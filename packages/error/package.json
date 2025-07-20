@@ -1,5 +1,5 @@
 {
-  "name": "@livo/error",
+  "name": "@livon/error",
   "type": "module",
   "version": "1.0.0",
   "description": "",
@@ -24,7 +24,7 @@
   
   "license": "MIT",
   "devDependencies": {
-    "@livo/typescript": "workspace:*",
+    "@livon/typescript": "workspace:*",
     "chokidar": "latest",
     "typescript": "latest"
   }

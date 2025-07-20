@@ -1,0 +1,6 @@
+{
+  "extends": "@livon/typescript/base.json",
+  "compilerOptions": {
+    "outDir": "./dist"
+  },
+}

@@ -1,4 +1,4 @@
-import { RefloContext } from '@livo/types/context.ts';
+import { RefloContext } from '@livon/types/context.ts';
 const validateEvent = (event: unknown): RefloContext => {
   if (typeof event !== 'object' || event === null) {
     throw new TypeError('Event must be a non-null object');

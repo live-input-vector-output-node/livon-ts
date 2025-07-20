@@ -1,6 +1,6 @@
-import { HookEmitFn, HookMap, HookOnFn } from "@livo/types/hooks.ts";
+import { HookEmitFn, HookMap, HookOnFn } from "@livon/types/hooks.ts";
 import { RefloModule, RegisteredModule } from "./runtime.js";
-import { emitHookNames, HookPrefix, OnHookName, onHookNames } from "@livo/enums/hooks.js";
+import { emitHookNames, HookPrefix, OnHookName, onHookNames } from "@livon/enums/hooks.js";
 
 export const composeModules = (modules: RegisteredModule[]) => {
   const composedOnHooks = onHookNames.reduce<HookMap>((prev, hookName) => {

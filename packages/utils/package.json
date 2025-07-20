@@ -1,5 +1,5 @@
 {
-  "name": "@livo/utils",
+  "name": "@livon/utils",
   "version": "1.0.0",
   "description": "",
   "type": "module",
@@ -31,8 +31,8 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "@livo/typescript": "workspace:*",
-    "@livo/types": "workspace:*",
+    "@livon/typescript": "workspace:*",
+    "@livon/types": "workspace:*",
     "@swc/cli": "latest",
     "@swc/core": "latest",
     "@types/ws": "latest"

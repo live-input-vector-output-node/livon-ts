@@ -1,6 +1,6 @@
 {
-  "name": "reflo",
-  "private": true,
+  "name": "@livon",
+  "private": false,
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
@@ -9,9 +9,7 @@
     "check-types": "turbo run check-types"
   },
   "devDependencies": {
-    "prettier": "^3.5.3",
-    "turbo": "^2.5.3",
-    "typescript": "5.8.2"
+    "turbo": "latest"
   },
   "packageManager": "pnpm@9.0.0",
   "engines": {

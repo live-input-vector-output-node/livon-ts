@@ -1,5 +1,5 @@
 {
-  "name": "@livo/enums",
+  "name": "@livon/enums",
   "version": "1.0.0",
   "description": "",
   "type": "module",
@@ -28,7 +28,7 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "@livo/typescript": "workspace:*",
+    "@livon/typescript": "workspace:*",
     "@swc/cli": "latest",
     "@swc/core": "latest",
     "@types/ws": "latest"

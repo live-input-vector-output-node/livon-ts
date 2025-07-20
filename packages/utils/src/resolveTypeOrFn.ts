@@ -1,4 +1,4 @@
-import type { AnyConstructor, AnyFunction } from '@livo/types/base.ts';
+import type { AnyConstructor, AnyFunction } from '@livon/types/base.ts';
 import { tryCatchTagged } from './tryCatchTagged.js'
 import { isAnyFunction } from './isAnyFuntion.js';
 

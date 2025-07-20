@@ -1,6 +1,6 @@
 import {
   ModuleFactoryOrFunction
-} from "@livo/types/hooks.ts";
+} from "@livon/types/hooks.ts";
 
 export interface RefloModuleDefinition {
   name: string;

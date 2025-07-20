@@ -1,4 +1,4 @@
-import { Unpromised } from "@livo/types/base.ts";
+import { Unpromised } from "@livon/types/base.ts";
 
 export type TaggedResult<T> =
   | { ok: true; data: T }

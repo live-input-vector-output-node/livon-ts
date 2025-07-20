@@ -1,0 +1,3 @@
+{
+  "extends":"@livon/typescript/package.json"
+}

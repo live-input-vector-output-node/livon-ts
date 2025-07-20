@@ -1,21 +1,30 @@
 {
   "$schema": "https://turborepo.com/schema.json",
-  "ui": "tui",
+  "concurrency": "25",
   "tasks": {
-    "build": {
-      "dependsOn": ["^build"],
-      "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "outputs": [".next/**", "!.next/cache/**"]
-    },
-    "lint": {
-      "dependsOn": ["^lint"]
-    },
-    "check-types": {
-      "dependsOn": ["^check-types"]
-    },
     "dev": {
+      "with": ["dev:ts", "dev:js", "dev:barrel"],
       "cache": false,
-      "persistent": true
+      "persistent": true,
+      "outputLogs": "new-only"
+    },
+    "dev:ts": {
+      "cache": false,
+      "persistent": true,
+      "outputLogs": "new-only",
+      "outputs": ["dist/**"]
+    },
+    "dev:js": {
+      "cache": false,
+      "persistent": true,
+      "outputLogs": "new-only",
+      "outputs": ["dist/**"]
+    },
+    "dev:barrel": {
+      "cache": false,
+      "persistent": false,
+      "outputLogs": "new-only",
+      "outputs": ["dist/**"]
     }
   }
 }

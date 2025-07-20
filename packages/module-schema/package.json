@@ -1,5 +1,5 @@
 {
-  "name": "@livo/module-schema",
+  "name": "@livon/module-schema",
   "version": "1.0.0",
   "description": "",
   "type": "module",
@@ -19,8 +19,8 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "@livo/core": "workspace:*",
-    "@livo/typescript": "workspace:*",
+    "@livon/core": "workspace:*",
+    "@livon/typescript": "workspace:*",
     "@swc/cli": "latest",
     "@swc/core": "latest",
     "@types/ws": "latest"

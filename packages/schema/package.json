@@ -1,7 +1,7 @@
 {
-  "name": "@livo/schema",
+  "name": "@livon/schema",
   "type": "module",
-  "version": "0.0.0",
+  "version": "0.0.1-rc1",
   "description": "",
   "exports": {
     "./runtime.js": {
@@ -26,15 +26,18 @@
   
   "license": "MIT",
   "devDependencies": {
-    "@livo/typescript": "workspace:*",
-    "@livo/core": "workspace:*",
-    "@livo/types": "workspace:*",
-    "@livo/enums": "workspace:*",
-    "@livo/error": "workspace:*",
+    "@livon/typescript": "workspace:*",
+    "@livon/core": "workspace:*",
+    "@livon/types": "workspace:*",
+    "@livon/enums": "workspace:*",
+    "@livon/error": "workspace:*",
     "@swc/core": "latest",
     "@swc/cli": "latest",
     "chokidar": "latest",
     "typescript": "latest",
     "barrelbot": "latest"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

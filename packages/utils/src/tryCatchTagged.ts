@@ -1,4 +1,4 @@
-import { Unpromised } from "@livo/types/base.ts";
+import { Unpromised } from "@livon/types/base.ts";
 import { tryCatchTaggedSync } from "./tryCatchTaggedSync.js";
 
 export type TaggedResult<T> =

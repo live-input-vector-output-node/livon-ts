@@ -1,0 +1,22 @@
+{
+  "name": "@refol/new-package",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "build:ts": "echo tsc",
+    "build:js": "swc src -d dist --config-file ./swcrc",
+    "dev:ts": "pnpm run build:ts -w",
+    "dev:js": "pnpm run build:js --watch"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "mit",
+  "devDependencies": {
+    "@livon/swc": "workspace:*",
+    "@livon/typescript": "workspace:*",
+    "@swc/core": "latest",
+    "@swc/cli": "latest",
+    "chokidar": "latest",
+    "typescript": "latest"
+  }
+}

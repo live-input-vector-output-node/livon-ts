@@ -1,0 +1,26 @@
+{
+  "name": "@livon/demo-gateway",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "dev:js": "cross-env SWCRC=true node --watch --watch-preserve-output --import @swc-node/register/esm-register src/index.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@livon/core": "workspace:*",
+    "@livon/transport-ws-gateway": "workspace:*",
+    "@livon/module-schema": "workspace:*",
+    "@livon/manager-retry": "workspace:*",
+    "@livon/typescript": "workspace:*",
+    "@swc-node/register": "latest",
+    "@swc/cli": "latest",
+    "@swc/core": "latest",
+    "chokidar": "latest",
+    "cross-env": "latest",
+    "node": "latest",
+    "typescript": "latest"
+  }
+}

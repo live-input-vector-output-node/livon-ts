@@ -1,5 +1,5 @@
 {
-  "name": "@livo/core",
+  "name": "@livon/core",
   "type": "module",
   "version": "1.0.0",
   "description": "",
@@ -24,10 +24,10 @@
   
   "license": "MIT",
   "devDependencies": {
-    "@livo/typescript": "workspace:*",
-    "@livo/utils": "workspace:*",
-    "@livo/types": "workspace:*",
-    "@livo/enums": "workspace:*",
+    "@livon/typescript": "workspace:*",
+    "@livon/utils": "workspace:*",
+    "@livon/types": "workspace:*",
+    "@livon/enums": "workspace:*",
     "@swc/core": "latest",
     "@swc/cli": "latest",
     "chokidar": "latest",
