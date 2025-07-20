@@ -1,0 +1,40 @@
+{
+  "name": "@livo/schema",
+  "type": "module",
+  "version": "0.0.0",
+  "description": "",
+  "exports": {
+    "./runtime.js": {
+      "import": "./dist/runtime.js",
+      "types": "./dist/runtime.d.ts"
+    },
+    "./createRefloMiddleware.js": {
+      "import": "./dist/createRefloMiddleware.js",
+      "types": "./dist/createRefloMiddleware.d.ts"
+    }
+  },
+  "scripts": {
+    "build:ts": "tsc",
+    "build:js": "swc src -d dist --log-watch-compilation --config-file .swcrc --strip-leading-paths",
+    "build:barrel": "barrelbot ./src",
+    "dev:ts": "pnpm run build:ts -w",
+    "dev:js": "pnpm run build:js --watch",
+    "dev:barrel": "barrelbot watch src"
+  },
+  "keywords": [],
+  "author": "",
+  
+  "license": "MIT",
+  "devDependencies": {
+    "@livo/typescript": "workspace:*",
+    "@livo/core": "workspace:*",
+    "@livo/types": "workspace:*",
+    "@livo/enums": "workspace:*",
+    "@livo/error": "workspace:*",
+    "@swc/core": "latest",
+    "@swc/cli": "latest",
+    "chokidar": "latest",
+    "typescript": "latest",
+    "barrelbot": "latest"
+  }
+}
