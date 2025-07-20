@@ -1,0 +1,31 @@
+{
+  "name": "@livo/manager-retry",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "scripts": {
+    "build:ts": "tsc",
+    "build:js": "swc src -d dist --log-watch-compilation --config-file .swcrc --strip-leading-paths",
+    "dev:ts": "pnpm run build:ts -w",
+    "dev:js": "pnpm run build:js --watch"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/managerRetry.js",
+      "types": "./dist/managerRetry.d.ts"
+    }
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@livo/core": "workspace:*",
+    "@livo/typescript": "workspace:*",
+    "@swc/cli": "latest",
+    "@swc/core": "latest",
+    "@types/ws": "latest"
+  },
+  "dependencies": {
+    "ws": "latest"
+  }
+}

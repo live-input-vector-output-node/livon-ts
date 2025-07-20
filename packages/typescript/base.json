@@ -3,17 +3,24 @@
   "compilerOptions": {
     "declaration": true,
     "declarationMap": true,
+    "sourceMap": false,
     "esModuleInterop": true,
-    "incremental": false,
+    "incremental": true,
     "isolatedModules": true,
-    "lib": ["es2022", "DOM", "DOM.Iterable"],
+    "lib": [
+      "ESNext",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "module": "NodeNext",
     "moduleDetection": "force",
     "moduleResolution": "NodeNext",
     "noUncheckedIndexedAccess": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
+    "preserveWatchOutput": true,
     "strict": true,
-    "target": "ES2022"
+    "target": "ES2023",
+    "emitDeclarationOnly": true,
   }
 }

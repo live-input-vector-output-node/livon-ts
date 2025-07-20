@@ -1,0 +1,40 @@
+{
+  "name": "@livo/utils",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "scripts": {
+    "build:ts": "tsc",
+    "build:js": "swc src -d dist --log-watch-compilation --config-file .swcrc --strip-leading-paths",
+    "dev:ts": "pnpm run build:ts -w",
+    "dev:js": "pnpm run build:js --watch"
+  },
+  "exports": {
+    "./readonlyArrayToEnum.js": {
+      "import": "./dist/readonlyArrayToEnum.js",
+      "types": "./dist/readonlyArrayToEnum.d.ts"
+    },
+    "./resolveTypeOrFn.js": {
+      "import": "./dist/resolveTypeOrFn.js",
+      "types": "./dist/resolveTypeOrFn.d.ts"
+    },
+    "./tryCatchTagged.js": {
+      "import": "./dist/tryCatchTagged.js",
+      "types": "./dist/tryCatchTagged.d.ts"
+    },
+    "./tryChain.js": {
+      "import": "./dist/tryChain.js",
+      "types": "./dist/tryChain.d.ts"
+    }
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@livo/typescript": "workspace:*",
+    "@livo/types": "workspace:*",
+    "@swc/cli": "latest",
+    "@swc/core": "latest",
+    "@types/ws": "latest"
+  }
+}

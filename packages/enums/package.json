@@ -1,0 +1,36 @@
+{
+  "name": "@livo/enums",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "scripts": {
+    "build:ts": "tsc",
+    "build:js": "swc src -d dist --log-watch-compilation --config-file .swcrc --strip-leading-paths",
+    "dev:ts": "pnpm run build:ts -w",
+    "dev:js": "pnpm run build:js --watch"
+  },
+  
+  "exports": {
+    "./hooks.js": {
+      "import": "./dist/hooks.js",
+      "types": "./dist/hooks.d.ts"
+    },
+    "./readonlyArrayToEnum.js": {
+      "import": "./dist/readonlyArrayToEnum.js",
+      "types": "./dist/readonlyArrayToEnum.d.ts"
+    },
+    "./types.ts": {
+      "import": "./dist/types.d.ts",
+      "types": "./dist/types.d.ts"
+    }
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@livo/typescript": "workspace:*",
+    "@swc/cli": "latest",
+    "@swc/core": "latest",
+    "@types/ws": "latest"
+  }
+}

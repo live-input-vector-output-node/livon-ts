@@ -1,0 +1,31 @@
+{
+  "name": "@livo/error",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "",
+  "exports": {
+    "./runtime.js": {
+      "import": "./dist/runtime.js",
+      "types": "./dist/runtime.d.ts"
+    },
+    "./createRefloMiddleware.js": {
+      "import": "./dist/createRefloMiddleware.js",
+      "types": "./dist/createRefloMiddleware.d.ts"
+    }
+  },
+  "scripts": {
+    "build:ts": "tsc",
+    "build:js": "swc src -d dist --log-watch-compilation --config-file .swcrc --strip-leading-paths",
+    "dev:ts": "pnpm run build:ts -w",
+    "dev:js": "pnpm run build:js --watch"
+  },
+  "keywords": [],
+  "author": "",
+  
+  "license": "MIT",
+  "devDependencies": {
+    "@livo/typescript": "workspace:*",
+    "chokidar": "latest",
+    "typescript": "latest"
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "name": "@livo/types",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "scripts": {
+    "build:ts": "tsc",
+    "dev:ts": "pnpm run build:ts -w"
+  },
+  "exports": {
+    "./context.ts": {
+      "import": "./dist/context.d.ts",
+      "types": "./dist/context.d.ts"
+    },
+    "./event.ts": {
+      "import": "./dist/event.d.ts",
+      "types": "./dist/event.d.ts"
+    },
+    "./hooks.ts": {
+      "import": "./dist/hooks.d.ts",
+      "types": "./dist/hooks.d.ts"
+    },
+    "./base.ts": {
+      "import": "./dist/base.d.ts",
+      "types": "./dist/base.d.ts"
+    }
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@livo/typescript": "workspace:*",
+    "@livo/enums": "workspace:*",
+    "@swc/cli": "latest",
+    "@swc/core": "latest",
+    "@types/ws": "latest"
+  }
+}

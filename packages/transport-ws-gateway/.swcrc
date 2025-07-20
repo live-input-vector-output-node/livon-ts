@@ -1,0 +1,31 @@
+{
+  "$schema": "https://swc.rs/schema.json",
+  "jsc": {
+    "baseUrl": "./src",
+    "parser": {
+      "syntax": "typescript",
+      "tsx": true,
+      "decorators": true
+    },
+    "minify": {
+      "compress": false,
+      "mangle": false
+    },
+    "transform": {
+      "decoratorMetadata": true,
+      "legacyDecorator": true
+    }
+  },
+  "module": {
+    "type": "nodenext",
+    "outFileExtension": "js",
+    "lazy": true,
+    "fullyResove": true
+  },
+  "sourceMaps": "inline",
+  "isModule": true,
+  "env": {
+    "bugfixes": true,
+    "dynamicImport": true
+  }
+}

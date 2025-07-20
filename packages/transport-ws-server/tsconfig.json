@@ -1,0 +1,6 @@
+{
+  "extends":"@livo/typescript/base.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+  }
+}
