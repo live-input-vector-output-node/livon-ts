@@ -1,16 +1,30 @@
 {
   "name": "@livon/schema",
+  "description": "Dependency-free schema definition system for type-safe, runtime-validated event payloads in microservice architectures.",
+  "license": "MIT",
+  "version": "0.0.1-alpha1",
   "type": "module",
-  "version": "0.0.1-rc1",
-  "description": "",
+  "author": {
+    "name": "LIVON",
+    "url": "https://github.com/live-input-vector-output-node/livon-ts/tree/main/packages/schema",
+    "email": "cspeck89+livon@gmial.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/live-input-vector-output-node/livon-ts",
+    "directory": "packages/schema"
+  },
+  "contributors": [
+    {
+      "name": "cr15p1",
+      "url": "https://github.com/cr15p1",
+      "email": "cspeck89+livon@gmail.com"
+    }
+  ],
   "exports": {
-    "./runtime.js": {
-      "import": "./dist/runtime.js",
-      "types": "./dist/runtime.d.ts"
-    },
-    "./createRefloMiddleware.js": {
-      "import": "./dist/createRefloMiddleware.js",
-      "types": "./dist/createRefloMiddleware.d.ts"
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
     }
   },
   "scripts": {
@@ -18,13 +32,19 @@
     "build:js": "swc src -d dist --log-watch-compilation --config-file .swcrc --strip-leading-paths",
     "build:barrel": "barrelbot ./src",
     "dev:ts": "pnpm run build:ts -w",
-    "dev:js": "pnpm run build:js --watch",
-    "dev:barrel": "barrelbot watch src"
+    "dev:js": "pnpm run build:js --watch"
   },
-  "keywords": [],
-  "author": "",
-  
-  "license": "MIT",
+  "keywords": [
+    "event-schema",
+    "event-bus",
+    "schema-definition",
+    "typescript",
+    "microservices",
+    "payload-validation",
+    "runtime-types",
+    "event-system",
+    "typed-events"
+  ],
   "devDependencies": {
     "@livon/typescript": "workspace:*",
     "@livon/core": "workspace:*",
@@ -39,5 +59,8 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }
