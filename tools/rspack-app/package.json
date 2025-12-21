@@ -1,0 +1,33 @@
+{
+  "name": "@livon/rspack-app",
+  "version": "0.27.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "rspack build",
+    "dev": "rspack dev",
+    "preview": "rspack preview",
+    "lint": "eslint .",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "test:unit": "vitest run -c vitest.unit.config.ts",
+    "test:integration": "vitest run -c vitest.integration.config.ts"
+  },
+  "dependencies": {
+    "react": "latest",
+    "react-dom": "latest"
+  },
+  "devDependencies": {
+    "@rspack/cli": "1.7.5",
+    "@rspack/core": "1.7.5",
+    "@rspack/plugin-react-refresh": "1.6.0",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "@typescript-eslint/eslint-plugin": "8.54.0",
+    "@typescript-eslint/parser": "8.54.0",
+    "eslint": "9.0.0",
+    "typescript": "latest",
+    "vitest": "latest",
+    "@livon/config": "workspace:*"
+  }
+}
