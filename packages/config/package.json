@@ -1,0 +1,41 @@
+{
+  "name": "@livon/config",
+  "version": "0.27.0",
+  "private": false,
+  "type": "module",
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "README.md",
+    "eslint",
+    "rsbuild",
+    "rslib",
+    "rspack",
+    "swc",
+    "tsconfig",
+    "vitest"
+  ],
+  "exports": {
+    "./tsconfig/base.json": "./tsconfig/base.json",
+    "./tsconfig/library.json": "./tsconfig/library.json",
+    "./tsconfig/app.json": "./tsconfig/app.json",
+    "./eslint/base.cjs": "./eslint/base.cjs",
+    "./swc/base.json": "./swc/base.json",
+    "./rspack/base": "./rspack/base.ts",
+    "./rsbuild/base": "./rsbuild/base.ts",
+    "./rslib/base": "./rslib/base.ts",
+    "./vitest/base": "./vitest/base.ts",
+    "./vitest/base.cjs": "./vitest/base.cjs"
+  },
+  "scripts": {
+    "build": "true",
+    "build:watch": "true",
+    "dev": "true",
+    "lint": "true",
+    "typecheck": "true",
+    "test": "true",
+    "test:unit": "true",
+    "test:integration": "true"
+  }
+}
