@@ -1,0 +1,47 @@
+{
+  "name": "@livon/schema",
+  "version": "0.27.0",
+  "private": false,
+  "type": "module",
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "PROMPT.md",
+    "SCHEMA.md"
+  ],
+  "exports": {
+    ".": {
+      "development": "./src/index.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "rslib build",
+    "build:watch": "rslib dev",
+    "dev": "true",
+    "lint": "eslint .",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run -c vitest.unit.config.ts",
+    "test:unit": "vitest run -c vitest.unit.config.ts",
+    "test:integration": "vitest run -c vitest.integration.config.ts"
+  },
+  "dependencies": {
+    "@livon/config": "workspace:*",
+    "@livon/runtime": "workspace:*",
+    "msgpackr": "latest"
+  },
+  "devDependencies": {
+    "@rslib/core": "latest",
+    "@typescript-eslint/eslint-plugin": "8.54.0",
+    "@typescript-eslint/parser": "8.54.0",
+    "eslint": "9.0.0",
+    "typescript": "latest",
+    "vitest": "latest",
+    "@livon/config": "workspace:*"
+  }
+}
