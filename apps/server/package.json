@@ -1,0 +1,36 @@
+{
+  "name": "@livon/app-server",
+  "version": "0.27.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "build": "rslib build",
+    "build:watch": "rslib dev",
+    "dev": "HOST=0.0.0.0 LIVON_PORT=3002 LIVON_EXPLAIN=1 node --watch --watch-preserve-output dist/index.js",
+    "preview": "HOST=0.0.0.0 LIVON_PORT=3002 node dist/index.js",
+    "lint": "eslint .",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --configLoader runner -c vitest.integration.config.ts",
+    "test:unit": "vitest run --configLoader runner -c vitest.unit.config.ts",
+    "test:integration": "vitest run --configLoader runner -c vitest.integration.config.ts"
+  },
+  "dependencies": {
+    "@livon/dlq-module": "workspace:*",
+    "@livon/runtime": "workspace:*",
+    "@livon/schema": "workspace:*",
+    "@livon/node-ws-transport": "workspace:*",
+    "msgpackr": "latest",
+    "ws": "latest"
+  },
+  "devDependencies": {
+    "@livon/config": "workspace:*",
+    "@rslib/core": "latest",
+    "@types/node": "latest",
+    "@types/ws": "latest",
+    "eslint": "9.0.0",
+    "superwstest": "latest",
+    "typescript": "latest",
+    "vitest": "latest"
+  }
+}
