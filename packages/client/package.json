@@ -1,0 +1,50 @@
+{
+  "name": "@livon/client",
+  "version": "0.27.0",
+  "private": false,
+  "type": "module",
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./generate": {
+      "types": "./dist/generate.d.ts",
+      "import": "./dist/generate.js",
+      "require": "./dist/generate.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "rslib build",
+    "build:watch": "rslib dev",
+    "dev": "true",
+    "lint": "eslint .",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "true",
+    "test:unit": "true",
+    "test:integration": "true"
+  },
+  "dependencies": {
+    "@livon/config": "workspace:*",
+    "@livon/runtime": "workspace:*"
+  },
+  "devDependencies": {
+    "@rslib/core": "latest",
+    "@types/node": "latest",
+    "@typescript-eslint/eslint-plugin": "8.54.0",
+    "@typescript-eslint/parser": "8.54.0",
+    "eslint": "9.0.0",
+    "typescript": "latest",
+    "@livon/config": "workspace:*"
+  }
+}
