@@ -1,0 +1,41 @@
+{
+  "name": "@livon/app-client",
+  "version": "0.27.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "build": "rsbuild build",
+    "build:watch": "true",
+    "dev": "PORT=3001 rsbuild dev",
+    "gen:client:watch": "livon --endpoint ws://localhost:3002/ws --out src/generated/api.ts --poll 2000",
+    "preview": "rsbuild preview",
+    "lint": "eslint .",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "test:unit": "vitest run -c vitest.unit.config.ts",
+    "test:integration": "vitest run -c vitest.integration.config.ts",
+    "gen:client": "livon --endpoint ws://localhost:3002/ws --out src/generated/api.ts"
+  },
+  "dependencies": {
+    "@livon/client": "workspace:*",
+    "@livon/client-ws-transport": "workspace:*",
+    "@livon/runtime": "workspace:*",
+    "react": "latest",
+    "react-dom": "latest",
+    "zustand": "latest"
+  },
+  "devDependencies": {
+    "@livon/cli": "workspace:*",
+    "@livon/config": "workspace:*",
+    "@rsbuild/core": "latest",
+    "@rsbuild/plugin-react": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "@typescript-eslint/eslint-plugin": "8.54.0",
+    "@typescript-eslint/parser": "8.54.0",
+    "eslint": "9.0.0",
+    "typescript": "latest",
+    "vitest": "latest"
+  }
+}
