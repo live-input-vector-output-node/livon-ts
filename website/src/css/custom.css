@@ -1,0 +1,424 @@
+:root {
+  --ifm-color-primary: #7756ff;
+  --ifm-color-primary-dark: #6643f7;
+  --ifm-color-primary-darker: #603cf2;
+  --ifm-color-primary-darkest: #4f2de0;
+  --ifm-color-primary-light: #896bff;
+  --ifm-color-primary-lighter: #9275ff;
+  --ifm-color-primary-lightest: #ad97ff;
+  --ifm-background-color: #ffffff;
+  --ifm-background-surface-color: #fbf9ff;
+  --ifm-navbar-background-color: #ffffff;
+  --ifm-font-color-base: #383d41;
+  --ifm-heading-color: #2f3440;
+  --ifm-code-font-size: 92%;
+  --ifm-global-radius: 0;
+  --ifm-card-border-radius: 0;
+  --ifm-breadcrumb-border-radius: 0;
+  --ifm-footer-background-color: #ece7ff;
+  --ifm-footer-color: #383d41;
+  --ifm-footer-link-color: #4a3ac6;
+  --ifm-footer-title-color: #2f3440;
+  --ifm-menu-color-active: #4f2de0;
+  --ifm-link-color: #5d43db;
+  --ifm-link-hover-color: #4f2de0;
+  --ifm-toc-link-color: #595f66;
+  --ifm-toc-link-color-active: #4f2de0;
+  --ifm-navbar-search-input-background-color: #ece7ff;
+  --ifm-navbar-search-input-color: #2f2557;
+  --ifm-navbar-search-input-placeholder-color: #6b6294;
+  --ifm-table-border-color: transparent;
+  --ifm-blockquote-border-left-color: #7756ff;
+  --ifm-code-background: #f0edff;
+  --ifm-pre-background: #251f3c;
+  --ifm-pre-color: #f8f7ff;
+  --livon-inline-code-bg: #e2dcfb;
+  --livon-inline-code-color: #2f2557;
+  --livon-code-block-bg: #efebff;
+  --livon-chevron-cut: 8px;
+  --docusaurus-highlighted-code-line-bg: rgba(119, 86, 255, 0.14);
+  --ifm-global-shadow-lw: none;
+  --ifm-global-shadow-md: none;
+  --ifm-global-shadow-tl: none;
+  --search-local-input-active-border-color: #5d43db;
+  --search-local-modal-background: #f2eeff;
+  --search-local-modal-shadow: none;
+  --search-local-hit-background: #ffffff;
+  --search-local-hit-color: #2f3440;
+  --search-local-hit-shadow: none;
+  --search-local-muted-color: #6b7280;
+  --search-local-highlight-color: #4f2de0;
+  --search-local-hit-active-color: #ffffff;
+  --livon-octagon-cut-lg: 14px;
+  --livon-octagon-cut-md: 10px;
+  --livon-octagon-cut-sm: 8px;
+  --livon-hexagon-cut: 16px;
+  --livon-octagon-shape-md: polygon(
+    var(--livon-octagon-cut-md) 0,
+    calc(100% - var(--livon-octagon-cut-md)) 0,
+    100% var(--livon-octagon-cut-md),
+    100% calc(100% - var(--livon-octagon-cut-md)),
+    calc(100% - var(--livon-octagon-cut-md)) 100%,
+    var(--livon-octagon-cut-md) 100%,
+    0 calc(100% - var(--livon-octagon-cut-md)),
+    0 var(--livon-octagon-cut-md)
+  );
+  --livon-octagon-shape-sm: polygon(
+    var(--livon-octagon-cut-sm) 0,
+    calc(100% - var(--livon-octagon-cut-sm)) 0,
+    100% var(--livon-octagon-cut-sm),
+    100% calc(100% - var(--livon-octagon-cut-sm)),
+    calc(100% - var(--livon-octagon-cut-sm)) 100%,
+    var(--livon-octagon-cut-sm) 100%,
+    0 calc(100% - var(--livon-octagon-cut-sm)),
+    0 var(--livon-octagon-cut-sm)
+  );
+  --livon-hexagon-shape: polygon(
+    var(--livon-hexagon-cut) 0,
+    calc(100% - var(--livon-hexagon-cut)) 0,
+    100% 50%,
+    calc(100% - var(--livon-hexagon-cut)) 100%,
+    var(--livon-hexagon-cut) 100%,
+    0 50%
+  );
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+[data-theme='dark'] {
+  --ifm-color-primary: #dfd4ff;
+  --ifm-color-primary-dark: #d4c5ff;
+  --ifm-color-primary-darker: #cbbaff;
+  --ifm-color-primary-darkest: #ae93ff;
+  --ifm-color-primary-light: #e9e1ff;
+  --ifm-color-primary-lighter: #f0eaff;
+  --ifm-color-primary-lightest: #fbf9ff;
+  --ifm-background-color: #0d0a18;
+  --ifm-background-surface-color: #17122d;
+  --ifm-navbar-background-color: #17122d;
+  --ifm-font-color-base: #fbfaff;
+  --ifm-heading-color: #ffffff;
+  --ifm-footer-background-color: #0d0a18;
+  --ifm-footer-color: #ede8ff;
+  --ifm-footer-link-color: #e2d8ff;
+  --ifm-footer-title-color: #ffffff;
+  --ifm-link-color: #d8ccff;
+  --ifm-link-hover-color: #f0ebff;
+  --ifm-menu-color-active: #e5dbff;
+  --ifm-toc-link-color: #cec8e8;
+  --ifm-toc-link-color-active: #e5dbff;
+  --ifm-navbar-search-input-background-color: #261e45;
+  --ifm-navbar-search-input-color: #f7f3ff;
+  --ifm-navbar-search-input-placeholder-color: #b9afd9;
+  --ifm-code-background: #2a2149;
+  --ifm-pre-background: #100c1c;
+  --livon-inline-code-bg: #4b3e74;
+  --livon-inline-code-color: #f7f3ff;
+  --livon-code-block-bg: #120d22;
+  --ifm-table-border-color: transparent;
+  --ifm-hover-overlay: rgba(255, 255, 255, 0.14);
+  --docusaurus-highlighted-code-line-bg: rgba(223, 212, 255, 0.18);
+  --ifm-global-shadow-lw: none;
+  --ifm-global-shadow-md: none;
+  --ifm-global-shadow-tl: none;
+  --search-local-input-active-border-color: #e5dbff;
+  --search-local-modal-background: #17122d;
+  --search-local-modal-shadow: none;
+  --search-local-hit-background: #231b40;
+  --search-local-hit-color: #f7f3ff;
+  --search-local-hit-shadow: none;
+  --search-local-muted-color: #b0a5cf;
+  --search-local-highlight-color: #e5dbff;
+  --search-local-hit-active-color: #1c1536;
+}
+
+.navbar {
+  border-bottom: none;
+}
+
+.navbar__search-input {
+  background-color: var(--ifm-navbar-search-input-background-color) !important;
+  border: none !important;
+  border-radius: 0 !important;
+  clip-path: var(--livon-octagon-shape-sm);
+  color: var(--ifm-navbar-search-input-color) !important;
+  min-height: 2.2rem;
+}
+
+.navbar__search-input::placeholder {
+  color: var(--ifm-navbar-search-input-placeholder-color) !important;
+}
+
+.navbar__search-input:focus,
+.navbar__search-input:focus-visible {
+  outline: 2px solid var(--ifm-color-primary);
+  outline-offset: 1px;
+}
+
+.navbar__logo img {
+  height: 28px;
+}
+
+.menu__link {
+  border-radius: 0;
+}
+
+.theme-doc-sidebar-menu .menu__link,
+.theme-doc-sidebar-menu .menu__list-item-collapsible,
+.theme-doc-sidebar-menu .menu__link--sublist {
+  border-radius: 0 !important;
+  clip-path: var(--livon-octagon-shape-sm) !important;
+}
+
+.theme-doc-sidebar-menu .menu__caret,
+.theme-doc-sidebar-menu .menu__caret::before {
+  border-radius: 0 !important;
+}
+
+.theme-doc-sidebar-container {
+  border-right: none;
+}
+
+.theme-doc-breadcrumbs,
+.theme-doc-markdown,
+.theme-doc-toc-mobile {
+  background: var(--ifm-background-surface-color);
+  border: none !important;
+  border-radius: 0 !important;
+  clip-path: var(--livon-octagon-shape-md);
+}
+
+.theme-doc-breadcrumbs {
+  margin-bottom: 0.9rem;
+  padding: 0.55rem 0.7rem;
+}
+
+.theme-doc-markdown {
+  padding: 1rem 1.1rem 1.2rem;
+}
+
+.theme-doc-toc-mobile {
+  margin-bottom: 0.9rem;
+}
+
+.pagination-nav__link {
+  border-radius: 0;
+  border: none;
+}
+
+.breadcrumbs__link {
+  border-radius: 0 !important;
+  clip-path: var(--livon-octagon-shape-sm) !important;
+}
+
+.breadcrumbs__item--active .breadcrumbs__link {
+  clip-path: var(--livon-octagon-shape-sm) !important;
+}
+
+.footer {
+  border-top: none;
+}
+
+/* Flat design baseline: avoid shadows across core UI surfaces. */
+.navbar,
+.dropdown__menu,
+.menu__link,
+.pagination-nav__link,
+.card,
+.button,
+.theme-code-block,
+.table-of-contents,
+.docusaurus-mermaid-container svg {
+  box-shadow: none !important;
+  text-shadow: none !important;
+  filter: none !important;
+}
+
+.button {
+  border-radius: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+  transition: background-color 140ms ease, color 140ms ease;
+}
+
+:not(pre) > code {
+  background: var(--livon-inline-code-bg) !important;
+  border: none !important;
+  border-radius: 0 !important;
+  clip-path: polygon(
+    var(--livon-chevron-cut) 0,
+    calc(100% - var(--livon-chevron-cut)) 0,
+    100% 50%,
+    calc(100% - var(--livon-chevron-cut)) 100%,
+    var(--livon-chevron-cut) 100%,
+    0 50%
+  );
+  color: var(--livon-inline-code-color) !important;
+  display: inline-block;
+  line-height: 1.2;
+  padding: 0.1rem 0.62rem 0.1rem 0.48rem;
+}
+
+.theme-code-block {
+  --prism-background-color: var(--livon-code-block-bg) !important;
+  border: none !important;
+}
+
+.theme-code-block pre.prism-code {
+  background-color: var(--livon-code-block-bg) !important;
+}
+
+/* Octagon surfaces */
+.button,
+.card,
+.menu__link,
+.pagination-nav__link,
+.dropdown__menu,
+.theme-code-block,
+.table-of-contents,
+.admonition,
+.tabs__item {
+  clip-path: var(--livon-octagon-shape-md);
+}
+
+.menu__link,
+.tabs__item {
+  clip-path: var(--livon-octagon-shape-sm);
+}
+
+/* Colored emphasis surfaces should stay octagonal everywhere. */
+.badge,
+.theme-doc-version-badge,
+.menu__link--active,
+.tabs__item--active,
+.dropdown__link--active {
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  clip-path: var(--livon-octagon-shape-sm) !important;
+}
+
+.badge,
+.theme-doc-version-badge {
+  padding: 0.2rem 0.65rem;
+}
+
+/* Tables: one connected octagon shape across header + body rows. */
+.markdown .table-wrapper,
+.markdown .table-wrapper table,
+.markdown table {
+  border: none !important;
+  border-radius: 0 !important;
+  clip-path: var(--livon-octagon-shape-md);
+}
+
+.markdown .table-wrapper table {
+  margin-bottom: 0;
+}
+
+.markdown table thead tr {
+  background: var(--ifm-background-surface-color);
+}
+
+.markdown table tbody tr:nth-child(2n + 1) {
+  background: var(--ifm-background-surface-color);
+}
+
+.markdown table tbody tr:nth-child(2n) {
+  background: var(--ifm-table-stripe-background);
+}
+
+/* Comparison tables: make LIVON column the visual anchor. */
+.markdown table.livon-comparison-table .livon-highlight-column {
+  background: rgba(119, 86, 255, 0.15);
+  border-left: 1px solid rgba(119, 86, 255, 0.28);
+  border-right: 1px solid rgba(119, 86, 255, 0.28);
+  font-weight: 600;
+}
+
+.markdown table.livon-comparison-table thead .livon-highlight-column {
+  background: rgba(119, 86, 255, 0.24);
+  color: #2f2557;
+}
+
+[data-theme='dark'] .markdown table.livon-comparison-table .livon-highlight-column {
+  background: rgba(223, 212, 255, 0.19);
+  border-left: 1px solid rgba(223, 212, 255, 0.3);
+  border-right: 1px solid rgba(223, 212, 255, 0.3);
+  color: #f7f3ff;
+}
+
+[data-theme='dark'] .markdown table.livon-comparison-table thead .livon-highlight-column {
+  background: rgba(223, 212, 255, 0.25);
+  color: #ffffff;
+}
+
+.markdown table.livon-comparison-table tbody tr td {
+  transition: box-shadow 160ms ease;
+}
+
+.markdown table.livon-comparison-table tbody tr:hover td {
+  box-shadow: inset 0 -2px 0 0 rgba(119, 86, 255, 0.8);
+}
+
+[data-theme='dark'] .markdown table.livon-comparison-table tbody tr:hover td {
+  box-shadow: inset 0 -2px 0 0 rgba(223, 212, 255, 0.85);
+}
+
+@media (max-width: 996px) {
+  .navbar-sidebar .menu__link,
+  .navbar-sidebar .menu__list-item-collapsible,
+  .navbar-sidebar .menu__link--sublist,
+  .navbar-sidebar .menu__link--active {
+    border-radius: 0 !important;
+    clip-path: var(--livon-hexagon-shape) !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+.button--primary {
+  background: #7756ff;
+  color: #ffffff;
+}
+
+.button--primary:hover {
+  background: #6643f7;
+  color: #ffffff;
+}
+
+.button--secondary {
+  background: #2b3350;
+  color: #f9f9ff;
+}
+
+.button--secondary:hover {
+  background: #3b4670;
+  color: #ffffff;
+}
+
+[data-theme='dark'] .button--primary {
+  background: #c6b6ff;
+  color: #130f21;
+}
+
+[data-theme='dark'] .button--primary:hover {
+  background: #b5a0ff;
+  color: #130f21;
+}
+
+[data-theme='dark'] .button--secondary {
+  background: #ece6ff;
+  color: #171327;
+}
+
+[data-theme='dark'] .button--secondary:hover {
+  background: #ddd3ff;
+  color: #130f21;
+}
