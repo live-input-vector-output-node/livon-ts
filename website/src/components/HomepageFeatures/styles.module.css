@@ -1,0 +1,46 @@
+.features {
+  padding: 3rem 0 3.5rem;
+}
+
+.subtitle {
+  color: var(--ifm-font-color-base);
+  margin-bottom: 1rem;
+  max-width: 760px;
+}
+
+.grid {
+  column-count: 2;
+  column-gap: 1rem;
+}
+
+.grid > .card {
+  break-inside: avoid;
+  -webkit-column-break-inside: avoid;
+  display: inline-block;
+  margin: 0 0 1rem;
+  page-break-inside: avoid;
+  width: 100%;
+}
+
+.card {
+  background: var(--ifm-background-surface-color);
+  border: none;
+  border-radius: 0;
+  clip-path: polygon(
+    var(--livon-octagon-cut-lg) 0,
+    calc(100% - var(--livon-octagon-cut-lg)) 0,
+    100% var(--livon-octagon-cut-lg),
+    100% calc(100% - var(--livon-octagon-cut-lg)),
+    calc(100% - var(--livon-octagon-cut-lg)) 100%,
+    var(--livon-octagon-cut-lg) 100%,
+    0 calc(100% - var(--livon-octagon-cut-lg)),
+    0 var(--livon-octagon-cut-lg)
+  );
+  padding: 1.1rem;
+}
+
+@media screen and (max-width: 900px) {
+  .grid {
+    column-count: 1;
+  }
+}

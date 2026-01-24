@@ -1,0 +1,237 @@
+.hero {
+  background: var(--ifm-background-surface-color);
+  border-bottom: none;
+  padding: 0 1.5rem 1.5rem;
+}
+
+.heroInner {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  margin: 0 auto;
+  max-width: 1120px;
+  text-align: center;
+}
+
+.heroIntro {
+  align-items: center;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: calc(100dvh - var(--ifm-navbar-height));
+  position: relative;
+  padding: 0.9rem 0 1.1rem;
+}
+
+.heroLogo {
+  height: auto;
+  margin-bottom: 1.5rem;
+  max-width: 380px;
+  width: min(100%, 380px);
+}
+
+.heroTitle {
+  color: var(--ifm-heading-color);
+  margin-bottom: 0.5rem;
+}
+
+.heroSubtitle {
+  color: var(--ifm-font-color-base);
+  font-size: 1.1rem;
+  margin-bottom: 0.75rem;
+}
+
+.heroCatcher {
+  color: var(--ifm-font-color-base);
+  font-size: 1rem;
+  line-height: 1.5;
+  margin: 0 0 1.5rem;
+  max-width: 760px;
+}
+
+.heroActions {
+  --hero-cta-width: 15.5rem;
+  column-gap: 1rem;
+  display: grid;
+  grid-template-columns: minmax(0, var(--hero-cta-width)) minmax(0, var(--hero-cta-width));
+  justify-content: center;
+  row-gap: 0.75rem;
+  width: 100%;
+}
+
+.heroActions > a {
+  justify-self: stretch;
+  text-align: center;
+  width: 100%;
+}
+
+.heroActions > :nth-child(3) {
+  grid-column: 1 / -1;
+  justify-self: center;
+  width: min(100%, var(--hero-cta-width));
+}
+
+.scrollHint {
+  align-items: center;
+  color: #7756ff;
+  display: inline-flex;
+  height: 2.5rem;
+  justify-content: center;
+  left: 50%;
+  position: absolute;
+  text-decoration: none;
+  transform: translateX(-50%);
+  bottom: 0.2rem;
+  width: 2.7rem;
+}
+
+.scrollHintIcon {
+  animation: heroPlaneHop 2s ease-out infinite;
+  display: block;
+  height: 1.45rem;
+  transform-origin: 50% 85%;
+  width: 2.6rem;
+}
+
+.scrollHintIcon path {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 4;
+}
+
+@keyframes heroPlaneHop {
+  0%,
+  70%,
+  100% {
+    transform: translateY(0) scaleX(1) scaleY(1) rotate(0deg);
+  }
+  5% {
+    transform: translateY(0) scaleX(1.18) scaleY(0.76) rotate(2deg);
+  }
+  12% {
+    transform: translateY(-24px) scaleX(0.8) scaleY(1.25) rotate(2deg);
+  }
+  23% {
+    transform: translateY(-10px) scaleX(0.92) scaleY(1.12) rotate(0deg);
+  }
+  33% {
+    transform: translateY(0) scaleX(1.12) scaleY(0.83) rotate(-1deg);
+  }
+  42% {
+    transform: translateY(-11px) scaleX(0.9) scaleY(1.14) rotate(-1deg);
+  }
+  50% {
+    transform: translateY(0) scaleX(1.07) scaleY(0.9) rotate(0deg);
+  }
+  57% {
+    transform: translateY(-6px) scaleX(0.95) scaleY(1.07) rotate(0deg);
+  }
+  64% {
+    transform: translateY(0) scaleX(1.03) scaleY(0.95) rotate(0deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scrollHintIcon {
+    animation: none;
+  }
+}
+
+.heroCodeGrid {
+  column-count: 2;
+  column-gap: 1rem;
+  width: 100%;
+}
+
+.heroCodeCard {
+  break-inside: avoid;
+  -webkit-column-break-inside: avoid;
+  display: inline-block;
+  margin: 0 0 1rem;
+  page-break-inside: avoid;
+  text-align: left;
+  width: 100%;
+}
+
+.section {
+  padding: 3rem 0;
+}
+
+.lead {
+  color: var(--ifm-font-color-base);
+  margin-bottom: 1.5rem;
+  max-width: 720px;
+}
+
+.cardGrid {
+  column-count: 2;
+  column-gap: 1rem;
+}
+
+.cardGrid > .card {
+  break-inside: avoid;
+  -webkit-column-break-inside: avoid;
+  display: inline-block;
+  margin: 0 0 1rem;
+  page-break-inside: avoid;
+  width: 100%;
+}
+
+.card {
+  background: var(--ifm-background-surface-color);
+  border: none;
+  border-radius: 0;
+  clip-path: polygon(
+    var(--livon-octagon-cut-lg) 0,
+    calc(100% - var(--livon-octagon-cut-lg)) 0,
+    100% var(--livon-octagon-cut-lg),
+    100% calc(100% - var(--livon-octagon-cut-lg)),
+    calc(100% - var(--livon-octagon-cut-lg)) 100%,
+    var(--livon-octagon-cut-lg) 100%,
+    0 calc(100% - var(--livon-octagon-cut-lg)),
+    0 var(--livon-octagon-cut-lg)
+  );
+  box-shadow: none;
+  padding: 1.1rem;
+}
+
+@media screen and (max-width: 996px) {
+  .hero {
+    padding: 0 1.25rem 1.25rem;
+  }
+
+  .heroIntro {
+    min-height: calc(100dvh - var(--ifm-navbar-height));
+    padding: 0.75rem 0 1rem;
+  }
+}
+
+@media screen and (max-width: 760px) {
+  .heroActions {
+    grid-template-columns: minmax(0, var(--hero-cta-width));
+    justify-content: center;
+    width: 100%;
+  }
+
+  .heroActions > :nth-child(1),
+  .heroActions > :nth-child(2),
+  .heroActions > :nth-child(3) {
+    grid-column: auto;
+    justify-self: center;
+    text-align: center;
+    width: min(100%, var(--hero-cta-width));
+  }
+}
+
+@media screen and (max-width: 900px) {
+  .heroCodeGrid {
+    column-count: 1;
+  }
+
+  .cardGrid {
+    column-count: 1;
+  }
+}
