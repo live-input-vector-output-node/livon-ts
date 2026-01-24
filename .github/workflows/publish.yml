@@ -1,0 +1,64 @@
+name: Publish Packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      npm_tag:
+        description: npm dist-tag for publish
+        required: false
+        default: latest
+        type: string
+      dry_run:
+        description: Run publish in dry-run mode
+        required: false
+        default: false
+        type: boolean
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.0.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+          registry-url: https://registry.npmjs.org
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm turbo run build --filter='./packages/*' --concurrency=4
+
+      - name: Publish packages (dry-run)
+        if: github.event_name == 'workflow_dispatch' && inputs.dry_run
+        run: |
+          TAG="${{ inputs.npm_tag }}"
+          pnpm -r --filter './packages/*' publish --access public --tag "$TAG" --no-git-checks --dry-run
+
+      - name: Publish packages
+        if: github.event_name != 'workflow_dispatch' || inputs.dry_run == false
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          TAG="latest"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ inputs.npm_tag }}" ]; then
+            TAG="${{ inputs.npm_tag }}"
+          fi
+          pnpm -r --filter './packages/*' publish --access public --tag "$TAG" --no-git-checks
