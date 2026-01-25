@@ -1,0 +1,120 @@
+---
+title: Testing and Quality
+sidebar_position: 4
+---
+
+## Root quality gates
+
+```sh
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm build
+pnpm check:policies
+```
+
+## Monorepo Vitest workspace
+
+Root tests are executed by Vitest workspace config at `vitest.workspace.ts`.
+Each package/app/tool test config is registered as its own Vitest project.
+
+```sh
+pnpm test
+pnpm run test --config vitest.workspace.ts
+```
+
+## Package-local tests
+
+Most packages expose:
+
+```sh
+pnpm --filter <package-name> test
+pnpm --filter <package-name> test:unit
+pnpm --filter <package-name> test:integration
+```
+
+### Parameters
+
+- `<package-name>`: workspace package selector (for example [@livon/runtime](/docs/packages/runtime)).
+
+## CI scope
+
+The CI workflow keeps Turbo for lint/typecheck/build and runs tests through the root Vitest workspace.
+
+```sh
+pnpm turbo run lint --filter='./packages/*' --filter='./apps/*' --concurrency=4
+pnpm turbo run typecheck --filter='./packages/*' --filter='./apps/*' --concurrency=4
+pnpm test
+pnpm turbo run build --filter='./packages/*' --filter='./apps/*' --concurrency=4
+```
+
+## Coding quality baseline
+
+- Functional style only.
+- Immutable updates.
+- No loop keywords.
+- No classes and no `this`.
+- No `any` unless explicitly justified in docs/comments.
+
+## Executable documentation rules
+
+Unit tests are treated as executable documentation.
+They must communicate behavior clearly enough that readers understand the implementation contract without opening source files.
+
+### Naming
+
+- Use semantic test names with this pattern: `it('should <do> when <happen>', ...)`.
+- Prefer behavior-first phrasing over implementation details where possible.
+
+### Structure
+
+- Use one top-level `describe('<api>()')` block per tested source file.
+- Inside it, use `describe('happy')` and `describe('sad')` to separate success and failure behavior.
+- Use `beforeAll`, `beforeEach`, `afterEach`, and `afterAll` consistently for setup and cleanup.
+
+### Mocking and isolation
+
+- Unit tests should be fully mocked and atomic per behavior.
+- Mock every callable dependency with `vi.fn()`.
+- Mock [schema](/docs/schema) and [runtime](/docs/packages/runtime) object properties as explicit mock fields when those properties are part of behavior checks.
+- Reuse shared mock instances across tests where practical for speed.
+- Reset only per-mock state (`mockClear`/`mockReset`) instead of resetting the full Vitest runtime every test.
+- Assert call parameters explicitly for every relevant interaction.
+- Prefer interface-based mock contracts over `typeof`-based contracts when both are feasible.
+
+### Mock factory pattern
+
+- Keep reusable mock builders under a dedicated `testing/mocks` folder in package source.
+- Prefer composable factories where higher-level mocks call lower-level mocks.
+- Recommended pattern:
+
+```ts
+const createBaseSchemaMock = (overrides?: Partial<SchemaWithChain>) => ({
+  parse: vi.fn(),
+  typed: vi.fn(),
+  optional: vi.fn(),
+  nullable: vi.fn(),
+  describe: vi.fn(),
+  refine: vi.fn(),
+  before: vi.fn(),
+  after: vi.fn(),
+  and: vi.fn(),
+  ...overrides,
+});
+
+const createStringMock = (override: Partial<StringSchemaMock> = {}) => ({
+  ...createBaseSchemaMock(),
+  min: vi.fn(),
+  max: vi.fn(),
+  email: vi.fn(),
+  regex: vi.fn(),
+  ...override,
+});
+```
+
+### Branch coverage requirement
+
+- For every changed file, test all reachable branches with explicit happy/sad cases.
+- Missing branch tests are considered incomplete implementation work.
+
+See [Governance and Rule Sources](governance) and [Coding Style Guide](coding-style-guide) for the canonical rule set.
