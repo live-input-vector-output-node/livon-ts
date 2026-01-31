@@ -1,0 +1,66 @@
+import { schemaFactory } from './schemaFactory.js';
+import { Schema, SchemaContext, SchemaDoc } from './types.js';
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- union options intentionally allow heterogeneous schema outputs.
+type AnySchema = Schema<any>;
+
+export interface UnionSchemaInput<TValues extends readonly AnySchema[]> {
+  name: string;
+  options: TValues;
+  doc?: SchemaDoc;
+}
+
+interface ResolveUnionMatchInput<TValues extends readonly AnySchema[]> {
+  input: unknown;
+  ctx: SchemaContext;
+  options: TValues;
+}
+
+const resolveUnionMatch = <TValues extends readonly AnySchema[]>({
+  input,
+  ctx,
+  options,
+}: ResolveUnionMatchInput<TValues>): ReturnType<TValues[number]['parse']> => {
+  const matches = options
+    .map((option) => {
+      try {
+        return { ok: true, value: option.parse(input, ctx) } as const;
+      } catch (error) {
+        return { ok: false, error } as const;
+      }
+    })
+    .find((result) => result.ok);
+
+  if (!matches) {
+    throw { message: 'No union match', code: 'union.match' };
+  }
+
+  return matches.value as ReturnType<TValues[number]['parse']>;
+};
+
+/**
+ * union is part of the public LIVON API.
+ *
+ * @remarks
+ * Parameter and return types are defined in the TypeScript signature.
+ *
+ * @see ${DOCS_HOST:-http://localhost:3000}/docs/schema/union
+ *
+ * @example
+ * const result = union(undefined as never);
+ */
+export const union = <TValues extends readonly AnySchema[]>({
+  name,
+  options,
+  doc,
+}: UnionSchemaInput<TValues>) =>
+  schemaFactory({
+    name,
+    type: 'union',
+    doc,
+    ast: (ctx) => {
+      const build = ctx.getBuildContext();
+      return { type: 'union', name, children: options.map((option) => option.ast(build ?? undefined)) };
+    },
+    validate: (input, ctx) => resolveUnionMatch({ input, ctx, options }),
+  });
