@@ -1,0 +1,116 @@
+---
+title: Architecture
+sidebar_position: 1
+---
+
+import Mermaid from '@theme/Mermaid';
+
+LIVON is an event-driven runtime with strict module boundaries:
+
+1. [@livon/runtime](/docs/packages/runtime) orchestrates hook chains and envelope lifecycle.
+2. [@livon/schema](/docs/packages/schema) resolves operations/subscriptions and validates payloads.
+3. [@livon/*-ws-transport](/docs/packages) maps runtime envelopes to WebSocket wire payloads.
+4. [@livon/client](/docs/packages/client) exposes generated APIs on top of runtime + transport.
+
+## Layer map
+
+<Mermaid
+  value={`
+flowchart LR
+  ClientApp["Client App"] --> ClientApi["@livon/client generated API"]
+  ClientApi --> ClientTransport["@livon/client-ws-transport"]
+  ClientTransport --> Runtime["@livon/runtime"]
+  Runtime --> Schema["@livon/schema schemaModule"]
+  Runtime --> ServerTransport["@livon/node-ws-transport"]
+  ServerTransport --> WebSocket[WebSocket network]
+`}
+/>
+
+## Envelope contract
+
+All modules exchange one envelope shape (`EventEnvelope`).
+
+```ts
+type EventEnvelope = {
+  id: string;
+  event: string;
+  status: 'sending' | 'receiving' | 'failed';
+  metadata?: Readonly<Record<string, unknown>>;
+  context?: RuntimeEventContext;
+  payload?: Uint8Array;
+  error?: {
+    message: string;
+    name?: string;
+    stack?: string;
+    context?: Readonly<RuntimeEventContext>;
+  };
+};
+```
+
+### Field parameters
+
+- `id` (`string`): unique envelope id.
+- `event` (`string`): event/topic name.
+- `status` (`'sending' | 'receiving' | 'failed'`): lifecycle status.
+- `metadata` (`Record<string, unknown>`, optional): routing/correlation metadata.
+- `context` (`RuntimeEventContext`, optional): module-enriched context.
+- `payload` (`Uint8Array`, optional): binary payload.
+- `error` (`EventError`, optional): normalized error payload.
+
+Rules:
+
+- Envelope must contain `payload` or `error`.
+- `runtime` creates `id` when missing.
+- Runtime executes modules in registration order: left to right in `runtime(moduleA, moduleB, ...)`.
+- `runtime` applies default `status`:
+  - `emitSend` and `emitEvent` => `sending`
+  - `emitReceive` => `receiving`
+- `metadata` and `context` are merged immutably when hooks call `next(update)`.
+
+## Serialization boundaries
+
+[@livon/runtime](/docs/packages/runtime) does not serialize. Serialization starts at [schema](/docs/schema) and transport.
+
+| Property | Runtime | Schema module | WS transport |
+| --- | --- | --- | --- |
+| `id` | Created/forwarded | forwarded on errors, regenerated on new emits without id | forwarded |
+| `event` | forwarded | operation response uses same event; publish uses subscription topic | forwarded |
+| `status` | set by emit path | preserved for schema error emits | forwarded |
+| `metadata` | merged | forwarded and extended for publish (`key`, `ack`) | packed on wire |
+| `context` | merged | forwarded copy | encoded/decoded as msgpack bytes |
+| `payload` | binary only (`Uint8Array`) | decode input, run contract, encode output | packed as binary payload field |
+| `error` | normalized in runtime error path | converted to schema error envelope | encoded/decoded as msgpack error field |
+
+## Runtime responsibilities
+
+- Registers `onReceive`, `onSend`, `onError` chains.
+- Exposes `ctx.emitReceive`, `ctx.emitSend`, `ctx.emitError`, `ctx.emitEvent`.
+- Never assumes transport details.
+- Calls `onError` hooks when any hook throws.
+
+## Schema module responsibilities
+
+- Runs on `onReceive`.
+- Decodes request payload (`decoder`, default msgpack).
+- Parses input via LIVON [schemas](/docs/schema), executes operation/fieldOperation.
+- Emits response event with encoded output.
+- Handles subscriptions via `publish` by validating input/payload/output.
+- Emits errors through `ctx.emitError` while preserving incoming status.
+
+## Transport responsibilities
+
+- Converts WebSocket frames to and from `EventEnvelope`.
+- Sets inbound status to `receiving`.
+- Emits inbound envelopes with `registry.emitReceive`.
+- Sends outbound envelopes from `registry.onSend`.
+- Must not run [schema validation](/docs/schema) or domain logic.
+
+## Module author checklist
+
+When writing a custom module:
+
+1. Register through runtime hooks only.
+2. Treat envelope as immutable input.
+3. Forward `id`, `event`, `metadata`, `context` unless you intentionally override.
+4. Use `ctx.emitError` instead of throwing cross-module control errors.
+5. Keep serialization concerns in transport/[schema](/docs/schema) boundaries, not runtime core.
