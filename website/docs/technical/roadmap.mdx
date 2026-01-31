@@ -1,0 +1,128 @@
+---
+title: Roadmap
+sidebar_position: 3
+---
+
+import Mermaid from '@theme/Mermaid';
+
+This page visualizes the LIVON roadmap for docs readers.  
+This page is the canonical roadmap source.
+
+## Current state
+
+- Monorepo scaffold with `pnpm` + Turborepo
+- Shared configs in [@livon/config](/docs/packages/config)
+- Generator CLI (`pnpm gen`) and policy checks (`pnpm check:policies`)
+- [Runtime](/docs/packages/runtime), [schema module](/docs/packages/schema), and WebSocket transports implemented
+- Documentation split into core + package-level guides
+
+## Next milestones
+
+1. Harden runtime reliability modules (`retry`, `DLQ`, queue orchestration)
+2. Expand [schema AST metadata](/docs/schema) and docs surfaces
+3. Improve client generator and typed SDK ergonomics
+4. Introduce gateway-based automatic [schema merging](/docs/schema)
+5. Expand transport adapters (`Kafka`, `Valkey`-compatible)
+6. Strengthen contribution automation and release flow
+
+## Vision extensions
+
+### Gateway automatic [schema merging](/docs/schema)
+
+- Add a gateway module that reads schema fragments from multiple modules/services
+- Merge schemas into deterministic contract snapshots
+- Detect conflicts and expose explicit merge resolution hooks
+- Reuse merged snapshots for generation, runtime routing, and compatibility checks
+
+### Transport roadmap
+
+- Add `Kafka` transporter for durable stream-oriented event delivery
+- Add `Valkey`-compatible transporter (Redis OSS-compatible alternative) for low-latency queue/pub-sub patterns
+- Keep transports behind one runtime transport contract so modules stay transport-agnostic
+
+## Delivery flow
+
+<Mermaid
+  value={`
+flowchart TD
+  Current[Current State] --> Reliability[Reliability Modules]
+  Reliability --> Ast[Schema AST Metadata]
+  Ast --> Gateway[Gateway Schema Merge]
+  Gateway --> Generator[Client Generator DX]
+  Gateway --> Kafka[Kafka Transporter]
+  Gateway --> Valkey[Valkey Transporter]
+  Kafka --> Release[Automation and Release]
+  Valkey --> Release
+  Generator --> Release
+`}
+/>
+
+## Track overview
+
+<Mermaid
+  value={`
+graph TD
+  subgraph NowGroup["Now"]
+    Config[Monorepo + Config]
+    Runtime[Runtime + Schema + WS Transport]
+    Docs[Documentation Baseline]
+  end
+
+  subgraph NextGroup["Next"]
+    Retry[Retry Module]
+    Dlq[DLQ Module]
+    Queue[Queue Module]
+    AstMeta[AST Metadata]
+    GatewayMerge[Gateway Schema Merge]
+    ClientDX[Client DX]
+  end
+
+  subgraph LaterGroup["Later"]
+    KafkaTransport[Kafka Transporter]
+    ValkeyTransport[Valkey Transporter]
+    ReleaseFlow[Release Automation]
+  end
+
+  Config --> Runtime
+  Runtime --> Retry
+  Runtime --> Dlq
+  Runtime --> Queue
+  Runtime --> AstMeta
+  AstMeta --> GatewayMerge
+  GatewayMerge --> ClientDX
+  GatewayMerge --> KafkaTransport
+  GatewayMerge --> ValkeyTransport
+  KafkaTransport --> ReleaseFlow
+  ValkeyTransport --> ReleaseFlow
+  Docs --> ClientDX
+`}
+/>
+
+## Timeline intent
+
+<Mermaid
+  value={`
+gantt
+  title LIVON Roadmap Sequence
+  dateFormat  YYYY-MM-DD
+  axisFormat  %b
+
+  section Foundation
+  Runtime and Docs Baseline     :done, base, 2026-01-01, 45d
+
+  section Reliability
+  Retry and DLQ Modules         :active, rel, 2026-02-15, 45d
+  Queue Orchestration           :queue, after rel, 30d
+
+  section Schema and Gateway
+  AST Metadata Expansion        :ast, after queue, 30d
+  Gateway Schema Merging        :gateway, after ast, 30d
+
+  section DX and Transport
+  Client Generator Improvements :dx, after gateway, 30d
+  Kafka and Valkey Transporters :transport, after dx, 30d
+
+  section Delivery
+  Release Automation            :relf, after transport, 30d
+`}
+/>

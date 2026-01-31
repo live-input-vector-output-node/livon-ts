@@ -1,0 +1,135 @@
+---
+title: Event Flow
+sidebar_position: 2
+---
+
+import Mermaid from '@theme/Mermaid';
+
+This page describes the concrete runtime flow so custom modules can integrate safely.
+
+## Request/response flow (runtime + [schema](/docs/schema) + transport)
+
+<Mermaid
+  value={`
+sequenceDiagram
+  participant C as Client API
+  participant CT as client-ws-transport
+  participant R as runtime
+  participant ST as node-ws-transport
+  participant S as schemaModule
+
+  C->>CT: request(event, payload)
+  CT->>CT: payloadEncode + correlationId metadata
+  CT->>ST: WebSocket frame (msgpack envelope)
+  ST->>R: emitReceive({ status: receiving, context: { transport, clientId } })
+  R->>S: onReceive(envelope)
+  S->>S: decode + schema.parse + exec
+  S->>R: ctx.emitEvent({ event, payload })
+  R->>ST: onSend(envelope status=sending)
+  ST->>CT: WebSocket frame (msgpack envelope)
+  CT->>CT: decode + correlation resolve
+  CT-->>C: Promise resolve(response)
+`}
+/>
+
+## Ordering guarantee
+
+Runtime executes hook chains in the same order modules are passed to `runtime(...)`.
+
+```ts
+runtime(moduleA, moduleB, moduleC);
+```
+
+### Parameters
+
+`runtime(...modules)`:
+
+- `modules` (`RuntimeModule[]`): ordered module list; order defines hook execution.
+
+`emitReceive(input)`:
+
+- `input` (`EmitInput`): event input with `event`, `payload` or `error`, and optional envelope metadata/context.
+
+For each chain (`onReceive`, `onSend`, `onError`), execution order is:
+
+1. `moduleA`
+2. `moduleB`
+3. `moduleC`
+
+## Field-by-field forwarding behavior
+
+### Incoming frame -> server runtime
+
+1. `node-ws-transport` decodes wire event.
+2. `status` becomes `receiving`.
+3. `context` is merged with `{ transport: 'ws', clientId }`.
+4. Envelope is forwarded to `registry.emitReceive`.
+
+### [Schema](/docs/schema) execution
+
+1. `schemaModule` reads `envelope.event`.
+2. `envelope.payload` is decoded.
+3. Operation/field operation runs with [schema-validated](/docs/schema) input.
+4. Response is emitted with:
+   - `event`: same operation event name
+   - `payload`: encoded output
+   - `metadata`: copied/merged metadata
+   - `context`: copied context
+5. Runtime assigns default `status: sending` to this new outbound envelope.
+
+### Outbound frame -> client runtime
+
+1. `node-ws-transport` encodes envelope.
+2. Client transport decodes envelope.
+3. If `metadata.correlationId` matches pending request:
+   - resolve/reject request promise
+4. Otherwise emit to runtime via `emitReceive`.
+
+## Publish/subscription flow
+
+<Mermaid
+  value={`
+flowchart LR
+  Operation["Operation exec"] --> PublishCall["Publish call with topic payload input meta"]
+  PublishCall --> SubscriptionLookup["Schema subscription lookup"]
+  SubscriptionLookup --> SubValidate["Validate input and payload with optional filter"]
+  SubValidate --> SubExec["Optional subscription exec"]
+  SubExec --> SubOutput["Optional output parse"]
+  SubOutput --> Emit["Emit topic with encoded payload"]
+  Emit --> RuntimeSend["Runtime onSend chain"]
+`}
+/>
+
+Publish metadata behavior:
+
+- `meta` from publish call is merged into envelope metadata.
+- `key` is mapped to metadata as `key`.
+- `ack` config is normalized and stored under metadata `ack`.
+
+## Error flow
+
+<Mermaid
+  value={`
+flowchart TD
+  Hook[onReceive/onSend hook throws] --> RuntimeNormalize[runtime normalizes EventError]
+  RuntimeNormalize --> RuntimeError[onError hooks called]
+  SchemaFail[schema parse/exec fails] --> SchemaEmitError[schemaModule ctx.emitError]
+  SchemaEmitError --> RuntimeError
+  TransportFail[transport encode/send/decode fails] --> TransportEmitError[transport ctx.emitError]
+  TransportEmitError --> RuntimeError
+`}
+/>
+
+Important details:
+
+- Runtime does not throw across module boundaries for delivery control.
+- [`schemaModule`](/docs/packages/schema) preserves incoming `status` in emitted error envelopes.
+- Reliability modules (retry/DLQ) should listen on `onError` and re-emit envelopes via `emitSend`/`emitReceive`.
+
+## Module author rules for predictable behavior
+
+1. Always pass full envelope data through runtime channels.
+2. Never assume another module exists.
+3. Keep transformations pure and immutable.
+4. If you add context data, merge into `context` instead of replacing.
+5. If your module serializes, document exactly which fields are encoded and where.
