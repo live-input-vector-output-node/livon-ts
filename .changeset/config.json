@@ -1,0 +1,22 @@
+{
+  "$schema": "https://unpkg.com/@changesets/config@3.0.0/schema.json",
+  "changelog": "@changesets/cli/changelog",
+  "commit": false,
+  "fixed": [
+    [
+      "@livon/cli",
+      "@livon/client",
+      "@livon/client-ws-transport",
+      "@livon/config",
+      "@livon/dlq-module",
+      "@livon/runtime",
+      "@livon/schema",
+      "@livon/node-ws-transport"
+    ]
+  ],
+  "linked": [],
+  "access": "public",
+  "baseBranch": "main",
+  "updateInternalDependencies": "patch",
+  "ignore": []
+}

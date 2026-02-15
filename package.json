@@ -11,7 +11,10 @@
     "format": "turbo run format",
     "typecheck": "turbo run typecheck",
     "gen": "node tools/gen/index.mjs",
-    "check:policies": "node tools/policies/check.mjs"
+    "check:policies": "node tools/policies/check.mjs",
+    "changeset": "pnpm dlx @changesets/cli",
+    "changeset:version": "pnpm dlx @changesets/cli version",
+    "changeset:publish": "pnpm dlx @changesets/cli publish"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^4.0.18",
@@ -19,5 +22,5 @@
     "turbo": "latest",
     "typescript": "latest"
   },
-  "version": "0.27.0"
+  "version": "0.27.0-rc.1"
 }

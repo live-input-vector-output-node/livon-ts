@@ -206,3 +206,35 @@ Requirements:
 - `NPM_TOKEN` repository secret.
 - Valid package versions (no duplicate version publish).
 - Build passes for all `packages/*`.
+
+Version management is handled with Changesets (fixed version group for all publishable `@livon/*` packages).
+
+```sh
+pnpm changeset
+pnpm changeset:version
+```
+
+The publish workflow uses:
+
+```sh
+pnpm changeset:publish --tag rc
+pnpm changeset:publish --tag latest
+```
+
+RC publishing defaults:
+
+- `npm_tag` defaults to `rc`.
+- `release_candidate` defaults to `1` and validates package versions against `<major>.<minor>.<patch>-rc.<candidate>`.
+- Pipeline runs `lint`, `typecheck`, `test`, and `build` before publish.
+
+Recommended RC publish flow:
+
+1. Set package versions to `<major>.<minor>.<patch>-rc.<candidate>`.
+2. Run `Publish Packages` with `dry_run=true` first.
+3. Run `Publish Packages` with `dry_run=false` to publish to npm with the `rc` dist-tag.
+
+Recommended stable publish flow:
+
+1. Set package versions to `<major>.<minor>.<patch>`.
+2. Run `Publish Packages` with `npm_tag=latest` and `dry_run=true`.
+3. Run `Publish Packages` with `npm_tag=latest` and `dry_run=false`.

@@ -6,7 +6,12 @@ on:
       npm_tag:
         description: npm dist-tag for publish
         required: false
-        default: latest
+        default: rc
+        type: string
+      release_candidate:
+        description: RC candidate number expected in versions (for example 1 for -rc.1)
+        required: false
+        default: "1"
         type: string
       dry_run:
         description: Run publish in dry-run mode
@@ -40,22 +45,64 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build packages
-        run: pnpm turbo run build --filter='./packages/*' --concurrency=4
+      - name: Validate package versions
+        run: |
+          RC="${{ inputs.release_candidate }}"
+          NPM_TAG="${{ inputs.npm_tag }}"
+          node - <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          const root = process.cwd();
+          const rc = process.env.RC;
+          const npmTag = process.env.NPM_TAG || 'rc';
+          const expected = npmTag === 'rc'
+            ? new RegExp(`^\\d+\\.\\d+\\.\\d+-rc\\.${rc}$`)
+            : /^\d+\.\d+\.\d+$/;
+          const packagesDir = path.join(root, 'packages');
+          const invalid = fs.readdirSync(packagesDir)
+            .map((name) => path.join(packagesDir, name, 'package.json'))
+            .filter((file) => fs.existsSync(file))
+            .map((file) => ({ file, json: JSON.parse(fs.readFileSync(file, 'utf8')) }))
+            .filter(({ json }) => typeof json.version !== 'string' || !expected.test(json.version));
+          if (invalid.length > 0) {
+            console.error('Invalid package versions for RC publish:');
+            invalid.forEach(({ file, json }) => {
+              console.error(`${path.relative(root, file)} -> ${json.version}`);
+            });
+            process.exit(1);
+          }
+          NODE
+        env:
+          RC: ${{ inputs.release_candidate }}
+          NPM_TAG: ${{ inputs.npm_tag }}
+
+      - name: Lint
+        run: pnpm turbo run lint --filter='./packages/*' --filter='./apps/*' --concurrency=4
+
+      - name: Typecheck
+        run: pnpm turbo run typecheck --filter='./packages/*' --filter='./apps/*' --concurrency=4
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build
+        run: pnpm turbo run build --filter='./packages/*' --filter='./apps/*' --concurrency=4
 
       - name: Publish packages (dry-run)
         if: github.event_name == 'workflow_dispatch' && inputs.dry_run
         run: |
           TAG="${{ inputs.npm_tag }}"
-          pnpm -r --filter './packages/*' publish --access public --tag "$TAG" --no-git-checks --dry-run
+          pnpm changeset --version
+          pnpm changeset status --verbose
+          pnpm -r --filter './packages/*' publish --access public --tag "$TAG" --no-git-checks --dry-run --report-summary
 
       - name: Publish packages
         if: github.event_name != 'workflow_dispatch' || inputs.dry_run == false
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          TAG="latest"
+          TAG="rc"
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ inputs.npm_tag }}" ]; then
             TAG="${{ inputs.npm_tag }}"
           fi
-          pnpm -r --filter './packages/*' publish --access public --tag "$TAG" --no-git-checks
+          pnpm changeset:publish --tag "$TAG"
