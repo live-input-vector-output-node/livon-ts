@@ -1,8 +1,8 @@
-# @livon/runtime Redirect
+# @livon/runtime
 
-Canonical source moved to Docusaurus:
+Package docs (GitHub Pages):
+- https://live-input-vector-output-node.github.io/livon-ts/docs/packages/runtime
 
-- `/docs/packages/runtime`
-- File source: `website/docs/packages/runtime.md`
-
-This file is a compatibility redirect only.
+License:
+- MIT
+- Root license text: `../../LIZENZ.md`

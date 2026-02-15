@@ -1,13 +1,8 @@
-# @livon/schema Redirect
+# @livon/schema
 
-Canonical sources moved to Docusaurus:
+Package docs (GitHub Pages):
+- https://live-input-vector-output-node.github.io/livon-ts/docs/packages/schema
 
-- `/docs/packages/schema`
-- `/docs/schema`
-
-File sources:
-
-- `website/docs/packages/schema.md`
-- `website/docs/schema/index.md`
-
-This file is a compatibility redirect only.
+License:
+- MIT
+- Root license text: `../../LIZENZ.md`

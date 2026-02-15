@@ -1,8 +1,8 @@
-# @livon/dlq-module Redirect
+# @livon/dlq-module
 
-Canonical source moved to Docusaurus:
+Package docs (GitHub Pages):
+- https://live-input-vector-output-node.github.io/livon-ts/docs/packages/dlq-module
 
-- `/docs/packages/dlq-module`
-- File source: `website/docs/packages/dlq-module.md`
-
-This file is a compatibility redirect only.
+License:
+- MIT
+- Root license text: `../../LIZENZ.md`

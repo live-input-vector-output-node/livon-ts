@@ -1,8 +1,8 @@
-# @livon/config Redirect
+# @livon/config
 
-Canonical source moved to Docusaurus:
+Package docs (GitHub Pages):
+- https://live-input-vector-output-node.github.io/livon-ts/docs/packages/config
 
-- `/docs/packages/config`
-- File source: `website/docs/packages/config.md`
-
-This file is a compatibility redirect only.
+License:
+- MIT
+- Root license text: `../../LIZENZ.md`
