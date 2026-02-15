@@ -110,7 +110,10 @@ describe('schema core utilities', () => {
           issues: [createIssueForPath({ path: [], message: 'invalid' })],
         });
 
-        expect(result.meta).toBeUndefined();
+        expect(result.ok).toBe(false);
+        if (!result.ok) {
+          expect(result.meta).toBeUndefined();
+        }
       });
     });
   });

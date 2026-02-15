@@ -99,12 +99,13 @@ describe('api utilities', () => {
             explicit: explicitOperation,
           },
           inline: inlineOperation,
-        });
+        } as unknown as Parameters<typeof api>[0]);
+        const operations = result.operations as Record<string, typeof explicitOperation>;
 
-        expect(result.operations.explicit.name).toBe('explicit');
-        expect(result.operations.explicit.exec).toBe(explicitOperation.exec);
-        expect(result.operations.inline.name).toBe('inline');
-        expect(result.operations.inline.exec).toBe(inlineOperation.exec);
+        expect(operations.explicit?.name).toBe('explicit');
+        expect(operations.explicit?.exec).toBe(explicitOperation.exec);
+        expect(operations.inline?.name).toBe('inline');
+        expect(operations.inline?.exec).toBe(inlineOperation.exec);
       });
 
       it('should assign missing names to operations field operations and subscriptions', () => {
@@ -143,7 +144,7 @@ describe('api utilities', () => {
 
         expect(result.operations.createUser.name).toBe('createUser');
         expect(result.fieldOperations.displayName.name).toBe('displayName');
-        expect(result.subscriptions.userCreated.name).toBe('userCreated');
+        expect(result.subscriptions.userCreated?.name).toBe('userCreated');
       });
 
       it('should build ast with operation subscription and field nodes when ast is requested', () => {
@@ -189,7 +190,7 @@ describe('api utilities', () => {
           publish: {
             userCreated: () => ({ id: 'u-1' }),
           },
-          ack: { required: true, mode: 'processed' },
+          ack: { required: true, mode: 'handled' },
           doc: { summary: 'create user' },
         });
         const displayName = fieldOperation({
@@ -222,7 +223,7 @@ describe('api utilities', () => {
           name: 'createUser',
           constraints: {
             publish: ['userCreated'],
-            ack: { required: true, mode: 'processed' },
+            ack: { required: true, mode: 'handled' },
             request: 'OperationInput',
             response: 'OperationOutput',
           },
@@ -259,7 +260,7 @@ describe('api utilities', () => {
             fieldOperations: {
               displayName: fieldOp,
             },
-          }),
+          } as unknown as Parameters<typeof api>[0]),
         ).toThrowError('api.type is required when fieldOperations are provided.');
       });
 
@@ -278,7 +279,7 @@ describe('api utilities', () => {
             operations: {
               createUser: publishingOperation,
             },
-          }),
+          } as unknown as Parameters<typeof api>[0]),
         ).toThrowError(
           'api: operation "createUser" publishes "missingTopic" but no subscription with that name exists.',
         );
@@ -376,7 +377,7 @@ describe('api utilities', () => {
               exec: async () => 'left',
             }),
           },
-        });
+        } as unknown as Parameters<typeof api>[0]);
         const right = api({
           type: owner,
           fieldOperations: {
@@ -385,7 +386,7 @@ describe('api utilities', () => {
               exec: async () => 'right',
             }),
           },
-        });
+        } as unknown as Parameters<typeof api>[0]);
 
         expect(() =>
           composeApi({
@@ -401,12 +402,12 @@ describe('api utilities', () => {
           subscriptions: {
             userCreated: subscription({ payload }),
           },
-        });
+        } as unknown as Parameters<typeof api>[0]);
         const right = api({
           subscriptions: {
             userCreated: subscription({ payload }),
           },
-        });
+        } as unknown as Parameters<typeof api>[0]);
 
         expect(() =>
           composeApi({

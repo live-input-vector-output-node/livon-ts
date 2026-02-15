@@ -5,6 +5,9 @@ import { createSchemaModuleInput, schemaModule } from './schemaModule.js';
 import { createBaseSchemaMock } from './testing/mocks/index.js';
 import type { EventEnvelope, RuntimeContext, RuntimeRegistry } from '@livon/runtime';
 
+type ModuleOperation = ReturnType<typeof createSchemaModuleInput>['operations'][string];
+type ModuleFieldOperation = ReturnType<typeof createSchemaModuleInput>['fieldOperations'][string];
+
 interface RegistryHookState {
   onReceive?: (envelope: EventEnvelope, ctx: RuntimeContext, next: RuntimeNext) => Promise<EventEnvelope>;
 }
@@ -174,7 +177,7 @@ describe('schemaModule utilities', () => {
         const outputSchema = createBaseSchemaMock<typeof decodedOutput>({
           outputValue: decodedOutput,
         });
-        const exec = vi.fn(async () => ({ raw: true }));
+        const exec = vi.fn(async () => decodedOutput);
         const module = schemaModule(
           createSchemaModuleInput({
             operations: {
@@ -182,7 +185,7 @@ describe('schemaModule utilities', () => {
                 input: inputSchema,
                 output: outputSchema,
                 exec,
-              }),
+              }) as ModuleOperation,
             },
             fieldOperations: {},
             subscriptions: {},
@@ -217,7 +220,7 @@ describe('schemaModule utilities', () => {
         const dependsOnSchema = createBaseSchemaMock<{ id: string }>({ outputValue: { id: 'u-1' } });
         const inputSchema = createBaseSchemaMock<{ locale: string }>({ outputValue: { locale: 'en' } });
         const outputSchema = createBaseSchemaMock<{ value: string }>({ outputValue: { value: 'Alice' } });
-        const exec = vi.fn(async () => ({ raw: true }));
+        const exec = vi.fn(async () => ({ value: 'Alice' }));
         const module = schemaModule(
           createSchemaModuleInput({
             operations: {},
@@ -227,7 +230,7 @@ describe('schemaModule utilities', () => {
                 input: inputSchema,
                 output: outputSchema,
                 exec,
-              }),
+              }) as ModuleFieldOperation,
             },
             subscriptions: {},
             ast: () => ({ type: 'api' }),
@@ -295,7 +298,7 @@ describe('schemaModule utilities', () => {
                 exec: async () => {
                   throw execError;
                 },
-              }),
+              }) as unknown as ModuleOperation,
             },
             fieldOperations: {},
             subscriptions: {},

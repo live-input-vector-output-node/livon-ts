@@ -4,6 +4,7 @@ import { createSchemaContext } from './context.js';
 import { captureThrow } from './testing/mocks/index.js';
 import { guardFactory, schemaFactory } from './schemaFactory.js';
 import type { AstNode, SchemaContext } from './types.js';
+import type { SchemaFactoryChainOperation } from './schemaFactory.js';
 
 describe('schemaFactory()', () => {
   let astNode: AstNode;
@@ -61,14 +62,16 @@ describe('schemaFactory()', () => {
     });
 
     it('should build chained schema when chain method is called', () => {
-      const plusOperation = vi.fn((value: number) => (step: number) => value + step);
-      const schema = schemaFactory({
+      const plusOperation = vi.fn<SchemaFactoryChainOperation<number, [number], number>>(
+        (value, _ctx) => (step) => value + step,
+      );
+      const schema = schemaFactory<number, { plus: SchemaFactoryChainOperation<number, [number], number> }>({
         name: 'Score',
         type: 'number',
         ast: () => ({ type: 'number', name: 'Score' }),
         validate: (input) => Number(input),
         chain: {
-          plus: plusOperation,
+          plus: plusOperation as SchemaFactoryChainOperation<number, [number], number>,
         },
       });
 

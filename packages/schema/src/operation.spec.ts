@@ -89,7 +89,7 @@ describe('operation utilities', () => {
             name: string(),
           },
           exec: () => 'ok',
-        });
+        } as unknown as Parameters<typeof fieldOperation>[0]);
 
         expect(result.type).toBe('field');
         expect(result.dependsOn.name).toBe('dependsOn');
@@ -215,7 +215,7 @@ describe('operation utilities', () => {
         });
         const publisher = vi.fn(async () => undefined);
         const publishHook = vi.fn(() => ({ event: 'created' }));
-        const exec = vi.fn(async () => ({ raw: true }));
+        const exec = vi.fn(async () => parsedOutput);
         context = createSchemaContext({
           request: {
             publisher,
@@ -229,7 +229,7 @@ describe('operation utilities', () => {
             userCreated: publishHook,
           },
           rooms: () => ['room-a', 'room-b'],
-          ack: { required: true, mode: 'processed' },
+          ack: { required: true, mode: 'handled' },
           exec,
         });
 
@@ -243,14 +243,14 @@ describe('operation utilities', () => {
           topic: 'userCreated',
           payload: { event: 'created' },
           input: parsedInput,
-          ack: { required: true, mode: 'processed' },
+          ack: { required: true, mode: 'handled' },
           meta: { room: 'room-a' },
         });
         expect(publisher).toHaveBeenNthCalledWith(2, {
           topic: 'userCreated',
           payload: { event: 'created' },
           input: parsedInput,
-          ack: { required: true, mode: 'processed' },
+          ack: { required: true, mode: 'handled' },
           meta: { room: 'room-b' },
         });
         expect(result).toEqual(parsedOutput);
@@ -367,7 +367,7 @@ describe('operation utilities', () => {
           input: inputSchema,
           output: outputSchema,
           exec,
-        });
+        } as unknown as Parameters<typeof fieldOperation>[0]);
 
         const result = await runFieldOperation(op, { rawDependsOn: true }, { rawInput: true }, context);
 
