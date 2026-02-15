@@ -1,0 +1,15 @@
+# system
+.DS_Store
+
+# dependencies
+node_modules/
+
+# build output
+dist/
+build/
+coverage/
+website/build/
+
+# tooling caches
+.turbo/
+*.tsbuildinfo
