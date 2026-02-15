@@ -96,6 +96,28 @@ jobs:
           pnpm changeset status --verbose
           pnpm -r --filter './packages/*' publish --access public --tag "$TAG" --no-git-checks --dry-run --report-summary
 
+      - name: Validate npm token
+        if: github.event_name != 'workflow_dispatch' || inputs.dry_run == false
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -z "${NODE_AUTH_TOKEN}" ]; then
+            echo "::error::NPM_TOKEN secret is missing. Add it in repository Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+
+      - name: Configure npm authentication
+        if: github.event_name != 'workflow_dispatch' || inputs.dry_run == false
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          cat <<EOF > ~/.npmrc
+          //registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}
+          registry=https://registry.npmjs.org/
+          always-auth=true
+          EOF
+          npm whoami
+
       - name: Publish packages
         if: github.event_name != 'workflow_dispatch' || inputs.dry_run == false
         env:

@@ -6,6 +6,15 @@
   </a>
 </p>
 
+<p align="center">
+  <a href="https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml">
+    <img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Flive-input-vector-output-node%2Flivon-ts%2Fmain%2F.github%2Fbadges%2Fcoverage.json" alt="Coverage" />
+  </a>
+  <a href="https://www.npmjs.com/package/@livon/runtime">
+    <img src="https://img.shields.io/npm/unpacked-size/%40livon/runtime?label=npm%20runtime%20size" alt="npm package size (@livon/runtime)" />
+  </a>
+</p>
+
 LIVON (Live Input Vector Output Node) is a TypeScript framework for building APIs that frontend and backend teams can share, including real-time communication.
 
 ## What Is LIVON?

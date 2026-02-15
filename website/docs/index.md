@@ -10,6 +10,9 @@ LIVON documentation is split into four sections:
 - `Contribution`: contributor workflows, quality gates, and generation tools.
 - `Packages`: usage docs for each publishable package in `packages/*`.
 
+[![Coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Flive-input-vector-output-node%2Flivon-ts%2Fmain%2F.github%2Fbadges%2Fcoverage.json)](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml)
+[![npm runtime size](https://img.shields.io/npm/unpacked-size/%40livon/runtime?label=npm%20runtime%20size)](https://www.npmjs.com/package/@livon/runtime)
+
 ## Main
 
 - [What Is LIVON and Why](/docs/core/what-is-livon)

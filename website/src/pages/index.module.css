@@ -42,6 +42,21 @@
   margin-bottom: 0.75rem;
 }
 
+.heroBadges {
+  align-items: center;
+  column-gap: 0.65rem;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin: 0 0 1rem;
+  row-gap: 0.5rem;
+}
+
+.heroBadges img {
+  display: block;
+  height: 20px;
+}
+
 .heroCatcher {
   color: var(--ifm-font-color-base);
   font-size: 1rem;

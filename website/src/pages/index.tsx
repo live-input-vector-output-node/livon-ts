@@ -36,6 +36,20 @@ const Home = (): ReactNode => {
                 FULLSTACK REALTIME RUNTIME
               </Heading>
               <p className={styles.heroSubtitle}>A composable event runtime for modular, predictable system design.</p>
+              <div className={styles.heroBadges}>
+                <a href="https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml">
+                  <img
+                    src="https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Flive-input-vector-output-node%2Flivon-ts%2Fmain%2F.github%2Fbadges%2Fcoverage.json"
+                    alt="Coverage"
+                  />
+                </a>
+                <a href="https://www.npmjs.com/package/@livon/runtime">
+                  <img
+                    src="https://img.shields.io/npm/unpacked-size/%40livon/runtime?label=npm%20runtime%20size"
+                    alt="npm package size (@livon/runtime)"
+                  />
+                </a>
+              </div>
               <p className={styles.heroCatcher}>
                 LIVON is a schema-first runtime ecosystem for full-stack real-time applications. You define contracts
                 once, validate data at runtime, and generate typed client APIs from the same source so server and
