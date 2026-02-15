@@ -1,0 +1,23 @@
+{
+  "name": "livon-monorepo",
+  "private": true,
+  "packageManager": "pnpm@9.0.0",
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run build:watch dev gen:client:watch --filter=./packages/* --filter=./apps/* --concurrency=20",
+    "docs": "turbo run docs --filter=./website",
+    "test": "vitest run --passWithNoTests",
+    "lint": "turbo run lint",
+    "format": "turbo run format",
+    "typecheck": "turbo run typecheck",
+    "gen": "node tools/gen/index.mjs",
+    "check:policies": "node tools/policies/check.mjs"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^4.0.18",
+    "vitest": "latest",
+    "turbo": "latest",
+    "typescript": "latest"
+  },
+  "version": "0.27.0"
+}
