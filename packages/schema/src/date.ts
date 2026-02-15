@@ -13,10 +13,17 @@ export interface DateFactoryInput {
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/schema/date
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/date
  *
  * @example
- * const result = date(undefined as never);
+ * // Creates a date schema and validates a Date object.
+ * const CreatedAt = date();
+ * CreatedAt.parse(new Date());
+ *
+ * @example
+ * // Extends date validation to also allow null.
+ * const MaybeCreatedAt = date().nullable();
+ * MaybeCreatedAt.parse(null);
  */
 export const date = ({ name = 'date', doc }: DateFactoryInput = {}) =>
   schemaFactory<Date>({

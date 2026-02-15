@@ -8,7 +8,7 @@ export interface TypeGuard<T> {
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/schema/type-guards
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/type-guards
  *
  * @example
  * const result = isString(undefined as never);
@@ -21,7 +21,7 @@ export const isString = (input: unknown): input is string => typeof input === 's
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/schema/type-guards
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/type-guards
  *
  * @example
  * const result = isNumber(undefined as never);
@@ -35,7 +35,7 @@ export const isNumber = (input: unknown): input is number =>
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/schema/type-guards
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/type-guards
  *
  * @example
  * const result = isBoolean(undefined as never);
@@ -48,7 +48,7 @@ export const isBoolean = (input: unknown): input is boolean => typeof input === 
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/schema/type-guards
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/type-guards
  *
  * @example
  * const result = isDate(undefined as never);
@@ -62,7 +62,7 @@ export const isDate = (input: unknown): input is Date =>
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/schema/type-guards
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/type-guards
  *
  * @example
  * const result = isUint8Array(undefined as never);
@@ -79,7 +79,7 @@ export interface UnknownRecord {
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/schema/type-guards
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/type-guards
  *
  * @example
  * const result = isRecord(undefined as never);
@@ -97,7 +97,7 @@ export interface ArrayTypeGuard<T> {
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/schema/type-guards
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/type-guards
  *
  * @example
  * const result = isArray(undefined as never);

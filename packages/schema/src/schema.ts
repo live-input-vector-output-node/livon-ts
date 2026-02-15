@@ -78,7 +78,7 @@ export interface EnsureSchemaContext {
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/schema/type-safety
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/type-safety
  *
  * @example
  * const result = createIssueForPath(undefined as never);
@@ -101,7 +101,7 @@ export const createIssueForPath = ({
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/schema/type-safety
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/type-safety
  *
  * @example
  * const result = ok(undefined as never);
@@ -114,7 +114,7 @@ export const ok = <T>({ value }: OkInput<T>): SchemaResult<T> => ({ ok: true, va
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/schema/type-safety
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/type-safety
  *
  * @example
  * const result = fail(undefined as never);
@@ -127,7 +127,7 @@ export const fail = ({ issues, meta }: FailInput): SchemaResult<never> => ({ ok:
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/schema/type-safety
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/type-safety
  *
  * @example
  * const result = ensureSchemaContext(undefined as never);
@@ -146,7 +146,7 @@ export const ensureSchemaContext: EnsureSchemaContext = (ctx) => {
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/schema/type-safety
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/type-safety
  *
  * @example
  * const result = createSchema(undefined as never);
@@ -321,7 +321,7 @@ export const createSchema = <T>({ name, type, ast, validate }: CreateSchemaInput
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/schema/type-safety
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/type-safety
  *
  * @example
  * const result = createGuardSchema(undefined as never);
@@ -343,7 +343,7 @@ export const createGuardSchema = <T>({ name, type, guard, message, code }: Creat
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/schema/type-safety
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/type-safety
  *
  * @example
  * const result = createPrimitiveSchema(undefined as never);

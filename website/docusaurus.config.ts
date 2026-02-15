@@ -20,7 +20,7 @@ const config: Config = {
   },
 
   // Set the production url of your site here
-  url: deployToGithubPages ? `https://${organizationName}.github.io` : 'http://localhost:3000',
+  url: deployToGithubPages ? `https://${organizationName}.github.io` : 'http://127.0.0.1:3000',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
   baseUrl: deployToGithubPages ? `/${projectName}/` : '/',

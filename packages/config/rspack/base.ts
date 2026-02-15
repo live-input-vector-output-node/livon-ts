@@ -1,7 +1,28 @@
+/**
+ * Shared Rspack base config helpers exported by `@livon/config`.
+ *
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/packages/config
+ */
 import { type Configuration, HtmlRspackPlugin } from '@rspack/core';
 import ReactRefreshRspackPlugin from '@rspack/plugin-react-refresh';
 import path from 'node:path';
 
+/**
+ * Creates a reusable React-focused Rspack configuration.
+ *
+ * @example
+ * ```ts
+ * import { createRspackReactConfig } from '@livon/config/rspack';
+ *
+ * export default createRspackReactConfig({
+ *   entry: './src/index.tsx',
+ *   template: './public/index.html',
+ *   port: 3000,
+ * });
+ * ```
+ *
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/packages/config
+ */
 export const createRspackReactConfig = ({
   entry,
   template,

@@ -1,3 +1,8 @@
+/**
+ * Shared ESLint base config exported by `@livon/config/eslint/base.cjs`.
+ *
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/packages/config
+ */
 module.exports = [
   {
     ignores: ["dist", "build", "coverage", "node_modules"],

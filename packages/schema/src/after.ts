@@ -11,9 +11,22 @@ export interface AfterInput<T> {
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/schema/after
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/after
  *
  * @example
- * const result = after(undefined as never);
+ * // Postprocesses validated string output by converting it to uppercase.
+ * const UppercaseName = after({
+ *   schema: string(),
+ *   hook: (value: string) => value.toUpperCase(),
+ * });
+ * UppercaseName.parse('alice');
+ *
+ * @example
+ * // Extends the postprocessed schema to also allow undefined.
+ * const MaybeUppercaseName = after({
+ *   schema: string(),
+ *   hook: (value: string) => value.toUpperCase(),
+ * }).optional();
+ * MaybeUppercaseName.parse(undefined);
  */
 export const after = <T>({ schema, hook }: AfterInput<T>) => schema.after(hook);

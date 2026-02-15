@@ -28,7 +28,7 @@ import {clientWsTransport} from '@livon/client-ws-transport';
 import {api} from './generated/api';
 
 const transport = clientWsTransport({
-  url: 'ws://localhost:3002/ws',
+  url: 'ws://127.0.0.1:3002/ws',
   reconnect: true,
   reconnectDelayMs: 1000,
   queueEnabled: true,

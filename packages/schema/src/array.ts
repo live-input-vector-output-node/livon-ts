@@ -14,10 +14,17 @@ export interface ArraySchemaInput<T> {
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/schema/array
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/array
  *
  * @example
- * const result = array(undefined as never);
+ * // Creates an array schema that validates string items.
+ * const Tags = array({ name: 'tags', item: string() });
+ * Tags.parse(['typescript', 'schema']);
+ *
+ * @example
+ * // Extends the array schema to also allow undefined.
+ * const OptionalTags = array({ name: 'tags', item: string() }).optional();
+ * OptionalTags.parse(undefined);
  */
 export const array = <T>({ name, item, doc }: ArraySchemaInput<T>) =>
   schemaFactory({

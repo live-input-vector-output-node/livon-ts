@@ -20,7 +20,7 @@ export interface SchemaFactoryValidate<T> {
  * @typeParam TArgs - Operation argument tuple.
  * @typeParam TNext - Output type after applying the operation.
  *
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/schema/schema-factory
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/schema-factory
  *
  * @example
  * interface MinChain {
@@ -34,7 +34,7 @@ export interface SchemaFactoryChainOperation<TValue, TArgs extends readonly unkn
 /**
  * Map of chain operation names to chain operation implementations.
  *
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/schema/schema-factory
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/schema-factory
  */
 export type SchemaFactoryChainDefinition<TValue> = Record<
   string,
@@ -47,7 +47,7 @@ export type SchemaFactoryChainDefinition<TValue> = Record<
  *
  * Every chain method returns a new schema that keeps the same chain API.
  *
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/schema/schema-factory
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/schema-factory
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- helper conditional type must accept heterogeneous chain signatures.
 export type SchemaChainMethods<TChain extends SchemaFactoryChainDefinition<any>> = {
@@ -60,7 +60,7 @@ export type SchemaChainMethods<TChain extends SchemaFactoryChainDefinition<any>>
 /**
  * Schema type enriched with fluent chain methods.
  *
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/schema/schema-factory
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/schema-factory
  *
  * @example
  * const Name = string().min(3).max(50);
@@ -114,7 +114,7 @@ const normalizeError = (error: unknown): SchemaFactoryErrorLike => {
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/schema/schema-factory
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/schema-factory
  *
  * @example
  * const result = schemaFactory(undefined as never);
@@ -196,7 +196,7 @@ export const schemaFactory = <
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/schema/schema-factory
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/schema-factory
  *
  * @example
  * const result = guardFactory(undefined as never);

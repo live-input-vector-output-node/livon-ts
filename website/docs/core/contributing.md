@@ -49,8 +49,8 @@ pnpm -C apps/client dev
 
 Default local endpoints:
 
-- Client app: `http://localhost:3001`
-- Server WS endpoint: `ws://localhost:3002/ws`
+- Client app: `http://127.0.0.1:3001`
+- Server WS endpoint: `ws://127.0.0.1:3002/ws`
 
 Run client API generation watcher:
 
@@ -171,8 +171,8 @@ For package-local commands:
 
 Update documentation whenever public behavior, API contracts, or workflows change.
 
-For JSDoc `@see` links, use `${DOCS_HOST:-http://localhost:3000}` as host prefix
-to keep links environment-agnostic (local docs and deployed docs).
+For JSDoc `@see` links, use `https://live-input-vector-output-node.github.io/livon-ts` as host prefix
+to keep links stable against the published docs site.
 
 ## Rule sources
 

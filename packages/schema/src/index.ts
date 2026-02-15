@@ -1,3 +1,8 @@
+/**
+ * Public package entrypoint for `@livon/schema`.
+ *
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/packages/schema
+ */
 export { createSchemaValidationError } from './SchemaValidationError.js';
 export type { SchemaValidationError } from './SchemaValidationError.js';
 export { schemaFactory } from './schemaFactory.js';

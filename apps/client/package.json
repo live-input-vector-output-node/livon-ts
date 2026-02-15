@@ -8,14 +8,14 @@
     "build": "rsbuild build",
     "build:watch": "true",
     "dev": "PORT=3001 rsbuild dev",
-    "gen:client:watch": "livon --endpoint ws://localhost:3002/ws --out src/generated/api.ts --poll 2000",
+    "gen:client:watch": "livon --endpoint ws://127.0.0.1:3002/ws --out src/generated/api.ts --poll 2000",
     "preview": "rsbuild preview",
     "lint": "eslint .",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run --passWithNoTests",
     "test:unit": "vitest run -c vitest.unit.config.ts",
     "test:integration": "vitest run -c vitest.integration.config.ts",
-    "gen:client": "livon --endpoint ws://localhost:3002/ws --out src/generated/api.ts"
+    "gen:client": "livon --endpoint ws://127.0.0.1:3002/ws --out src/generated/api.ts"
   },
   "dependencies": {
     "@livon/client": "workspace:*",

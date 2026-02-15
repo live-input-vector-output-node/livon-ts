@@ -56,7 +56,7 @@ export interface SchemaModuleLike {
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/packages/schema
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/packages/schema
  *
  * @example
  * const result = createSchemaModuleInput(undefined as never);
@@ -283,7 +283,7 @@ const emitErrorEvent = async (input: EmitErrorEventInput) =>
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/packages/schema
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/packages/schema
  *
  * @example
  * const result = schemaModule(undefined as never);

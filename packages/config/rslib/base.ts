@@ -1,3 +1,8 @@
+/**
+ * Shared Rslib base config helpers exported by `@livon/config`.
+ *
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/packages/config
+ */
 import { defineConfig, type ConfigParams } from '@rslib/core';
 
 type RslibTarget = 'node' | 'web';
@@ -22,6 +27,21 @@ const resolveFormats = ({ command, formats }: ResolveFormatsInput): ReadonlyArra
   return devFormats.length > 0 ? devFormats : formats;
 };
 
+/**
+ * Creates a reusable Rslib configuration with deterministic dev format selection.
+ *
+ * @example
+ * ```ts
+ * import { createRslibConfig } from '@livon/config/rslib';
+ *
+ * export default createRslibConfig({
+ *   target: 'node',
+ *   formats: ['esm', 'cjs'],
+ * });
+ * ```
+ *
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/packages/config
+ */
 export const createRslibConfig = ({ target, formats }: CreateRslibConfigInput) => {
   return defineConfig(({ command }) => {
     const selectedFormats = resolveFormats({ command, formats });

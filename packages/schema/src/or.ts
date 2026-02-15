@@ -61,10 +61,23 @@ const resolveOrMatch = <TValues extends readonly AnySchema[]>({
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/schema/or
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/or
  *
  * @example
- * const result = or(undefined as never);
+ * // Creates an or-schema that accepts either string or number identifiers.
+ * const Identifier = or({
+ *   name: 'identifier',
+ *   options: [string(), number()] as const,
+ * });
+ * Identifier.parse('user-1');
+ *
+ * @example
+ * // Extends the or-schema to also allow undefined.
+ * const OptionalIdentifier = or({
+ *   name: 'identifier',
+ *   options: [string(), number()] as const,
+ * }).optional();
+ * OptionalIdentifier.parse(undefined);
  */
 export const or = <TValues extends readonly AnySchema[]>({
   name,

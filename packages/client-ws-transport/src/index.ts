@@ -1,3 +1,8 @@
+/**
+ * Public package entrypoint for `@livon/client-ws-transport`.
+ *
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/packages/client-ws-transport
+ */
 import type { ClientRequest, ClientTransportClose, ClientTransportConnect } from '@livon/client';
 import type {
   EmitInput,
@@ -457,7 +462,7 @@ const buildReceiveEmitInput = ({ envelope, decodePayload }: BuildReceiveEmitInpu
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/packages/client-ws-transport
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/packages/client-ws-transport
  *
  * @example
  * const result = clientWsTransport(undefined as never);

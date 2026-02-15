@@ -16,7 +16,7 @@ CLI for syncing [schema AST](/docs/schema) from a running server and generating/
 ## Basic command
 
 ```sh
-livon --endpoint ws://localhost:3002/ws --out src/generated/api.ts --poll 2000
+livon --endpoint ws://127.0.0.1:3002/ws --out src/generated/api.ts --poll 2000
 ```
 
 ## Run sync and app command in one process
@@ -24,7 +24,7 @@ livon --endpoint ws://localhost:3002/ws --out src/generated/api.ts --poll 2000
 You can append a command directly (without `&&`):
 
 ```sh
-livon --endpoint ws://localhost:3002/ws --out src/generated/api.ts --poll 2000 next start
+livon --endpoint ws://127.0.0.1:3002/ws --out src/generated/api.ts --poll 2000 next start
 ```
 
 If the linked command exits, `livon` exits too.  
@@ -33,7 +33,7 @@ If `livon` exits, it terminates the linked command.
 If your linked command starts with flags, use `--` before it:
 
 ```sh
-livon --endpoint ws://localhost:3002/ws --out src/generated/api.ts -- --some-command --flag
+livon --endpoint ws://127.0.0.1:3002/ws --out src/generated/api.ts -- --some-command --flag
 ```
 
 ## Parameters

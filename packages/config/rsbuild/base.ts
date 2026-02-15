@@ -1,6 +1,26 @@
+/**
+ * Shared Rsbuild base config helpers exported by `@livon/config`.
+ *
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/packages/config
+ */
 import { defineConfig } from '@rsbuild/core';
 import { pluginReact } from '@rsbuild/plugin-react';
 
+/**
+ * Creates a reusable React-focused Rsbuild configuration.
+ *
+ * @example
+ * ```ts
+ * import { createRsbuildReactConfig } from '@livon/config/rsbuild';
+ *
+ * export default createRsbuildReactConfig({
+ *   entry: './src/index.tsx',
+ *   template: './public/index.html',
+ * });
+ * ```
+ *
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/packages/config
+ */
 export const createRsbuildReactConfig = ({
   entry,
   template,

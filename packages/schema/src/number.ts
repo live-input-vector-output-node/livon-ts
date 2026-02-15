@@ -10,9 +10,10 @@ export interface NumberFactoryInput {
 /**
  * Chain operation: validates minimum numeric value.
  *
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/schema/number
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/number
  *
  * @example
+ * // Enforces a minimum numeric value.
  * number().min(0)
  */
 export interface NumberChainMin {
@@ -22,9 +23,10 @@ export interface NumberChainMin {
 /**
  * Chain operation: validates maximum numeric value.
  *
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/schema/number
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/number
  *
  * @example
+ * // Enforces a maximum numeric value.
  * number().max(100)
  */
 export interface NumberChainMax {
@@ -34,9 +36,10 @@ export interface NumberChainMax {
 /**
  * Chain operation: validates integer-only numbers.
  *
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/schema/number
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/number
  *
  * @example
+ * // Restricts accepted values to integers only.
  * number().int()
  */
 export interface NumberChainInt {
@@ -46,9 +49,10 @@ export interface NumberChainInt {
 /**
  * Chain operation: validates positive numbers.
  *
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/schema/number
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/number
  *
  * @example
+ * // Restricts accepted values to positive numbers.
  * number().positive()
  */
 export interface NumberChainPositive {
@@ -58,7 +62,7 @@ export interface NumberChainPositive {
 /**
  * Chain map for `number()` schemas.
  *
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/schema/number
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/number
  */
 export interface NumberChainDefinition {
   min: NumberChainMin;
@@ -75,10 +79,17 @@ export type NumberSchema = ReturnType<typeof number>;
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/schema/number
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/number
  *
  * @example
- * const result = number(undefined as never);
+ * // Creates a basic number schema and validates an age.
+ * const Age = number();
+ * Age.parse(21);
+ *
+ * @example
+ * // Combines chain rules for integer, positive, and minimum age checks.
+ * const AdultAge = number().int().positive().min(18);
+ * AdultAge.parse(21);
  */
 export const number = ({ name = 'number', doc }: NumberFactoryInput = {}) =>
   schemaFactory<number>({

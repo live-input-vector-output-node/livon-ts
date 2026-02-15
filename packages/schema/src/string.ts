@@ -10,9 +10,10 @@ export interface StringFactoryInput {
 /**
  * Chain operation: validates minimum length.
  *
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/schema/string
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/string
  *
  * @example
+ * // Enforces at least 3 characters for a string value.
  * string().min(3)
  */
 export interface StringChainMin {
@@ -22,9 +23,10 @@ export interface StringChainMin {
 /**
  * Chain operation: validates maximum length.
  *
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/schema/string
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/string
  *
  * @example
+ * // Enforces at most 120 characters for a string value.
  * string().max(120)
  */
 export interface StringChainMax {
@@ -34,9 +36,10 @@ export interface StringChainMax {
 /**
  * Chain operation: validates e-mail format.
  *
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/schema/string
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/string
  *
  * @example
+ * // Validates that the string matches a basic e-mail pattern.
  * string().email()
  */
 export interface StringChainEmail {
@@ -46,9 +49,10 @@ export interface StringChainEmail {
 /**
  * Chain operation: validates a custom regular expression.
  *
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/schema/string
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/string
  *
  * @example
+ * // Validates the string against a custom regular expression.
  * string().regex(/^[a-z]+$/i)
  */
 export interface StringChainRegex {
@@ -58,7 +62,7 @@ export interface StringChainRegex {
 /**
  * Chain map for `string()` schemas.
  *
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/schema/string
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/string
  */
 export interface StringChainDefinition extends SchemaFactoryChainDefinition<string> {
   min: StringChainMin;
@@ -75,10 +79,17 @@ export type StringSchema = ReturnType<typeof string>;
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/schema/string
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/string
  *
  * @example
- * const result = string(undefined as never);
+ * // Creates a basic string schema and validates a username.
+ * const Username = string();
+ * Username.parse('alice');
+ *
+ * @example
+ * // Adds chain rules to enforce a username length range.
+ * const Username = string().min(3).max(20);
+ * Username.parse('alice');
  */
 export const string = ({ name = 'string', doc }: StringFactoryInput = {}) =>
   schemaFactory<string, StringChainDefinition>({

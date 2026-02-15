@@ -210,7 +210,7 @@ export interface SchemaHookAfter<T, U> {
  * Adds `undefined` as an accepted value for the current schema.
  *
  * @returns A schema that accepts the original type or `undefined`.
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/schema/type-safety
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/type-safety
  *
  * @example
  * const MaybeName = string().optional();
@@ -223,7 +223,7 @@ export interface SchemaOptional<T> {
  * Adds `null` as an accepted value for the current schema.
  *
  * @returns A schema that accepts the original type or `null`.
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/schema/type-safety
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/type-safety
  *
  * @example
  * const NullableName = string().nullable();
@@ -237,7 +237,7 @@ export interface SchemaNullable<T> {
  *
  * @param input - Predicate and error metadata.
  * @returns A schema with the extra refinement rule.
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/schema/type-safety
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/type-safety
  *
  * @example
  * const Adult = number().refine({
@@ -254,7 +254,7 @@ export interface SchemaRefineMethod<T> {
  *
  * @param hook - Hook that can transform input and/or emit issues.
  * @returns A schema with the before-hook applied.
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/schema/type-safety
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/type-safety
  *
  * @example
  * const Trimmed = string().before((input) =>
@@ -270,7 +270,7 @@ export interface SchemaBeforeMethod<T> {
  *
  * @param hook - Hook that maps validated value to a new value.
  * @returns A schema of the transformed output type.
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/schema/type-safety
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/type-safety
  *
  * @example
  * const UserId = string().after((value) => value.toUpperCase());
@@ -284,7 +284,7 @@ export interface SchemaAfterMethod<T> {
  *
  * @param other - Schema to intersect with.
  * @returns A schema that must satisfy both schemas.
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/schema/type-safety
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/type-safety
  *
  * @example
  * const Combined = LeftSchema.and(RightSchema);
@@ -298,7 +298,7 @@ export interface SchemaAndMethod<T> {
  *
  * @param doc - Documentation text or structured metadata.
  * @returns A schema with merged documentation metadata.
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/schema/type-safety
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/type-safety
  *
  * @example
  * const Email = string().describe('User e-mail address');

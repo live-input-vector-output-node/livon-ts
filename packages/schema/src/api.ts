@@ -72,7 +72,7 @@ export interface SubscriptionInputShape {
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/schema/api
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/api
  *
  * @example
  * const result = subscription(undefined as never);
@@ -197,7 +197,7 @@ const mergeSubscriptions = (input?: SubscriptionInputShape): SubscriptionShape =
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/schema/api
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/api
  *
  * @example
  * const result = api(undefined as never);
@@ -354,7 +354,7 @@ export interface ComposedApi<
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/schema/api
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/api
  *
  * @example
  * const result = composeApi(undefined as never);

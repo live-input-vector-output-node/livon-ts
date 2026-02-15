@@ -26,7 +26,7 @@ import {runtime} from '@livon/runtime';
 import {clientWsTransport} from '@livon/client-ws-transport';
 import {api} from './generated/api';
 
-const transport = clientWsTransport({url: 'ws://localhost:3002/ws'});
+const transport = clientWsTransport({url: 'ws://127.0.0.1:3002/ws'});
 runtime(transport, api);
 ```
 

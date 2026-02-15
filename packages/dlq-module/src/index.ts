@@ -1,3 +1,8 @@
+/**
+ * Public package entrypoint for `@livon/dlq-module`.
+ *
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/packages/dlq-module
+ */
 import type {
   EmitInput,
   EventEnvelope,
@@ -227,7 +232,7 @@ const replayStoredEvent = async (input: ReplayStoredEventInput) => {
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/packages/dlq-module
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/packages/dlq-module
  *
  * @example
  * const result = dlqModule(undefined as never);

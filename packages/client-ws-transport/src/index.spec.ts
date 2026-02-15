@@ -109,7 +109,7 @@ const createWebSocketCtor = (): WebSocketCtorBundle => {
 const createOptions = (
   overrides: Partial<ClientWsTransportOptions> = {},
 ): ClientWsTransportOptions => ({
-  url: 'ws://localhost:3002/ws',
+  url: 'ws://127.0.0.1:3002/ws',
   ...overrides,
 });
 

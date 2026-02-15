@@ -17,10 +17,26 @@ export interface ObjectSchemaInput<TShape extends Shape> {
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/schema/object
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/object
  *
  * @example
- * const result = object(undefined as never);
+ * // Creates an object schema with id and age fields.
+ * const User = object({
+ *   name: 'user',
+ *   shape: {
+ *     id: string(),
+ *     age: number(),
+ *   },
+ * });
+ * User.parse({ id: 'u1', age: 21 });
+ *
+ * @example
+ * // Extends object validation to also allow null.
+ * const MaybeUser = object({
+ *   name: 'user',
+ *   shape: { id: string() },
+ * }).nullable();
+ * MaybeUser.parse(null);
  */
 export const object = <
   TShape extends Record<string, AnySchema>

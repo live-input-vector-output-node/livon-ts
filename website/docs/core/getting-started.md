@@ -54,7 +54,7 @@ import {runtime} from '@livon/runtime';
 import {clientWsTransport} from '@livon/client-ws-transport';
 import {api} from './generated/api';
 
-const transport = clientWsTransport({url: 'ws://localhost:3002/ws'});
+const transport = clientWsTransport({url: 'ws://127.0.0.1:3002/ws'});
 runtime(transport, api);
 ```
 
@@ -194,7 +194,7 @@ const chatStore = createStore<ChatState>((set) => {
   };
 });
 
-const transport = clientWsTransport({url: 'ws://localhost:3002/ws'});
+const transport = clientWsTransport({url: 'ws://127.0.0.1:3002/ws'});
 
 runtime(transport, api);
 
@@ -230,7 +230,7 @@ await api.sendMessage({
 ## Generate client API from server [schema](/docs/schema)
 
 ```sh
-livon --endpoint ws://localhost:3002/ws --out src/generated/api.ts --poll 2000
+livon --endpoint ws://127.0.0.1:3002/ws --out src/generated/api.ts --poll 2000
 ```
 
 ## State integration (Zustand)
@@ -263,7 +263,7 @@ export const useChatStore = create<ChatState>((set) => {
   };
 });
 
-const transport = clientWsTransport({url: 'ws://localhost:3002/ws'});
+const transport = clientWsTransport({url: 'ws://127.0.0.1:3002/ws'});
 
 runtime(transport, api);
 ```
@@ -313,7 +313,7 @@ export const store = configureStore({
   },
 });
 
-const transport = clientWsTransport({url: 'ws://localhost:3002/ws'});
+const transport = clientWsTransport({url: 'ws://127.0.0.1:3002/ws'});
 
 api({
   onMessage: (payload) => {

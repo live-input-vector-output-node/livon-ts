@@ -13,10 +13,17 @@ export interface BooleanFactoryInput {
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/schema/boolean
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/boolean
  *
  * @example
- * const result = boolean(undefined as never);
+ * // Creates a boolean schema and validates a true value.
+ * const IsActive = boolean();
+ * IsActive.parse(true);
+ *
+ * @example
+ * // Extends boolean validation to also allow undefined.
+ * const MaybeIsActive = boolean().optional();
+ * MaybeIsActive.parse(undefined);
  */
 export const boolean = ({ name = 'boolean', doc }: BooleanFactoryInput = {}) =>
   schemaFactory<boolean>({

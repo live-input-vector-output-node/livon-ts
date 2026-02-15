@@ -13,10 +13,17 @@ export interface BinarySchemaInput {
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/schema/binary
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/binary
  *
  * @example
- * const result = binary(undefined as never);
+ * // Creates a binary schema and validates a Uint8Array payload.
+ * const Payload = binary({ name: 'payload' });
+ * Payload.parse(new Uint8Array([1, 2, 3]));
+ *
+ * @example
+ * // Extends binary validation to also allow undefined.
+ * const MaybePayload = binary({ name: 'payload' }).optional();
+ * MaybePayload.parse(undefined);
  */
 export const binary = ({ name, doc }: BinarySchemaInput) =>
   schemaFactory<Uint8Array>({

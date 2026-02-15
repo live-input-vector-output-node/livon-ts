@@ -13,10 +13,17 @@ export interface LiteralSchemaInput<T extends string | number | boolean> {
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/schema/literal
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/literal
  *
  * @example
- * const result = literal(undefined as never);
+ * // Creates a literal schema that accepts only the value 'ok'.
+ * const Status = literal({ name: 'status', value: 'ok' });
+ * Status.parse('ok');
+ *
+ * @example
+ * // Extends the same literal rule to also allow undefined.
+ * const MaybeStatus = literal({ name: 'status', value: 'ok' }).optional();
+ * MaybeStatus.parse(undefined);
  */
 export const literal = <const T extends string | number | boolean>({
   name,

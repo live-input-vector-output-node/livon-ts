@@ -122,7 +122,7 @@ const buildClientEventEnvelope = (envelope: EventEnvelope): ClientEventEnvelope 
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/packages/client
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/packages/client
  *
  * @example
  * const result = clientModule(undefined as never);
@@ -480,7 +480,7 @@ const createClientCore = ({ ast }: ClientOptions): ClientRequestSetter & Record<
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/packages/client
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/packages/client
  *
  * @example
  * const result = createClient(undefined as never);
@@ -517,7 +517,7 @@ export const createClient = (input: ClientModuleInput): ClientModule & Record<st
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/packages/client
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/packages/client
  *
  * @example
  * const result = createClientModule(undefined as never);

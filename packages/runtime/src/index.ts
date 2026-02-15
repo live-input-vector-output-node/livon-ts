@@ -1,3 +1,8 @@
+/**
+ * Public package entrypoint for `@livon/runtime`.
+ *
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/packages/runtime
+ */
 export { runtime } from './runtime.js';
 export type {
   RuntimeEventContext,

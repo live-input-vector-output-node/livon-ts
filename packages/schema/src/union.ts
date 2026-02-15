@@ -44,10 +44,23 @@ const resolveUnionMatch = <TValues extends readonly AnySchema[]>({
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/schema/union
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/union
  *
  * @example
- * const result = union(undefined as never);
+ * // Creates a union schema that accepts either string or number identifiers.
+ * const Identifier = union({
+ *   name: 'identifier',
+ *   options: [string(), number()] as const,
+ * });
+ * Identifier.parse('user-1');
+ *
+ * @example
+ * // Extends the union schema to also allow undefined.
+ * const OptionalIdentifier = union({
+ *   name: 'identifier',
+ *   options: [string(), number()] as const,
+ * }).optional();
+ * OptionalIdentifier.parse(undefined);
  */
 export const union = <TValues extends readonly AnySchema[]>({
   name,

@@ -17,10 +17,23 @@ export interface TupleSchemaInput<TItems extends readonly AnySchema[]> {
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/schema/tuple
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/tuple
  *
  * @example
- * const result = tuple(undefined as never);
+ * // Creates a tuple schema for numeric x/y coordinates.
+ * const Coordinates = tuple({
+ *   name: 'coordinates',
+ *   items: [number(), number()] as const,
+ * });
+ * Coordinates.parse([10, 20]);
+ *
+ * @example
+ * // Extends tuple validation to also allow undefined.
+ * const MaybeCoordinates = tuple({
+ *   name: 'coordinates',
+ *   items: [number(), number()] as const,
+ * }).optional();
+ * MaybeCoordinates.parse(undefined);
  */
 export const tuple = <TItems extends readonly AnySchema[]>({
   name,

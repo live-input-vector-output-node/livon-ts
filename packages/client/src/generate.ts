@@ -1,3 +1,8 @@
+/**
+ * Client code-generation entrypoint exported as `@livon/client/generate`.
+ *
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/packages/client
+ */
 import fs from 'node:fs';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
@@ -785,7 +790,7 @@ const applyTemplateMap = (template: string, placeholders: Array<{ key: string; v
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/packages/client
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/packages/client
  *
  * @example
  * const result = getClientGeneratorFingerprint(undefined as never);
@@ -808,7 +813,7 @@ export const getClientGeneratorFingerprint = (): string => {
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see ${DOCS_HOST:-http://localhost:3000}/docs/packages/client
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/packages/client
  *
  * @example
  * const result = generateClientFiles(undefined as never);

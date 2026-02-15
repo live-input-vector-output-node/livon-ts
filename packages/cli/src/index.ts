@@ -302,7 +302,7 @@ const readCliInput = (argv: string[]): ParsedCliInput => {
   };
 
   if (!options.endpoint && options.port) {
-    options.endpoint = `ws://localhost:${options.port}/ws`;
+    options.endpoint = `ws://127.0.0.1:${options.port}/ws`;
   }
   if (!options.endpoint) {
     throw new Error('Missing required --endpoint or --port');
