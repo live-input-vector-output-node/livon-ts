@@ -1,4 +1,4 @@
-import { createVitestConfig } from '@livon/config/vitest/base';
+import { createVitestConfig } from '@livon/config/vitest/base.cjs';
 
 const base = createVitestConfig({ type: 'unit' });
 
