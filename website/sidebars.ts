@@ -10,10 +10,6 @@ const sidebars: SidebarsConfig = {
     {
       type: 'category',
       label: 'Main',
-      link: {
-        type: 'doc',
-        id: 'core/what-is-livon',
-      },
       items: [
         'core/what-is-livon',
         'core/livon-vs-others',
@@ -27,10 +23,6 @@ const sidebars: SidebarsConfig = {
     {
       type: 'category',
       label: 'Packages',
-      link: {
-        type: 'doc',
-        id: 'packages/index',
-      },
       items: [
         'packages/index',
         'packages/runtime',
@@ -38,12 +30,9 @@ const sidebars: SidebarsConfig = {
         {
           type: 'category',
           label: 'Schema APIs',
-          link: {
-            type: 'doc',
-            id: 'schema/index',
-          },
           items: [
             'schema/index',
+            'schema/context',
             'schema/type-safety',
             'schema/string',
             'schema/number',
@@ -84,7 +73,6 @@ const sidebars: SidebarsConfig = {
         id: 'core/governance',
       },
       items: [
-        'core/governance',
         'core/coding-style-guide',
         'core/definition-of-done',
         'core/project-context',
@@ -103,7 +91,6 @@ const sidebars: SidebarsConfig = {
         id: 'technical/runtime-design',
       },
       items: [
-        'technical/runtime-design',
         'technical/architecture',
         'technical/event-flow',
         'technical/roadmap',

@@ -178,7 +178,21 @@ html {
 }
 
 .theme-doc-sidebar-container {
-  border-right: none;
+  border: none !important;
+  border-right: none !important;
+  border-left: none !important;
+}
+
+.navbar-sidebar,
+.navbar-sidebar__brand,
+.navbar-sidebar__items {
+  border: none !important;
+  border-right: none !important;
+  border-left: none !important;
+}
+
+.table-of-contents__left-border {
+  border-left: none !important;
 }
 
 .theme-doc-breadcrumbs,
