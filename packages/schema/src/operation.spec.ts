@@ -236,7 +236,7 @@ describe('operation utilities', () => {
         const result = await runOperation(op, { rawInput: true }, context);
 
         expect(exec).toHaveBeenCalledWith(parsedInput, context);
-        expect(outputSchema.parse).toHaveBeenCalledWith({ raw: true }, context);
+        expect(outputSchema.parse).toHaveBeenCalledWith(parsedOutput, context);
         expect(publishHook).toHaveBeenCalledWith(parsedOutput, context);
         expect(publisher).toHaveBeenCalledTimes(2);
         expect(publisher).toHaveBeenNthCalledWith(1, {
