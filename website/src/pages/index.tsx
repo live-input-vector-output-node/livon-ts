@@ -45,8 +45,8 @@ const Home = (): ReactNode => {
                 </a>
                 <a href="https://www.npmjs.com/package/@livon/runtime">
                   <img
-                    src="https://img.shields.io/npm/unpacked-size/%40livon/runtime?label=npm%20runtime%20size"
-                    alt="npm package size (@livon/runtime)"
+                    src="https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Flive-input-vector-output-node%2Flivon-ts%2Fmain%2F.github%2Fbadges%2Fsize-runtime.json"
+                    alt="runtime size (@livon/runtime)"
                   />
                 </a>
               </div>

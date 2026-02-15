@@ -128,3 +128,31 @@ jobs:
             TAG="${{ inputs.npm_tag }}"
           fi
           pnpm changeset:publish --tag "$TAG"
+
+      - name: Tag published packages as latest
+        if: github.event_name != 'workflow_dispatch' || inputs.dry_run == false
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          const { execSync } = require('child_process');
+
+          const root = process.cwd();
+          const packagesDir = path.join(root, 'packages');
+          const packageFiles = fs.readdirSync(packagesDir)
+            .map((name) => path.join(packagesDir, name, 'package.json'))
+            .filter((file) => fs.existsSync(file));
+
+          const publishable = packageFiles
+            .map((file) => JSON.parse(fs.readFileSync(file, 'utf8')))
+            .filter((pkg) => pkg.private !== true)
+            .filter((pkg) => typeof pkg.name === 'string' && typeof pkg.version === 'string');
+
+          publishable.forEach((pkg) => {
+            const spec = `${pkg.name}@${pkg.version}`;
+            console.log(`Tagging ${spec} as latest`);
+            execSync(`npm dist-tag add ${spec} latest`, { stdio: 'inherit' });
+          });
+          NODE

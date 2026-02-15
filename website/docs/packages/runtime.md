@@ -3,6 +3,8 @@ title: "@livon/runtime"
 sidebar_position: 1
 ---
 
+[![runtime size](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Flive-input-vector-output-node%2Flivon-ts%2Fmain%2F.github%2Fbadges%2Fsize-runtime.json)](https://www.npmjs.com/package/@livon/runtime)
+
 ## Install
 
 ```sh

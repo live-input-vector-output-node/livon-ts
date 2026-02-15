@@ -3,6 +3,8 @@ title: "@livon/client-ws-transport"
 sidebar_position: 4
 ---
 
+[![client-ws size](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Flive-input-vector-output-node%2Flivon-ts%2Fmain%2F.github%2Fbadges%2Fsize-client-ws-transport.json)](https://www.npmjs.com/package/@livon/client-ws-transport)
+
 ## Install
 
 ```sh

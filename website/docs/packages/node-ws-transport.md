@@ -3,6 +3,8 @@ title: "@livon/node-ws-transport"
 sidebar_position: 5
 ---
 
+[![node-ws size](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Flive-input-vector-output-node%2Flivon-ts%2Fmain%2F.github%2Fbadges%2Fsize-node-ws-transport.json)](https://www.npmjs.com/package/@livon/node-ws-transport)
+
 ## Install
 
 ```sh

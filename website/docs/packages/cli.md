@@ -3,6 +3,8 @@ title: "@livon/cli"
 sidebar_position: 8
 ---
 
+[![cli size](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Flive-input-vector-output-node%2Flivon-ts%2Fmain%2F.github%2Fbadges%2Fsize-cli.json)](https://www.npmjs.com/package/@livon/cli)
+
 ## Install
 
 ```sh
