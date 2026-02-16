@@ -27,6 +27,17 @@ livon \
   -- pnpm dev
 ```
 
+## Generated output mode
+
+`livon` always runs in `rslib` mode after sync.
+
+- default output: `esm + cjs + d.ts`
+- use `--esm` or `--cjs` to build only the selected format
+- use `--js` when you only need `esm + cjs` and want to skip declaration files
+
+With `--out src/generated/api.ts`, compiled files are written to `src/generated/dist`.
+`livon` also writes `src/generated/package.json` with conditional exports, so `import { api } from './generated'` resolves to the matching build output.
+
 ## Linked process lifecycle
 
 If the linked command exits, `livon` exits too.  
@@ -49,6 +60,9 @@ livon --endpoint ws://127.0.0.1:3002/ws --out src/generated/api.ts -- --some-com
 - `--method <GET|POST>` (`string`): request method for explain fetch.
 - `--header key:value` (`string`, repeatable): additional request header.
 - `--payload <json>` (`string`): raw JSON payload body for explain request.
+- `--esm` (`boolean`): build only ESM output (`dist/index.js`).
+- `--cjs` (`boolean`): build only CJS output (`dist/index.cjs`).
+- `--js` (`boolean`): builds only `esm + cjs` (skips `.d.ts` output).
 - `--no-event` (`boolean`): disables event wrapping behavior for transports expecting plain request mode.
 - `--` (delimiter): separates livon flags from linked command arguments.
 

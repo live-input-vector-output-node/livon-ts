@@ -30,6 +30,15 @@ Current generated typing behavior to keep in sync:
 - `and(...)` schema nodes are emitted as TypeScript intersections (`Left & Right`).
 - If schema composition passes an explicit `name`, that name is used as the generated type name.
 
+### Central TypeScript surface template
+
+Generated interface and signature syntax is centralized in:
+
+- `packages/client/src/typeScriptSurfaceTemplate.ts`
+
+Use this file when TypeScript surface style should change globally (for example interface member syntax, callable signatures, or method/property signature formatting).
+This avoids editing many render call sites in `packages/client/src/generate.ts`.
+
 ## Install
 
 ```sh

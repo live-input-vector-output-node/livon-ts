@@ -142,6 +142,7 @@ Generated JSDoc is produced by the client generator (`@livon/client`), so genera
 Required when changing generator behavior:
 
 - update generator implementation in `packages/client/src/generate.ts` or templates in `packages/client/templates/*`
+- if TypeScript interface/signature surface should change globally, update `packages/client/src/typeScriptSurfaceTemplate.ts`
 - update this page when generated JSDoc structure or terminology changes
 - update package docs in [@livon/client](/docs/packages/client) when usage/hover behavior changes
 - keep `packages/client/src/generate.spec.ts` aligned with current generated output expectations

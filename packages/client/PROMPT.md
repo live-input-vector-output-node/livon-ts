@@ -18,9 +18,8 @@ Canonical sources:
 
 Generator sync rule:
 
-- Any change in `packages/client/src/generate.ts` or `packages/client/templates/*` that affects generated API output must update documentation in:
+- Any change in `packages/client/src/generate.ts`, `packages/client/src/typeScriptSurfaceTemplate.ts`, or `packages/client/templates/*` that affects generated API output must update documentation in:
   - `website/docs/core/schema-doc-and-generated-jsdoc.md`
   - `website/docs/packages/client.md`
 - Keep generated JSDoc terminology and examples aligned with documented terminology and examples.
 - Validate generator behavior with `packages/client/src/generate.spec.ts`.
-
