@@ -94,7 +94,7 @@ describe('union()', () => {
       expect(schemaFactoryMock).toHaveBeenCalledTimes(1);
       const factoryInput = getFactoryInput();
       expect(factoryInput.name).toBe('TextOrCount');
-      expect(factoryInput.type).toBe('union');
+      expect(factoryInput.type).toBe('or');
       expect(result).toBe(schemaFactoryMock.mock.results[0]?.value);
     });
 
@@ -144,6 +144,22 @@ describe('union()', () => {
         type: 'union',
         name: 'FirstOptionOrSecondOption',
       });
+    });
+
+    it('should forward discriminator option to alias target when union input provides discriminator', () => {
+      const discriminator = vi.fn(() => secondOptionMock);
+      union({
+        options: [firstOptionMock, secondOptionMock],
+        discriminator,
+      });
+      const factoryInput = getFactoryInput();
+
+      const parsed = factoryInput.validate('input', schemaContextMock);
+
+      expect(parsed).toBe(2);
+      expect(discriminator).toHaveBeenCalledWith('input', schemaContextMock);
+      expect(firstOptionMock.parse).not.toHaveBeenCalled();
+      expect(secondOptionMock.parse).toHaveBeenCalledWith('input', schemaContextMock);
     });
   });
 

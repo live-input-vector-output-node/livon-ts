@@ -4,6 +4,7 @@ sidebar_position: 12
 ---
 
 Use this combinator to validate with multiple schema options and optional discriminator logic.
+`union` is an alias of this API.
 
 ```ts
 import {enumeration, literal, or} from '@livon/schema';

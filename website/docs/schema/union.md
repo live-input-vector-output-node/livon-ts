@@ -4,6 +4,7 @@ sidebar_position: 11
 ---
 
 Use this schema to validate union options by trying each option until one matches.
+`union` is an alias of [or](or).
 
 ```ts
 import {union, string, number} from '@livon/schema';
@@ -26,6 +27,7 @@ API schemas (`api`) are not valid as union options.
 
 - `name` (`string`, optional): explicit union schema name override. If omitted, LIVON derives a deterministic name from option schema names.
 - `options` (`readonly Schema[]`, required): candidate schemas.
+- `discriminator` (`(input, ctx) => Schema | undefined`, optional): picks one schema before fallback matching.
 - `doc` (`SchemaDoc`, optional): schema metadata attached to AST/doc output.
 
 ## Chain API
