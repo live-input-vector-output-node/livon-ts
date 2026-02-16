@@ -1,5 +1,6 @@
 import { generateClientFiles, getClientGeneratorFingerprint } from '@livon/client/generate';
 import type { AstNode } from '@livon/client/generate';
+import { createRslib } from '@rslib/core';
 import { spawn } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
 import { promises as fs } from 'node:fs';
@@ -17,6 +18,15 @@ interface Options {
   method?: 'GET' | 'POST';
   headers: Record<string, string>;
   payload?: unknown;
+  build: BuildOptions;
+}
+
+type BuildFormat = 'esm' | 'cjs';
+
+interface BuildOptions {
+  dts: boolean;
+  formats: readonly BuildFormat[];
+  customFormats: boolean;
 }
 
 interface ExplainResponse {
@@ -45,6 +55,33 @@ interface GeneratedClientSummary {
   fieldResolvers: number;
   inputs: number;
   outputs: number;
+}
+
+interface BuildGeneratedClientInput {
+  options: Options;
+}
+
+interface BuildGeneratedClientResult {
+  dts: boolean;
+  formats: readonly BuildFormat[];
+  outputPath: string;
+}
+
+interface GeneratedPackageManifest {
+  private: boolean;
+  type: 'module';
+  sideEffects: boolean;
+  main?: string;
+  module?: string;
+  types?: string;
+  exports: {
+    '.': {
+      types?: string;
+      import?: string;
+      require?: string;
+      default: string;
+    };
+  };
 }
 
 interface WireEnvelopeBase {
@@ -83,6 +120,7 @@ interface ExplainResponsePayload extends ExplainResponse {
 type WebSocketData = RawData | ArrayBufferView;
 
 const RETRY_RESET_AFTER_CONNECTION = 'livon.retry.reset_after_connection';
+const BUILD_FORMATS = ['esm', 'cjs'] as const;
 
 interface RetryAwareError extends Error {
   [RETRY_RESET_AFTER_CONNECTION]?: boolean;
@@ -115,6 +153,25 @@ interface ReadCliArgsResult {
   options: Options;
 }
 
+interface AddBuildFormatInput {
+  options: Options;
+  format: BuildFormat;
+}
+
+const addBuildFormat = ({ options, format }: AddBuildFormatInput): Options => {
+  const nextFormats = options.build.customFormats
+    ? [...new Set([...options.build.formats, format])]
+    : [format];
+  return {
+    ...options,
+    build: {
+      ...options.build,
+      formats: nextFormats,
+      customFormats: true,
+    },
+  };
+};
+
 const createDefaultOptions = (): Options => ({
   endpoint: '',
   port: undefined,
@@ -125,6 +182,11 @@ const createDefaultOptions = (): Options => ({
   method: 'POST',
   headers: {},
   payload: undefined,
+  build: {
+    dts: true,
+    formats: BUILD_FORMATS,
+    customFormats: false,
+  },
 });
 
 const readOptionValue = ({ argv, index, arg }: ReadOptionValueInput): ReadOptionValueResult => {
@@ -161,6 +223,36 @@ const readCliArgs = ({ argv, index, options }: ReadCliArgsInput): ReadCliArgsRes
         event: undefined,
         method: 'GET',
       },
+    });
+  }
+
+  if (arg === '--js') {
+    return readCliArgs({
+      argv,
+      index: index + 1,
+      options: {
+        ...options,
+        build: {
+          ...options.build,
+          dts: false,
+        },
+      },
+    });
+  }
+
+  if (arg === '--esm') {
+    return readCliArgs({
+      argv,
+      index: index + 1,
+      options: addBuildFormat({ options, format: 'esm' }),
+    });
+  }
+
+  if (arg === '--cjs') {
+    return readCliArgs({
+      argv,
+      index: index + 1,
+      options: addBuildFormat({ options, format: 'cjs' }),
     });
   }
 
@@ -587,13 +679,155 @@ const fetchAst = async (options: Options, etag?: string): Promise<FetchResult> =
 };
 
 const resolveOutputPaths = (out: string) => {
-  const isFile = path.extname(out).length > 0;
-  const outDir = isFile ? path.dirname(out) : out;
+  const absoluteOut = path.resolve(out);
+  const isFile = path.extname(absoluteOut).length > 0;
+  const outDir = isFile ? path.dirname(absoluteOut) : absoluteOut;
   const astFile = path.join(outDir, 'ast.ts');
-  const clientFile = isFile ? out : path.join(outDir, 'client.ts');
+  const clientFile = isFile ? absoluteOut : path.join(outDir, 'client.ts');
   const indexFile = path.join(outDir, 'index.ts');
+  const packageJsonFile = path.join(outDir, 'package.json');
   const checksumFile = path.join(outDir, '.livon.client.checksum');
-  return { outDir, astFile, clientFile, indexFile, checksumFile };
+  return { outDir, astFile, clientFile, indexFile, packageJsonFile, checksumFile };
+};
+
+interface RelativeBuildPathInput {
+  basePath: string;
+  filePath: string;
+}
+
+const relativeBuildPath = ({ basePath, filePath }: RelativeBuildPathInput): string => {
+  const relativePath = path.relative(basePath, filePath).split(path.sep).join('/');
+  return `./${relativePath}`;
+};
+
+interface CreateBuildEntriesInput {
+  outDir: string;
+  indexFile: string;
+  clientFile: string;
+  astFile: string;
+}
+
+const createBuildEntries = ({
+  outDir,
+  indexFile,
+  clientFile,
+  astFile,
+}: CreateBuildEntriesInput): Readonly<Record<string, string>> => {
+  const files = [indexFile, clientFile, astFile];
+  const entryNames = files.map((filePath) => path.parse(filePath).name);
+  const uniqueEntryNames = new Set(entryNames);
+  if (uniqueEntryNames.size !== entryNames.length) {
+    throw new Error('Generated output file names must be unique for rslib entries.');
+  }
+  return files.reduce<Record<string, string>>((acc, filePath) => {
+    return {
+      ...acc,
+      [path.parse(filePath).name]: relativeBuildPath({ basePath: outDir, filePath }),
+    };
+  }, {});
+};
+
+interface ToManifestOutputFileInput {
+  format: BuildFormat;
+}
+
+const manifestOutputFile = ({ format }: ToManifestOutputFileInput): string =>
+  format === 'esm' ? './dist/index.js' : './dist/index.cjs';
+
+interface CreateGeneratedPackageManifestInput {
+  buildResult: BuildGeneratedClientResult;
+}
+
+const createGeneratedPackageManifest = ({
+  buildResult,
+}: CreateGeneratedPackageManifestInput): GeneratedPackageManifest => {
+  const hasEsm = buildResult.formats.includes('esm');
+  const hasCjs = buildResult.formats.includes('cjs');
+  const defaultFormat: BuildFormat = hasEsm ? 'esm' : 'cjs';
+  const main = hasCjs ? manifestOutputFile({ format: 'cjs' }) : undefined;
+  const module = hasEsm ? manifestOutputFile({ format: 'esm' }) : undefined;
+  const types = buildResult.dts ? './dist/index.d.ts' : undefined;
+  return {
+    private: true,
+    type: 'module',
+    sideEffects: false,
+    ...(main ? { main } : {}),
+    ...(module ? { module } : {}),
+    ...(types ? { types } : {}),
+    exports: {
+      '.': {
+        ...(types ? { types } : {}),
+        ...(hasEsm ? { import: manifestOutputFile({ format: 'esm' }) } : {}),
+        ...(hasCjs ? { require: manifestOutputFile({ format: 'cjs' }) } : {}),
+        default: manifestOutputFile({ format: defaultFormat }),
+      },
+    },
+  };
+};
+
+interface WriteGeneratedPackageManifestInput {
+  packageJsonFile: string;
+  buildResult: BuildGeneratedClientResult;
+}
+
+const writeGeneratedPackageManifest = async ({
+  packageJsonFile,
+  buildResult,
+}: WriteGeneratedPackageManifestInput): Promise<void> => {
+  const manifest = createGeneratedPackageManifest({ buildResult });
+  await fs.writeFile(
+    packageJsonFile,
+    `${JSON.stringify(manifest, null, 2)}\n`,
+    'utf8',
+  );
+};
+
+const buildGeneratedClient = async ({ options }: BuildGeneratedClientInput): Promise<BuildGeneratedClientResult> => {
+  if (options.build.formats.length === 0) {
+    throw new Error('Build formats cannot be empty.');
+  }
+
+  const { outDir, astFile, clientFile, indexFile, packageJsonFile } = resolveOutputPaths(options.out);
+  const entries = createBuildEntries({
+    outDir,
+    indexFile,
+    clientFile,
+    astFile,
+  });
+  const rslib = await createRslib({
+    cwd: outDir,
+    config: {
+      source: {
+        entry: entries,
+      },
+      lib: options.build.formats.map((format) => {
+        return {
+          format,
+          syntax: 'es2021',
+          dts: options.build.dts,
+          bundle: false,
+        };
+      }),
+      output: {
+        target: 'web',
+        distPath: 'dist',
+        cleanDistPath: true,
+        minify: false,
+      },
+    },
+  });
+
+  await rslib.build();
+  const buildResult: BuildGeneratedClientResult = {
+    dts: options.build.dts,
+    formats: options.build.formats,
+    outputPath: path.join(outDir, 'dist'),
+  };
+  await writeGeneratedPackageManifest({
+    packageJsonFile,
+    buildResult,
+  });
+  return buildResult;
 };
 
 const readCachedChecksum = async (checksumFile: string): Promise<CachedClientChecksum> => {
@@ -772,6 +1006,7 @@ const run = async () => {
     }, { forceWrite: initialSyncPending });
     initialSyncPending = false;
     if (writeResult.updated) {
+      const buildResult = await buildGeneratedClient({ options });
       // eslint-disable-next-line no-console
       const details: string[] = [];
       if (writeResult.schemaVersion) {
@@ -786,6 +1021,8 @@ const run = async () => {
         details.push(`${writeResult.summary.inputs} inputs`);
         details.push(`${writeResult.summary.outputs} outputs`);
       }
+      details.push(`build ${buildResult.formats.join('+')}${buildResult.dts ? '+dts' : ''}`);
+      details.push(`dist ${buildResult.outputPath}`);
       const detailsInfo = details.length > 0 ? `, ${details.join(', ')}` : '';
       console.log(`livon: client updated (checksum ${writeResult.checksum}${detailsInfo})`);
     }

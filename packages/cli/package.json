@@ -42,13 +42,13 @@
     "test:integration": "true"
   },
   "dependencies": {
+    "@rslib/core": "latest",
     "@livon/client": "workspace:*",
     "@livon/config": "workspace:*",
     "msgpackr": "latest",
     "ws": "latest"
   },
   "devDependencies": {
-    "@rslib/core": "latest",
     "@types/ws": "latest",
     "@typescript-eslint/eslint-plugin": "8.54.0",
     "@typescript-eslint/parser": "8.54.0",

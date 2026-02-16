@@ -130,6 +130,9 @@ importers:
       '@livon/config':
         specifier: workspace:*
         version: link:../config
+      '@rslib/core':
+        specifier: latest
+        version: 0.19.5(typescript@5.9.3)
       msgpackr:
         specifier: latest
         version: 1.11.8
@@ -137,9 +140,6 @@ importers:
         specifier: latest
         version: 8.19.0
     devDependencies:
-      '@rslib/core':
-        specifier: latest
-        version: 0.19.5(typescript@5.9.3)
       '@types/node':
         specifier: latest
         version: 25.2.2
