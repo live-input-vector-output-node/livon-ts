@@ -1,0 +1,23 @@
+{
+  "name": "@livon/badges",
+  "version": "0.27.0-rc.5",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node ../update-size-badges.mjs .github/badges",
+    "dev": "true",
+    "lint": "true",
+    "typecheck": "true",
+    "test": "true"
+  },
+  "dependencies": {
+    "@livon/cli": "workspace:*",
+    "@livon/client": "workspace:*",
+    "@livon/client-ws-transport": "workspace:*",
+    "@livon/config": "workspace:*",
+    "@livon/dlq-module": "workspace:*",
+    "@livon/node-ws-transport": "workspace:*",
+    "@livon/runtime": "workspace:*",
+    "@livon/schema": "workspace:*"
+  }
+}

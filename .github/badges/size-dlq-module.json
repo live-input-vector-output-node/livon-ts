@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "label": "dlq size",
-  "message": "9.0 kB / 2.5 kB gz",
+  "label": "dlq mini size",
+  "message": "2.2 kB / 985 B gz",
   "color": "brightgreen"
 }

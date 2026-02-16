@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "label": "client size",
-  "message": "66.1 kB / 13.6 kB gz",
-  "color": "yellowgreen"
+  "label": "client mini size",
+  "message": "19.3 kB / 6.0 kB gz",
+  "color": "green"
 }

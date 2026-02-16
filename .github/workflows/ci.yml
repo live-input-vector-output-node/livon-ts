@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      - '.github/badges/**'
   pull_request:
   workflow_dispatch:
 
@@ -11,7 +13,7 @@ jobs:
   ci:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -54,3 +56,17 @@ jobs:
 
       - name: Run monorepo CI
         run: pnpm run ci
+
+      - name: Commit updated size badges
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          if git diff --quiet -- .github/badges/size-*.json; then
+            echo "No size badge changes."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/badges/size-*.json
+          git commit -m "chore: update minified package size badges [skip ci]"
+          git push

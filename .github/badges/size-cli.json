@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "label": "cli size",
-  "message": "34.3 kB / 7.8 kB gz",
+  "label": "cli mini size",
+  "message": "11.7 kB / 4.1 kB gz",
   "color": "green"
 }

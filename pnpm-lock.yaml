@@ -349,6 +349,33 @@ importers:
         specifier: latest
         version: 4.0.18(@types/node@25.2.2)(jiti@2.6.1)(terser@5.46.0)
 
+  tools/badges:
+    dependencies:
+      '@livon/cli':
+        specifier: workspace:*
+        version: link:../../packages/cli
+      '@livon/client':
+        specifier: workspace:*
+        version: link:../../packages/client
+      '@livon/client-ws-transport':
+        specifier: workspace:*
+        version: link:../../packages/client-ws-transport
+      '@livon/config':
+        specifier: workspace:*
+        version: link:../../packages/config
+      '@livon/dlq-module':
+        specifier: workspace:*
+        version: link:../../packages/dlq-module
+      '@livon/node-ws-transport':
+        specifier: workspace:*
+        version: link:../../packages/server-ws-transport
+      '@livon/runtime':
+        specifier: workspace:*
+        version: link:../../packages/runtime
+      '@livon/schema':
+        specifier: workspace:*
+        version: link:../../packages/schema
+
   tools/rslib-browser:
     devDependencies:
       '@livon/config':

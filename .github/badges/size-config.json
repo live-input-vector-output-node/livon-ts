@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "label": "config size",
-  "message": "17.9 kB / 4.8 kB gz",
-  "color": "green"
+  "label": "config mini size",
+  "message": "n/a",
+  "color": "lightgrey"
 }

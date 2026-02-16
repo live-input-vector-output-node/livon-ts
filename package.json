@@ -12,6 +12,7 @@
     "format": "turbo run format",
     "typecheck": "turbo run typecheck",
     "gen": "node tools/gen/index.mjs",
+    "badges:size": "node tools/update-size-badges.mjs .github/badges",
     "check:policies": "node tools/policies/check.mjs",
     "changeset": "pnpm dlx @changesets/cli",
     "changeset:version": "node tools/release/changeset-version.mjs",
