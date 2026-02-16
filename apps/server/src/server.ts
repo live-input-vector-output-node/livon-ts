@@ -75,6 +75,11 @@ const closeHttpServer = (server: Server) =>
 
 const closeWsServer = (wsServer: WebSocketServer) =>
   new Promise<void>((resolve, reject) => {
+    wsServer.clients.forEach((client) => {
+      try {
+        client.terminate();
+      } catch {}
+    });
     wsServer.close((error) => {
       if (error) {
         reject(error);

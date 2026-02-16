@@ -7,7 +7,7 @@
   "scripts": {
     "build": "rslib build",
     "build:watch": "rslib dev",
-    "dev": "HOST=0.0.0.0 LIVON_PORT=3002 LIVON_EXPLAIN=1 node --watch --watch-preserve-output dist/index.js",
+    "dev": "HOST=0.0.0.0 LIVON_PORT=3002 LIVON_EXPLAIN=1 node --watch-path=dist --watch-preserve-output dist/index.js",
     "preview": "HOST=0.0.0.0 LIVON_PORT=3002 node dist/index.js",
     "lint": "eslint .",
     "typecheck": "tsc -p tsconfig.json --noEmit",

@@ -1,7 +1,7 @@
 import { generateClientFiles, getClientGeneratorFingerprint } from '@livon/client/generate';
 import type { AstNode } from '@livon/client/generate';
 import { spawn } from 'node:child_process';
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import WebSocket, { type RawData } from 'ws';
@@ -40,8 +40,17 @@ interface CachedClientChecksum {
   etag?: string;
 }
 
+interface GeneratedClientSummary {
+  subscriptions: number;
+  fieldResolvers: number;
+  inputs: number;
+  outputs: number;
+}
+
 interface WireEnvelopeBase {
+  id: string;
   event: string;
+  status: 'sending' | 'receiving' | 'failed';
   metadata?: Readonly<Record<string, unknown>>;
   context?: Uint8Array;
 }
@@ -323,6 +332,13 @@ const readCliInput = (argv: string[]): ParsedCliInput => {
   };
 };
 
+const isConnectionRefusedError = (error: unknown): boolean => {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+  return error.message.includes('ECONNREFUSED');
+};
+
 const applyPortToEndpoint = (endpoint: string, port: number): string => {
   const url = new URL(endpoint);
   if (url.protocol !== 'ws:' && url.protocol !== 'wss:') {
@@ -337,6 +353,69 @@ const applyPortToEndpoint = (endpoint: string, port: number): string => {
 
 const hashAst = (ast: unknown): string =>
   createHash('sha256').update(JSON.stringify(ast)).digest('hex');
+
+const summarizeGeneratedClient = (ast: AstNode): GeneratedClientSummary => {
+  const getRequestType = (node: AstNode): string | undefined => {
+    const requestFromNode = typeof node.request === 'string' ? node.request : undefined;
+    if (requestFromNode) {
+      return requestFromNode;
+    }
+    if (!isRecord(node.constraints)) {
+      return undefined;
+    }
+    return typeof node.constraints.request === 'string' ? node.constraints.request : undefined;
+  };
+
+  const getResponseType = (node: AstNode): string | undefined => {
+    const responseFromNode = typeof node.response === 'string' ? node.response : undefined;
+    if (responseFromNode) {
+      return responseFromNode;
+    }
+    if (!isRecord(node.constraints)) {
+      return undefined;
+    }
+    return typeof node.constraints.response === 'string' ? node.constraints.response : undefined;
+  };
+
+  const isFieldResolverNode = (node: AstNode): boolean => {
+    if (node.type !== 'field' || !isRecord(node.constraints)) {
+      return false;
+    }
+    return typeof node.constraints.owner === 'string' && typeof node.constraints.field === 'string';
+  };
+
+  const walk = (node: AstNode): GeneratedClientSummary => {
+    const own = {
+      subscriptions: node.type === 'subscription' ? 1 : 0,
+      fieldResolvers: isFieldResolverNode(node) ? 1 : 0,
+      inputs:
+        (node.type === 'operation' || node.type === 'subscription' || isFieldResolverNode(node))
+        && getRequestType(node)
+          ? 1
+          : 0,
+      outputs:
+        (node.type === 'operation' || node.type === 'subscription' || isFieldResolverNode(node))
+        && getResponseType(node)
+          ? 1
+          : 0,
+    };
+
+    return (node.children ?? []).reduce<GeneratedClientSummary>(
+      (acc, child) => {
+        const childSummary = walk(child);
+        return {
+          subscriptions: acc.subscriptions + childSummary.subscriptions,
+          fieldResolvers: acc.fieldResolvers + childSummary.fieldResolvers,
+          inputs: acc.inputs + childSummary.inputs,
+          outputs: acc.outputs + childSummary.outputs,
+        };
+      },
+      own,
+    );
+  };
+
+  return walk(ast);
+};
 
 const compactMetadata = (
   metadata?: Readonly<Record<string, unknown>>,
@@ -391,7 +470,9 @@ const buildWireEnvelope = (input: BuildWireEnvelopeInput): WireEnvelopePayload =
   const metadata = compactMetadata(input.metadata);
   const context = compactContext(input.context);
   const base: WireEnvelopeBase = {
+    id: randomUUID(),
     event: input.event,
+    status: 'sending',
     metadata,
     context: context ? encodePayload(context) : undefined,
   };
@@ -510,8 +591,9 @@ const resolveOutputPaths = (out: string) => {
   const outDir = isFile ? path.dirname(out) : out;
   const astFile = path.join(outDir, 'ast.ts');
   const clientFile = isFile ? out : path.join(outDir, 'client.ts');
+  const indexFile = path.join(outDir, 'index.ts');
   const checksumFile = path.join(outDir, '.livon.client.checksum');
-  return { outDir, astFile, clientFile, checksumFile };
+  return { outDir, astFile, clientFile, indexFile, checksumFile };
 };
 
 const readCachedChecksum = async (checksumFile: string): Promise<CachedClientChecksum> => {
@@ -542,16 +624,18 @@ const writeClientFiles = async (
   ast: unknown,
   options: Options,
   meta?: Pick<FetchResult, 'checksum' | 'etag' | 'schemaVersion' | 'generatedAt'>,
+  config?: { forceWrite?: boolean },
 ) => {
-  const { outDir, astFile, clientFile, checksumFile } = resolveOutputPaths(options.out);
+  const { outDir, astFile, clientFile, indexFile, checksumFile } = resolveOutputPaths(options.out);
   await fs.mkdir(outDir, { recursive: true });
   const previous = await readCachedChecksum(checksumFile);
   const checksum = meta?.checksum ?? hashAst(ast);
   const etagBase = (meta?.etag ?? checksum).trim();
   const hasSameGenerator = previous.generatorHash === CLIENT_GENERATOR_HASH;
   const hasSameEtag = previous.etag === etagBase;
+  const shouldForceWrite = Boolean(config?.forceWrite);
 
-  if (hasSameGenerator && hasSameEtag) {
+  if (!shouldForceWrite && hasSameGenerator && hasSameEtag) {
     return {
       updated: false,
       checksum,
@@ -561,16 +645,27 @@ const writeClientFiles = async (
     };
   }
 
-  const generated = generateClientFiles({ ast: ast as AstNode });
+  const astNode = ast as AstNode;
+  const generated = generateClientFiles({ ast: astNode });
   const astSource = generated.files[generated.astFile];
   const clientSource = generated.files[generated.clientFile];
 
   if (!astSource || !clientSource) {
     throw new Error('Generated client sources were empty.');
   }
+  const summary = summarizeGeneratedClient(astNode);
 
   await fs.writeFile(astFile, astSource, 'utf8');
   await fs.writeFile(clientFile, clientSource, 'utf8');
+  const astModuleName = path.parse(generated.astFile).name;
+  const clientModuleName = path.parse(generated.clientFile).name;
+  const indexSource = [
+    `export { ast } from './${astModuleName}.js';`,
+    `export { api, createApiClient } from './${clientModuleName}.js';`,
+    `export * from './${clientModuleName}.js';`,
+    '',
+  ].join('\n');
+  await fs.writeFile(indexFile, indexSource, 'utf8');
   await fs.writeFile(
     checksumFile,
     JSON.stringify({ generatorHash: CLIENT_GENERATOR_HASH, etag: etagBase }),
@@ -578,6 +673,7 @@ const writeClientFiles = async (
   );
   return {
     updated: true,
+    summary,
     checksum,
     etag: etagBase,
     schemaVersion: meta?.schemaVersion,
@@ -645,6 +741,7 @@ const run = async () => {
   const options = cli.options;
   const commandRuntimeInput = cli.command.length > 0 ? { command: cli.command } : undefined;
   let commandRuntime: CommandRuntime | undefined;
+  let initialSyncPending = true;
   const ensureCommandRuntime = () => {
     if (!commandRuntimeInput || commandRuntime) {
       return;
@@ -655,11 +752,12 @@ const run = async () => {
   const execute = async () => {
     const { checksumFile } = resolveOutputPaths(options.out);
     const cached = await readCachedChecksum(checksumFile);
-    const useCachedEtag = cached.generatorHash === CLIENT_GENERATOR_HASH;
+    const useCachedEtag = !initialSyncPending && cached.generatorHash === CLIENT_GENERATOR_HASH;
     const cachedEtag = useCachedEtag ? cached.etag : undefined;
 
     const result = await fetchAst(options, cachedEtag);
     if (result.notModified) {
+      initialSyncPending = false;
       return;
     }
     if (result.ast === undefined) {
@@ -671,27 +769,36 @@ const run = async () => {
       etag: result.etag,
       schemaVersion: result.schemaVersion,
       generatedAt: result.generatedAt,
-    });
+    }, { forceWrite: initialSyncPending });
+    initialSyncPending = false;
     if (writeResult.updated) {
       // eslint-disable-next-line no-console
-      const meta = [];
+      const details: string[] = [];
       if (writeResult.schemaVersion) {
-        meta.push(`schema ${writeResult.schemaVersion}`);
+        details.push(`schema ${writeResult.schemaVersion}`);
       }
       if (writeResult.generatedAt) {
-        meta.push(`generated ${writeResult.generatedAt}`);
+        details.push(`generated ${writeResult.generatedAt}`);
       }
-      const metaInfo = meta.length > 0 ? `, ${meta.join(', ')}` : '';
-      console.log(`livon: client updated (checksum ${writeResult.checksum}${metaInfo})`);
+      if (writeResult.summary) {
+        details.push(`${writeResult.summary.subscriptions} subscriptions`);
+        details.push(`${writeResult.summary.fieldResolvers} fieldResolvers`);
+        details.push(`${writeResult.summary.inputs} inputs`);
+        details.push(`${writeResult.summary.outputs} outputs`);
+      }
+      const detailsInfo = details.length > 0 ? `, ${details.join(', ')}` : '';
+      console.log(`livon: client updated (checksum ${writeResult.checksum}${detailsInfo})`);
     }
   };
 
   const withRetry = async (action: () => Promise<void>) => {
     const maxAttempts = 20;
     const baseDelay = 250;
+    let waitingForEndpointLogged = false;
     const runAttempt = async (attempt: number, resetApplied: boolean): Promise<void> => {
       try {
         await action();
+        waitingForEndpointLogged = false;
         return;
       } catch (error) {
         const retryAware = error as RetryAwareError;
@@ -702,8 +809,16 @@ const run = async () => {
           throw new Error('livon: giving up after repeated retries');
         }
         const wait = baseDelay * Math.min(nextAttempt, 10);
-        // eslint-disable-next-line no-console
-        console.warn(`livon: attempt ${nextAttempt}/${maxAttempts} failed: ${error instanceof Error ? error.message : String(error)} – retrying in ${wait}ms`);
+        if (isConnectionRefusedError(error)) {
+          if (!waitingForEndpointLogged) {
+            // eslint-disable-next-line no-console
+            console.log(`livon: waiting for endpoint ${options.endpoint}...`);
+            waitingForEndpointLogged = true;
+          }
+        } else {
+          // eslint-disable-next-line no-console
+          console.warn(`livon: attempt ${nextAttempt}/${maxAttempts} failed: ${error instanceof Error ? error.message : String(error)} – retrying in ${wait}ms`);
+        }
         await new Promise((resolve) => setTimeout(resolve, wait));
         await runAttempt(nextAttempt, nextResetApplied);
       }
