@@ -12,13 +12,13 @@
     "@livon/runtime": "0.27.0-rc.3",
     "@livon/schema": "0.27.0-rc.3",
     "@livon/node-ws-transport": "0.27.0-rc.3",
-    "@livon/browser-lib": "0.27.0",
-    "@livon/node-lib": "0.27.0",
-    "@livon/package-name": "0.27.0",
-    "@livon/rspack-app": "0.27.0",
-    "@livon/app-name": "0.27.0",
-    "@livon/frontend-app": "0.27.0",
-    "website": "0.27.0"
+    "@livon/browser-lib": "0.27.0-rc.3",
+    "@livon/node-lib": "0.27.0-rc.3",
+    "@livon/package-name": "0.27.0-rc.3",
+    "@livon/rspack-app": "0.27.0-rc.3",
+    "@livon/app-name": "0.27.0-rc.3",
+    "@livon/frontend-app": "0.27.0-rc.3",
+    "website": "0.27.0-rc.3"
   },
   "changesets": [
     "wise-pandas-worry"
