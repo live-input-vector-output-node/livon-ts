@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
   "label": "runtime size",
-  "message": "3.7 kB / 1.3 kB gz",
-  "color": "brightgreen"
+  "message": "16.1 kB / 3.7 kB gz",
+  "color": "green"
 }
