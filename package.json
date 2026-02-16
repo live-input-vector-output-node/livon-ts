@@ -4,8 +4,9 @@
   "packageManager": "pnpm@9.0.0",
   "scripts": {
     "build": "turbo run build",
-    "dev": "turbo run build:watch dev gen:client:watch --filter=./packages/* --filter=./apps/*",
-    "docs": "turbo run docs --filter=./website",
+    "ci": "turbo run ci",
+    "dev": "turbo run build:watch dev gen:client:watch",
+    "docs": "turbo run docs",
     "test": "vitest run --passWithNoTests",
     "lint": "turbo run lint",
     "format": "turbo run format",
