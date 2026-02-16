@@ -12,9 +12,9 @@
     "preview": "rsbuild preview",
     "lint": "eslint .",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run --passWithNoTests",
-    "test:unit": "vitest run -c vitest.unit.config.ts",
-    "test:integration": "vitest run -c vitest.integration.config.ts",
+    "test": "vitest run --passWithNoTests --configLoader runner -c vitest.integration.config.ts",
+    "test:unit": "vitest run --configLoader runner -c vitest.unit.config.ts",
+    "test:integration": "vitest run --passWithNoTests --configLoader runner -c vitest.integration.config.ts",
     "gen:client": "livon --endpoint ws://127.0.0.1:3002/ws --out src/generated/api.ts"
   },
   "dependencies": {
