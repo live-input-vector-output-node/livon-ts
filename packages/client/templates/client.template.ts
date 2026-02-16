@@ -8,7 +8,7 @@ ${{LIVON_CLIENT_OP_DEFS}}
 
 export type SubscriptionName = keyof LivonEventMap;
 export type SubscriptionHandler<TName extends SubscriptionName> = (payload: LivonEventMap[TName], ctx: ClientHandlerContext) => void;
-export type SubscriptionHandlers = Partial<{ [K in SubscriptionName]: SubscriptionHandler<K> }>;
+${{LIVON_CLIENT_SUB_HANDLER_DEFS}}
 export interface SubscriptionToggleEntry { on(): void; off(): void; }
 export type SubscriptionToggles = { [K in SubscriptionName]: SubscriptionToggleEntry };
 export interface RoomApi extends SubscriptionToggles {

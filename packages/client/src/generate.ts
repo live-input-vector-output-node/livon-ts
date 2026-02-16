@@ -42,6 +42,11 @@ interface OperationSpec {
 interface EventSpec {
   topic: string;
   payloadType: string;
+  doc?: Readonly<Record<string, unknown>>;
+  constraints?: Readonly<Record<string, unknown>>;
+  requestType?: string;
+  responseType?: string;
+  payloadNode?: AstNode;
 }
 
 interface FieldOperationSpec {
@@ -75,6 +80,7 @@ const AST_PLACEHOLDER = '${{LIVON_AST}}';
 const CLIENT_IMPORTS_PLACEHOLDER = '${{LIVON_CLIENT_IMPORTS}}';
 const CLIENT_TYPE_DEFS_PLACEHOLDER = '${{LIVON_CLIENT_TYPE_DEFS}}';
 const CLIENT_EVENT_MAP_PLACEHOLDER = '${{LIVON_CLIENT_EVENT_MAP}}';
+const CLIENT_SUB_HANDLER_DEFS_PLACEHOLDER = '${{LIVON_CLIENT_SUB_HANDLER_DEFS}}';
 const CLIENT_FIELD_OPS_PLACEHOLDER = '${{LIVON_CLIENT_FIELD_OPS}}';
 const CLIENT_OP_DEFS_PLACEHOLDER = '${{LIVON_CLIENT_OP_DEFS}}';
 const CLIENT_OP_LINES_PLACEHOLDER = '${{LIVON_CLIENT_OP_LINES}}';
@@ -278,6 +284,12 @@ const resolveTypeName = (typeName: string | undefined, namedNodes: Map<string, N
   return named?.typeName;
 };
 
+const resolveDocTypeName = (
+  typeName: string | undefined,
+  namedNodes: Map<string, NamedNode>,
+  fallback: string,
+): string => resolveTypeName(typeName, namedNodes) ?? typeName ?? fallback;
+
 const collectSubscriptionEvents = (root: AstNode, namedNodes: Map<string, NamedNode>): EventSpec[] => {
   const events: EventSpec[] = [];
   walkAst(root, (node) => {
@@ -285,11 +297,20 @@ const collectSubscriptionEvents = (root: AstNode, namedNodes: Map<string, NamedN
       return;
     }
     const constraints = node.constraints;
+    const requestType = node.request ?? (typeof constraints?.request === 'string' ? constraints.request : undefined);
     const responseType = node.response ?? (typeof constraints?.response === 'string' ? constraints.response : undefined);
     const resolvedType = resolveTypeName(responseType, namedNodes);
     const payload = node.children?.[0];
     const payloadType = resolvedType ?? renderType(payload, namedNodes, node.name);
-    events.push({ topic: node.name, payloadType });
+    events.push({
+      topic: node.name,
+      payloadType,
+      doc: node.doc,
+      constraints,
+      requestType,
+      responseType,
+      payloadNode: payload,
+    });
   });
   return events;
 };
@@ -394,6 +415,17 @@ const buildExample = (
       const first = node.children?.[0];
       return buildExample(first, namedNodes, depth + 1, visited);
     }
+    case 'and': {
+      const [left, right] = node.children ?? [];
+      const leftExample = buildExample(left, namedNodes, depth + 1, visited);
+      if (!right) {
+        return leftExample;
+      }
+      const rightExample = buildExample(right, namedNodes, depth + 1, visited);
+      return left?.type === 'object' && right.type === 'object'
+        ? `{ ...${leftExample}, ...${rightExample} }`
+        : leftExample;
+    }
     case 'object': {
       const fields = (node.children ?? []).filter((child) => child.type === 'field' && child.name);
       const body = fields.slice(0, 3).map((field) => {
@@ -435,7 +467,7 @@ const renderFieldDoc = (
   lines.push(`Field: ${fieldName}.`);
   lines.push(`Type: ${fieldType}.`);
   lines.push(...renderConstraints(fieldNode.constraints));
-  lines.push(`@link ${fieldType}`);
+  lines.push(`See {@link ${fieldType}}.`);
   lines.push(`@example ${buildExample(fieldNode.children?.[0], namedNodes)}`);
   return lines;
 };
@@ -450,29 +482,31 @@ const renderOperationDoc = (
   lines.push(...resolveDocText(operation.doc));
   lines.push(`Operation: ${operation.name}.`);
   lines.push(...renderConstraints(operation.constraints));
+  const responseType = resolveDocTypeName(operation.responseType, namedNodes, outputType);
+  lines.push(`Output type: ${responseType}.`);
   if (operation.input) {
-    const requestType = operation.requestType ?? inputType;
-    lines.push(`@param input ${requestType}`);
-    lines.push(`@link ${requestType}`);
-  } else {
-    lines.push(`@param input void`);
+    const requestType = resolveDocTypeName(operation.requestType, namedNodes, inputType);
+    lines.push(`Input type: ${requestType}.`);
+    lines.push(`@param input - ${requestType} request payload.`);
+    lines.push(`See {@link ${requestType}}.`);
   }
-  const responseType = operation.responseType ?? outputType;
-  lines.push(`@returns ${responseType}`);
-  lines.push(`@resolve ${responseType}`);
-  lines.push(`@link ${responseType}`);
+  lines.push(`@returns ${responseType} operation result.`);
+  lines.push(`See {@link ${responseType}}.`);
   if (operation.publishTopics.length > 0) {
     lines.push(`Publishes events: ${operation.publishTopics.join(', ')}.`);
   }
   const inputExample = operation.input ? buildExample(operation.input, namedNodes) : '';
   const call = operation.input ? `(${inputExample})` : '()';
-  lines.push(`@example await client.${renderPropertyName(operation.name)}${call}`);
+  lines.push('@example');
+  lines.push(`await client.${renderPropertyName(operation.name)}${call}`);
   if (operation.input) {
-    const requestType = operation.requestType ?? inputType;
+    const requestType = resolveDocTypeName(operation.requestType, namedNodes, inputType);
     const signatureInput = `${inputExample}: ${requestType}`;
-    lines.push(`@example ${operation.name}(${signatureInput}): ${responseType}`);
+    lines.push('@example');
+    lines.push(`${operation.name}(${signatureInput}): ${responseType}`);
   } else {
-    lines.push(`@example ${operation.name}(): ${responseType}`);
+    lines.push('@example');
+    lines.push(`${operation.name}(): ${responseType}`);
   }
   return lines;
 };
@@ -490,28 +524,30 @@ const renderFieldOperationDoc = (
   lines.push(...resolveDocText(operation.doc));
   lines.push(`Field operation: ${owner}.${field}.`);
   lines.push(...renderConstraints(operation.constraints));
-  const dependsOn = operation.dependsOnType ?? owner;
+  const dependsOn = resolveDocTypeName(operation.dependsOnType, namedNodes, owner);
+  const responseType = resolveDocTypeName(operation.responseType, namedNodes, outputType);
   lines.push(`Depends on: ${dependsOn}.`);
-  lines.push(`@link ${dependsOn}`);
+  lines.push(`Output type: ${responseType}.`);
+  lines.push(`See {@link ${dependsOn}}.`);
   if (hasInput) {
-    const requestType = operation.requestType ?? inputType;
-    lines.push(`@param input ${requestType}`);
-    lines.push(`@link ${requestType}`);
-  } else {
-    lines.push(`@param input void`);
+    const requestType = resolveDocTypeName(operation.requestType, namedNodes, inputType);
+    lines.push(`Input type: ${requestType}.`);
+    lines.push(`@param input - ${requestType} request payload.`);
+    lines.push(`See {@link ${requestType}}.`);
   }
-  const responseType = operation.responseType ?? outputType;
-  lines.push(`@returns ${responseType}`);
-  lines.push(`@resolve ${responseType}`);
-  lines.push(`@link ${responseType}`);
+  lines.push(`@returns ${responseType} field operation result.`);
+  lines.push(`See {@link ${responseType}}.`);
   const inputExample = hasInput ? buildExample(operation.input, namedNodes) : '';
   const call = hasInput ? `(${inputExample})` : '()';
-  lines.push(`@example await ${field}${call}`);
+  lines.push('@example');
+  lines.push(`await ${field}${call}`);
   if (hasInput) {
-    const requestType = operation.requestType ?? inputType;
-    lines.push(`@example ${field}(${inputExample}: ${requestType}): ${responseType}`);
+    const requestType = resolveDocTypeName(operation.requestType, namedNodes, inputType);
+    lines.push('@example');
+    lines.push(`${field}(${inputExample}: ${requestType}): ${responseType}`);
   } else {
-    lines.push(`@example ${field}(): ${responseType}`);
+    lines.push('@example');
+    lines.push(`${field}(): ${responseType}`);
   }
   return lines;
 };
@@ -556,6 +592,13 @@ const renderType = (
     case 'union': {
       const options = (node.children ?? []).map((child) => renderType(child, namedNodes));
       return options.length > 0 ? options.join(' | ') : 'unknown';
+    }
+    case 'and': {
+      const options = (node.children ?? [])
+        .map((child) => renderType(child, namedNodes))
+        .filter((value) => value !== 'unknown');
+      const unique = Array.from(new Set(options));
+      return unique.length > 0 ? unique.join(' & ') : 'unknown';
     }
     case 'object':
       return node.name && namedNodes.has(node.name)
@@ -726,10 +769,120 @@ const renderOperationDefinitions = (
     lines.push('}');
     lines.push('');
     clientLines.push(...renderJSDoc(renderOperationDoc(entry.operation, inputType, outputType, namedNodes), '  '));
-    clientLines.push(`  ${renderPropertyName(entry.operation.name)}: ${entry.typeName};`);
+    if (entry.operation.input) {
+      clientLines.push(`  ${renderPropertyName(entry.operation.name)}(input: ${inputType}): Promise<${outputType}>;`);
+    } else {
+      clientLines.push(`  ${renderPropertyName(entry.operation.name)}(): Promise<${outputType}>;`);
+    }
   });
 
   return { lines, clientLines };
+};
+
+const renderSubscriptionTypeName = (topic: string, used: Set<string>): string =>
+  resolveUniqueName(`${pascalCaseName(topic)}Subscription`, used);
+
+const renderSubscriptionHandlerDoc = (
+  event: EventSpec,
+  payloadType: string,
+  namedNodes: Map<string, NamedNode>,
+): string[] => {
+  const lines: string[] = [];
+  lines.push(...resolveDocText(event.doc));
+  lines.push(`Subscription handler for "${event.topic}".`);
+  lines.push(...renderConstraints(event.constraints));
+  const requestType = event.requestType
+    ? resolveDocTypeName(event.requestType, namedNodes, event.requestType)
+    : undefined;
+  const outputType = resolveDocTypeName(event.responseType, namedNodes, payloadType);
+  if (event.requestType) {
+    lines.push(`Request input: ${requestType}.`);
+  }
+  lines.push(`Output type: ${outputType}.`);
+  const payloadDoc = resolveDocText(event.payloadNode?.doc);
+  if (payloadDoc.length > 0) {
+    lines.push(`Payload doc: ${payloadDoc.join(' ')}`);
+  }
+  lines.push(`@param payload - ${payloadType} payload emitted for "${event.topic}".`);
+  lines.push('@param ctx - ClientHandlerContext runtime metadata and room context.');
+  lines.push(`See {@link ${payloadType}} and {@link ClientHandlerContext}.`);
+  lines.push('@example');
+  lines.push(`api({ ${renderPropertyName(event.topic)}: (payload) => payload });`);
+  return lines;
+};
+
+const renderSubscriptionPropertyDoc = (
+  event: EventSpec,
+  payloadType: string,
+  namedNodes: Map<string, NamedNode>,
+): string[] => {
+  const lines: string[] = [];
+  lines.push(...resolveDocText(event.doc));
+  lines.push(`Subscription callback for "${event.topic}".`);
+  lines.push(...renderConstraints(event.constraints));
+  const requestType = event.requestType
+    ? resolveDocTypeName(event.requestType, namedNodes, event.requestType)
+    : undefined;
+  const outputType = resolveDocTypeName(event.responseType, namedNodes, payloadType);
+  if (event.requestType) {
+    lines.push(`Request input: ${requestType}.`);
+  }
+  lines.push(`Output type: ${outputType}.`);
+  const payloadDoc = resolveDocText(event.payloadNode?.doc);
+  if (payloadDoc.length > 0) {
+    lines.push(`Payload doc: ${payloadDoc.join(' ')}`);
+  }
+  lines.push(`@param payload - ${payloadType} payload emitted for "${event.topic}".`);
+  lines.push('@param ctx - ClientHandlerContext runtime metadata and room context.');
+  lines.push(`See {@link ${payloadType}} and {@link ClientHandlerContext}.`);
+  lines.push('@example');
+  lines.push(`api({ ${renderPropertyName(event.topic)}: (payload) => payload });`);
+  return lines;
+};
+
+const renderSubscriptionDefinitions = (
+  events: EventSpec[],
+  usedNames: Set<string>,
+  namedNodes: Map<string, NamedNode>,
+): string[] => {
+  if (events.length === 0) {
+    return ['export type SubscriptionHandlers = Partial<{ [K in SubscriptionName]: SubscriptionHandler<K> }>;', ''];
+  }
+
+  const uniqueByTopic = events.reduce<Map<string, EventSpec>>((acc, event) => {
+    if (!acc.has(event.topic)) {
+      acc.set(event.topic, event);
+    }
+    return acc;
+  }, new Map<string, EventSpec>());
+
+  const subscriptions = Array.from(uniqueByTopic.values())
+    .map((event) => ({
+      event,
+      payloadType: event.payloadType,
+      handlerTypeName: renderSubscriptionTypeName(event.topic, usedNames),
+    }))
+    .sort((a, b) => a.event.topic.localeCompare(b.event.topic));
+
+  const lines: string[] = [];
+
+  subscriptions.forEach(({ event, payloadType, handlerTypeName }) => {
+    lines.push(...renderJSDoc(renderSubscriptionHandlerDoc(event, payloadType, namedNodes)));
+    lines.push(`export interface ${handlerTypeName} {`);
+    lines.push(`  (payload: ${payloadType}, ctx: ClientHandlerContext): void;`);
+    lines.push('}');
+    lines.push('');
+  });
+
+  lines.push('export interface SubscriptionHandlers {');
+  subscriptions.forEach(({ event, payloadType }) => {
+    lines.push(...renderJSDoc(renderSubscriptionPropertyDoc(event, payloadType, namedNodes), '  '));
+    lines.push(`  ${renderPropertyName(event.topic)}?(payload: ${payloadType}, ctx: ClientHandlerContext): void;`);
+  });
+  lines.push('}');
+  lines.push('');
+
+  return lines;
 };
 
 const renderEventMapDefinitions = (events: EventSpec[]): string[] => {
@@ -758,6 +911,7 @@ const defaultClientTemplate = () =>
     CLIENT_IMPORTS_PLACEHOLDER,
     CLIENT_TYPE_DEFS_PLACEHOLDER,
     CLIENT_EVENT_MAP_PLACEHOLDER,
+    CLIENT_SUB_HANDLER_DEFS_PLACEHOLDER,
     CLIENT_FIELD_OPS_PLACEHOLDER,
     CLIENT_OP_DEFS_PLACEHOLDER,
     CLIENT_OP_LINES_PLACEHOLDER,
@@ -858,6 +1012,7 @@ export const generateClientFiles = ({
   const events = Array.from(eventsByTopic.values());
 
   const eventMapDefinitions = renderEventMapDefinitions(events);
+  const subscriptionDefinitions = renderSubscriptionDefinitions(events, usedNames, namedNodes);
 
   const eventTopics = events.map((event) => event.topic);
   const subscriptionNamesArray = Array.from(new Set(eventTopics)).map((topic) => JSON.stringify(topic));
@@ -869,6 +1024,7 @@ export const generateClientFiles = ({
   ].join('\n');
   const clientTypeDefs = typeDefinitions.join('\n');
   const clientEventMap = eventMapDefinitions.join('\n');
+  const clientSubscriptionDefs = subscriptionDefinitions.join('\n');
   const clientFieldOps = fieldOperationDefinitions.join('\n');
   const clientOpDefs = operationDefinitions.join('\n');
   const clientOpLines = clientLines.join('\n');
@@ -884,6 +1040,7 @@ export const generateClientFiles = ({
       { key: CLIENT_IMPORTS_PLACEHOLDER, value: clientImports },
       { key: CLIENT_TYPE_DEFS_PLACEHOLDER, value: clientTypeDefs },
       { key: CLIENT_EVENT_MAP_PLACEHOLDER, value: clientEventMap },
+      { key: CLIENT_SUB_HANDLER_DEFS_PLACEHOLDER, value: clientSubscriptionDefs },
       { key: CLIENT_FIELD_OPS_PLACEHOLDER, value: clientFieldOps },
       { key: CLIENT_OP_DEFS_PLACEHOLDER, value: clientOpDefs },
       { key: CLIENT_OP_LINES_PLACEHOLDER, value: clientOpLines },

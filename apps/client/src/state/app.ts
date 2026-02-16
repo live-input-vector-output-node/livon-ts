@@ -13,14 +13,18 @@ export interface AppState {
 let lifecycleRegistered = false;
 
 const ensureConnectionAndAnnouncePresence = async () => {
-  await useConnectionStore.getState().ensureConnected();
-  const name = useSessionStore.getState().name.trim();
-  if (!name) {
-    return;
+  try {
+    await useConnectionStore.getState().ensureConnected();
+    const name = useSessionStore.getState().name.trim();
+    if (!name) {
+      return;
+    }
+    const users = useUsersStore.getState();
+    await users.announcePresence(name);
+    await users.sendHello(name);
+  } catch (error) {
+    console.warn('livon: presence refresh skipped', error);
   }
-  const users = useUsersStore.getState();
-  await users.announcePresence(name);
-  await users.sendHello(name);
 };
 
 const registerPresenceLifecycleHandlers = () => {
@@ -48,7 +52,11 @@ export const useAppStore = create<AppState>((set, get) => ({
   initialize: async () => {
     if (get().initialized) {
       useMessagesStore.getState().initialize();
-      await useUsersStore.getState().initialize();
+      try {
+        await useUsersStore.getState().initialize();
+      } catch (error) {
+        console.warn('livon: users initialization skipped', error);
+      }
       registerPresenceLifecycleHandlers();
       return;
     }
@@ -56,7 +64,11 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ initialized: true });
     await useConnectionStore.getState().connect();
     useMessagesStore.getState().initialize();
-    await useUsersStore.getState().initialize();
+    try {
+      await useUsersStore.getState().initialize();
+    } catch (error) {
+      console.warn('livon: users initialization skipped', error);
+    }
     registerPresenceLifecycleHandlers();
   },
 }));

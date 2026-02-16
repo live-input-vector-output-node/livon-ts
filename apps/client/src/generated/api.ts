@@ -30,7 +30,7 @@ export interface Hello {
   /**
    * Field: userId.
    * Type: HelloUserId.
-   * @link HelloUserId
+   * See {@link HelloUserId}.
    * @example ...
    */
   userId: HelloUserId;
@@ -45,7 +45,7 @@ export interface HelloInput {
   /**
    * Field: userId.
    * Type: HelloUserId.
-   * @link HelloUserId
+   * See {@link HelloUserId}.
    * @example "string"
    */
   userId: HelloUserId;
@@ -79,35 +79,35 @@ export interface Message {
   /**
    * Field: id.
    * Type: MessageId.
-   * @link MessageId
+   * See {@link MessageId}.
    * @example "string"
    */
   id: MessageId;
   /**
    * Field: author.
    * Type: Author.
-   * @link Author
+   * See {@link Author}.
    * @example ...
    */
   author: Author;
   /**
    * Field: text.
    * Type: Text.
-   * @link Text
+   * See {@link Text}.
    * @example ...
    */
   text: Text;
   /**
    * Field: createdAt.
    * Type: CreatedAt.
-   * @link CreatedAt
+   * See {@link CreatedAt}.
    * @example new Date()
    */
   createdAt: CreatedAt;
   /**
    * Field: roomId.
    * Type: RoomId.
-   * @link RoomId
+   * See {@link RoomId}.
    * @example ...
    */
   roomId: RoomId;
@@ -140,21 +140,21 @@ export interface SendMessageInput {
   /**
    * Field: author.
    * Type: Author.
-   * @link Author
+   * See {@link Author}.
    * @example "string"
    */
   author: Author;
   /**
    * Field: text.
    * Type: Text.
-   * @link Text
+   * See {@link Text}.
    * @example "string"
    */
   text: Text;
   /**
    * Field: roomId.
    * Type: RoomId.
-   * @link RoomId
+   * See {@link RoomId}.
    * @example "string"
    */
   roomId: RoomId;
@@ -175,14 +175,14 @@ export interface User {
   /**
    * Field: _id.
    * Type: Id.
-   * @link Id
+   * See {@link Id}.
    * @example ...
    */
   _id: Id;
   /**
    * Field: name.
    * Type: Name.
-   * @link Name
+   * See {@link Name}.
    * @example "string"
    */
   name: Name;
@@ -190,26 +190,28 @@ export interface User {
    * Field operation: User.greeting.
    * Constraints: owner="User", field="greeting", response="greeting", dependsOn="User".
    * Depends on: User.
-   * @link User
-   * @param input void
-   * @returns greeting
-   * @resolve greeting
-   * @link greeting
-   * @example await greeting()
-   * @example greeting(): greeting
+   * Output type: Greeting.
+   * See {@link User}.
+   * @returns Greeting field operation result.
+   * See {@link Greeting}.
+   * @example
+   * await greeting()
+   * @example
+   * greeting(): Greeting
    */
   greeting?: UserGreetingField;
   /**
    * Field operation: User.friends.
    * Constraints: owner="User", field="friends", response="UserList", dependsOn="User".
    * Depends on: User.
-   * @link User
-   * @param input void
-   * @returns UserList
-   * @resolve UserList
-   * @link UserList
-   * @example await friends()
-   * @example friends(): UserList
+   * Output type: UserList.
+   * See {@link User}.
+   * @returns UserList field operation result.
+   * See {@link UserList}.
+   * @example
+   * await friends()
+   * @example
+   * friends(): UserList
    */
   friends?: UserFriendsField;
 }
@@ -223,7 +225,7 @@ export interface UserInput {
   /**
    * Field: _id.
    * Type: Id.
-   * @link Id
+   * See {@link Id}.
    * @example "string"
    */
   _id: Id;
@@ -245,13 +247,14 @@ export type LivonEventMap = {
 /**
  * Field operation: User.friends.
  * Depends on: User.
- * @link User
- * @param input void
- * @returns UserList
- * @resolve UserList
- * @link UserList
- * @example await friends()
- * @example friends(): UserList
+ * Output type: UserList.
+ * See {@link User}.
+ * @returns UserList field operation result.
+ * See {@link UserList}.
+ * @example
+ * await friends()
+ * @example
+ * friends(): UserList
  */
 export interface UserFriendsField {
   (): Promise<UserList>;
@@ -260,13 +263,14 @@ export interface UserFriendsField {
 /**
  * Field operation: User.greeting.
  * Depends on: User.
- * @link User
- * @param input void
- * @returns greeting
- * @resolve greeting
- * @link greeting
- * @example await greeting()
- * @example greeting(): greeting
+ * Output type: Greeting.
+ * See {@link User}.
+ * @returns Greeting field operation result.
+ * See {@link Greeting}.
+ * @example
+ * await greeting()
+ * @example
+ * greeting(): Greeting
  */
 export interface UserGreetingField {
   (): Promise<Greeting>;
@@ -275,14 +279,17 @@ export interface UserGreetingField {
 /**
  * Operation: hello.
  * Constraints: publish=["onHello"], request="HelloInput", response="Hello".
- * @param input HelloInput
- * @link HelloInput
- * @returns Hello
- * @resolve Hello
- * @link Hello
+ * Output type: Hello.
+ * Input type: HelloInput.
+ * @param input - HelloInput request payload.
+ * See {@link HelloInput}.
+ * @returns Hello operation result.
+ * See {@link Hello}.
  * Publishes events: onHello.
- * @example await client.hello({ userId: "string" })
- * @example hello({ userId: "string" }: HelloInput): Hello
+ * @example
+ * await client.hello({ userId: "string" })
+ * @example
+ * hello({ userId: "string" }: HelloInput): Hello
  */
 export interface HelloOperation {
   (input: HelloInput): Promise<Hello>;
@@ -291,14 +298,17 @@ export interface HelloOperation {
 /**
  * Operation: joinChat.
  * Constraints: publish=["onUserJoined"], request="UserInput", response="User".
- * @param input UserInput
- * @link UserInput
- * @returns User
- * @resolve User
- * @link User
+ * Output type: User.
+ * Input type: UserInput.
+ * @param input - UserInput request payload.
+ * See {@link UserInput}.
+ * @returns User operation result.
+ * See {@link User}.
  * Publishes events: onUserJoined.
- * @example await client.joinChat(...)
- * @example joinChat(...: UserInput): User
+ * @example
+ * await client.joinChat(...)
+ * @example
+ * joinChat(...: UserInput): User
  */
 export interface JoinChatOperation {
   (input: UserInput): Promise<User>;
@@ -307,14 +317,17 @@ export interface JoinChatOperation {
 /**
  * Operation: leaveChat.
  * Constraints: publish=["onUserLeft"], request="UserInput", response="User".
- * @param input UserInput
- * @link UserInput
- * @returns User
- * @resolve User
- * @link User
+ * Output type: User.
+ * Input type: UserInput.
+ * @param input - UserInput request payload.
+ * See {@link UserInput}.
+ * @returns User operation result.
+ * See {@link User}.
  * Publishes events: onUserLeft.
- * @example await client.leaveChat(...)
- * @example leaveChat(...: UserInput): User
+ * @example
+ * await client.leaveChat(...)
+ * @example
+ * leaveChat(...: UserInput): User
  */
 export interface LeaveChatOperation {
   (input: UserInput): Promise<User>;
@@ -323,13 +336,16 @@ export interface LeaveChatOperation {
 /**
  * Operation: listUsers.
  * Constraints: request="ListUsersInput", response="UserList".
- * @param input ListUsersInput
- * @link ListUsersInput
- * @returns UserList
- * @resolve UserList
- * @link UserList
- * @example await client.listUsers({  })
- * @example listUsers({  }: ListUsersInput): UserList
+ * Output type: UserList.
+ * Input type: ListUsersInput.
+ * @param input - ListUsersInput request payload.
+ * See {@link ListUsersInput}.
+ * @returns UserList operation result.
+ * See {@link UserList}.
+ * @example
+ * await client.listUsers({  })
+ * @example
+ * listUsers({  }: ListUsersInput): UserList
  */
 export interface ListUsersOperation {
   (input: ListUsersInput): Promise<UserList>;
@@ -338,14 +354,17 @@ export interface ListUsersOperation {
 /**
  * Operation: sendMessage.
  * Constraints: publish=["onMessage"], ack={"required":true,"mode":"received","timeoutMs":5000,"retries":3}, request="SendMessageInput", response="Message".
- * @param input SendMessageInput
- * @link SendMessageInput
- * @returns Message
- * @resolve Message
- * @link Message
+ * Output type: Message.
+ * Input type: SendMessageInput.
+ * @param input - SendMessageInput request payload.
+ * See {@link SendMessageInput}.
+ * @returns Message operation result.
+ * See {@link Message}.
  * Publishes events: onMessage.
- * @example await client.sendMessage({ author: "string", text: "string", roomId: "string" })
- * @example sendMessage({ author: "string", text: "string", roomId: "string" }: SendMessageInput): Message
+ * @example
+ * await client.sendMessage({ author: "string", text: "string", roomId: "string" })
+ * @example
+ * sendMessage({ author: "string", text: "string", roomId: "string" }: SendMessageInput): Message
  */
 export interface SendMessageOperation {
   (input: SendMessageInput): Promise<Message>;
@@ -354,13 +373,16 @@ export interface SendMessageOperation {
 /**
  * Operation: user.
  * Constraints: request="UserInput", response="User".
- * @param input UserInput
- * @link UserInput
- * @returns User
- * @resolve User
- * @link User
- * @example await client.user({ _id: "string" })
- * @example user({ _id: "string" }: UserInput): User
+ * Output type: User.
+ * Input type: UserInput.
+ * @param input - UserInput request payload.
+ * See {@link UserInput}.
+ * @returns User operation result.
+ * See {@link User}.
+ * @example
+ * await client.user({ _id: "string" })
+ * @example
+ * user({ _id: "string" }: UserInput): User
  */
 export interface UserOperation {
   (input: UserInput): Promise<User>;
@@ -369,7 +391,117 @@ export interface UserOperation {
 
 export type SubscriptionName = keyof LivonEventMap;
 export type SubscriptionHandler<TName extends SubscriptionName> = (payload: LivonEventMap[TName], ctx: ClientHandlerContext) => void;
-export type SubscriptionHandlers = Partial<{ [K in SubscriptionName]: SubscriptionHandler<K> }>;
+/**
+ * Subscription handler for "onHello".
+ * Constraints: input="HelloInput", payload="Hello", output="Hello".
+ * Request input: HelloInput.
+ * Output type: Hello.
+ * @param payload - Hello payload emitted for "onHello".
+ * @param ctx - ClientHandlerContext runtime metadata and room context.
+ * See {@link Hello} and {@link ClientHandlerContext}.
+ * @example
+ * api({ onHello: (payload) => payload });
+ */
+export interface OnHelloSubscription {
+  (payload: Hello, ctx: ClientHandlerContext): void;
+}
+
+/**
+ * Subscription handler for "onMessage".
+ * Constraints: input="SendMessageInput", payload="Message", output="Message".
+ * Request input: SendMessageInput.
+ * Output type: Message.
+ * @param payload - Message payload emitted for "onMessage".
+ * @param ctx - ClientHandlerContext runtime metadata and room context.
+ * See {@link Message} and {@link ClientHandlerContext}.
+ * @example
+ * api({ onMessage: (payload) => payload });
+ */
+export interface OnMessageSubscription {
+  (payload: Message, ctx: ClientHandlerContext): void;
+}
+
+/**
+ * Subscription handler for "onUserJoined".
+ * Constraints: input="UserInput", payload="User", output="User".
+ * Request input: UserInput.
+ * Output type: User.
+ * @param payload - User payload emitted for "onUserJoined".
+ * @param ctx - ClientHandlerContext runtime metadata and room context.
+ * See {@link User} and {@link ClientHandlerContext}.
+ * @example
+ * api({ onUserJoined: (payload) => payload });
+ */
+export interface OnUserJoinedSubscription {
+  (payload: User, ctx: ClientHandlerContext): void;
+}
+
+/**
+ * Subscription handler for "onUserLeft".
+ * Constraints: input="UserInput", payload="User", output="User".
+ * Request input: UserInput.
+ * Output type: User.
+ * @param payload - User payload emitted for "onUserLeft".
+ * @param ctx - ClientHandlerContext runtime metadata and room context.
+ * See {@link User} and {@link ClientHandlerContext}.
+ * @example
+ * api({ onUserLeft: (payload) => payload });
+ */
+export interface OnUserLeftSubscription {
+  (payload: User, ctx: ClientHandlerContext): void;
+}
+
+export interface SubscriptionHandlers {
+  /**
+   * Subscription callback for "onHello".
+   * Constraints: input="HelloInput", payload="Hello", output="Hello".
+   * Request input: HelloInput.
+   * Output type: Hello.
+   * @param payload - Hello payload emitted for "onHello".
+   * @param ctx - ClientHandlerContext runtime metadata and room context.
+   * See {@link Hello} and {@link ClientHandlerContext}.
+   * @example
+   * api({ onHello: (payload) => payload });
+   */
+  onHello?(payload: Hello, ctx: ClientHandlerContext): void;
+  /**
+   * Subscription callback for "onMessage".
+   * Constraints: input="SendMessageInput", payload="Message", output="Message".
+   * Request input: SendMessageInput.
+   * Output type: Message.
+   * @param payload - Message payload emitted for "onMessage".
+   * @param ctx - ClientHandlerContext runtime metadata and room context.
+   * See {@link Message} and {@link ClientHandlerContext}.
+   * @example
+   * api({ onMessage: (payload) => payload });
+   */
+  onMessage?(payload: Message, ctx: ClientHandlerContext): void;
+  /**
+   * Subscription callback for "onUserJoined".
+   * Constraints: input="UserInput", payload="User", output="User".
+   * Request input: UserInput.
+   * Output type: User.
+   * @param payload - User payload emitted for "onUserJoined".
+   * @param ctx - ClientHandlerContext runtime metadata and room context.
+   * See {@link User} and {@link ClientHandlerContext}.
+   * @example
+   * api({ onUserJoined: (payload) => payload });
+   */
+  onUserJoined?(payload: User, ctx: ClientHandlerContext): void;
+  /**
+   * Subscription callback for "onUserLeft".
+   * Constraints: input="UserInput", payload="User", output="User".
+   * Request input: UserInput.
+   * Output type: User.
+   * @param payload - User payload emitted for "onUserLeft".
+   * @param ctx - ClientHandlerContext runtime metadata and room context.
+   * See {@link User} and {@link ClientHandlerContext}.
+   * @example
+   * api({ onUserLeft: (payload) => payload });
+   */
+  onUserLeft?(payload: User, ctx: ClientHandlerContext): void;
+}
+
 export interface SubscriptionToggleEntry { on(): void; off(): void; }
 export type SubscriptionToggles = { [K in SubscriptionName]: SubscriptionToggleEntry };
 export interface RoomApi extends SubscriptionToggles {
@@ -381,79 +513,97 @@ export interface LivonClient extends SubscriptionToggles, ClientModule {
   /**
    * Operation: hello.
    * Constraints: publish=["onHello"], request="HelloInput", response="Hello".
-   * @param input HelloInput
-   * @link HelloInput
-   * @returns Hello
-   * @resolve Hello
-   * @link Hello
+   * Output type: Hello.
+   * Input type: HelloInput.
+   * @param input - HelloInput request payload.
+   * See {@link HelloInput}.
+   * @returns Hello operation result.
+   * See {@link Hello}.
    * Publishes events: onHello.
-   * @example await client.hello({ userId: "string" })
-   * @example hello({ userId: "string" }: HelloInput): Hello
+   * @example
+   * await client.hello({ userId: "string" })
+   * @example
+   * hello({ userId: "string" }: HelloInput): Hello
    */
-  hello: HelloOperation;
+  hello(input: HelloInput): Promise<Hello>;
   /**
    * Operation: joinChat.
    * Constraints: publish=["onUserJoined"], request="UserInput", response="User".
-   * @param input UserInput
-   * @link UserInput
-   * @returns User
-   * @resolve User
-   * @link User
+   * Output type: User.
+   * Input type: UserInput.
+   * @param input - UserInput request payload.
+   * See {@link UserInput}.
+   * @returns User operation result.
+   * See {@link User}.
    * Publishes events: onUserJoined.
-   * @example await client.joinChat(...)
-   * @example joinChat(...: UserInput): User
+   * @example
+   * await client.joinChat(...)
+   * @example
+   * joinChat(...: UserInput): User
    */
-  joinChat: JoinChatOperation;
+  joinChat(input: UserInput): Promise<User>;
   /**
    * Operation: leaveChat.
    * Constraints: publish=["onUserLeft"], request="UserInput", response="User".
-   * @param input UserInput
-   * @link UserInput
-   * @returns User
-   * @resolve User
-   * @link User
+   * Output type: User.
+   * Input type: UserInput.
+   * @param input - UserInput request payload.
+   * See {@link UserInput}.
+   * @returns User operation result.
+   * See {@link User}.
    * Publishes events: onUserLeft.
-   * @example await client.leaveChat(...)
-   * @example leaveChat(...: UserInput): User
+   * @example
+   * await client.leaveChat(...)
+   * @example
+   * leaveChat(...: UserInput): User
    */
-  leaveChat: LeaveChatOperation;
+  leaveChat(input: UserInput): Promise<User>;
   /**
    * Operation: listUsers.
    * Constraints: request="ListUsersInput", response="UserList".
-   * @param input ListUsersInput
-   * @link ListUsersInput
-   * @returns UserList
-   * @resolve UserList
-   * @link UserList
-   * @example await client.listUsers({  })
-   * @example listUsers({  }: ListUsersInput): UserList
+   * Output type: UserList.
+   * Input type: ListUsersInput.
+   * @param input - ListUsersInput request payload.
+   * See {@link ListUsersInput}.
+   * @returns UserList operation result.
+   * See {@link UserList}.
+   * @example
+   * await client.listUsers({  })
+   * @example
+   * listUsers({  }: ListUsersInput): UserList
    */
-  listUsers: ListUsersOperation;
+  listUsers(input: ListUsersInput): Promise<UserList>;
   /**
    * Operation: sendMessage.
    * Constraints: publish=["onMessage"], ack={"required":true,"mode":"received","timeoutMs":5000,"retries":3}, request="SendMessageInput", response="Message".
-   * @param input SendMessageInput
-   * @link SendMessageInput
-   * @returns Message
-   * @resolve Message
-   * @link Message
+   * Output type: Message.
+   * Input type: SendMessageInput.
+   * @param input - SendMessageInput request payload.
+   * See {@link SendMessageInput}.
+   * @returns Message operation result.
+   * See {@link Message}.
    * Publishes events: onMessage.
-   * @example await client.sendMessage({ author: "string", text: "string", roomId: "string" })
-   * @example sendMessage({ author: "string", text: "string", roomId: "string" }: SendMessageInput): Message
+   * @example
+   * await client.sendMessage({ author: "string", text: "string", roomId: "string" })
+   * @example
+   * sendMessage({ author: "string", text: "string", roomId: "string" }: SendMessageInput): Message
    */
-  sendMessage: SendMessageOperation;
+  sendMessage(input: SendMessageInput): Promise<Message>;
   /**
    * Operation: user.
    * Constraints: request="UserInput", response="User".
-   * @param input UserInput
-   * @link UserInput
-   * @returns User
-   * @resolve User
-   * @link User
-   * @example await client.user({ _id: "string" })
-   * @example user({ _id: "string" }: UserInput): User
+   * Output type: User.
+   * Input type: UserInput.
+   * @param input - UserInput request payload.
+   * See {@link UserInput}.
+   * @returns User operation result.
+   * See {@link User}.
+   * @example
+   * await client.user({ _id: "string" })
+   * @example
+   * user({ _id: "string" }: UserInput): User
    */
-  user: UserOperation;
+  user(input: UserInput): Promise<User>;
   __register?: (handlers: Record<string, SubscriptionHandler<SubscriptionName>>, roomId?: string) => void;
   __toggle?: (event: SubscriptionName, enabled: boolean, roomId?: string) => void;
 }

@@ -71,6 +71,9 @@ const upsertAuthor = (message: Message) => {
 
 const normalizeRoomId = (roomId?: string) => roomId || GLOBAL_ROOM_ID;
 
+const roomIdFromMessageContext = (message: Message, roomFromContext?: string) =>
+  normalizeRoomId(roomFromContext ?? message.roomId);
+
 const markRoomAsRead = (state: MessagesState, roomId: string): Partial<MessagesState> => {
   const unreadCount = state.unreadByRoom[roomId] ?? 0;
   if (unreadCount <= 0) {
@@ -122,10 +125,11 @@ export const useMessagesStore = create<MessagesState>((set, get) => ({
 
     api({
       onMessage: (payload, ctx) => {
-        useMessagesStore.getState().ingest(normalizeRoomId(ctx.room), payload);
+        const roomId = roomIdFromMessageContext(payload, ctx.room);
+        get().ingest(roomId, payload);
       },
     });
-    api.onMessage.on?.();
+
     set({ initialized: true });
   },
   ingest: (roomId, message) => {
@@ -184,7 +188,8 @@ export const useMessagesStore = create<MessagesState>((set, get) => ({
   },
   sendToActiveRoom: async (text, author) => {
     const roomId = get().activeRoomId;
-    await api.sendMessage({ author, text, roomId });
+    const message = await api.sendMessage({ author, text, roomId });
+    get().ingest(roomIdFromMessageContext(message), message);
   },
   clear: () =>
     set({

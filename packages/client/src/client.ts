@@ -269,6 +269,13 @@ const hydrateByNode = ({ value, node, registry, request }: HydrateByNodeInput): 
     return value;
   }
 
+  if (node.type === 'and') {
+    return (node.children ?? []).reduce(
+      (current, child) => hydrateByNode({ value: current, node: child, registry, request }),
+      value,
+    );
+  }
+
   if (node.type === 'object' && isRecord(value)) {
     const typeName = node.name;
     if (typeName && registry.has(typeName)) {
