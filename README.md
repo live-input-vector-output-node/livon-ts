@@ -16,11 +16,14 @@
   <a href="https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/docs-pages.yml">
     <img src="https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/docs-pages.yml/badge.svg" alt="Docs Pages" />
   </a>
+  <a href="https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/scorecards.yml">
+    <img src="https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/scorecards.yml/badge.svg" alt="Scorecard Analysis" />
+  </a>
   <a href="https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml">
     <img src="https://img.shields.io/badge/code%20quality-eslint%20%2B%20tsc-1f6feb" alt="Code quality" />
   </a>
-  <a href="https://securityscorecards.dev/viewer/?uri=github.com/live-input-vector-output-node/livon-ts">
-    <img src="https://api.securityscorecards.dev/projects/github.com/live-input-vector-output-node/livon-ts/badge" alt="Security Scorecard" />
+  <a href="https://scorecard.dev/viewer/?uri=github.com/live-input-vector-output-node/livon-ts">
+    <img src="https://api.scorecard.dev/projects/github.com/live-input-vector-output-node/livon-ts/badge" alt="Security Scorecard" />
   </a>
   <a href="https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml">
     <img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Flive-input-vector-output-node%2Flivon-ts%2Fmain%2F.github%2Fbadges%2Fcoverage.json" alt="Coverage" />
@@ -34,6 +37,17 @@
 </p>
 
 LIVON (Live Input Vector Output Node) is a TypeScript framework for building APIs that frontend and backend teams can share, including real-time communication.
+
+## Package Badges
+
+- `@livon/runtime`: [![npm](https://img.shields.io/npm/v/%40livon%2Fruntime)](https://www.npmjs.com/package/@livon/runtime) [![Package Size](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Flive-input-vector-output-node%2Flivon-ts%2Fmain%2F.github%2Fbadges%2Fsize-runtime.json)](https://www.npmjs.com/package/@livon/runtime) [![Security Scorecard](https://api.scorecard.dev/projects/github.com/live-input-vector-output-node/livon-ts/badge)](https://scorecard.dev/viewer/?uri=github.com/live-input-vector-output-node/livon-ts)
+- `@livon/schema`: [![npm](https://img.shields.io/npm/v/%40livon%2Fschema)](https://www.npmjs.com/package/@livon/schema) [![Package Size](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Flive-input-vector-output-node%2Flivon-ts%2Fmain%2F.github%2Fbadges%2Fsize-schema.json)](https://www.npmjs.com/package/@livon/schema) [![Security Scorecard](https://api.scorecard.dev/projects/github.com/live-input-vector-output-node/livon-ts/badge)](https://scorecard.dev/viewer/?uri=github.com/live-input-vector-output-node/livon-ts)
+- `@livon/client`: [![npm](https://img.shields.io/npm/v/%40livon%2Fclient)](https://www.npmjs.com/package/@livon/client) [![Package Size](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Flive-input-vector-output-node%2Flivon-ts%2Fmain%2F.github%2Fbadges%2Fsize-client.json)](https://www.npmjs.com/package/@livon/client) [![Security Scorecard](https://api.scorecard.dev/projects/github.com/live-input-vector-output-node/livon-ts/badge)](https://scorecard.dev/viewer/?uri=github.com/live-input-vector-output-node/livon-ts)
+- `@livon/client-ws-transport`: [![npm](https://img.shields.io/npm/v/%40livon%2Fclient-ws-transport)](https://www.npmjs.com/package/@livon/client-ws-transport) [![Package Size](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Flive-input-vector-output-node%2Flivon-ts%2Fmain%2F.github%2Fbadges%2Fsize-client-ws-transport.json)](https://www.npmjs.com/package/@livon/client-ws-transport) [![Security Scorecard](https://api.scorecard.dev/projects/github.com/live-input-vector-output-node/livon-ts/badge)](https://scorecard.dev/viewer/?uri=github.com/live-input-vector-output-node/livon-ts)
+- `@livon/node-ws-transport`: [![npm](https://img.shields.io/npm/v/%40livon%2Fnode-ws-transport)](https://www.npmjs.com/package/@livon/node-ws-transport) [![Package Size](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Flive-input-vector-output-node%2Flivon-ts%2Fmain%2F.github%2Fbadges%2Fsize-node-ws-transport.json)](https://www.npmjs.com/package/@livon/node-ws-transport) [![Security Scorecard](https://api.scorecard.dev/projects/github.com/live-input-vector-output-node/livon-ts/badge)](https://scorecard.dev/viewer/?uri=github.com/live-input-vector-output-node/livon-ts)
+- `@livon/dlq-module`: [![npm](https://img.shields.io/npm/v/%40livon%2Fdlq-module)](https://www.npmjs.com/package/@livon/dlq-module) [![Package Size](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Flive-input-vector-output-node%2Flivon-ts%2Fmain%2F.github%2Fbadges%2Fsize-dlq-module.json)](https://www.npmjs.com/package/@livon/dlq-module) [![Security Scorecard](https://api.scorecard.dev/projects/github.com/live-input-vector-output-node/livon-ts/badge)](https://scorecard.dev/viewer/?uri=github.com/live-input-vector-output-node/livon-ts)
+- `@livon/config`: [![npm](https://img.shields.io/npm/v/%40livon%2Fconfig)](https://www.npmjs.com/package/@livon/config) [![Package Size](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Flive-input-vector-output-node%2Flivon-ts%2Fmain%2F.github%2Fbadges%2Fsize-config.json)](https://www.npmjs.com/package/@livon/config) [![Security Scorecard](https://api.scorecard.dev/projects/github.com/live-input-vector-output-node/livon-ts/badge)](https://scorecard.dev/viewer/?uri=github.com/live-input-vector-output-node/livon-ts)
+- `@livon/cli`: [![npm](https://img.shields.io/npm/v/%40livon%2Fcli)](https://www.npmjs.com/package/@livon/cli) [![Package Size](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Flive-input-vector-output-node%2Flivon-ts%2Fmain%2F.github%2Fbadges%2Fsize-cli.json)](https://www.npmjs.com/package/@livon/cli) [![Security Scorecard](https://api.scorecard.dev/projects/github.com/live-input-vector-output-node/livon-ts/badge)](https://scorecard.dev/viewer/?uri=github.com/live-input-vector-output-node/livon-ts)
 
 ## What Is LIVON?
 
