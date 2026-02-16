@@ -6,6 +6,9 @@ const ROOT = process.cwd();
 const BASE = existsSync(path.join(ROOT, 'pnpm-workspace.yaml')) ? ROOT : path.join(ROOT, 'new_livon');
 const PACKAGES_DIR = path.join(BASE, 'packages');
 const APPS_DIR = path.join(BASE, 'apps');
+const TOOLS_DIR = path.join(BASE, 'tools');
+const WEBSITE_DIR = path.join(BASE, 'website');
+const ROOT_PACKAGE_JSON_PATH = path.join(BASE, 'package.json');
 const SOURCE_DIR = 'src';
 const SOURCE_EXTENSIONS = ['.ts', '.tsx', '.js', '.mjs'];
 const SKIPPED_DIR_NAMES = ['node_modules', 'dist', '.turbo', '.git', 'coverage', 'build'];
@@ -140,11 +143,44 @@ const checkForbiddenManualValidationHelpers = async (projectPath) => {
   return violations.flat();
 };
 
+const checkVersionParity = async (projectPaths) => {
+  const rootPackageJson = await readJson(ROOT_PACKAGE_JSON_PATH).catch(() => null);
+  if (!rootPackageJson || typeof rootPackageJson.version !== 'string') {
+    return ['package.json: root version must be defined as a string'];
+  }
+
+  const expectedVersion = rootPackageJson.version;
+  const packageJsonPaths = [
+    ROOT_PACKAGE_JSON_PATH,
+    ...projectPaths.map((projectPath) => path.join(projectPath, 'package.json')),
+  ];
+
+  const checks = await Promise.all(
+    packageJsonPaths.map(async (packageJsonPath) => {
+      const pkgJson = await readJson(packageJsonPath).catch(() => null);
+      const relativePath = path.relative(BASE, packageJsonPath);
+      if (!pkgJson || typeof pkgJson.version !== 'string') {
+        return [`${relativePath}: version must be defined as a string`];
+      }
+      if (pkgJson.version !== expectedVersion) {
+        return [
+          `${relativePath}: version "${pkgJson.version}" must match root package.json version "${expectedVersion}"`,
+        ];
+      }
+      return [];
+    }),
+  );
+
+  return checks.flat();
+};
+
 const run = async () => {
   const errors = [];
 
   const packages = await collectProjects(PACKAGES_DIR);
   const apps = await collectProjects(APPS_DIR);
+  const tools = await collectProjects(TOOLS_DIR);
+  const websiteProjects = (await exists(path.join(WEBSITE_DIR, 'package.json'))) ? [WEBSITE_DIR] : [];
 
   await Promise.all(
     packages.map(async (projectPath) => {
@@ -167,6 +203,8 @@ const run = async () => {
       errors.push(...(await checkForbiddenManualValidationHelpers(projectPath)));
     }),
   );
+
+  errors.push(...(await checkVersionParity([...packages, ...apps, ...tools, ...websiteProjects])));
 
   if (errors.length > 0) {
     console.error('Policy check failed:');

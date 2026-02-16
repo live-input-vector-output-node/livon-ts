@@ -208,13 +208,23 @@ Requirements:
 - `NPM_TOKEN` repository secret.
 - Valid package versions (no duplicate version publish).
 - Build passes for all `packages/*`.
+- Version updates are created locally (`pnpm changeset` + `pnpm changeset:version`) and committed to `main`.
+- Publish is executed in CI and starts automatically on `main` when `.changeset/**` or `**/CHANGELOG.md` changes.
 
 Version management is handled with Changesets (fixed version group for all publishable `@livon/*` packages).
+
+Lockstep versioning policy:
+
+- Every `package.json` in this repository uses the same version value.
+- This includes root, `apps/*`, `packages/*`, `tools/*`, and `website`.
+- `pnpm check:policies` fails if any version deviates from the root `package.json` version.
 
 ```sh
 pnpm changeset
 pnpm changeset:version
 ```
+
+`pnpm changeset:version` runs Changesets versioning and then syncs the root `package.json` version to the shared workspace version.
 
 The publish workflow uses:
 

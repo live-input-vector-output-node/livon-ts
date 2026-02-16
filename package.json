@@ -15,7 +15,8 @@
     "gen": "node tools/gen/index.mjs",
     "check:policies": "node tools/policies/check.mjs",
     "changeset": "pnpm dlx @changesets/cli",
-    "changeset:version": "pnpm dlx @changesets/cli version",
+    "changeset:version": "node tools/release/changeset-version.mjs",
+    "changeset:sync-root-version": "node tools/release/sync-root-version.mjs",
     "changeset:publish": "pnpm dlx @changesets/cli publish"
   },
   "devDependencies": {
@@ -24,5 +25,5 @@
     "turbo": "latest",
     "typescript": "latest"
   },
-  "version": "0.27.0-rc.3"
+  "version": "0.27.0-rc.4"
 }

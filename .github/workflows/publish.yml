@@ -1,6 +1,12 @@
 name: Publish Packages
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.changeset/**'
+      - '**/CHANGELOG.md'
   workflow_dispatch:
     inputs:
       npm_tag:
@@ -51,15 +57,21 @@ jobs:
       - name: Validate package versions
         run: |
           RC="${{ inputs.release_candidate }}"
+          if [ "${{ github.event_name }}" != "workflow_dispatch" ]; then
+            RC=""
+          fi
           NPM_TAG="${{ inputs.npm_tag }}"
+          if [ "${{ github.event_name }}" != "workflow_dispatch" ] || [ -z "$NPM_TAG" ]; then
+            NPM_TAG="rc"
+          fi
           node - <<'NODE'
           const fs = require('fs');
           const path = require('path');
           const root = process.cwd();
-          const rc = process.env.RC;
-          const npmTag = process.env.NPM_TAG || 'rc';
+          const rc = (process.env.RC || '').trim();
+          const npmTag = (process.env.NPM_TAG || 'rc').trim();
           const expected = npmTag === 'rc'
-            ? new RegExp(`^\\d+\\.\\d+\\.\\d+-rc\\.${rc}$`)
+            ? (rc ? new RegExp(`^\\d+\\.\\d+\\.\\d+-rc\\.${rc}$`) : /^\d+\.\d+\.\d+-rc\.\d+$/)
             : /^\d+\.\d+\.\d+$/;
           const packagesDir = path.join(root, 'packages');
           const invalid = fs.readdirSync(packagesDir)

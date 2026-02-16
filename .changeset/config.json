@@ -4,6 +4,8 @@
   "commit": false,
   "fixed": [
     [
+      "@livon/app-client",
+      "@livon/app-server",
       "@livon/cli",
       "@livon/client",
       "@livon/client-ws-transport",
@@ -11,7 +13,14 @@
       "@livon/dlq-module",
       "@livon/runtime",
       "@livon/schema",
-      "@livon/node-ws-transport"
+      "@livon/node-ws-transport",
+      "@livon/browser-lib",
+      "@livon/node-lib",
+      "@livon/package-name",
+      "@livon/rspack-app",
+      "@livon/app-name",
+      "@livon/frontend-app",
+      "website"
     ]
   ],
   "linked": [],
