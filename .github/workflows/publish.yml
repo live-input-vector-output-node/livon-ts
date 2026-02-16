@@ -51,9 +51,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Sync package READMEs from docs
-        run: pnpm docs:sync:package-readmes
-
       - name: Validate package versions
         run: |
           RC="${{ inputs.release_candidate }}"

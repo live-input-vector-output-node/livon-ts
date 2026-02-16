@@ -1,5 +1,3 @@
-<!-- AUTO-GENERATED: run `pnpm docs:sync:package-readmes` -->
-<!-- Source: website/docs/packages/client-ws-transport.md -->
 # @livon/client-ws-transport
 
 ## Install
