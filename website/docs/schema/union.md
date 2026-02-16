@@ -9,7 +9,6 @@ Use this schema to validate union options by trying each option until one matche
 import {union, string, number} from '@livon/schema';
 
 const StringOrNumber = union({
-  name: 'StringOrNumber',
   options: [
     string(),
     number(),
@@ -25,7 +24,7 @@ API schemas (`api`) are not valid as union options.
 
 ## Parameters
 
-- `name` (`string`, required): union schema name.
+- `name` (`string`, optional): explicit union schema name override. If omitted, LIVON derives a deterministic name from option schema names.
 - `options` (`readonly Schema[]`, required): candidate schemas.
 - `doc` (`SchemaDoc`, optional): schema metadata attached to AST/doc output.
 

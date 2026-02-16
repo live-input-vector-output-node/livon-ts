@@ -1,4 +1,5 @@
 import { schemaFactory } from './schemaFactory.js';
+import { resolveCombinatorName } from './combinatorName.js';
 import { Schema, SchemaContext, SchemaDoc } from './types.js';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- `or` combines heterogeneous schema branches.
@@ -9,7 +10,7 @@ export interface OrSchemaDiscriminator<TValues extends readonly AnySchema[]> {
 }
 
 export interface OrSchemaInput<TValues extends readonly AnySchema[]> {
-  name: string;
+  name?: string;
   options: TValues;
   discriminator?: OrSchemaDiscriminator<TValues>;
   doc?: SchemaDoc;
@@ -66,7 +67,6 @@ const resolveOrMatch = <TValues extends readonly AnySchema[]>({
  * @example
  * // Creates an or-schema that accepts either string or number identifiers.
  * const Identifier = or({
- *   name: 'identifier',
  *   options: [string(), number()] as const,
  * });
  * Identifier.parse('user-1');
@@ -84,14 +84,21 @@ export const or = <TValues extends readonly AnySchema[]>({
   options,
   discriminator,
   doc,
-}: OrSchemaInput<TValues>) =>
-  schemaFactory({
+}: OrSchemaInput<TValues>) => {
+  const schemaName = resolveCombinatorName({
+    fallback: 'Or',
     name,
+    options,
+  });
+
+  return schemaFactory({
+    name: schemaName,
     type: 'or',
     doc,
     ast: (ctx) => {
       const build = ctx.getBuildContext();
-      return { type: 'union', name, children: options.map((option) => option.ast(build ?? undefined)) };
+      return { type: 'union', name: schemaName, children: options.map((option) => option.ast(build ?? undefined)) };
     },
     validate: (input, ctx) => resolveOrMatch({ input, ctx, options, discriminator }),
   });
+};

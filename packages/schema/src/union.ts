@@ -1,11 +1,12 @@
 import { schemaFactory } from './schemaFactory.js';
+import { resolveCombinatorName } from './combinatorName.js';
 import { Schema, SchemaContext, SchemaDoc } from './types.js';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- union options intentionally allow heterogeneous schema outputs.
 type AnySchema = Schema<any>;
 
 export interface UnionSchemaInput<TValues extends readonly AnySchema[]> {
-  name: string;
+  name?: string;
   options: TValues;
   doc?: SchemaDoc;
 }
@@ -49,7 +50,6 @@ const resolveUnionMatch = <TValues extends readonly AnySchema[]>({
  * @example
  * // Creates a union schema that accepts either string or number identifiers.
  * const Identifier = union({
- *   name: 'identifier',
  *   options: [string(), number()] as const,
  * });
  * Identifier.parse('user-1');
@@ -66,14 +66,21 @@ export const union = <TValues extends readonly AnySchema[]>({
   name,
   options,
   doc,
-}: UnionSchemaInput<TValues>) =>
-  schemaFactory({
+}: UnionSchemaInput<TValues>) => {
+  const schemaName = resolveCombinatorName({
+    fallback: 'Union',
     name,
+    options,
+  });
+
+  return schemaFactory({
+    name: schemaName,
     type: 'union',
     doc,
     ast: (ctx) => {
       const build = ctx.getBuildContext();
-      return { type: 'union', name, children: options.map((option) => option.ast(build ?? undefined)) };
+      return { type: 'union', name: schemaName, children: options.map((option) => option.ast(build ?? undefined)) };
     },
     validate: (input, ctx) => resolveUnionMatch({ input, ctx, options }),
   });
+};

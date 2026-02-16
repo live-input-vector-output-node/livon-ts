@@ -12,7 +12,6 @@ const Role = enumeration('Role').values('free', 'pro');
 const LegacyRole = literal({name: 'LegacyRole', value: 'legacy'});
 
 const RoleInput = or({
-  name: 'RoleInput',
   options: [Role, LegacyRole] as const,
 });
 
@@ -24,7 +23,7 @@ API schemas (`api`) are not valid as `or` options.
 
 ## Parameters
 
-- `name` (`string`, required): `or` schema name.
+- `name` (`string`, optional): explicit `or` schema name override. If omitted, LIVON derives a deterministic name from option schema names.
 - `options` (`readonly Schema[]`, required): candidate schemas.
 - `discriminator` (`(input, ctx) => Schema | undefined`, optional): picks one schema before fallback matching.
 - `doc` (`SchemaDoc`, optional): schema metadata attached to AST/doc output.

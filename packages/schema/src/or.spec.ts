@@ -157,6 +157,19 @@ describe('or()', () => {
       expect(firstOptionMock.parse).not.toHaveBeenCalled();
       expect(secondOptionMock.parse).toHaveBeenCalledWith('input', schemaContextMock);
     });
+
+    it('should derive schema name when or input omits name', () => {
+      or({
+        options: [firstOptionMock, secondOptionMock],
+      });
+      const factoryInput = getFactoryInput();
+
+      expect(factoryInput.name).toBe('FirstOptionOrSecondOption');
+      expect(factoryInput.ast(schemaContextMock)).toMatchObject({
+        type: 'union',
+        name: 'FirstOptionOrSecondOption',
+      });
+    });
   });
 
   describe('sad', () => {
