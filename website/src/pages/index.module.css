@@ -20,13 +20,37 @@
   flex-direction: column;
   justify-content: center;
   min-height: calc(100dvh - var(--ifm-navbar-height));
+  padding: 1.2rem 0 1.7rem;
   position: relative;
-  padding: 0.9rem 0 1.1rem;
+  width: 100%;
+}
+
+.heroIntroGrid {
+  display: grid;
+  gap: clamp(1rem, 2.4vw, 1.9rem);
+  justify-items: center;
+  width: min(100%, 760px);
+}
+
+.heroBrandGroup {
+  display: grid;
+  gap: clamp(0.7rem, 1.6vw, 1rem);
+  justify-items: center;
+  width: min(100%, 620px);
+}
+
+.heroValueGroup {
+  width: min(100%, 700px);
+}
+
+.heroActionGroup {
+  display: grid;
+  justify-items: center;
+  width: min(100%, 700px);
 }
 
 .heroLogo {
   height: auto;
-  margin-bottom: 1.5rem;
   max-width: 380px;
   width: min(100%, 380px);
 }
@@ -39,7 +63,36 @@
 .heroSubtitle {
   color: var(--ifm-font-color-base);
   font-size: 1.1rem;
-  margin-bottom: 0.75rem;
+  margin: 0;
+}
+
+.heroValueList {
+  color: var(--ifm-font-color-base);
+  display: grid;
+  gap: 0.45rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.heroValueList li {
+  align-items: center;
+  display: inline-flex;
+  font-size: 1rem;
+  font-weight: 600;
+  gap: 0.45rem;
+  justify-content: center;
+  line-height: 1.35;
+}
+
+.heroValueList li::before {
+  border-bottom: 2px solid var(--ifm-color-success);
+  border-right: 2px solid var(--ifm-color-success);
+  content: '';
+  display: inline-block;
+  height: 0.62rem;
+  transform: rotate(40deg) translateY(-0.03rem);
+  width: 0.32rem;
 }
 
 .heroBadges {
@@ -71,7 +124,7 @@
   display: grid;
   grid-template-columns: minmax(0, var(--hero-cta-width)) minmax(0, var(--hero-cta-width));
   justify-content: center;
-  row-gap: 0.75rem;
+  row-gap: 0.85rem;
   width: 100%;
 }
 
@@ -220,7 +273,7 @@
 
   .heroIntro {
     min-height: calc(100dvh - var(--ifm-navbar-height));
-    padding: 0.75rem 0 1rem;
+    padding: 1rem 0 1.2rem;
   }
 }
 

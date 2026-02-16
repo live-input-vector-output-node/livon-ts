@@ -31,40 +31,33 @@ const Home = (): ReactNode => {
         <section className={styles.hero}>
           <div className={styles.heroInner}>
             <div className={styles.heroIntro}>
-              <img className={styles.heroLogo} src={logoUrl} alt="LIVON Logo" />
-              <Heading as="h1" className={styles.heroTitle}>
-                FULLSTACK REALTIME RUNTIME
-              </Heading>
-              <p className={styles.heroSubtitle}>A composable event runtime for modular, predictable system design.</p>
-              <div className={styles.heroBadges}>
-                <a href="https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml">
-                  <img
-                    src="https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Flive-input-vector-output-node%2Flivon-ts%2Fmain%2F.github%2Fbadges%2Fcoverage.json"
-                    alt="Coverage"
-                  />
-                </a>
-                <a href="https://www.npmjs.com/package/@livon/runtime">
-                  <img
-                    src="https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Flive-input-vector-output-node%2Flivon-ts%2Fmain%2F.github%2Fbadges%2Fsize-runtime.json"
-                    alt="runtime size (@livon/runtime)"
-                  />
-                </a>
-              </div>
-              <p className={styles.heroCatcher}>
-                LIVON is a schema-first runtime ecosystem for full-stack real-time applications. You define contracts
-                once, validate data at runtime, and generate typed client APIs from the same source so server and
-                client stay aligned without manual duplicate types.
-              </p>
-              <div className={styles.heroActions}>
-                <Link className="button button--primary button--lg" to="/docs/core/what-is-livon">
-                  Why LIVON
-                </Link>
-                <Link className="button button--secondary button--lg" to="/docs/core/getting-started">
-                  Getting Started
-                </Link>
-                <Link className="button button--secondary button--lg" to="/docs/technical/architecture">
-                  Architecture
-                </Link>
+              <div className={styles.heroIntroGrid}>
+                <div className={styles.heroBrandGroup}>
+                  <img className={styles.heroLogo} src={logoUrl} alt="LIVON Logo" />
+                  <p className={styles.heroSubtitle}>
+                    The real-time runtime with API sync for full-stack systems.
+                  </p>
+                </div>
+                <div className={styles.heroValueGroup}>
+                  <ul className={styles.heroValueList}>
+                    <li>Realtime API interfaces that stay in sync.</li>
+                    <li>Type-safe, validated payloads across frontend and backend.</li>
+                    <li>Generated client APIs with JSDoc and sync workflow.</li>
+                  </ul>
+                </div>
+                <div className={styles.heroActionGroup}>
+                  <div className={styles.heroActions}>
+                    <Link className="button button--primary button--lg" to="/docs/core/why-livon-exists">
+                      Why LIVON
+                    </Link>
+                    <Link className="button button--secondary button--lg" to="/docs/core/getting-started">
+                      Getting Started
+                    </Link>
+                    <Link className="button button--secondary button--lg" to="/docs/packages/cli">
+                      Client Sync
+                    </Link>
+                  </div>
+                </div>
               </div>
               {showScrollHint && (
                 <a className={styles.scrollHint} href="#home-content" aria-label="Scroll down for more content">
@@ -77,60 +70,58 @@ const Home = (): ReactNode => {
             <div className={styles.heroCodeGrid} id="home-content">
               <article className={`${styles.card} ${styles.heroCodeCard}`}>
                 <Heading as="h3">Server</Heading>
-                <CodeBlock language="ts">{`import { runtime } from '@livon/runtime';
+                <CodeBlock language="ts">{`import { createServer } from 'node:http';
+import { WebSocketServer } from 'ws';
+import { runtime } from '@livon/runtime';
 import { schemaModule } from '@livon/schema';
 import { nodeWsTransport } from '@livon/node-ws-transport';
+import { serverSchema } from './schema.js';
+
+const httpServer = createServer();
+const wsServer = new WebSocketServer({ server: httpServer, path: '/ws' });
 
 runtime(
   nodeWsTransport({ server: wsServer }),
   schemaModule(serverSchema, { explain: true }),
-);`}</CodeBlock>
+);
+
+httpServer.listen(3002, '127.0.0.1');`}</CodeBlock>
               </article>
               <article className={`${styles.card} ${styles.heroCodeCard}`}>
-                <Heading as="h3">State</Heading>
-                <CodeBlock language="ts">{`import {createStore} from 'zustand/vanilla';
-import {api} from './generated/api.js';
-
-interface ChatState {
-  messages: string[];
-}
-
-export const chatStore = createStore<ChatState>((set) => {
-  api({
-    onMessage: (payload) =>
-      set((state) => ({
-        ...state,
-        messages: [...state.messages, payload.text],
-      })),
-  });
-
-  return {
-    messages: [],
-  };
-});`}</CodeBlock>
+                <Heading as="h3">Client Sync (Required)</Heading>
+                <CodeBlock language="sh">{`livon --endpoint ws://127.0.0.1:3002/ws --out src/generated/api.ts --poll 2000 -- pnpm dev`}</CodeBlock>
               </article>
               <article className={`${styles.card} ${styles.heroCodeCard}`}>
                 <Heading as="h3">Browser</Heading>
                 <CodeBlock language="ts">{`import { runtime } from '@livon/runtime';
 import { clientWsTransport } from '@livon/client-ws-transport';
-import {api} from './generated/api.js';
+import { api } from './generated/api.js';
 
-const transport = clientWsTransport({ url: 'ws://127.0.0.1:3002/ws' });
+runtime(clientWsTransport({ url: 'ws://127.0.0.1:3002/ws' }), api);
 
-runtime(transport, api);`}</CodeBlock>
+api({
+  onMessage: (payload) => {
+    console.log(payload.text);
+  },
+});
+
+await api.sendMessage({
+  author: 'Alice',
+  text: 'Hello from LIVON',
+});`}</CodeBlock>
               </article>
               <article className={`${styles.card} ${styles.heroCodeCard}`}>
                 <Heading as="h3">API Schema</Heading>
                 <CodeBlock language="ts">{`import {
+  and,
   api,
-  createSchemaModuleInput,
   object,
   operation,
   string,
   subscription,
 } from '@livon/schema';
 
-const messageInput = object({
+const MessageInput = object({
   name: 'MessageInput',
   shape: {
     author: string(),
@@ -138,29 +129,25 @@ const messageInput = object({
   },
 });
 
-const message = object({
-  name: 'Message',
-  shape: {
-    author: string(),
-    text: string(),
-  },
-});
+const WithId = object({ name: 'WithId', shape: { id: string() } });
+
+const MessageWithId = and({ left: MessageInput, right: WithId });
 
 const sendMessage = operation({
-  input: messageInput,
-  output: message,
-  exec: async (input) => input,
+  input: MessageInput,
+  output: MessageWithId,
+  exec: async (input) => ({ ...input, id: 'msg-1' }),
   publish: {
     onMessage: (output) => output,
   },
 });
 
-export const apiSchema = api({
+export const ApiSchema = api({
   operations: {sendMessage},
-  subscriptions: {onMessage: subscription({payload: message})},
+  subscriptions: {onMessage: subscription({payload: MessageWithId})},
 });
 
-export const serverSchema = createSchemaModuleInput(apiSchema);`}</CodeBlock>
+export const serverSchema = ApiSchema;`}</CodeBlock>
               </article>
             </div>
           </div>
@@ -170,28 +157,28 @@ export const serverSchema = createSchemaModuleInput(apiSchema);`}</CodeBlock>
           <div className="container">
             <Heading as="h2">Quick Start</Heading>
             <p className={styles.lead}>
-              LIVON docs are split into Main, Technical, Contribution, and Packages sections.
+              Start with the concept, run the sync, and ship your first realtime API sync flow fast.
             </p>
             <div className={styles.cardGrid}>
               <article className={styles.card}>
-                <Heading as="h3">Main Docs</Heading>
-                <p>Onboarding and minimal setup path to run LIVON quickly.</p>
+                <Heading as="h3">Core Concepts</Heading>
+                <p>Why teams adopt LIVON and how one schema model reduces integration friction.</p>
+                <Link to="/docs/core/why-livon-exists">Open Core Concepts</Link>
+              </article>
+              <article className={styles.card}>
+                <Heading as="h3">Guides</Heading>
+                <p>Hands-on setup to go from zero to synced backend and frontend interfaces.</p>
                 <Link to="/docs/core/getting-started">Open Getting Started</Link>
               </article>
               <article className={styles.card}>
                 <Heading as="h3">Technical Docs</Heading>
-                <p>Deep architecture and envelope flow from runtime to schema and transport.</p>
+                <p>Deep dive into runtime flow, transport integration, and internals.</p>
                 <Link to="/docs/technical/architecture">Open Technical Docs</Link>
               </article>
               <article className={styles.card}>
                 <Heading as="h3">Package Docs</Heading>
-                <p>How to install and use every module from `@livon/runtime` to `@livon/cli`.</p>
+                <p>Use each `@livon/*` package directly with practical API references and examples.</p>
                 <Link to="/docs/packages/runtime">Go to Package Docs</Link>
-              </article>
-              <article className={styles.card}>
-                <Heading as="h3">Contribution Docs</Heading>
-                <p>Generators, quality gates, and contribution process for maintainers.</p>
-                <Link to="/docs/core/contributing">Open Contribution Docs</Link>
               </article>
             </div>
           </div>

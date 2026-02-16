@@ -325,11 +325,19 @@ html {
 .markdown table {
   border: none !important;
   border-radius: 0 !important;
-  clip-path: var(--livon-octagon-shape-md);
+  border-collapse: collapse;
+  border-spacing: 0;
+  clip-path: var(--livon-octagon-shape-sm);
+  display: table;
 }
 
 .markdown .table-wrapper table {
   margin-bottom: 0;
+}
+
+.markdown table th,
+.markdown table td {
+  border: none !important;
 }
 
 .markdown table thead tr {
@@ -344,41 +352,77 @@ html {
   background: var(--ifm-table-stripe-background);
 }
 
+/* Explicit octagon wrapper for comparison tables (chamfered corners, no radius). */
+.markdown .livon-octagon-table {
+  max-width: 100%;
+  margin-bottom: 1.25rem;
+  border-radius: 0 !important;
+  overflow: hidden;
+  clip-path: var(--livon-octagon-shape-md);
+}
+
+.markdown .livon-octagon-table > .table-wrapper {
+ 
+  max-width: 100%;
+  margin: 0;
+}
+
+.markdown .livon-octagon-table > table {
+  margin-bottom: 0;
+  border-radius: 0 !important;
+  clip-path: none;
+}
+
+.markdown .livon-octagon-table > .table-wrapper > table,
+.markdown .livon-octagon-table table.livon-comparison-table {
+  margin-bottom: 0;
+  border-radius: 0 !important;
+  clip-path: none;
+   min-width: 100%;
+}
+
 /* Comparison tables: make LIVON column the visual anchor. */
-.markdown table.livon-comparison-table .livon-highlight-column {
+.markdown table.livon-comparison-table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+.markdown table.livon-comparison-table .livon-highlight-column,
+.markdown table.livon-comparison-table th:last-child,
+.markdown table.livon-comparison-table td:last-child {
   background: rgba(119, 86, 255, 0.15);
-  border-left: 1px solid rgba(119, 86, 255, 0.28);
-  border-right: 1px solid rgba(119, 86, 255, 0.28);
   font-weight: 600;
 }
 
-.markdown table.livon-comparison-table thead .livon-highlight-column {
+.markdown table.livon-comparison-table thead .livon-highlight-column,
+.markdown table.livon-comparison-table thead th:last-child {
   background: rgba(119, 86, 255, 0.24);
   color: #2f2557;
 }
 
-[data-theme='dark'] .markdown table.livon-comparison-table .livon-highlight-column {
+[data-theme='dark'] .markdown table.livon-comparison-table .livon-highlight-column,
+[data-theme='dark'] .markdown table.livon-comparison-table th:last-child,
+[data-theme='dark'] .markdown table.livon-comparison-table td:last-child {
   background: rgba(223, 212, 255, 0.19);
-  border-left: 1px solid rgba(223, 212, 255, 0.3);
-  border-right: 1px solid rgba(223, 212, 255, 0.3);
   color: #f7f3ff;
 }
 
-[data-theme='dark'] .markdown table.livon-comparison-table thead .livon-highlight-column {
+[data-theme='dark'] .markdown table.livon-comparison-table thead .livon-highlight-column,
+[data-theme='dark'] .markdown table.livon-comparison-table thead th:last-child {
   background: rgba(223, 212, 255, 0.25);
   color: #ffffff;
 }
 
 .markdown table.livon-comparison-table tbody tr td {
-  transition: box-shadow 160ms ease;
+  transition: background-color 160ms ease;
 }
 
-.markdown table.livon-comparison-table tbody tr:hover td {
-  box-shadow: inset 0 -2px 0 0 rgba(119, 86, 255, 0.8);
+.markdown table.livon-comparison-table tbody tr:hover td:not(.livon-highlight-column) {
+  background: rgba(119, 86, 255, 0.11);
 }
 
-[data-theme='dark'] .markdown table.livon-comparison-table tbody tr:hover td {
-  box-shadow: inset 0 -2px 0 0 rgba(223, 212, 255, 0.85);
+[data-theme='dark'] .markdown table.livon-comparison-table tbody tr:hover td:not(.livon-highlight-column) {
+  background: rgba(223, 212, 255, 0.14);
 }
 
 @media (max-width: 996px) {
@@ -387,7 +431,7 @@ html {
   .navbar-sidebar .menu__link--sublist,
   .navbar-sidebar .menu__link--active {
     border-radius: 0 !important;
-    clip-path: var(--livon-hexagon-shape) !important;
+    clip-path: var(--livon-octagon-shape-sm) !important;
   }
 }
 

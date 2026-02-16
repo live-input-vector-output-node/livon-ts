@@ -18,7 +18,7 @@ const featureList: readonly FeatureItem[] = [
   },
   {
     title: '@livon/schema',
-    description: 'Schema-first contracts for operations, subscriptions, parsing, and AST.',
+    description: 'Schema-first APIs for operations, subscriptions, parsing, and AST.',
     to: '/docs/packages/schema',
   },
   {
