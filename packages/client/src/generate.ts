@@ -8,6 +8,10 @@ import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { AstNode } from './client.js';
+import {
+  typeScriptSurfaceTemplate,
+  typeScriptSurfaceTemplateSourceFilePath,
+} from './typeScriptSurfaceTemplate.js';
 
 export interface GenerateClientFilesOptions {
   ast: AstNode;
@@ -289,6 +293,8 @@ const resolveDocTypeName = (
   namedNodes: Map<string, NamedNode>,
   fallback: string,
 ): string => resolveTypeName(typeName, namedNodes) ?? typeName ?? fallback;
+
+const promiseReturnType = (typeName: string): string => `Promise<${typeName}>`;
 
 const collectSubscriptionEvents = (root: AstNode, namedNodes: Map<string, NamedNode>): EventSpec[] => {
   const events: EventSpec[] = [];
@@ -637,13 +643,18 @@ const renderTypeDefinitions = (
     const node = entry.node;
     lines.push(...renderJSDoc(renderTypeDoc(node, namedNodes)));
     if (node.type === 'object') {
-      lines.push(`export interface ${entry.typeName} {`);
+      lines.push(typeScriptSurfaceTemplate.renderInterfaceStart({ name: entry.typeName }));
       const fields = (node.children ?? []).filter((child) => child.type === 'field' && child.name);
       fields.forEach((fieldNode) => {
         const fieldName = fieldNode.name ?? 'field';
         const childType = renderType(fieldNode.children?.[0], namedNodes);
         lines.push(...renderJSDoc(renderFieldDoc(fieldName, fieldNode, childType, namedNodes), '  '));
-        lines.push(`  ${renderPropertyName(fieldName)}: ${childType};`);
+        lines.push(
+          typeScriptSurfaceTemplate.renderPropertySignature({
+            name: renderPropertyName(fieldName),
+            type: childType,
+          }),
+        );
       });
 
       const operations = groupsByOwner.get(entry.name) ?? [];
@@ -661,15 +672,21 @@ const renderTypeDefinitions = (
             '  ',
           ),
         );
-        lines.push(`  ${renderPropertyName(operation.field)}?: ${fieldTypeName};`);
+        lines.push(
+          typeScriptSurfaceTemplate.renderPropertySignature({
+            name: renderPropertyName(operation.field),
+            type: fieldTypeName,
+            optional: true,
+          }),
+        );
       });
-      lines.push('}');
+      lines.push(typeScriptSurfaceTemplate.renderInterfaceEnd());
       lines.push('');
       return;
     }
 
     const typeBody = renderType(node, namedNodes, entry.name);
-    lines.push(`export type ${entry.typeName} = ${typeBody};`);
+    lines.push(typeScriptSurfaceTemplate.renderTypeAlias({ name: entry.typeName, body: typeBody }));
     lines.push('');
   });
 
@@ -728,13 +745,23 @@ const renderFieldOperationDefinitions = (
         ),
       ),
     );
-    lines.push(`export interface ${operation.fieldTypeName} {`);
+    lines.push(typeScriptSurfaceTemplate.renderInterfaceStart({ name: operation.fieldTypeName }));
     if (operation.hasInput) {
-      lines.push(`  (input: ${operation.inputType}): Promise<${operation.outputType}>;`);
+      lines.push(
+        typeScriptSurfaceTemplate.renderCallSignature({
+          parameters: `input: ${operation.inputType}`,
+          returnType: promiseReturnType(operation.outputType),
+        }),
+      );
     } else {
-      lines.push(`  (): Promise<${operation.outputType}>;`);
+      lines.push(
+        typeScriptSurfaceTemplate.renderCallSignature({
+          parameters: '',
+          returnType: promiseReturnType(operation.outputType),
+        }),
+      );
     }
-    lines.push('}');
+    lines.push(typeScriptSurfaceTemplate.renderInterfaceEnd());
     lines.push('');
   });
 
@@ -760,19 +787,43 @@ const renderOperationDefinitions = (
     const inputType = renderType(entry.operation.input, namedNodes);
     const outputType = renderType(entry.operation.output, namedNodes);
     lines.push(...renderJSDoc(renderOperationDoc(entry.operation, inputType, outputType, namedNodes)));
-    lines.push(`export interface ${entry.typeName} {`);
+    lines.push(typeScriptSurfaceTemplate.renderInterfaceStart({ name: entry.typeName }));
     if (entry.operation.input) {
-      lines.push(`  (input: ${inputType}): Promise<${outputType}>;`);
+      lines.push(
+        typeScriptSurfaceTemplate.renderCallSignature({
+          parameters: `input: ${inputType}`,
+          returnType: promiseReturnType(outputType),
+        }),
+      );
     } else {
-      lines.push(`  (): Promise<${outputType}>;`);
+      lines.push(
+        typeScriptSurfaceTemplate.renderCallSignature({
+          parameters: '',
+          returnType: promiseReturnType(outputType),
+        }),
+      );
     }
-    lines.push('}');
+    lines.push(typeScriptSurfaceTemplate.renderInterfaceEnd());
     lines.push('');
     clientLines.push(...renderJSDoc(renderOperationDoc(entry.operation, inputType, outputType, namedNodes), '  '));
     if (entry.operation.input) {
-      clientLines.push(`  ${renderPropertyName(entry.operation.name)}(input: ${inputType}): Promise<${outputType}>;`);
+      clientLines.push(
+        typeScriptSurfaceTemplate.renderMethodSignature({
+          indent: '  ',
+          name: renderPropertyName(entry.operation.name),
+          parameters: `input: ${inputType}`,
+          returnType: promiseReturnType(outputType),
+        }),
+      );
     } else {
-      clientLines.push(`  ${renderPropertyName(entry.operation.name)}(): Promise<${outputType}>;`);
+      clientLines.push(
+        typeScriptSurfaceTemplate.renderMethodSignature({
+          indent: '  ',
+          name: renderPropertyName(entry.operation.name),
+          parameters: '',
+          returnType: promiseReturnType(outputType),
+        }),
+      );
     }
   });
 
@@ -868,18 +919,31 @@ const renderSubscriptionDefinitions = (
 
   subscriptions.forEach(({ event, payloadType, handlerTypeName }) => {
     lines.push(...renderJSDoc(renderSubscriptionHandlerDoc(event, payloadType, namedNodes)));
-    lines.push(`export interface ${handlerTypeName} {`);
-    lines.push(`  (payload: ${payloadType}, ctx: ClientHandlerContext): void;`);
-    lines.push('}');
+    lines.push(typeScriptSurfaceTemplate.renderInterfaceStart({ name: handlerTypeName }));
+    lines.push(
+      typeScriptSurfaceTemplate.renderCallSignature({
+        parameters: `payload: ${payloadType}, ctx: ClientHandlerContext`,
+        returnType: 'void',
+      }),
+    );
+    lines.push(typeScriptSurfaceTemplate.renderInterfaceEnd());
     lines.push('');
   });
 
-  lines.push('export interface SubscriptionHandlers {');
+  lines.push(typeScriptSurfaceTemplate.renderInterfaceStart({ name: 'SubscriptionHandlers' }));
   subscriptions.forEach(({ event, payloadType }) => {
     lines.push(...renderJSDoc(renderSubscriptionPropertyDoc(event, payloadType, namedNodes), '  '));
-    lines.push(`  ${renderPropertyName(event.topic)}?(payload: ${payloadType}, ctx: ClientHandlerContext): void;`);
+    lines.push(
+      typeScriptSurfaceTemplate.renderMethodSignature({
+        indent: '  ',
+        name: renderPropertyName(event.topic),
+        optional: true,
+        parameters: `payload: ${payloadType}, ctx: ClientHandlerContext`,
+        returnType: 'void',
+      }),
+    );
   });
-  lines.push('}');
+  lines.push(typeScriptSurfaceTemplate.renderInterfaceEnd());
   lines.push('');
 
   return lines;
@@ -951,10 +1015,12 @@ const applyTemplateMap = (template: string, placeholders: Array<{ key: string; v
  */
 export const getClientGeneratorFingerprint = (): string => {
   const source = fs.readFileSync(sourceFilePath, 'utf8');
+  const typeScriptSurfaceTemplateSource = fs.readFileSync(typeScriptSurfaceTemplateSourceFilePath, 'utf8');
   const astTemplate = readTemplate('ast.template.ts', defaultAstTemplate);
   const clientTemplate = readTemplate('client.template.ts', defaultClientTemplate);
   const parts = [
     hashText(source),
+    hashText(typeScriptSurfaceTemplateSource),
     hashText(astTemplate),
     hashText(clientTemplate),
   ];
