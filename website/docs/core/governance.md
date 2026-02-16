@@ -40,3 +40,10 @@ When adding or updating repository documentation:
 1. Update the Docusaurus page first.
 2. Keep root/package README-style files as short redirects only.
 3. Avoid duplicate rule text across non-doc files.
+
+## Tooling governance policy
+
+Tooling policy is defined in [Contributing](contributing).
+
+- Prefer default configs and standard tool commands over custom wrappers.
+- Use Turborepo (`turbo.json`) as the orchestration layer for monorepo tasks.

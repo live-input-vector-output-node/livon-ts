@@ -130,6 +130,23 @@ pnpm gen node schema
 pnpm -C apps/client gen:client
 ```
 
+## Tooling and build policy
+
+Use default tool configs and standard commands first.
+
+- Prefer native config files such as `rslib.config.ts`, `rsbuild.config.ts`, `vitest.*.config.ts`, `eslint.config.cjs`, and `tsconfig*.json`.
+- Prefer standard tooling commands (`rslib`, `rsbuild`, `vitest`, `eslint`, `tsc`) in package scripts.
+- Avoid custom wrapper scripts for normal build, lint, test, and typecheck flows.
+- Keep package scripts atomic (single-tool command); orchestration belongs to Turborepo.
+
+Use Turborepo as the monorepo execution layer:
+
+- Cross-package sequencing, caching, and parallelism must be managed in `turbo.json`.
+- Root workflows should call `pnpm turbo run ...` instead of bespoke orchestration scripts.
+
+Custom scripts are acceptable only when standard tooling cannot express required product behavior.
+When that happens, document the reason in the relevant docs and keep scope minimal.
+
 ## Before opening a pull request
 
 Run:
