@@ -1,4 +1,4 @@
-import { type Configuration, HtmlRspackPlugin } from '@rspack/core';
+import { HtmlRspackPlugin } from '@rspack/core';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ReactRefreshRspackPlugin from '@rspack/plugin-react-refresh';
@@ -6,7 +6,7 @@ import ReactRefreshRspackPlugin from '@rspack/plugin-react-refresh';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const config: Configuration = {
+const config = {
   mode: 'development',
   experiments: {
     css: true,
