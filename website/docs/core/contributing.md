@@ -252,16 +252,15 @@ pnpm changeset:version
 The publish workflow uses:
 
 ```sh
-pnpm changeset:publish --tag rc
-pnpm changeset:publish --tag latest
+pnpm changeset:publish
 ```
 
 CI publish behavior:
 
 - `Publish Packages` can be started manually via workflow dispatch without any parameters.
-- The workflow derives npm tag automatically from `.changeset/pre.json`:
-  - `mode: "pre"` -> uses `pre.tag` (for example `rc`)
-  - no pre mode -> uses `latest`
+- Tag handling is owned by Changesets:
+  - in pre mode (`.changeset/pre.json`), Changesets publishes to the pre tag (for example `rc`)
+  - outside pre mode, Changesets publishes to `latest`
 - Pipeline always runs `lint`, `typecheck`, `test`, and `build` before publish.
 - Pushes to `main` that change `.changeset/**` or `**/CHANGELOG.md` trigger publish automatically.
 
