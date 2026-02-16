@@ -3,6 +3,11 @@ title: "@livon/runtime"
 sidebar_position: 1
 ---
 
+[![npm](https://img.shields.io/npm/v/%40livon%2Fruntime)](https://www.npmjs.com/package/@livon/runtime)
+[![Package Size](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Flive-input-vector-output-node%2Flivon-ts%2Fmain%2F.github%2Fbadges%2Fsize-runtime.json)](https://www.npmjs.com/package/@livon/runtime)
+[![Security Scorecard](https://api.scorecard.dev/projects/github.com/live-input-vector-output-node/livon-ts/badge)](https://scorecard.dev/viewer/?uri=github.com/live-input-vector-output-node/livon-ts)
+[![CI](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml/badge.svg)](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml)
+
 ## Install
 
 ```sh

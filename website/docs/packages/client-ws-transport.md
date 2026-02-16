@@ -3,6 +3,11 @@ title: "@livon/client-ws-transport"
 sidebar_position: 4
 ---
 
+[![npm](https://img.shields.io/npm/v/%40livon%2Fclient-ws-transport)](https://www.npmjs.com/package/@livon/client-ws-transport)
+[![Package Size](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Flive-input-vector-output-node%2Flivon-ts%2Fmain%2F.github%2Fbadges%2Fsize-client-ws-transport.json)](https://www.npmjs.com/package/@livon/client-ws-transport)
+[![Security Scorecard](https://api.scorecard.dev/projects/github.com/live-input-vector-output-node/livon-ts/badge)](https://scorecard.dev/viewer/?uri=github.com/live-input-vector-output-node/livon-ts)
+[![CI](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml/badge.svg)](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml)
+
 ## Purpose
 
 Browser/client websocket transport module for [@livon/runtime](/docs/packages/runtime).
