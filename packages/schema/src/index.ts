@@ -37,7 +37,7 @@ export { before } from './before.js';
 export { after } from './after.js';
 export { and } from './and.js';
 export { createSchemaContext } from './context.js';
-export { schemaModule, createSchemaModuleInput } from './schemaModule.js';
+export { schemaModule } from './schemaModule.js';
 export { normalizeDoc, mergeDoc } from './doc.js';
 export type {
   Schema,

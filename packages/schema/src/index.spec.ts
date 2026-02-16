@@ -39,7 +39,6 @@ describe('index exports', () => {
       expect(typeof schema.operation).toBe('function');
       expect(typeof schema.fieldOperation).toBe('function');
       expect(typeof schema.schemaModule).toBe('function');
-      expect(typeof schema.createSchemaModuleInput).toBe('function');
     });
   });
 

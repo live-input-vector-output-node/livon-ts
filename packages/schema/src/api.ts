@@ -4,7 +4,7 @@ import { FieldOperation, Operation, withFieldOperationName, withOperationName } 
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- schema generic must stay permissive for covariance/contravariance across composed APIs.
 type AnySchema = Schema<any>;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- field input contract accepts shape/schema variants and is normalized at runtime.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- field input schema accepts shape/schema variants and is normalized at runtime.
 type AnyFieldOperation = FieldOperation<AnySchema, any, AnySchema | undefined, unknown>;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- operation results are heterogeneous across API shape entries.
 type AnyResult = any;

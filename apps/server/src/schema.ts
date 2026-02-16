@@ -1,5 +1,13 @@
-import { api, array, date, fieldOperation, object, operation, string, subscription, type Infer } from '@livon/schema';
-import { createSchemaModuleInput } from '@livon/schema';
+import {
+  api,
+  array,
+  date,
+  fieldOperation,
+  object,
+  operation,
+  string,
+  subscription,
+} from '@livon/schema';
 
 const UserId = string({ name: '_id' });
 const MessageId = string({ name: 'messageId' });
@@ -63,14 +71,12 @@ const UserList = array({
   item: User,
 });
 
-type UserPayload = Infer<typeof User>;
-
 const ListUsersInput = object({
   name: 'ListUsersInput',
   shape: {},
 });
 
-const activeUsers = new Map<string, UserPayload>();
+const activeUsers = new Map<string, { _id: string; name: string }>();
 const clientToUser = new Map<string, string>();
 const userConnections = new Map<string, Set<string>>();
 
@@ -81,7 +87,7 @@ const attachClientToUser = (clientId: string, userId: string) => {
   userConnections.set(userId, existing);
 };
 
-const removeUserConnection = (clientId: string): UserPayload | undefined => {
+const removeUserConnection = (clientId: string): { _id: string; name: string } | undefined => {
   const userId = clientToUser.get(clientId);
   if (!userId) {
     return undefined;
@@ -206,9 +212,11 @@ const sendMessageOperation = operation({
   },
 });
 
+const Greeting = string({ name: 'greeting' });
+
 const userGreeting = fieldOperation({
   dependsOn: User,
-  output: string({ name: 'greeting' }),
+  output: Greeting,
   exec: (user) => `Hello ${user.name}`,
 });
 
@@ -270,4 +278,4 @@ export const serverApi: ReturnType<typeof api> = api({
   },
 });
 
-export const serverSchema = createSchemaModuleInput(serverApi);
+export const serverSchema = serverApi;

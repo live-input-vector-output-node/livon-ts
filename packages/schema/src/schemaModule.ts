@@ -25,7 +25,7 @@ import type {
 
 type RuntimeNext = (update?: PartialEventEnvelope) => Promise<EventEnvelope>;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- module registry stores heterogeneous schema contracts.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- module registry stores heterogeneous schemas.
 type AnySchema = Schema<any>;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- runtime operation registry carries unresolved generic payload/input types.
 type AnyInput = any;
@@ -36,13 +36,6 @@ type AnyOperation = Operation<AnySchema, AnySchema | undefined, AnyResult>;
 type AnyFieldOperation = FieldOperation<AnySchema, AnyInput, AnySchema | undefined, AnyResult>;
 type AnySubscription = Subscription<AnySchema | undefined, AnySchema, AnySchema | undefined, unknown>;
 
-export type SchemaModuleInput = {
-  operations: Record<string, AnyOperation>;
-  fieldOperations: Record<string, AnyFieldOperation>;
-  subscriptions: Record<string, AnySubscription>;
-  ast: () => AstNode;
-};
-
 export interface SchemaModuleLike {
   operations: Record<string, AnyOperation>;
   fieldOperations: Record<string, AnyFieldOperation>;
@@ -50,18 +43,9 @@ export interface SchemaModuleLike {
   ast: () => AstNode;
 }
 
-/**
- * createSchemaModuleInput is part of the public LIVON API.
- *
- * @remarks
- * Parameter and return types are defined in the TypeScript signature.
- *
- * @see https://live-input-vector-output-node.github.io/livon-ts/docs/packages/schema
- *
- * @example
- * const result = createSchemaModuleInput(undefined as never);
- */
-export const createSchemaModuleInput = (input: SchemaModuleLike): SchemaModuleInput => ({
+export type SchemaModuleInput = SchemaModuleLike;
+
+const normalizeSchemaModuleInput = (input: SchemaModuleLike): SchemaModuleInput => ({
   operations: input.operations,
   fieldOperations: input.fieldOperations,
   subscriptions: input.subscriptions,
@@ -288,12 +272,13 @@ const emitErrorEvent = async (input: EmitErrorEventInput) =>
  * @example
  * const result = schemaModule(undefined as never);
  */
-export const schemaModule = (schema: SchemaModuleInput, options: SchemaModuleOptions = {}): RuntimeModule => {
+export const schemaModule = (schema: SchemaModuleLike, options: SchemaModuleOptions = {}): RuntimeModule => {
+  const moduleSchema = normalizeSchemaModuleInput(schema);
   const encode = options.encoder ?? defaultEncode;
   const decode = options.decoder ?? defaultDecode;
   const now = options.now ?? Date.now;
 
-  const ast = schema.ast();
+  const ast = moduleSchema.ast();
   const checksum = hashString(stableStringify(ast));
 
   const onReceive = async (envelope: EventEnvelope, ctx: RuntimeContext, next: RuntimeNext) => {
@@ -320,11 +305,11 @@ export const schemaModule = (schema: SchemaModuleInput, options: SchemaModuleOpt
       return envelope;
     }
 
-    const op = schema.operations[envelope.event];
+    const op = moduleSchema.operations[envelope.event];
     const fieldInfo = op ? undefined : splitFieldEvent(envelope.event);
     const fieldKey = fieldInfo ? `${fieldInfo.owner}.${fieldInfo.field}` : undefined;
     const fieldOp = fieldInfo && !op
-      ? schema.fieldOperations[fieldKey!] ?? schema.fieldOperations[fieldInfo.field]
+      ? moduleSchema.fieldOperations[fieldKey!] ?? moduleSchema.fieldOperations[fieldInfo.field]
       : undefined;
 
     if (!op && !fieldOp) {
@@ -338,7 +323,7 @@ export const schemaModule = (schema: SchemaModuleInput, options: SchemaModuleOpt
     const schemaContext = createSchemaContext();
 
     const publisher = async (input: PublishInput) => {
-      const subscription = schema.subscriptions[input.topic];
+      const subscription = moduleSchema.subscriptions[input.topic];
       if (!subscription) {
         throw new Error(`schemaModule: publish topic "${input.topic}" has no matching subscription.`);
       }

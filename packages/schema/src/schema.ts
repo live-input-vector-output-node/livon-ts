@@ -8,6 +8,7 @@ import {
   SchemaHookAfter,
   SchemaValidate,
   SchemaRefineInput,
+  SchemaAndOptions,
   AstNode,
   SchemaDoc,
 } from './types.js';
@@ -71,6 +72,19 @@ export interface EnsureSchemaContextInput {
 export interface EnsureSchemaContext {
   (ctx?: SchemaContext): SchemaContext;
 }
+
+const isRecord = (input: unknown): input is Record<string, unknown> =>
+  typeof input === 'object' && input !== null && !Array.isArray(input);
+
+const capitalize = (input: string): string =>
+  input.length === 0 ? input : `${input.slice(0, 1).toUpperCase()}${input.slice(1)}`;
+
+const joinAndSchemaName = (leftName: string, rightName: string): string => `${leftName}${capitalize(rightName)}`;
+
+const mergeAndValue = <T, U>(leftValue: T, rightValue: U): T & U =>
+  isRecord(leftValue) && isRecord(rightValue)
+    ? ({ ...leftValue, ...rightValue } as T & U)
+    : (leftValue as T & U);
 
 /**
  * createIssueForPath is part of the public LIVON API.
@@ -271,9 +285,9 @@ export const createSchema = <T>({ name, type, ast, validate }: CreateSchemaInput
       },
     });
 
-  const and = <U>(other: Schema<U>): Schema<T & U> =>
+  const and = <U>(other: Schema<U>, options?: SchemaAndOptions): Schema<T & U> =>
     createSchema({
-      name: `${name}.and`,
+      name: options?.name ?? joinAndSchemaName(name, other.name),
       type: `${type}.and`,
       ast: (ctx) => ({
         type: 'and',
@@ -284,7 +298,7 @@ export const createSchema = <T>({ name, type, ast, validate }: CreateSchemaInput
         const left = validate(input, context);
         const right = other.validate(input, context);
         return left.ok && right.ok
-          ? ok({ value: left.value as T & U })
+          ? ok({ value: mergeAndValue(left.value, right.value) })
           : fail({ issues: [...(left.ok ? [] : left.issues), ...(right.ok ? [] : right.issues)] });
       },
     });

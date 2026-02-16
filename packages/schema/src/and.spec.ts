@@ -40,6 +40,13 @@ describe('and()', () => {
       expect(leftSchemaMock.and).toHaveBeenCalledWith(rightSchemaMock);
       expect(result).toBe(mergedSchemaMock);
     });
+
+    it('should pass name override when and input includes name', () => {
+      and({ left: leftSchemaMock, right: rightSchemaMock, name: 'MessageWithId' });
+
+      expect(leftSchemaMock.and).toHaveBeenCalledTimes(1);
+      expect(leftSchemaMock.and).toHaveBeenCalledWith(rightSchemaMock, { name: 'MessageWithId' });
+    });
   });
 
   describe('sad', () => {

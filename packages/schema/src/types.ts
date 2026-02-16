@@ -279,10 +279,15 @@ export interface SchemaAfterMethod<T> {
   <U>(hook: SchemaHookAfter<T, U>): Schema<U>;
 }
 
+export interface SchemaAndOptions {
+  name?: string;
+}
+
 /**
  * Creates an intersection schema with another schema.
  *
  * @param other - Schema to intersect with.
+ * @param options - Optional naming override for the composed schema.
  * @returns A schema that must satisfy both schemas.
  * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/type-safety
  *
@@ -290,7 +295,7 @@ export interface SchemaAfterMethod<T> {
  * const Combined = LeftSchema.and(RightSchema);
  */
 export interface SchemaAndMethod<T> {
-  <U>(other: Schema<U>): Schema<T & U>;
+  <U>(other: Schema<U>, options?: SchemaAndOptions): Schema<T & U>;
 }
 
 /**

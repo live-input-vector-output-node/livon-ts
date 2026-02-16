@@ -1,12 +1,13 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { api } from './api.js';
 import { operation, fieldOperation } from './operation.js';
-import { createSchemaModuleInput, schemaModule } from './schemaModule.js';
+import { schemaModule, type SchemaModuleLike } from './schemaModule.js';
 import { createBaseSchemaMock } from './testing/mocks/index.js';
 import type { EventEnvelope, RuntimeContext, RuntimeRegistry } from '@livon/runtime';
 
-type ModuleOperation = ReturnType<typeof createSchemaModuleInput>['operations'][string];
-type ModuleFieldOperation = ReturnType<typeof createSchemaModuleInput>['fieldOperations'][string];
+type ModuleOperation = SchemaModuleLike['operations'][string];
+type ModuleFieldOperation = SchemaModuleLike['fieldOperations'][string];
 
 interface RegistryHookState {
   onReceive?: (envelope: EventEnvelope, ctx: RuntimeContext, next: RuntimeNext) => Promise<EventEnvelope>;
@@ -54,6 +55,14 @@ const createRegistryMock = (state: RegistryHookState): RuntimeRegistry => ({
   },
 });
 
+const createSchemaModuleLike = (overrides: Partial<SchemaModuleLike> = {}): SchemaModuleLike => ({
+  operations: {},
+  fieldOperations: {},
+  subscriptions: {},
+  ast: () => ({ type: 'api' }),
+  ...overrides,
+});
+
 describe('schemaModule utilities', () => {
   let runtimeContext: RuntimeContext;
 
@@ -73,55 +82,34 @@ describe('schemaModule utilities', () => {
     vi.restoreAllMocks();
   });
 
-  describe('createSchemaModuleInput()', () => {
-    describe('happy', () => {
-      it('should keep schema module parts when valid module-like input is provided', () => {
-        const operations = { ping: operation({ input: createBaseSchemaMock<string>(), exec: async () => 'ok' }) };
-        const fieldOperations = {};
-        const subscriptions = {};
-        const ast = () => ({ type: 'api' });
-
-        const result = createSchemaModuleInput({
-          operations,
-          fieldOperations,
-          subscriptions,
-          ast,
-        });
-
-        expect(result.operations).toBe(operations);
-        expect(result.fieldOperations).toBe(fieldOperations);
-        expect(result.subscriptions).toBe(subscriptions);
-        expect(result.ast).toBe(ast);
-      });
-    });
-
-    describe('sad', () => {
-      it('should keep empty records when empty module-like input is provided', () => {
-        const result = createSchemaModuleInput({
-          operations: {},
-          fieldOperations: {},
-          subscriptions: {},
-          ast: () => ({ type: 'api' }),
-        });
-
-        expect(result.operations).toEqual({});
-        expect(result.fieldOperations).toEqual({});
-        expect(result.subscriptions).toEqual({});
-      });
-    });
-  });
-
   describe('schemaModule()', () => {
     describe('happy', () => {
+      it('should accept api schema directly when schemaModule is created from api schema', () => {
+        const inputSchema = createBaseSchemaMock<{ id: string }>({
+          outputValue: { id: 'u-1' },
+        });
+        const apiSchema = api({
+          operations: {
+            ping: operation({
+              input: inputSchema,
+              exec: async () => ({ id: 'u-1' }),
+            }),
+          },
+          subscriptions: {},
+        });
+        const module = schemaModule(apiSchema);
+        const state: RegistryHookState = {};
+        const registry = createRegistryMock(state);
+
+        module.register(registry);
+
+        expect(module.name).toBe('schema');
+        expect(registry.onReceive).toHaveBeenCalledTimes(1);
+        expect(typeof state.onReceive).toBe('function');
+      });
+
       it('should register onReceive hook when runtime module register is called', () => {
-        const module = schemaModule(
-          createSchemaModuleInput({
-            operations: {},
-            fieldOperations: {},
-            subscriptions: {},
-            ast: () => ({ type: 'api' }),
-          }),
-        );
+        const module = schemaModule(createSchemaModuleLike());
         const state: RegistryHookState = {};
         const registry = createRegistryMock(state);
 
@@ -135,10 +123,7 @@ describe('schemaModule utilities', () => {
       it('should emit explain payload when explain option is enabled and explain event is received', async () => {
         const encode = vi.fn(() => new Uint8Array([9]));
         const module = schemaModule(
-          createSchemaModuleInput({
-            operations: {},
-            fieldOperations: {},
-            subscriptions: {},
+          createSchemaModuleLike({
             ast: () => ({ type: 'api', name: 'RootApi' }),
           }),
           {
@@ -179,7 +164,7 @@ describe('schemaModule utilities', () => {
         });
         const exec = vi.fn(async () => decodedOutput);
         const module = schemaModule(
-          createSchemaModuleInput({
+          createSchemaModuleLike({
             operations: {
               ping: operation({
                 input: inputSchema,
@@ -222,8 +207,7 @@ describe('schemaModule utilities', () => {
         const outputSchema = createBaseSchemaMock<{ value: string }>({ outputValue: { value: 'Alice' } });
         const exec = vi.fn(async () => ({ value: 'Alice' }));
         const module = schemaModule(
-          createSchemaModuleInput({
-            operations: {},
+          createSchemaModuleLike({
             fieldOperations: {
               'User.displayName': fieldOperation({
                 dependsOn: dependsOnSchema,
@@ -232,8 +216,6 @@ describe('schemaModule utilities', () => {
                 exec,
               }) as ModuleFieldOperation,
             },
-            subscriptions: {},
-            ast: () => ({ type: 'api' }),
           }),
           {
             decoder: decode,
@@ -263,14 +245,7 @@ describe('schemaModule utilities', () => {
 
     describe('sad', () => {
       it('should delegate to next when no matching operation or field operation exists', async () => {
-        const module = schemaModule(
-          createSchemaModuleInput({
-            operations: {},
-            fieldOperations: {},
-            subscriptions: {},
-            ast: () => ({ type: 'api' }),
-          }),
-        );
+        const module = schemaModule(createSchemaModuleLike());
         const state: RegistryHookState = {};
         const registry = createRegistryMock(state);
         module.register(registry);
@@ -291,7 +266,7 @@ describe('schemaModule utilities', () => {
         const decode = vi.fn(() => ({ id: 'u-1' }));
         const execError = new Error('operation failed');
         const module = schemaModule(
-          createSchemaModuleInput({
+          createSchemaModuleLike({
             operations: {
               ping: operation({
                 input: createBaseSchemaMock<{ id: string }>({ outputValue: { id: 'u-1' } }),
@@ -300,9 +275,6 @@ describe('schemaModule utilities', () => {
                 },
               }) as unknown as ModuleOperation,
             },
-            fieldOperations: {},
-            subscriptions: {},
-            ast: () => ({ type: 'api' }),
           }),
           {
             decoder: decode,

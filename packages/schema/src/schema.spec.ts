@@ -275,15 +275,15 @@ describe('schema core utilities', () => {
 
       it('should merge schemas when and schemas both validate successfully', () => {
         const left = createSchema({
-          name: 'Left',
+          name: 'MessageInput',
           type: 'left',
-          ast: () => ({ type: 'left', name: 'Left' }),
+          ast: () => ({ type: 'left', name: 'MessageInput' }),
           validate: () => ok({ value: { id: 'u-1' } }),
         });
         const right = createSchema({
-          name: 'Right',
+          name: 'WithRole',
           type: 'right',
-          ast: () => ({ type: 'right', name: 'Right' }),
+          ast: () => ({ type: 'right', name: 'WithRole' }),
           validate: () => ok({ value: { role: 'admin' } }),
         });
         const merged = left.and(right);
@@ -291,9 +291,28 @@ describe('schema core utilities', () => {
         const parsed = merged.parse('raw', context);
         const ast = merged.ast();
 
-        expect(parsed).toEqual({ id: 'u-1' });
+        expect(parsed).toEqual({ id: 'u-1', role: 'admin' });
+        expect(merged.name).toBe('MessageInputWithRole');
         expect(ast.type).toBe('and');
         expect(ast.children).toHaveLength(2);
+      });
+
+      it('should use explicit and name when and options include name', () => {
+        const left = createSchema({
+          name: 'MessageInput',
+          type: 'left',
+          ast: () => ({ type: 'left', name: 'MessageInput' }),
+          validate: () => ok({ value: { text: 'hello' } }),
+        });
+        const right = createSchema({
+          name: 'WithId',
+          type: 'right',
+          ast: () => ({ type: 'right', name: 'WithId' }),
+          validate: () => ok({ value: { id: 'm-1' } }),
+        });
+        const merged = left.and(right, { name: 'MessageWithId' });
+
+        expect(merged.name).toBe('MessageWithId');
       });
 
       it('should set fallback node name when ast result has no name', () => {
