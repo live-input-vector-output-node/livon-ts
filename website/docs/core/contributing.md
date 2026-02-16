@@ -76,6 +76,12 @@ pnpm test
 pnpm build
 ```
 
+Single-command Turbo pipeline for packages/apps:
+
+```sh
+pnpm run ci
+```
+
 ### 5. Run package-local checks during development
 
 Example unit test run:
@@ -142,7 +148,7 @@ Use default tool configs and standard commands first.
 Use Turborepo as the monorepo execution layer:
 
 - Cross-package sequencing, caching, and parallelism must be managed in `turbo.json`.
-- Root workflows should call `pnpm turbo run ...` instead of bespoke orchestration scripts.
+- Root workflows should call `pnpm run ci` instead of bespoke orchestration scripts.
 
 Custom scripts are acceptable only when standard tooling cannot express required product behavior.
 When that happens, document the reason in the relevant docs and keep scope minimal.

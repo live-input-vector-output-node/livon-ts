@@ -15,6 +15,12 @@ pnpm build
 pnpm check:policies
 ```
 
+For a single Turbo command across apps/packages:
+
+```sh
+pnpm run ci
+```
+
 ## Monorepo Vitest workspace
 
 Root tests are executed by Vitest workspace config at `vitest.workspace.ts`.
@@ -41,13 +47,11 @@ pnpm --filter <package-name> test:integration
 
 ## CI scope
 
-The CI workflow keeps Turbo for lint/typecheck/build and runs tests through the root Vitest workspace.
+The CI workflow runs one root command and delegates orchestration to Turborepo.
+CI caching includes PNPM store and local `.turbo` artifacts.
 
 ```sh
-pnpm turbo run lint --filter='./packages/*' --filter='./apps/*' --concurrency=4
-pnpm turbo run typecheck --filter='./packages/*' --filter='./apps/*' --concurrency=4
-pnpm test
-pnpm turbo run build --filter='./packages/*' --filter='./apps/*' --concurrency=4
+pnpm run ci
 ```
 
 ## Coding quality baseline
