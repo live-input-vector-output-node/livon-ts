@@ -9,11 +9,13 @@ import { defineConfig, type ConfigParams } from '@rslib/core';
 
 type RslibTarget = 'node' | 'web';
 type RslibFormat = 'esm' | 'cjs';
+type RslibBuildVariant = 'default' | 'mini';
 
 interface CreateRslibConfigInput {
   target: RslibTarget;
   formats: ReadonlyArray<RslibFormat>;
   entries?: Readonly<Record<string, string>>;
+  variant?: RslibBuildVariant;
 }
 
 interface ResolveFormatsInput {
@@ -23,6 +25,7 @@ interface ResolveFormatsInput {
 
 interface ResolveBuildVariantInput {
   command: ConfigParams['command'];
+  variant: RslibBuildVariant;
 }
 
 interface ResolveEntriesInput {
@@ -99,11 +102,11 @@ const resolveFormats = ({ command, formats }: ResolveFormatsInput): ReadonlyArra
   return devFormats.length > 0 ? devFormats : formats;
 };
 
-const resolveBuildVariant = ({ command }: ResolveBuildVariantInput): 'dev' | 'default' | 'mini' => {
+const resolveBuildVariant = ({ command, variant }: ResolveBuildVariantInput): 'dev' | 'default' | 'mini' => {
   if (command === 'dev') {
     return 'dev';
   }
-  return process.env.LIVON_BUILD_VARIANT === 'mini' ? 'mini' : 'default';
+  return variant;
 };
 
 /**
@@ -121,10 +124,10 @@ const resolveBuildVariant = ({ command }: ResolveBuildVariantInput): 'dev' | 'de
  *
  * @see https://live-input-vector-output-node.github.io/livon-ts/docs/packages/config
  */
-export const createRslibConfig = ({ target, formats, entries }: CreateRslibConfigInput) => {
+export const createRslibConfig = ({ target, formats, entries, variant = 'default' }: CreateRslibConfigInput) => {
   return defineConfig(({ command }) => {
     const selectedFormats = resolveFormats({ command, formats });
-    const buildVariant = resolveBuildVariant({ command });
+    const buildVariant = resolveBuildVariant({ command, variant });
     const shouldMinify = buildVariant === 'mini';
     const outputDistPath = buildVariant === 'mini' ? 'dist/mini' : 'dist';
     const cwd = process.cwd();
@@ -151,9 +154,37 @@ export const createRslibConfig = ({ target, formats, entries }: CreateRslibConfi
       output: {
         target,
         distPath: outputDistPath,
-        cleanDistPath: false,
+        cleanDistPath: command !== 'dev',
         minify: shouldMinify,
       },
     };
+  });
+};
+
+/**
+ * Creates a reusable Rslib mini build configuration for `dist/mini`.
+ *
+ * @example
+ * ```ts
+ * import { createRslibMiniConfig } from '@livon/config/rslib';
+ *
+ * export default createRslibMiniConfig({
+ *   target: 'node',
+ *   formats: ['esm', 'cjs'],
+ * });
+ * ```
+ *
+ * @see https://live-input-vector-output-node.github.io/livon-ts/docs/packages/config
+ */
+export const createRslibMiniConfig = ({
+  entries,
+  formats,
+  target,
+}: Omit<CreateRslibConfigInput, 'variant'>) => {
+  return createRslibConfig({
+    entries,
+    formats,
+    target,
+    variant: 'mini',
   });
 };

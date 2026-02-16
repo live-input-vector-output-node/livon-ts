@@ -9,8 +9,6 @@ dist/
 build/
 coverage/
 website/build/
-!tools/build/
-!tools/build/*.mjs
 
 # tooling caches
 .turbo/

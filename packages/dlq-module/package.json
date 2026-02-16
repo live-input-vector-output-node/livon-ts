@@ -25,7 +25,8 @@
     }
   },
   "scripts": {
-    "build": "node ../../tools/build/rslib-dual-build.mjs",
+    "build": "rslib build",
+    "postbuild": "rslib build -c rslib.mini.config.ts",
     "build:watch": "rslib dev",
     "dev": "true",
     "lint": "eslint .",
