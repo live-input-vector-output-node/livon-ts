@@ -8,10 +8,28 @@
 
 <p align="center">
   <a href="https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml">
+    <img src="https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml/badge.svg" alt="CI" />
+  </a>
+  <a href="https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/publish.yml">
+    <img src="https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/publish.yml/badge.svg" alt="Publish" />
+  </a>
+  <a href="https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/docs-pages.yml">
+    <img src="https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/docs-pages.yml/badge.svg" alt="Docs Pages" />
+  </a>
+  <a href="https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml">
+    <img src="https://img.shields.io/badge/code%20quality-eslint%20%2B%20tsc-1f6feb" alt="Code quality" />
+  </a>
+  <a href="https://securityscorecards.dev/viewer/?uri=github.com/live-input-vector-output-node/livon-ts">
+    <img src="https://api.securityscorecards.dev/projects/github.com/live-input-vector-output-node/livon-ts/badge" alt="Security Scorecard" />
+  </a>
+  <a href="https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml">
     <img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Flive-input-vector-output-node%2Flivon-ts%2Fmain%2F.github%2Fbadges%2Fcoverage.json" alt="Coverage" />
   </a>
   <a href="https://www.npmjs.com/package/@livon/runtime">
     <img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Flive-input-vector-output-node%2Flivon-ts%2Fmain%2F.github%2Fbadges%2Fsize-runtime.json" alt="runtime size (@livon/runtime)" />
+  </a>
+  <a href="./LIZENZ.md">
+    <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License: MIT" />
   </a>
 </p>
 

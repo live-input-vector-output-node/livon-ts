@@ -1,5 +1,12 @@
 # @livon/client
 
+[![CI](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml/badge.svg)](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml)
+[![Code Quality](https://img.shields.io/badge/code%20quality-eslint%20%2B%20tsc-1f6feb)](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml)
+[![Security Scorecard](https://api.securityscorecards.dev/projects/github.com/live-input-vector-output-node/livon-ts/badge)](https://securityscorecards.dev/viewer/?uri=github.com/live-input-vector-output-node/livon-ts)
+[![npm](https://img.shields.io/npm/v/%40livon%2Fclient)](https://www.npmjs.com/package/@livon/client)
+[![Package Size](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Flive-input-vector-output-node%2Flivon-ts%2Fmain%2F.github%2Fbadges%2Fsize-client.json)](https://www.npmjs.com/package/@livon/client)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](../../LIZENZ.md)
+
 ## Purpose
 
 [@livon/client](https://live-input-vector-output-node.github.io/livon-ts/docs/packages/client) provides deterministic client interface execution and generated-client foundations.

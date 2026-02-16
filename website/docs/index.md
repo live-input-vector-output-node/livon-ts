@@ -3,6 +3,12 @@ title: Documentation
 slug: /
 ---
 
+[![CI](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml/badge.svg)](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml)
+[![Code Quality](https://img.shields.io/badge/code%20quality-eslint%20%2B%20tsc-1f6feb)](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml)
+[![Security Scorecard](https://api.securityscorecards.dev/projects/github.com/live-input-vector-output-node/livon-ts/badge)](https://securityscorecards.dev/viewer/?uri=github.com/live-input-vector-output-node/livon-ts)
+[![Coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Flive-input-vector-output-node%2Flivon-ts%2Fmain%2F.github%2Fbadges%2Fcoverage.json)](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml)
+[![Runtime Size](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Flive-input-vector-output-node%2Flivon-ts%2Fmain%2F.github%2Fbadges%2Fsize-runtime.json)](https://www.npmjs.com/package/@livon/runtime)
+
 ## LIVON
 
 ### The real-time runtime with API sync for full-stack systems
