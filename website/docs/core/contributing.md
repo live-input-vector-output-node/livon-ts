@@ -233,20 +233,25 @@ pnpm changeset:publish --tag rc
 pnpm changeset:publish --tag latest
 ```
 
-RC publishing defaults:
+CI publish behavior:
 
-- `npm_tag` defaults to `rc`.
-- `release_candidate` defaults to `1` and validates package versions against `<major>.<minor>.<patch>-rc.<candidate>`.
-- Pipeline runs `lint`, `typecheck`, `test`, and `build` before publish.
+- `Publish Packages` can be started manually via workflow dispatch without any parameters.
+- The workflow derives npm tag automatically from `.changeset/pre.json`:
+  - `mode: "pre"` -> uses `pre.tag` (for example `rc`)
+  - no pre mode -> uses `latest`
+- Pipeline always runs `lint`, `typecheck`, `test`, and `build` before publish.
+- Pushes to `main` that change `.changeset/**` or `**/CHANGELOG.md` trigger publish automatically.
 
 Recommended RC publish flow:
 
-1. Set package versions to `<major>.<minor>.<patch>-rc.<candidate>`.
-2. Run `Publish Packages` with `dry_run=true` first.
-3. Run `Publish Packages` with `dry_run=false` to publish to npm with the `rc` dist-tag.
+1. Keep pre mode active (`pnpm dlx @changesets/cli pre enter rc` once, then stay in pre mode).
+2. Create release notes with `pnpm changeset`.
+3. Apply versions with `pnpm changeset:version`.
+4. Commit and push to `main` (auto publish), or trigger `Publish Packages` manually.
 
 Recommended stable publish flow:
 
-1. Set package versions to `<major>.<minor>.<patch>`.
-2. Run `Publish Packages` with `npm_tag=latest` and `dry_run=true`.
-3. Run `Publish Packages` with `npm_tag=latest` and `dry_run=false`.
+1. Exit pre mode with `pnpm dlx @changesets/cli pre exit`.
+2. Create release notes with `pnpm changeset`.
+3. Apply versions with `pnpm changeset:version`.
+4. Commit and push to `main` (auto publish), or trigger `Publish Packages` manually.
