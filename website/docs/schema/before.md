@@ -3,12 +3,12 @@ title: "before"
 sidebar_position: 14
 ---
 
-Runs an input transform/validation hook before schema validation.
+Use this wrapper to transform or validate input before schema validation.
 
 ```ts
 import {before, string} from '@livon/schema';
 
-const userName = before({
+const UserName = before({
   schema: string().min(2),
   hook: (input) => {
     if (typeof input === 'string') {
@@ -18,11 +18,11 @@ const userName = before({
   },
 });
 
-const value = userName.parse('  alice  ');
+const value = UserName.parse('  alice  ');
 ```
 
 `before` can wrap any value schema from this section.  
-API contracts (`api`) are not valid as `before.schema`.
+API schemas (`api`) are not valid as `before.schema`.
 
 ## Parameters
 
@@ -32,7 +32,7 @@ API contracts (`api`) are not valid as `before.schema`.
 ## Chain API
 
 - No schema-specific chain methods.
-- Shared methods on current type `T = schema output`: `optional(): Schema<T | undefined>`, `nullable(): Schema<T | null>`, `describe(doc: SchemaDoc): Schema<T>`, `refine(input): Schema<T>`, `before(hook): Schema<T>`, `after<U>(hook): Schema<U>`, `and<U>(other: Schema<U>): Schema<T & U>`.
+- Shared methods on current type `T = schema output`: `optional(): Schema<T | undefined>`, `nullable(): Schema<T | null>`, `describe(doc: SchemaDoc): Schema<T>`, `refine(input): Schema<T>`, `before(hook): Schema<T>`, `after<U>(hook): Schema<U>`, `and<U>(other: Schema<U>, options?: {name?: string}): Schema<T & U>`.
 
 ## Related schemas
 

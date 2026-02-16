@@ -3,12 +3,12 @@ title: "tuple"
 sidebar_position: 9
 ---
 
-Creates fixed-length tuple schemas.
+Use this schema to validate fixed-length tuples.
 
 ```ts
 import {tuple, string, number} from '@livon/schema';
 
-const userTuple = tuple({
+const UserTuple = tuple({
   name: 'UserTuple',
   items: [
     string(),
@@ -16,11 +16,11 @@ const userTuple = tuple({
   ] as const,
 });
 
-const value = userTuple.parse(['u-1', 7]);
+const value = UserTuple.parse(['u-1', 7]);
 ```
 
 `tuple.items` can use any value schema from this section.  
-API contracts (`api`) are not valid as tuple item schemas.
+API schemas (`api`) are not valid as tuple item schemas.
 
 ## Parameters
 
@@ -31,7 +31,7 @@ API contracts (`api`) are not valid as tuple item schemas.
 ## Chain API
 
 - No schema-specific chain methods.
-- Shared methods on current type `T = Infer<tuple.items>`: `optional(): Schema<T | undefined>`, `nullable(): Schema<T | null>`, `describe(doc: SchemaDoc): Schema<T>`, `refine(input): Schema<T>`, `before(hook): Schema<T>`, `after<U>(hook): Schema<U>`, `and<U>(other: Schema<U>): Schema<T & U>`.
+- Shared methods on current type `T = Infer<tuple.items>`: `optional(): Schema<T | undefined>`, `nullable(): Schema<T | null>`, `describe(doc: SchemaDoc): Schema<T>`, `refine(input): Schema<T>`, `before(hook): Schema<T>`, `after<U>(hook): Schema<U>`, `and<U>(other: Schema<U>, options?: {name?: string}): Schema<T & U>`.
 
 ## Related schemas
 

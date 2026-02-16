@@ -4,6 +4,7 @@ sidebar_position: 10
 ---
 
 This page tracks high-impact governance and rule-system updates.
+Use it when you need to understand why repository-wide rules changed.
 
 ## 2026-02-15
 
@@ -29,7 +30,7 @@ This page tracks high-impact governance and rule-system updates.
 - Copy before mutating array helpers like `sort`.
 - Immutable-by-default policy was made explicit.
 
-### Runtime communication contract clarified
+### Runtime communication schema clarified
 
 - Module communication is runtime-channel based (`emit*`, `onReceive`, `onSend`, `onError`).
 - Modules must not depend on internals of other modules.

@@ -14,6 +14,7 @@
 <!-- @agent.load: website/docs/technical/event-flow.mdx -->
 <!-- @agent.load: website/docs/technical/roadmap.mdx -->
 <!-- @agent.load: website/docs/packages/index.md -->
+<!-- @agent.load: packages/client/PROMPT.md -->
 <!-- @agent.load: packages/schema/PROMPT.md -->
 
 # Prompt Index
@@ -24,6 +25,7 @@ This file lists prompt entrypoints and canonical Docusaurus rule/documentation p
 
 - `PROMPT.md` – root prompt entrypoint
 - `PROMPTS.md` – prompt inventory entrypoint
+- `packages/client/PROMPT.md` – client package prompt entrypoint
 - `packages/schema/PROMPT.md` – schema package prompt entrypoint
 
 ## Canonical documentation source

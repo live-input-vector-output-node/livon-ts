@@ -20,12 +20,12 @@ LIVON (Live Input Vector Output Node) is a TypeScript framework for building API
 ## What Is LIVON?
 
 LIVON helps you build APIs once and use them on both backend and frontend.
-You define your API contract in one place, and LIVON keeps client and server in sync.
+You define your API schema in one place, and LIVON keeps client and server in sync.
 It is designed for both request/response flows and real-time event streams.
 
 ## Why LIVON?
 
-- One shared API contract for server and client
+- One shared API schema for server and client
 - Real-time events and API calls in one consistent model
 - Fewer integration bugs between frontend and backend
 - Strong TypeScript support out of the box

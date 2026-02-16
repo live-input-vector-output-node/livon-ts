@@ -3,21 +3,21 @@ title: "array"
 sidebar_position: 8
 ---
 
-Creates array schemas with item validation.
+Use this schema to validate arrays with item-level validation.
 
 ```ts
 import {array, string} from '@livon/schema';
 
-const tags = array({
+const Tags = array({
   name: 'Tags',
   item: string().min(1),
 });
 
-const value = tags.parse(['livon', 'schema']);
+const value = Tags.parse(['livon', 'schema']);
 ```
 
 `array.item` can use any value schema from this section.  
-API contracts (`api`) are not valid as array item schemas.
+API schemas (`api`) are not valid as array item schemas.
 
 ## Parameters
 
@@ -28,7 +28,7 @@ API contracts (`api`) are not valid as array item schemas.
 ## Chain API
 
 - No schema-specific chain methods.
-- Shared methods on current type `T = item[]`: `optional(): Schema<T | undefined>`, `nullable(): Schema<T | null>`, `describe(doc: SchemaDoc): Schema<T>`, `refine(input): Schema<T>`, `before(hook): Schema<T>`, `after<U>(hook): Schema<U>`, `and<U>(other: Schema<U>): Schema<T & U>`.
+- Shared methods on current type `T = item[]`: `optional(): Schema<T | undefined>`, `nullable(): Schema<T | null>`, `describe(doc: SchemaDoc): Schema<T>`, `refine(input): Schema<T>`, `before(hook): Schema<T>`, `after<U>(hook): Schema<U>`, `and<U>(other: Schema<U>, options?: {name?: string}): Schema<T & U>`.
 
 ## Related schemas
 

@@ -5,6 +5,8 @@ sidebar_position: 3
 
 import Mermaid from '@theme/Mermaid';
 
+For maintainers and decision makers, this page summarizes the current roadmap and planned capability tracks.
+
 This page visualizes the LIVON roadmap for docs readers.  
 This page is the canonical roadmap source.
 
@@ -30,7 +32,7 @@ This page is the canonical roadmap source.
 ### Gateway automatic [schema merging](/docs/schema)
 
 - Add a gateway module that reads schema fragments from multiple modules/services
-- Merge schemas into deterministic contract snapshots
+- Merge schemas into deterministic schema snapshots
 - Detect conflicts and expose explicit merge resolution hooks
 - Reuse merged snapshots for generation, runtime routing, and compatibility checks
 
@@ -38,7 +40,7 @@ This page is the canonical roadmap source.
 
 - Add `Kafka` transporter for durable stream-oriented event delivery
 - Add `Valkey`-compatible transporter (Redis OSS-compatible alternative) for low-latency queue/pub-sub patterns
-- Keep transports behind one runtime transport contract so modules stay transport-agnostic
+- Keep transports behind one runtime transport schema so modules stay transport-agnostic
 
 ## Delivery flow
 

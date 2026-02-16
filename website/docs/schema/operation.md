@@ -3,35 +3,59 @@ title: "operation"
 sidebar_position: 17
 ---
 
-`operation` defines a request/response handler in your API schema.
+Use `operation` to define request/response handlers in your API schema.
 
 ```ts
-import {object, operation, string} from '@livon/schema';
+import {and, literal, object, operation, or, string, union} from '@livon/schema';
 
-const messageInput = object({
+const MessagePayload = union({
+  name: 'MessagePayload',
+  options: [
+    string().min(1),
+    object({
+      name: 'AttachmentPayload',
+      shape: {
+        url: string(),
+      },
+    }),
+  ],
+});
+
+const RoomTarget = or({
+  name: 'RoomTarget',
+  options: [literal({name: 'GlobalRoom', value: 'global'}), string()],
+});
+
+const MessageInput = object({
   name: 'MessageInput',
   shape: {
     author: string(),
-    text: string(),
+    payload: MessagePayload,
+    room: RoomTarget,
   },
 });
 
-const message = object({
-  name: 'Message',
+const WithId = object({
+  name: 'WithId',
   shape: {
-    author: string(),
-    text: string(),
+    id: string(),
   },
+});
+
+const Message = and({
+  left: MessageInput,
+  right: WithId,
+  name: 'Message',
 });
 
 const sendMessage = operation({
-  input: messageInput,
-  output: message,
-  exec: async (input) => input,
+  input: MessageInput,
+  output: Message,
+  exec: async (input) => ({...input, id: 'msg-1'}),
   publish: {
     onMessage: (output) => output,
   },
-  rooms: (input) => (input.author === 'system' ? 'admin-room' : 'global'),
+  rooms: (input) => (input.room === 'global' ? 'global' : input.room),
   ack: {required: true, mode: 'received', timeoutMs: 5000, retries: 3},
 });
 ```
@@ -45,8 +69,10 @@ Key fields:
 - `rooms`: dynamic room routing
 - `ack`: delivery acknowledgement config
 
+This example intentionally composes `Message` from `MessageInput + WithId` (`and`) so you do not redefine the same payload fields twice.
+
 `input` and `output` can use any value schema from this section.  
-API contracts (`api`) are not valid as `input` or `output`.
+API schemas (`api`) are not valid as `input` or `output`.
 
 Important: every publish topic must exist in `api(...).subscriptions`.
 

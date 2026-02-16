@@ -3,8 +3,6 @@ title: "@livon/schema"
 sidebar_position: 2
 ---
 
-[![schema size](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Flive-input-vector-output-node%2Flivon-ts%2Fmain%2F.github%2Fbadges%2Fsize-schema.json)](https://www.npmjs.com/package/@livon/schema)
-
 ## Install
 
 ```sh
@@ -16,9 +14,13 @@ pnpm add @livon/schema
 [@livon/schema](/docs/packages/schema) defines:
 
 - [value schemas](/docs/schema) (`string`, `number`, `object`, `array`, `or`, `union`, ...)
-- operation contracts
-- subscription contracts
-- [schema runtime module](/docs/technical/runtime-design) (`schemaModule`)
+- operation schemas
+- subscription schemas
+- [schema module](/docs/technical/runtime-design) (`schemaModule`)
+
+## Best for
+
+Use this package when you want a single schema source for validation, typing, and generated client APIs.
 
 ## Schema API docs
 
@@ -51,12 +53,12 @@ Each schema/combinator has its own usage page:
 
 ## Type safety model
 
-LIVON [schema contracts](/docs/schema) are both runtime validators and type sources.
+LIVON [schemas](/docs/schema) are both runtime validators and type sources.
 Primitive schema names are optional, so `string()` and `number()` are valid defaults.
 
 1. Define payload shape once in [schema](/docs/schema).
 2. Validate unknown input with `parse()`.
-3. Reuse schema contract entrypoint with `typed()`.
+3. Reuse schema entrypoint with `typed()`.
 4. Derive types with `Infer` instead of hand-written payload interfaces.
 
 ```ts
@@ -95,14 +97,14 @@ const typed = User.typed(typedInput);
 
 `User.typed(typedInput)`:
 
-- `typedInput` (`UserType`): pretyped value using same schema contract entrypoint.
+- `typedInput` (`UserType`): pretyped value using same schema entrypoint.
 
-## Compose API contract
+## Compose API schema
 
 ```ts
-import {api, createSchemaModuleInput} from '@livon/schema';
+import {api} from '@livon/schema';
 
-const apiSchema = api({
+const ApiSchema = api({
   type: User,
   operations: {
     sendMessage,
@@ -115,8 +117,11 @@ const apiSchema = api({
   },
 });
 
-export const serverSchema = createSchemaModuleInput(apiSchema);
+export const serverSchema = ApiSchema;
 ```
+
+Use the `api(...)` (or `composeApi(...)`) result directly in `schemaModule(...)`.
+No additional schema-module input factory is required.
 
 ### Parameters in this example
 
@@ -124,12 +129,8 @@ export const serverSchema = createSchemaModuleInput(apiSchema);
 
 - `type` (`Schema`, optional): entity schema for field operations.
 - `operations` (`Record<string, Operation>`, optional): request/response operations.
-- `subscriptions` (`Record<string, Subscription | Schema>`, optional): publish topic contracts.
+- `subscriptions` (`Record<string, Subscription | Schema>`, optional): publish topic schemas.
 - `fieldOperations` (`Record<string, FieldOperation>`, optional): field-level resolvers.
-
-`createSchemaModuleInput(apiSchema)`:
-
-- `apiSchema` (`Api`): fully composed schema contract exported to runtime module.
 
 For focused usage patterns:
 
@@ -151,7 +152,7 @@ runtime(schemaModule(serverSchema, {explain: true}));
 
 `schemaModule(serverSchema, options?)`:
 
-- `serverSchema` (`SchemaModuleInput`): output of `createSchemaModuleInput(...)`.
+- `serverSchema` (`Api | ComposedApi`): fully composed schema from `api(...)` or `composeApi(...)`.
 - `options.explain` (`boolean`, optional): enables `$explain` endpoint for AST/checksum metadata.
 
 ## Explain endpoint
@@ -160,6 +161,8 @@ If `explain: true`, [schema module](/docs/technical/runtime-design) responds to 
 
 ## Related pages
 
+- [Validated by Default](/docs/core/validated-by-default)
+- [parse vs typed](/docs/core/parse-vs-typed)
 - [Schema APIs overview](../schema)
 - [Runtime Design](/docs/technical/runtime-design)
 - [Architecture](/docs/technical/architecture)

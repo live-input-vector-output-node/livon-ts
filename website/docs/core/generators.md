@@ -3,6 +3,8 @@ title: Generators
 sidebar_position: 3
 ---
 
+For maintainers creating or updating packages/apps, this page lists generator commands and parameters.
+
 ## Monorepo generator commands
 
 ```sh

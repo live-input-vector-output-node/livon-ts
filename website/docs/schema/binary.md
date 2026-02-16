@@ -3,7 +3,7 @@ title: "binary"
 sidebar_position: 13
 ---
 
-Creates binary payload schemas based on `Uint8Array`.
+Use this schema to validate binary payloads based on `Uint8Array`.
 
 ```ts
 import {binary} from '@livon/schema';
@@ -22,7 +22,7 @@ const value = BinaryPayload.parse(bytes);
 ## Chain API
 
 - No schema-specific chain methods.
-- Shared methods on current type `T = Uint8Array`: `optional(): Schema<T | undefined>`, `nullable(): Schema<T | null>`, `describe(doc: SchemaDoc): Schema<T>`, `refine(input): Schema<T>`, `before(hook): Schema<T>`, `after<U>(hook): Schema<U>`, `and<U>(other: Schema<U>): Schema<T & U>`.
+- Shared methods on current type `T = Uint8Array`: `optional(): Schema<T | undefined>`, `nullable(): Schema<T | null>`, `describe(doc: SchemaDoc): Schema<T>`, `refine(input): Schema<T>`, `before(hook): Schema<T>`, `after<U>(hook): Schema<U>`, `and<U>(other: Schema<U>, options?: {name?: string}): Schema<T & U>`.
 
 ## Related schemas
 

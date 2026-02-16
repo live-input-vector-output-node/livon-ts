@@ -4,6 +4,7 @@ sidebar_position: 7
 ---
 
 This guide defines the shared coding style across LIVON repositories.
+Use it to keep implementation style consistent across packages and apps.
 
 ## Core principles
 
@@ -62,7 +63,7 @@ const response = {...safeUser, role: 'member'};
 - Functions should be small and do one thing.
 - Prefer max two parameters for new code.
 - If inputs are simple primitives, always group them into one semantic config object.
-- Keep existing public callback signatures where external contracts require them.
+- Keep existing public callback signatures where external interfaces require them.
 
 ```ts
 interface RequestUserInput {
@@ -85,8 +86,8 @@ const requestUser = (userId: string, includePosts: boolean) =>
 ## Function typing rules
 
 - No inline object types for function parameters.
-- No inline function type signatures for reusable function contracts.
-- Define function contracts as named `interface` types.
+- No inline function type signatures for reusable function interfaces.
+- Define function interfaces as named `interface` types.
 
 ```ts
 interface BuildDisplayNameInput {
@@ -126,6 +127,8 @@ interface ModuleInput {
 - Use `interface` for object shapes.
 - Do not use manual `parseX...` or `toX...` validation helpers.
 - Use [schema composition](/docs/schema) and `schema.parse`.
+- Use `PascalCase` for schema constants in examples and docs (`User`, `MessageInput`, `ApiSchema`).
+- Keep operation/resolver runtime functions in `camelCase` (`sendMessage`, `userGreetingResolver`).
 
 ```ts
 const CreateUserInput = object({

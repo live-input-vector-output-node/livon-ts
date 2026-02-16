@@ -1,13 +1,22 @@
 import {themes as prismThemes} from 'prism-react-renderer';
+import {readFileSync} from 'node:fs';
+import {resolve} from 'node:path';
 import type {Config} from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
 
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
 const repository = process.env.GITHUB_REPOSITORY ?? 'live-input-vector-output-node/livon-ts';
-const [organizationName, projectName] = repository.split('/');
+const [, projectName] = repository.split('/');
 const deployToGithubPages =
   process.env.DOCUSAURUS_GITHUB_PAGES === 'true' || process.env.GITHUB_ACTIONS === 'true';
+const rootPackageJson = JSON.parse(readFileSync(resolve(__dirname, '..', 'package.json'), 'utf8')) as {
+  version?: string;
+};
+const currentVersion =
+  typeof rootPackageJson.version === 'string' && rootPackageJson.version.length > 0
+    ? `v${rootPackageJson.version}`
+    : 'v0.0.0';
 
 const config: Config = {
   title: 'LIVON',
@@ -20,14 +29,14 @@ const config: Config = {
   },
 
   // Set the production url of your site here
-  url: deployToGithubPages ? `https://${organizationName}.github.io` : 'http://127.0.0.1:3000',
+  url: deployToGithubPages ? 'https://live-input-vector-output-node.github.io' : 'http://127.0.0.1:3000',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
   baseUrl: deployToGithubPages ? `/${projectName}/` : '/',
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
-  organizationName, // Usually your GitHub org/user name.
+  organizationName: 'live-input-vector-output-node', // Usually your GitHub org/user name.
   projectName, // Usually your repo name.
 
   onBrokenLinks: deployToGithubPages ? 'warn' : 'throw',
@@ -90,18 +99,18 @@ const config: Config = {
           label: 'Docs',
         },
         {
-          to: '/docs/packages/runtime',
+          to: '/docs/core/why-livon-exists',
           position: 'left',
-          label: 'Packages',
+          label: 'Core Concepts',
         },
         {
           type: 'search',
           position: 'right',
         },
         {
-          href: `https://github.com/${organizationName}/${projectName}`,
-          label: 'GitHub',
+          to: '/docs',
           position: 'right',
+          label: currentVersion,
         },
       ],
     },
@@ -116,8 +125,8 @@ const config: Config = {
               to: '/docs',
             },
             {
-              label: 'Main',
-              to: '/docs/core/getting-started',
+              label: 'Core Concepts',
+              to: '/docs/core/why-livon-exists',
             },
             {
               label: 'Technical',
@@ -130,15 +139,6 @@ const config: Config = {
             {
               label: 'Packages',
               to: '/docs/packages/runtime',
-            },
-          ],
-        },
-        {
-          title: 'More',
-          items: [
-            {
-              label: 'GitHub',
-              href: `https://github.com/${organizationName}/${projectName}`,
             },
           ],
         },

@@ -4,6 +4,7 @@ sidebar_position: 8
 ---
 
 A task is done only if all items below are satisfied.
+Use this checklist before merge and release decisions.
 
 ## Code quality
 

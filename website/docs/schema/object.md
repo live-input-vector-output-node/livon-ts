@@ -3,12 +3,12 @@ title: "object"
 sidebar_position: 7
 ---
 
-Creates object schemas from a shape of nested schemas.
+Use this schema to validate objects from a shape of nested schemas.
 
 ```ts
 import {object, string, number} from '@livon/schema';
 
-const user = object({
+const User = object({
   name: 'User',
   shape: {
     id: string(),
@@ -17,7 +17,7 @@ const user = object({
   },
 });
 
-const value = user.parse({
+const value = User.parse({
   id: 'u-1',
   name: 'Alice',
   age: 30,
@@ -25,7 +25,7 @@ const value = user.parse({
 ```
 
 `object` fields can use any value schema from this section.  
-API contracts (`api`) are not valid as object field schemas.
+API schemas (`api`) are not valid as object field schemas.
 
 ## Parameters
 
@@ -36,7 +36,7 @@ API contracts (`api`) are not valid as object field schemas.
 ## Chain API
 
 - No schema-specific chain methods.
-- Shared methods on current type `T = Infer<object.shape>`: `optional(): Schema<T | undefined>`, `nullable(): Schema<T | null>`, `describe(doc: SchemaDoc): Schema<T>`, `refine(input): Schema<T>`, `before(hook): Schema<T>`, `after<U>(hook): Schema<U>`, `and<U>(other: Schema<U>): Schema<T & U>`.
+- Shared methods on current type `T = Infer<object.shape>`: `optional(): Schema<T | undefined>`, `nullable(): Schema<T | null>`, `describe(doc: SchemaDoc): Schema<T>`, `refine(input): Schema<T>`, `before(hook): Schema<T>`, `after<U>(hook): Schema<U>`, `and<U>(other: Schema<U>, options?: {name?: string}): Schema<T & U>`.
 
 ## Related schemas
 

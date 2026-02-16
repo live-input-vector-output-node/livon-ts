@@ -3,6 +3,8 @@ title: Testing and Quality
 sidebar_position: 4
 ---
 
+For contributors and reviewers, this page defines required test and quality standards across the monorepo.
+
 ## Root quality gates
 
 ```sh
@@ -59,7 +61,7 @@ pnpm turbo run build --filter='./packages/*' --filter='./apps/*' --concurrency=4
 ## Executable documentation rules
 
 Unit tests are treated as executable documentation.
-They must communicate behavior clearly enough that readers understand the implementation contract without opening source files.
+They must communicate behavior clearly enough that readers understand the implementation schema without opening source files.
 
 ### Naming
 
@@ -80,7 +82,7 @@ They must communicate behavior clearly enough that readers understand the implem
 - Reuse shared mock instances across tests where practical for speed.
 - Reset only per-mock state (`mockClear`/`mockReset`) instead of resetting the full Vitest runtime every test.
 - Assert call parameters explicitly for every relevant interaction.
-- Prefer interface-based mock contracts over `typeof`-based contracts when both are feasible.
+- Prefer interface-based mock schemas over `typeof`-based schemas when both are feasible.
 
 ### Mock factory pattern
 

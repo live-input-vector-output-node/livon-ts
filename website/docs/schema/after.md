@@ -3,21 +3,21 @@ title: "after"
 sidebar_position: 15
 ---
 
-Runs a post-parse transform on a validated schema value.
+Use this schema wrapper to run post-parse transforms on validated values.
 
 ```ts
 import {after, string} from '@livon/schema';
 
-const lowerUserName = after({
+const LowerUserName = after({
   schema: string().min(2),
   hook: (value) => value.toLowerCase(),
 });
 
-const value = lowerUserName.parse('ALICE');
+const value = LowerUserName.parse('ALICE');
 ```
 
 `after` can wrap any value schema from this section.  
-API contracts (`api`) are not valid as `after.schema`.
+API schemas (`api`) are not valid as `after.schema`.
 
 ## Parameters
 
@@ -27,7 +27,7 @@ API contracts (`api`) are not valid as `after.schema`.
 ## Chain API
 
 - No schema-specific chain methods.
-- Shared methods on current type `T = hook output`: `optional(): Schema<T | undefined>`, `nullable(): Schema<T | null>`, `describe(doc: SchemaDoc): Schema<T>`, `refine(input): Schema<T>`, `before(hook): Schema<T>`, `after<U>(hook): Schema<U>`, `and<U>(other: Schema<U>): Schema<T & U>`.
+- Shared methods on current type `T = hook output`: `optional(): Schema<T | undefined>`, `nullable(): Schema<T | null>`, `describe(doc: SchemaDoc): Schema<T>`, `refine(input): Schema<T>`, `before(hook): Schema<T>`, `after<U>(hook): Schema<U>`, `and<U>(other: Schema<U>, options?: {name?: string}): Schema<T & U>`.
 
 ## Related schemas
 

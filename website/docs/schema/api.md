@@ -3,14 +3,14 @@ title: "api"
 sidebar_position: 17
 ---
 
-`api({...})` composes your schema contracts into one API contract.
+Use `api({...})` to compose operation and subscription schemas into one API schema.
 
 ## Minimal usage
 
 ```ts
 import {api} from '@livon/schema';
 
-const apiSchema = api({
+const ApiSchema = api({
   type: User,
   operations: {
     sendMessage,
@@ -23,6 +23,19 @@ const apiSchema = api({
   },
 });
 ```
+
+## Runtime handoff
+
+Pass the `ApiSchema` result directly to `schemaModule(...)`:
+
+```ts
+import {runtime} from '@livon/runtime';
+import {schemaModule} from '@livon/schema';
+
+runtime(schemaModule(ApiSchema, {explain: true}));
+```
+
+No extra schema-module input adapter is required.
 
 ## `api({...})` input shape
 

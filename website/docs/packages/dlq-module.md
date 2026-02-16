@@ -3,17 +3,19 @@ title: "@livon/dlq-module"
 sidebar_position: 6
 ---
 
-[![dlq size](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Flive-input-vector-output-node%2Flivon-ts%2Fmain%2F.github%2Fbadges%2Fsize-dlq-module.json)](https://www.npmjs.com/package/@livon/dlq-module)
+## Purpose
+
+[@livon/dlq-module](/docs/packages/dlq-module) listens to [runtime](/docs/packages/runtime) `onError` events, tracks retry attempts in event context, and replays events until `maxAttempts` is reached.
+
+## Best for
+
+Use this module when you need retry control and dead-letter handling for failed runtime events.
 
 ## Install
 
 ```sh
 pnpm add @livon/dlq-module
 ```
-
-## Purpose
-
-[@livon/dlq-module](/docs/packages/dlq-module) listens to [runtime](/docs/packages/runtime) `onError` events, tracks retry attempts in event context, and replays events until `maxAttempts` is reached.
 
 ## Basic usage
 

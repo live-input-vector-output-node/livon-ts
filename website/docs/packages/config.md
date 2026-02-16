@@ -3,14 +3,6 @@ title: "@livon/config"
 sidebar_position: 7
 ---
 
-[![config size](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Flive-input-vector-output-node%2Flivon-ts%2Fmain%2F.github%2Fbadges%2Fsize-config.json)](https://www.npmjs.com/package/@livon/config)
-
-## Install
-
-```sh
-pnpm add -D @livon/config
-```
-
 ## Purpose
 
 Shared monorepo configuration package for:
@@ -20,6 +12,16 @@ Shared monorepo configuration package for:
 - SWC
 - Rsbuild / Rslib / Rspack
 - Vitest
+
+## Best for
+
+Use this package when workspace projects need consistent tooling defaults across lint, build, and test.
+
+## Install
+
+```sh
+pnpm add -D @livon/config
+```
 
 ## Usage
 
@@ -42,7 +44,10 @@ module.exports = require('@livon/config/eslint/base.cjs');
 ```ts
 import {createRslibConfig} from '@livon/config/rslib/base';
 
-export default createRslibConfig();
+export default createRslibConfig({
+  target: 'web',
+  formats: ['esm', 'cjs'],
+});
 ```
 
 ### Vitest
@@ -50,7 +55,7 @@ export default createRslibConfig();
 ```ts
 import {createVitestConfig} from '@livon/config/vitest/base';
 
-export default createVitestConfig();
+export default createVitestConfig({type: 'unit'});
 ```
 
 ## Parameters in these examples
@@ -65,7 +70,11 @@ ESLint:
 
 Rslib / Vitest:
 
-- `createRslibConfig()` / `createVitestConfig()` take optional config overrides; call without args to use project defaults.
+- `createRslibConfig({...})`:
+  - `target` (`'web' | 'node'`): output runtime target.
+  - `formats` (`('esm' | 'cjs')[]`): module formats to emit.
+- `createVitestConfig({...})`:
+  - `type` (`'unit' | 'integration'`): test project mode.
 
 ## Related pages
 

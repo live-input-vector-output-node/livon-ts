@@ -3,24 +3,24 @@ title: "or"
 sidebar_position: 12
 ---
 
-Creates union-like schemas with optional discriminator logic.
+Use this combinator to validate with multiple schema options and optional discriminator logic.
 
 ```ts
 import {enumeration, literal, or} from '@livon/schema';
 
-const role = enumeration('Role').values('free', 'pro');
-const legacyRole = literal({name: 'LegacyRole', value: 'legacy'});
+const Role = enumeration('Role').values('free', 'pro');
+const LegacyRole = literal({name: 'LegacyRole', value: 'legacy'});
 
-const roleInput = or({
+const RoleInput = or({
   name: 'RoleInput',
-  options: [role, legacyRole] as const,
+  options: [Role, LegacyRole] as const,
 });
 
-const value = roleInput.parse('pro');
+const value = RoleInput.parse('pro');
 ```
 
 `or.options` can use any value schema from this section.  
-API contracts (`api`) are not valid as `or` options.
+API schemas (`api`) are not valid as `or` options.
 
 ## Parameters
 
@@ -32,7 +32,7 @@ API contracts (`api`) are not valid as `or` options.
 ## Chain API
 
 - No schema-specific chain methods.
-- Shared methods on current type `T = or(options)`: `optional(): Schema<T | undefined>`, `nullable(): Schema<T | null>`, `describe(doc: SchemaDoc): Schema<T>`, `refine(input): Schema<T>`, `before(hook): Schema<T>`, `after<U>(hook): Schema<U>`, `and<U>(other: Schema<U>): Schema<T & U>`.
+- Shared methods on current type `T = or(options)`: `optional(): Schema<T | undefined>`, `nullable(): Schema<T | null>`, `describe(doc: SchemaDoc): Schema<T>`, `refine(input): Schema<T>`, `before(hook): Schema<T>`, `after<U>(hook): Schema<U>`, `and<U>(other: Schema<U>, options?: {name?: string}): Schema<T & U>`.
 
 ## Related schemas
 

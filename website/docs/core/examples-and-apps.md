@@ -12,7 +12,7 @@ This repository ships app examples under `apps/*` for end-to-end usage.
 
 ## Example purpose
 
-- Demonstrate [schema contracts](/docs/schema) across server and client.
+- Demonstrate [schemas](/docs/schema) across server and client.
 - Demonstrate runtime composition with transports.
 - Provide a reference for generated client API usage.
 

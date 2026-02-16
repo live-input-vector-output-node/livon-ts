@@ -3,14 +3,14 @@ title: "number"
 sidebar_position: 3
 ---
 
-Creates a number schema with numeric constraints.
+Use this schema to validate numbers with numeric constraints.
 
 ```ts
 import {number} from '@livon/schema';
 
-const score = number().int().min(0).max(100);
+const Score = number().int().min(0).max(100);
 
-const value = score.parse(42);
+const value = Score.parse(42);
 ```
 
 ## Parameters
@@ -25,4 +25,4 @@ const value = score.parse(42);
 - `.int(): Schema<number>`: requires an integer.
 - `.positive(): Schema<number>`: requires `value > 0`.
 
-Shared methods on current type `T = number`: `optional(): Schema<T | undefined>`, `nullable(): Schema<T | null>`, `describe(doc: SchemaDoc): Schema<T>`, `refine(input): Schema<T>`, `before(hook): Schema<T>`, `after<U>(hook): Schema<U>`, `and<U>(other: Schema<U>): Schema<T & U>`.
+Shared methods on current type `T = number`: `optional(): Schema<T | undefined>`, `nullable(): Schema<T | null>`, `describe(doc: SchemaDoc): Schema<T>`, `refine(input): Schema<T>`, `before(hook): Schema<T>`, `after<U>(hook): Schema<U>`, `and<U>(other: Schema<U>, options?: {name?: string}): Schema<T & U>`.

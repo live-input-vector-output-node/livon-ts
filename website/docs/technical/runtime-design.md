@@ -3,7 +3,7 @@ title: Runtime Design
 sidebar_position: 2
 ---
 
-This page documents runtime responsibilities and boundaries.
+For runtime maintainers, this page documents runtime responsibilities and execution-flow boundaries.
 
 ## Goals
 
@@ -122,7 +122,7 @@ runtime(
 
 `schemaModule(serverSchema)`:
 
-- `serverSchema` (`SchemaModuleInput`): [schema](/docs/schema) contract adapter for runtime.
+- `serverSchema` (`Api | ComposedApi`): [schema](/docs/schema) schema object returned by `api(...)` or `composeApi(...)`.
 
 `clientWsTransport(clientWsConfig)`:
 
@@ -188,7 +188,7 @@ sequenceDiagram
   R-->>App: ack ok=false
 ```
 
-## Contract behavior
+## Schema behavior
 
 - Operations can define `input`, `output`, `exec`, `publish`, `rooms`, and `ack`.
 - Subscriptions define `payload` and optional `input`, `output`, `filter`, `exec`.
@@ -215,7 +215,7 @@ type EventEnvelope = {
 ## Boundaries
 
 - Runtime orchestrates hooks and event forwarding.
-- [Schema module](/docs/packages/schema) validates, executes, and encodes/decodes contract payloads.
+- [Schema module](/docs/packages/schema) validates, executes, and encodes/decodes schema payloads.
 - Transport maps wire frames to/from envelopes.
 - Reliability behavior belongs to dedicated modules, not runtime or transport.
 

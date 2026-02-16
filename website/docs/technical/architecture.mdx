@@ -5,6 +5,8 @@ sidebar_position: 1
 
 import Mermaid from '@theme/Mermaid';
 
+For architects and platform engineers, this page explains how runtime, schema, client, and transport layers fit together.
+
 LIVON is an event-driven runtime with strict module boundaries:
 
 1. [@livon/runtime](/docs/packages/runtime) orchestrates hook chains and envelope lifecycle.
@@ -26,7 +28,7 @@ flowchart LR
 `}
 />
 
-## Envelope contract
+## Envelope schema
 
 All modules exchange one envelope shape (`EventEnvelope`).
 
@@ -78,7 +80,7 @@ Rules:
 | `status` | set by emit path | preserved for schema error emits | forwarded |
 | `metadata` | merged | forwarded and extended for publish (`key`, `ack`) | packed on wire |
 | `context` | merged | forwarded copy | encoded/decoded as msgpack bytes |
-| `payload` | binary only (`Uint8Array`) | decode input, run contract, encode output | packed as binary payload field |
+| `payload` | binary only (`Uint8Array`) | decode input, run schema, encode output | packed as binary payload field |
 | `error` | normalized in runtime error path | converted to schema error envelope | encoded/decoded as msgpack error field |
 
 ## Runtime responsibilities

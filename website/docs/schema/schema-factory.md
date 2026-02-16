@@ -3,7 +3,7 @@ title: "schemaFactory"
 sidebar_position: 17
 ---
 
-`schemaFactory` is the low-level API for building custom schemas when built-in helpers are not enough.
+Use `schemaFactory` to build custom schemas when built-in helpers are not enough.
 
 Use this only for advanced custom validators.  
 Most app code should use `string`, `number`, `object`, `array`, `or`, `union`, and other standard schema builders.

@@ -3,8 +3,6 @@ title: "@livon/runtime"
 sidebar_position: 1
 ---
 
-[![runtime size](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Flive-input-vector-output-node%2Flivon-ts%2Fmain%2F.github%2Fbadges%2Fsize-runtime.json)](https://www.npmjs.com/package/@livon/runtime)
-
 ## Install
 
 ```sh
@@ -18,6 +16,10 @@ pnpm add @livon/runtime
 - `onReceive`
 - `onSend`
 - `onError`
+
+## Best for
+
+Use this package when you need deterministic event flow orchestration across transports and schema execution.
 
 ## Basic usage
 
@@ -155,6 +157,7 @@ You can also scope to rooms via `ctx.room(roomId)`.
 
 ## Related pages
 
+- [Validated by Default](/docs/core/validated-by-default)
 - [@livon/schema](schema)
 - [Runtime Design](/docs/technical/runtime-design)
 - [Event Flow](/docs/technical/event-flow)

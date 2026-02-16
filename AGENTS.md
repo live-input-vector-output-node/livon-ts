@@ -5,6 +5,7 @@
 <!-- @agent.load: website/docs/core/contributing.md -->
 <!-- @agent.load: website/docs/core/testing-and-quality.md -->
 <!-- @agent.load: website/docs/technical/runtime-design.md -->
+<!-- @agent.load: packages/client/PROMPT.md -->
 <!-- @agent.load: packages/schema/PROMPT.md -->
 
 # AGENTS.md
@@ -29,6 +30,7 @@ Canonical product and engineering documentation lives in Docusaurus (`/docs`).
 3. Read `/docs/core/governance`.
 4. Load package-specific prompt entrypoints based on touched paths.
 5. For schema work, read `packages/schema/PROMPT.md`, `/docs/packages/schema`, and `/docs/schema`.
+6. For client generator work, read `packages/client/PROMPT.md`, `/docs/packages/client`, `/docs/core/generators`, and `/docs/core/schema-doc-and-generated-jsdoc`.
 
 ## Editing and Change Policy
 - Prefer normal editor-style changes for source files.

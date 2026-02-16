@@ -3,14 +3,14 @@ title: "fieldResolver"
 sidebar_position: 19
 ---
 
-`fieldResolver` in LIVON is implemented with `fieldOperation`.
+In LIVON, `fieldResolver` is implemented with `fieldOperation`.
 
 Use `fieldOperation` for type-safe field-level resolvers that depend on an entity schema.
 
 ```ts
 import {fieldOperation, object, string} from '@livon/schema';
 
-const user = object({
+const User = object({
   name: 'User',
   shape: {
     id: string(),
@@ -18,11 +18,11 @@ const user = object({
   },
 });
 
-const greetingOutput = string();
+const GreetingOutput = string();
 
 const userGreetingResolver = fieldOperation({
-  dependsOn: user,
-  output: greetingOutput,
+  dependsOn: User,
+  output: GreetingOutput,
   exec: async (entity) => `Hello ${entity.name}`,
 });
 ```
@@ -34,7 +34,7 @@ Key points:
 - `api.type` is required when `fieldOperations` are used
 
 `dependsOn`, `input`, and `output` can use any value schema from this section.  
-API contracts (`api`) are not valid as field resolver schemas.
+API schemas (`api`) are not valid as field resolver schemas.
 
 ## Parameters
 

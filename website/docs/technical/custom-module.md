@@ -3,7 +3,7 @@ title: How To Make Custom Module
 sidebar_position: 5
 ---
 
-Custom runtime modules integrate through runtime hooks.
+For runtime integrators, this page shows how to build and mount custom runtime modules safely.
 
 ## Step 1: define module factory
 
@@ -75,10 +75,10 @@ runtime(
 
 `schemaModule(serverSchema, {explain})`:
 
-- `serverSchema` (`SchemaModuleInput`): [schema](/docs/schema) runtime input built from API schema.
+- `serverSchema` (`Api | ComposedApi`): [schema](/docs/schema) runtime input returned by `api(...)` or `composeApi(...)`.
 - `explain` (`boolean`): enables explain endpoint for [schema AST](/docs/schema) metadata.
 
-## Module contract rules
+## Module schema rules
 
 1. Communicate only via runtime channels (`emit*`, `onReceive`, `onSend`, `onError`).
 2. Do not assume other modules exist.

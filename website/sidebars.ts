@@ -9,15 +9,41 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: 'category',
-      label: 'Main',
+      label: 'Core Concepts',
       items: [
-        'core/what-is-livon',
-        'core/livon-vs-others',
+        'core/why-livon-exists',
+        'core/validated-by-default',
+        'core/parse-vs-typed',
+        'core/backend-frontend-symmetry',
+        'core/schema-doc-and-generated-jsdoc',
+        'core/how-livon-differs',
+        'core/when-not-to-use-livon',
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Guides',
+      items: [
+        'core/getting-started',
         'core/for-managers',
         'core/for-frontend-developers',
         'core/for-backend-developers',
         'core/for-fullstack-developers',
-        'core/getting-started',
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Technical',
+      link: {
+        type: 'doc',
+        id: 'technical/runtime-design',
+      },
+      items: [
+        'technical/architecture',
+        'technical/event-flow',
+        'technical/roadmap',
+        'technical/custom-schema',
+        'technical/custom-module',
       ],
     },
     {
@@ -81,21 +107,6 @@ const sidebars: SidebarsConfig = {
         'core/generators',
         'core/testing-and-quality',
         'core/contributing',
-      ],
-    },
-    {
-      type: 'category',
-      label: 'Technical',
-      link: {
-        type: 'doc',
-        id: 'technical/runtime-design',
-      },
-      items: [
-        'technical/architecture',
-        'technical/event-flow',
-        'technical/roadmap',
-        'technical/custom-schema',
-        'technical/custom-module',
       ],
     },
   ],

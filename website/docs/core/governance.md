@@ -4,6 +4,7 @@ sidebar_position: 6
 ---
 
 This page defines the documentation single source of truth policy for this repository.
+Use it as the reference when deciding where canonical rules and process docs belong.
 
 ## Single source of truth
 

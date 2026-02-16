@@ -3,12 +3,12 @@ title: "union"
 sidebar_position: 11
 ---
 
-Creates union schemas by trying each option until one matches.
+Use this schema to validate union options by trying each option until one matches.
 
 ```ts
 import {union, string, number} from '@livon/schema';
 
-const stringOrNumber = union({
+const StringOrNumber = union({
   name: 'StringOrNumber',
   options: [
     string(),
@@ -16,12 +16,12 @@ const stringOrNumber = union({
   ] as const,
 });
 
-const a = stringOrNumber.parse('hello');
-const b = stringOrNumber.parse(42);
+const a = StringOrNumber.parse('hello');
+const b = StringOrNumber.parse(42);
 ```
 
 `union.options` can use any value schema from this section.  
-API contracts (`api`) are not valid as union options.
+API schemas (`api`) are not valid as union options.
 
 ## Parameters
 
@@ -32,7 +32,7 @@ API contracts (`api`) are not valid as union options.
 ## Chain API
 
 - No schema-specific chain methods.
-- Shared methods on current type `T = union(options)`: `optional(): Schema<T | undefined>`, `nullable(): Schema<T | null>`, `describe(doc: SchemaDoc): Schema<T>`, `refine(input): Schema<T>`, `before(hook): Schema<T>`, `after<U>(hook): Schema<U>`, `and<U>(other: Schema<U>): Schema<T & U>`.
+- Shared methods on current type `T = union(options)`: `optional(): Schema<T | undefined>`, `nullable(): Schema<T | null>`, `describe(doc: SchemaDoc): Schema<T>`, `refine(input): Schema<T>`, `before(hook): Schema<T>`, `after<U>(hook): Schema<U>`, `and<U>(other: Schema<U>, options?: {name?: string}): Schema<T & U>`.
 
 ## Related schemas
 

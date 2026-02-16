@@ -3,42 +3,64 @@ title: "subscription"
 sidebar_position: 18
 ---
 
-`subscription` defines how published payloads are validated and optionally transformed.
+Use `subscription` to validate published payloads and optionally transform them.
 
 ```ts
-import {object, string, subscription} from '@livon/schema';
+import {and, boolean, literal, object, string, subscription, union} from '@livon/schema';
 
-const message = object({
-  name: 'Message',
+const MessageBase = object({
+  name: 'MessageBase',
   shape: {
     author: string(),
     text: string(),
   },
 });
 
-const subscriptionInput = object({
+const WithRoom = object({
+  name: 'WithRoom',
+  shape: {
+    room: string(),
+  },
+});
+
+const Message = and({
+  left: MessageBase,
+  right: WithRoom,
+  name: 'Message',
+});
+
+const SubscriptionInput = object({
   name: 'SubscriptionInput',
   shape: {
-    author: string(),
+    author: union({
+      name: 'TargetAuthor',
+      options: [literal({name: 'AnyAuthor', value: '*'}), string()],
+    }),
   },
 });
 
-const subscriptionOutput = object({
-  name: 'SubscriptionOutput',
+const WithTrimMeta = object({
+  name: 'WithTrimMeta',
   shape: {
-    author: string(),
-    text: string(),
+    trimmed: boolean(),
   },
+});
+
+const SubscriptionOutput = and({
+  left: MessageBase,
+  right: WithTrimMeta,
+  name: 'SubscriptionOutput',
 });
 
 const onMessage = subscription({
-  input: subscriptionInput,
-  payload: message,
-  output: subscriptionOutput,
-  filter: (input, payload) => input.author === payload.author,
+  input: SubscriptionInput,
+  payload: Message,
+  output: SubscriptionOutput,
+  filter: (input, payload) => input.author === '*' || input.author === payload.author,
   exec: async (_input, payload) => ({
-    ...payload,
+    author: payload.author,
     text: payload.text.trim(),
+    trimmed: true,
   }),
 });
 ```
@@ -51,8 +73,10 @@ Key fields:
 - `filter`: optional gate (`boolean`)
 - `exec`: optional transform resolver
 
+This example uses composition (`and`, `union`) to avoid duplicate object schema definitions across input/payload/output.
+
 `input`, `payload`, and `output` can use any value schema from this section.  
-API contracts (`api`) are not valid as subscription schemas.
+API schemas (`api`) are not valid as subscription schemas.
 
 ## Parameters
 

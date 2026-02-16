@@ -11,6 +11,7 @@
 <!-- @agent.load: website/docs/technical/architecture.mdx -->
 <!-- @agent.load: website/docs/technical/event-flow.mdx -->
 <!-- @agent.load: website/docs/technical/roadmap.mdx -->
+<!-- @agent.load: packages/client/PROMPT.md -->
 <!-- @agent.load: packages/schema/PROMPT.md -->
 
 # LIVON - Root Prompt

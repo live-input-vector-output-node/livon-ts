@@ -3,7 +3,7 @@ title: How To Make Custom Schema
 sidebar_position: 4
 ---
 
-Custom [schemas](/docs/schema) in LIVON are built with [schemaFactory](/docs/schema/schema-factory).
+For advanced schema authors, this page shows how to build custom [schemas](/docs/schema) with [schemaFactory](/docs/schema/schema-factory).
 
 ## Step 1: define schema input
 

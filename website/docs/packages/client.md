@@ -3,23 +3,38 @@ title: "@livon/client"
 sidebar_position: 3
 ---
 
-[![client size](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Flive-input-vector-output-node%2Flivon-ts%2Fmain%2F.github%2Fbadges%2Fsize-client.json)](https://www.npmjs.com/package/@livon/client)
-
-## Install
-
-```sh
-pnpm add @livon/client
-```
-
 ## Purpose
 
-[@livon/client](/docs/packages/client) provides the runtime client module and generated-client foundations.
+[@livon/client](/docs/packages/client) provides deterministic client interface execution and generated-client foundations.
+
+## Best for
+
+Use this package when frontend apps consume generated LIVON APIs and typed subscription handlers.
 
 Exports include:
 
 - `createClient`
 - `createClientModule`
 - `clientModule`
+
+## Generator sync policy
+
+Generated client surfaces and hover docs are built from the client generator.
+When generator output changes, docs must be updated in sync.
+
+- Rule source: `packages/client/PROMPT.md`
+- JSDoc reference: [SchemaDoc & Generated JSDoc](/docs/core/schema-doc-and-generated-jsdoc)
+
+Current generated typing behavior to keep in sync:
+
+- `and(...)` schema nodes are emitted as TypeScript intersections (`Left & Right`).
+- If schema composition passes an explicit `name`, that name is used as the generated type name.
+
+## Install
+
+```sh
+pnpm add @livon/client
+```
 
 ## Runtime wiring (generated API path)
 
@@ -28,27 +43,30 @@ import {runtime} from '@livon/runtime';
 import {clientWsTransport} from '@livon/client-ws-transport';
 import {api} from './generated/api';
 
-const transport = clientWsTransport({url: 'ws://127.0.0.1:3002/ws'});
-runtime(transport, api);
+runtime(
+  clientWsTransport({url: 'ws://127.0.0.1:3002/ws'}),
+  api,
+);
 ```
 
 ### Parameters in this example
 
 `clientWsTransport({...})`:
 
-- `url` (`string`): websocket endpoint for the LIVON server.
+- `url` (`string`): websocket endpoint used by client transport.
 
 `runtime(transport, api)`:
 
 - `transport` (`RuntimeModule`): client transport module.
-- `api` (`RuntimeModule`): generated client module.
+- `api` (`RuntimeModule`): generated client module built from server schema.
 
 ## Subscription handling pattern
 
 ```ts
 api({
   onMessage: (payload, ctx) => {
-    // payload typed from generated schema
+    payload.text;
+    ctx.state.get('lastMessage');
   },
 });
 
@@ -59,112 +77,20 @@ api.onMessage.off();
 
 `api({...})`:
 
-- `onMessage` (`(payload, ctx) => void`): handler callback for subscription `onMessage`.
-- `payload` (in callback): typed subscription payload from generated [schema](/docs/schema).
-- `ctx` (in callback): runtime context for emit/state/room access.
+- `onMessage` (`(payload, ctx) => void`): typed subscription callback.
+- `payload` (in callback): generated payload type from server schema.
+- `ctx` (in callback): runtime context for state/emit/room access.
 
 `api.onMessage.off()`:
 
-- no parameters; disables delivery for one subscription.
-- subscriptions are enabled by default when handler is registered via `api({...})`.
-
-## Zustand integration pattern
-
-```ts
-import {create} from 'zustand';
-import {api} from './generated/api';
-
-interface ChatState {
-  messages: string[];
-}
-
-export const useChatStore = create<ChatState>((set) => {
-  api({
-    onMessage: (payload) =>
-      set((state) => ({
-        ...state,
-        messages: [...state.messages, payload.text],
-      })),
-  });
-
-  return {
-    messages: [],
-  };
-});
-```
-
-### Parameters in this example
-
-`create<ChatState>((set) => ...)`:
-
-- `set` (`(updater) => void`): Zustand state setter.
-
-`set((state) => ({...state, messages: [...] }))`:
-
-- `state` (`ChatState`): previous state snapshot used for immutable update.
-
-`api({...})`:
-
-- `onMessage` (`(payload) => void`): callback to forward subscription payload into store state.
-
-## Redux Toolkit integration pattern
-
-```ts
-import {configureStore, createSlice, type PayloadAction} from '@reduxjs/toolkit';
-
-interface ChatState {
-  messages: string[];
-}
-
-const chatSlice = createSlice({
-  name: 'chat',
-  initialState: {messages: []} as ChatState,
-  reducers: {
-    messageReceived: (state, action: PayloadAction<string>) => {
-      return {
-        ...state,
-        messages: [...state.messages, action.payload],
-      };
-    },
-  },
-});
-
-export const store = configureStore({
-  reducer: {
-    chat: chatSlice.reducer,
-  },
-});
-
-api({
-  onMessage: (payload) => {
-    store.dispatch(chatSlice.actions.messageReceived(payload.text));
-  },
-});
-```
-
-### Parameters in this example
-
-`createSlice({...})`:
-
-- `name` (`string`): redux slice name.
-- `initialState` (`ChatState`): initial store segment state.
-- `reducers` (`Record<string, reducer>`): reducer map for state transitions.
-
-`messageReceived(state, action)`:
-
-- `state` (`ChatState`): current reducer state.
-- `action.payload` (`string`): message text dispatched from subscription callback.
-
-`api({...})`:
-
-- `onMessage` (`(payload) => void`): subscription callback dispatching into redux store.
+- no parameters; disables one subscription callback stream.
 
 ## Room-scoped handlers
 
 ```ts
 api.room('global')({
   onMessage: (payload) => {
-    // room-specific handling
+    payload.text;
   },
 });
 ```
@@ -173,7 +99,7 @@ api.room('global')({
 
 `api.room(roomId)`:
 
-- `roomId` (`string`): room scope for handler registration.
+- `roomId` (`string`): room selector for scoped schema handling.
 
 `api.room(... )({...})`:
 
@@ -181,24 +107,24 @@ api.room('global')({
 
 ## Low-level client module
 
-If you need direct control over AST-driven client behavior:
-
 ```ts
 import {createClientModule} from '@livon/client';
+import {runtime} from '@livon/runtime';
 
-const clientModule = createClientModule({ast});
-runtime(transport, clientModule);
+const module = createClientModule({ast});
+runtime(transport, module);
 ```
 
 ### Parameters in this example
 
 `createClientModule({...})`:
 
-- `ast` (`AstNode`): [schema AST](/docs/schema) used to build low-level client contract behavior.
+- `ast` (`AstNode`): schema AST used to build executable client interface module.
 
 ## Related pages
 
 - [@livon/runtime](runtime)
 - [@livon/client-ws-transport](client-ws-transport)
 - [@livon/schema](schema)
+- [SchemaDoc & Generated JSDoc](/docs/core/schema-doc-and-generated-jsdoc)
 - [Schema APIs](/docs/schema)

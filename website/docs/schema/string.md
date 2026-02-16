@@ -3,14 +3,14 @@ title: "string"
 sidebar_position: 2
 ---
 
-Creates a string schema with optional chain validators.
+Use this schema to validate strings with optional chain validators.
 
 ```ts
 import {string} from '@livon/schema';
 
-const userName = string().min(3).max(20);
+const UserName = string().min(3).max(20);
 
-const value = userName.parse('alice');
+const value = UserName.parse('alice');
 ```
 
 ## Parameters
@@ -25,4 +25,4 @@ const value = userName.parse('alice');
 - `.email(): Schema<string>`: requires a valid email format.
 - `.regex(pattern: RegExp): Schema<string>`: requires `pattern.test(value) === true`.
 
-Shared methods on current type `T = string`: `optional(): Schema<T | undefined>`, `nullable(): Schema<T | null>`, `describe(doc: SchemaDoc): Schema<T>`, `refine(input): Schema<T>`, `before(hook): Schema<T>`, `after<U>(hook): Schema<U>`, `and<U>(other: Schema<U>): Schema<T & U>`.
+Shared methods on current type `T = string`: `optional(): Schema<T | undefined>`, `nullable(): Schema<T | null>`, `describe(doc: SchemaDoc): Schema<T>`, `refine(input): Schema<T>`, `before(hook): Schema<T>`, `after<U>(hook): Schema<U>`, `and<U>(other: Schema<U>, options?: {name?: string}): Schema<T & U>`.

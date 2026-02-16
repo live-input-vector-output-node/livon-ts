@@ -5,6 +5,7 @@ sidebar_position: 1
 
 [@livon/schema](/docs/packages/schema) exports schema builders and schema combinators.  
 This section documents each schema API with a focused usage example.
+Use it as the reference when implementing or reviewing schema definitions.
 
 ## Foundations
 
@@ -35,7 +36,7 @@ This section documents each schema API with a focused usage example.
 - [after](after)
 - [and](and)
 
-## API contracts
+## API schemas
 
 - [api](api)
 - [operation](operation)
@@ -53,7 +54,6 @@ import {
   before,
   binary,
   boolean,
-  createSchemaModuleInput,
   date,
   enumeration,
   literal,
@@ -67,97 +67,91 @@ import {
   union,
 } from '@livon/schema';
 
-const author = string().min(2);
-const messageText = string().min(1);
-const priority = number().int().min(0);
-const isPinned = boolean();
-const createdAt = date();
-const role = enumeration('Role').values('user', 'moderator', 'admin');
+const Author = string().min(2);
+const MessageText = string().min(1);
+const Priority = number().int().min(0);
+const IsPinned = boolean();
+const CreatedAt = date();
+const Role = enumeration('Role').values('user', 'moderator', 'admin');
 
-const tags = array({name: 'Tags', item: string()});
-const position = tuple({name: 'Position', items: [number(), number()]});
-const globalRoom = literal({name: 'GlobalRoom', value: 'global'});
-const attachment = binary({name: 'Attachment'});
+const Tags = array({name: 'Tags', item: string()});
+const Position = tuple({name: 'Position', items: [number(), number()]});
+const GlobalRoom = literal({name: 'GlobalRoom', value: 'global'});
+const Attachment = binary({name: 'Attachment'});
 
-const textOrAttachment = union({
+const TextOrAttachment = union({
   name: 'TextOrAttachment',
-  options: [messageText, attachment],
+  options: [MessageText, Attachment],
 });
 
-const roomSelector = or({
+const RoomSelector = or({
   name: 'RoomSelector',
-  options: [globalRoom, string()],
+  options: [GlobalRoom, string()],
 });
 
-const normalizedText = before({
-  schema: messageText,
+const NormalizedText = before({
+  schema: MessageText,
   hook: (input) => (typeof input === 'string' ? input.trim() : input),
 });
 
-const lowerText = after({
-  schema: normalizedText,
+const LowerText = after({
+  schema: NormalizedText,
   hook: (value) => value.toLowerCase(),
 });
 
-const positiveInt = and({
-  left: number().int(),
-  right: number().positive(),
-});
-
-const messageInput = object({
+const MessageInput = object({
   name: 'MessageInput',
   shape: {
-    author,
-    text: normalizedText,
-    room: roomSelector,
-    priority: positiveInt,
-    isPinned,
-    createdAt,
-    role,
-    tags,
-    position,
+    author: Author,
+    text: NormalizedText,
+    payload: TextOrAttachment,
+    room: RoomSelector,
+    priority: Priority,
+    isPinned: IsPinned,
+    createdAt: CreatedAt,
+    role: Role,
+    tags: Tags,
+    position: Position,
   },
 });
 
-const message = object({
-  name: 'Message',
+const WithId = object({
+  name: 'WithId',
   shape: {
-    author,
-    text: lowerText,
-    room: roomSelector,
-    payload: textOrAttachment,
-    priority,
-    isPinned,
-    createdAt,
-    role,
-    tags,
-    position,
+    id: string(),
   },
+});
+
+const MessageWithId = and({
+  left: MessageInput,
+  right: WithId,
+  name: 'MessageWithId',
 });
 
 const sendMessage = operation({
-  input: messageInput,
-  output: message,
+  input: MessageInput,
+  output: MessageWithId,
   exec: async (input) => ({
     ...input,
+    text: LowerText.parse(input.text),
     payload: input.text,
-    text: input.text,
+    id: 'msg-1',
   }),
   publish: {
     onMessage: (output) => output,
   },
 });
 
-const onMessage = subscription({
-  payload: message,
+const OnMessage = subscription({
+  payload: MessageWithId,
 });
 
-const apiSchema = api({
+const ApiSchema = api({
   operations: {sendMessage},
-  subscriptions: {onMessage},
+  subscriptions: {onMessage: OnMessage},
 });
 
-export const serverSchema = createSchemaModuleInput(apiSchema);
+export const serverSchema = ApiSchema;
 ```
 
 ## Parameters
@@ -167,7 +161,7 @@ Each function parameter used above is documented on its dedicated schema page:
 
 - primitives and collections: [string](string), [number](number), [boolean](boolean), [date](date), [enumeration](enumeration), [object](object), [array](array), [tuple](tuple), [literal](literal), [union](union), [or](or), [binary](binary)
 - combinators: [before](before), [after](after), [and](and)
-- contracts: [api](api), [operation](operation), [subscription](subscription), [fieldResolver](field-resolver)
+- schemas: [api](api), [operation](operation), [subscription](subscription), [fieldResolver](field-resolver)
 
 ## Advanced APIs
 

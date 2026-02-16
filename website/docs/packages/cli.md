@@ -3,7 +3,13 @@ title: "@livon/cli"
 sidebar_position: 8
 ---
 
-[![cli size](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Flive-input-vector-output-node%2Flivon-ts%2Fmain%2F.github%2Fbadges%2Fsize-cli.json)](https://www.npmjs.com/package/@livon/cli)
+## Purpose
+
+CLI for syncing [schema AST](/docs/schema) from a running server and generating/updating client outputs.
+
+## Best for
+
+Use this package when you want generated client APIs to stay in sync during local development and CI.
 
 ## Install
 
@@ -11,23 +17,17 @@ sidebar_position: 8
 pnpm add -D @livon/cli
 ```
 
-## Purpose
-
-CLI for syncing [schema AST](/docs/schema) from a running server and generating/updating client outputs.
-
-## Basic command
+## Recommended command (sync + app)
 
 ```sh
-livon --endpoint ws://127.0.0.1:3002/ws --out src/generated/api.ts --poll 2000
+livon \
+  --endpoint ws://127.0.0.1:3002/ws \
+  --out src/generated/api.ts \
+  --poll 2000 \
+  -- pnpm dev
 ```
 
-## Run sync and app command in one process
-
-You can append a command directly (without `&&`):
-
-```sh
-livon --endpoint ws://127.0.0.1:3002/ws --out src/generated/api.ts --poll 2000 next start
-```
+## Linked process lifecycle
 
 If the linked command exits, `livon` exits too.  
 If `livon` exits, it terminates the linked command.

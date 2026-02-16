@@ -3,14 +3,14 @@ title: "boolean"
 sidebar_position: 4
 ---
 
-Creates a boolean schema.
+Use this schema to validate boolean values.
 
 ```ts
 import {boolean} from '@livon/schema';
 
-const isAdmin = boolean();
+const IsAdmin = boolean();
 
-const value = isAdmin.parse(true);
+const value = IsAdmin.parse(true);
 ```
 
 ## Parameters
@@ -21,4 +21,4 @@ const value = isAdmin.parse(true);
 ## Chain API
 
 - No schema-specific chain methods.
-- Shared methods on current type `T = boolean`: `optional(): Schema<T | undefined>`, `nullable(): Schema<T | null>`, `describe(doc: SchemaDoc): Schema<T>`, `refine(input): Schema<T>`, `before(hook): Schema<T>`, `after<U>(hook): Schema<U>`, `and<U>(other: Schema<U>): Schema<T & U>`.
+- Shared methods on current type `T = boolean`: `optional(): Schema<T | undefined>`, `nullable(): Schema<T | null>`, `describe(doc: SchemaDoc): Schema<T>`, `refine(input): Schema<T>`, `before(hook): Schema<T>`, `after<U>(hook): Schema<U>`, `and<U>(other: Schema<U>, options?: {name?: string}): Schema<T & U>`.

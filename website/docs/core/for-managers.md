@@ -3,53 +3,24 @@ title: For Engineering Managers
 sidebar_position: 4
 ---
 
-This page explains LIVON from a delivery and team-scaling perspective.
+For engineering managers, this page explains LIVON from a delivery planning and team-scaling perspective.
 
-## What you get with LIVON
+## Manager advantages
 
-<table className="livon-comparison-table">
-  <thead>
-    <tr>
-      <th>Topic</th>
-      <th>Typical setup</th>
-      <th className="livon-highlight-column">LIVON</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>Change management</td>
-      <td>backend, frontend, and docs drift apart</td>
-      <td className="livon-highlight-column">one contract source feeds client + server</td>
-    </tr>
-    <tr>
-      <td>Delivery risk</td>
-      <td>integration bugs appear late in cycle</td>
-      <td className="livon-highlight-column">earlier detection through shared contract flow</td>
-    </tr>
-    <tr>
-      <td>Team coordination</td>
-      <td>teams negotiate payload changes manually</td>
-      <td className="livon-highlight-column">one change path for both teams</td>
-    </tr>
-    <tr>
-      <td>Onboarding</td>
-      <td>each project has unique transport conventions</td>
-      <td className="livon-highlight-column">consistent runtime patterns across projects</td>
-    </tr>
-    <tr>
-      <td>Platform scale</td>
-      <td>repeated custom glue per squad</td>
-      <td className="livon-highlight-column">reusable modules and clearer boundaries</td>
-    </tr>
-  </tbody>
-</table>
+1. Schema updates become explicit planning units across frontend and backend.
+2. Integration risk can be reduced earlier with predictable checks at integration points.
+3. Onboarding improves with one shared runtime and schema model.
+4. Platform reuse improves through shared modules and a common execution flow.
 
-## Management impact you can measure
+## Concrete manager example
 
-1. Fewer back-and-forth integration cycles between frontend and backend.
-2. More predictable release planning because contract updates are explicit.
-3. Faster onboarding with shared architectural conventions.
-4. Better reuse of platform investments (transport, reliability, policy modules).
+Two squads ship chat and notifications on different cadences.
+With LIVON, both squads consume one shared schema workflow and generated client API updates from the same source.
+Benefit: planning risk drops because cross-team interface changes become explicit and testable before release.
+
+## Compare all dimensions
+
+Use [How Livon Differs](how-livon-differs) for the full cross-tool comparison table.
 
 ## Tradeoffs to plan for
 

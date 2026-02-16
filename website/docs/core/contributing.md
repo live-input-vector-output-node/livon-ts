@@ -3,6 +3,8 @@ title: Contributing
 sidebar_position: 5
 ---
 
+For contributors and maintainers, this page defines the local development workflow and required quality gates.
+
 ## Developer quickstart
 
 ### 1. Clone and install workspace dependencies
@@ -153,7 +155,7 @@ Use this commit prefix pattern:
 Examples:
 
 ```text
-feature: add schema runtime explain payload tests
+feature: add runtime explain payload tests
 improvement: increase schema branch coverage for operation runner
 bug: fix field operation input normalization
 refactor: split api subscription normalization helpers
@@ -169,7 +171,7 @@ For package-local commands:
 - `-C <path>`: run command in a specific workspace package/app directory.
 - `--filter <workspace-selector>`: run command against a selected workspace package.
 
-Update documentation whenever public behavior, API contracts, or workflows change.
+Update documentation whenever public behavior, API schemas, or workflows change.
 
 For JSDoc `@see` links, use `https://live-input-vector-output-node.github.io/livon-ts` as host prefix
 to keep links stable against the published docs site.
