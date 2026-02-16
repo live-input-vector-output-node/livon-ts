@@ -21,6 +21,10 @@ interface ResolveFormatsInput {
   formats: ReadonlyArray<RslibFormat>;
 }
 
+interface ResolveBuildVariantInput {
+  command: ConfigParams['command'];
+}
+
 interface ResolveEntriesInput {
   cwd: string;
   entries?: Readonly<Record<string, string>>;
@@ -95,6 +99,13 @@ const resolveFormats = ({ command, formats }: ResolveFormatsInput): ReadonlyArra
   return devFormats.length > 0 ? devFormats : formats;
 };
 
+const resolveBuildVariant = ({ command }: ResolveBuildVariantInput): 'dev' | 'default' | 'mini' => {
+  if (command === 'dev') {
+    return 'dev';
+  }
+  return process.env.LIVON_BUILD_VARIANT === 'mini' ? 'mini' : 'default';
+};
+
 /**
  * Creates a reusable Rslib configuration with deterministic dev format selection.
  *
@@ -113,7 +124,9 @@ const resolveFormats = ({ command, formats }: ResolveFormatsInput): ReadonlyArra
 export const createRslibConfig = ({ target, formats, entries }: CreateRslibConfigInput) => {
   return defineConfig(({ command }) => {
     const selectedFormats = resolveFormats({ command, formats });
-    const shouldMinify = command !== 'dev';
+    const buildVariant = resolveBuildVariant({ command });
+    const shouldMinify = buildVariant === 'mini';
+    const outputDistPath = buildVariant === 'mini' ? 'dist/mini' : 'dist';
     const cwd = process.cwd();
     const selectedEntries = resolveEntries({ cwd, entries });
     const selectedTsconfigPath = resolveBuildTsconfigPath(cwd);
@@ -137,8 +150,8 @@ export const createRslibConfig = ({ target, formats, entries }: CreateRslibConfi
       }),
       output: {
         target,
-        distPath: 'dist',
-        cleanDistPath: true,
+        distPath: outputDistPath,
+        cleanDistPath: false,
         minify: shouldMinify,
       },
     };

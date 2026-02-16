@@ -9,18 +9,24 @@
   "files": [
     "dist",
     "README.md",
+    "LICENCE.md",
     "THIRD_PARTY_NOTICES.md"
   ],
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "development": "./src/index.ts",
       "import": "./dist/index.js",
-      "require": "./dist/index.cjs",
-      "types": "./dist/index.d.ts"
+      "require": "./dist/index.cjs"
+    },
+    "./mini": {
+      "types": "./dist/mini/index.d.ts",
+      "import": "./dist/mini/index.js",
+      "require": "./dist/mini/index.cjs"
     }
   },
   "scripts": {
-    "build": "rslib build",
+    "build": "node ../../tools/build/rslib-dual-build.mjs",
     "build:watch": "rslib dev",
     "dev": "true",
     "lint": "eslint .",

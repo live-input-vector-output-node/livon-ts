@@ -15,17 +15,28 @@
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     },
+    "./mini": {
+      "types": "./dist/mini/index.d.ts",
+      "import": "./dist/mini/index.js",
+      "require": "./dist/mini/index.cjs"
+    },
     "./generate": {
       "types": "./dist/generate.d.ts",
       "import": "./dist/generate.js",
       "require": "./dist/generate.cjs"
+    },
+    "./generate/mini": {
+      "types": "./dist/mini/generate.d.ts",
+      "import": "./dist/mini/generate.js",
+      "require": "./dist/mini/generate.cjs"
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "LICENCE.md"
   ],
   "scripts": {
-    "build": "rslib build",
+    "build": "node ../../tools/build/rslib-dual-build.mjs",
     "build:watch": "rslib dev",
     "dev": "true",
     "lint": "eslint .",

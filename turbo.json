@@ -1,16 +1,19 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "concurrency": "100",
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
       "outputs": ["dist/**", "build/**"]
     },
     "build:watch": {
+      "dependsOn": ["^build"],
       "cache": false,
       "persistent": true,
       "outputs": ["dist/**", "build/**"]
     },
     "gen:client:watch": {
+      "dependsOn": ["^build"],
       "cache": false,
       "persistent": true,
       "outputs": ["src/generated/**"]

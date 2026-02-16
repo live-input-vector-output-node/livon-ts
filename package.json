@@ -4,8 +4,10 @@
   "packageManager": "pnpm@9.0.0",
   "scripts": {
     "build": "turbo run build",
-    "dev": "turbo run build:watch dev gen:client:watch --filter=./packages/* --filter=./apps/* --concurrency=20",
+    "dev": "turbo run build:watch dev gen:client:watch --filter=./packages/* --filter=./apps/*",
     "docs": "turbo run docs --filter=./website",
+    "docs:sync:package-readmes": "node tools/docs/sync-package-readmes.mjs",
+    "docs:check:package-readmes": "node tools/docs/sync-package-readmes.mjs --check",
     "test": "vitest run --passWithNoTests",
     "lint": "turbo run lint",
     "format": "turbo run format",

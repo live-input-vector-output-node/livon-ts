@@ -6,16 +6,32 @@
   "publishConfig": {
     "access": "public"
   },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./mini": {
+      "types": "./dist/mini/index.d.ts",
+      "import": "./dist/mini/index.js",
+      "require": "./dist/mini/index.cjs"
+    }
+  },
   "files": [
     "bin",
     "dist",
+    "LICENCE.md",
     "THIRD_PARTY_NOTICES.md"
   ],
   "bin": {
     "livon": "bin/livon.js"
   },
   "scripts": {
-    "build": "rslib build",
+    "build": "node ../../tools/build/rslib-dual-build.mjs",
     "build:watch": "rslib dev",
     "dev": "true",
     "lint": "eslint .",
