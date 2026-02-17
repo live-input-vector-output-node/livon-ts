@@ -140,6 +140,14 @@ const config: Config = {
               label: 'Technical',
               to: '/docs/technical/architecture',
             },
+            {
+              label: 'Privacy Policy',
+              to: '/docs/legal/privacy',
+            },
+            {
+              label: 'Imprint',
+              to: '/docs/legal/imprint',
+            }
           ],
         },
       ],

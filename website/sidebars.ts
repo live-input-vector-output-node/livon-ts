@@ -109,6 +109,14 @@ const sidebars: SidebarsConfig = {
         'technical/custom-module',
       ],
     },
+    {
+      type: 'category',
+      label: 'Legal',
+      items: [
+        'legal/privacy',
+        'legal/imprint'
+      ],
+    }
   ],
 };
 
