@@ -114,7 +114,7 @@ const sidebars: SidebarsConfig = {
       label: 'Legal',
       items: [
         'legal/privacy',
-        'legal/imprint'
+        'legal/imprint',
       ],
     }
   ],
