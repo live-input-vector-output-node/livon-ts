@@ -1,4 +1,4 @@
-import type {SidebarsConfig} from '@docusaurus/plugin-content-docs';
+import type { SidebarsConfig } from '@docusaurus/plugin-content-docs';
 
 const sidebars: SidebarsConfig = {
   docsSidebar: [
@@ -6,19 +6,6 @@ const sidebars: SidebarsConfig = {
       type: 'doc',
       id: 'index',
       label: 'Overview',
-    },
-    {
-      type: 'category',
-      label: 'Core Concepts',
-      items: [
-        'core/why-livon-exists',
-        'core/validated-by-default',
-        'core/parse-vs-typed',
-        'core/backend-frontend-symmetry',
-        'core/schema-doc-and-generated-jsdoc',
-        'core/how-livon-differs',
-        'core/when-not-to-use-livon',
-      ],
     },
     {
       type: 'category',
@@ -92,6 +79,19 @@ const sidebars: SidebarsConfig = {
         'core/generators',
         'core/testing-and-quality',
         'core/contributing',
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Core Concepts',
+      items: [
+        'core/why-livon-exists',
+        'core/validated-by-default',
+        'core/parse-vs-typed',
+        'core/backend-frontend-symmetry',
+        'core/schema-doc-and-generated-jsdoc',
+        'core/how-livon-differs',
+        'core/when-not-to-use-livon',
       ],
     },
     {

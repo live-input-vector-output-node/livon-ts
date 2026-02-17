@@ -99,9 +99,9 @@ const config: Config = {
           label: 'Docs',
         },
         {
-          to: '/docs/core/why-livon-exists',
+          to: '/docs/packages/',
           position: 'left',
-          label: 'Core Concepts',
+          label: 'Packages',
         },
         {
           type: 'search',
