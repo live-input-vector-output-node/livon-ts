@@ -29,10 +29,10 @@ const config: Config = {
   },
 
   // Set the production url of your site here
-  url: deployToGithubPages ? 'https://live-input-vector-output-node.github.io' : 'http://127.0.0.1:3000',
+  url: deployToGithubPages ? 'https://livon.tech' : 'http://127.0.0.1:3000',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: deployToGithubPages ? `/${projectName}/` : '/',
+  baseUrl: '/',
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
