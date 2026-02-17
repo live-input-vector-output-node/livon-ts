@@ -10,7 +10,7 @@ export interface NumberFactoryInput {
 /**
  * Chain operation: validates minimum numeric value.
  *
- * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/number
+ * @see https://livon.tech/docs/schema/number
  *
  * @example
  * // Enforces a minimum numeric value.
@@ -23,7 +23,7 @@ export interface NumberChainMin {
 /**
  * Chain operation: validates maximum numeric value.
  *
- * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/number
+ * @see https://livon.tech/docs/schema/number
  *
  * @example
  * // Enforces a maximum numeric value.
@@ -36,7 +36,7 @@ export interface NumberChainMax {
 /**
  * Chain operation: validates integer-only numbers.
  *
- * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/number
+ * @see https://livon.tech/docs/schema/number
  *
  * @example
  * // Restricts accepted values to integers only.
@@ -49,7 +49,7 @@ export interface NumberChainInt {
 /**
  * Chain operation: validates positive numbers.
  *
- * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/number
+ * @see https://livon.tech/docs/schema/number
  *
  * @example
  * // Restricts accepted values to positive numbers.
@@ -62,7 +62,7 @@ export interface NumberChainPositive {
 /**
  * Chain map for `number()` schemas.
  *
- * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/number
+ * @see https://livon.tech/docs/schema/number
  */
 export interface NumberChainDefinition {
   min: NumberChainMin;
@@ -79,7 +79,7 @@ export type NumberSchema = ReturnType<typeof number>;
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/number
+ * @see https://livon.tech/docs/schema/number
  *
  * @example
  * // Creates a basic number schema and validates an age.

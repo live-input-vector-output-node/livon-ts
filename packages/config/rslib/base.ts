@@ -1,7 +1,7 @@
 /**
  * Shared Rslib base config helpers exported by `@livon/config`.
  *
- * @see https://live-input-vector-output-node.github.io/livon-ts/docs/packages/config
+ * @see https://livon.tech/docs/packages/config
  */
 import { existsSync, readdirSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
@@ -122,7 +122,7 @@ const resolveBuildVariant = ({ command, variant }: ResolveBuildVariantInput): 'd
  * });
  * ```
  *
- * @see https://live-input-vector-output-node.github.io/livon-ts/docs/packages/config
+ * @see https://livon.tech/docs/packages/config
  */
 export const createRslibConfig = ({ target, formats, entries, variant = 'default' }: CreateRslibConfigInput) => {
   return defineConfig(({ command }) => {
@@ -174,7 +174,7 @@ export const createRslibConfig = ({ target, formats, entries, variant = 'default
  * });
  * ```
  *
- * @see https://live-input-vector-output-node.github.io/livon-ts/docs/packages/config
+ * @see https://livon.tech/docs/packages/config
  */
 export const createRslibMiniConfig = ({
   entries,

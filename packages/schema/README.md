@@ -15,48 +15,48 @@ pnpm add @livon/schema
 
 ## Purpose
 
-[@livon/schema](https://live-input-vector-output-node.github.io/livon-ts/docs/packages/schema) defines:
+[@livon/schema](https://livon.tech/docs/packages/schema) defines:
 
-- [value schemas](https://live-input-vector-output-node.github.io/livon-ts/docs/schema) (`string`, `number`, `object`, `array`, `or`, `union`, ...)
+- [value schemas](https://livon.tech/docs/schema) (`string`, `number`, `object`, `array`, `or`, `union`, ...)
 - operation schemas
 - subscription schemas
-- [schema runtime module](https://live-input-vector-output-node.github.io/livon-ts/docs/technical/runtime-design) (`schemaModule`)
+- [schema runtime module](https://livon.tech/docs/technical/runtime-design) (`schemaModule`)
 
 ## Schema API docs
 
 Each schema/combinator has its own usage page:
 
-- [Schema APIs overview](https://live-input-vector-output-node.github.io/livon-ts/docs/schema)
-- [Schema Type Safety](https://live-input-vector-output-node.github.io/livon-ts/docs/schema/type-safety)
-- [Schema Context](https://live-input-vector-output-node.github.io/livon-ts/docs/schema/context)
-- [string](https://live-input-vector-output-node.github.io/livon-ts/docs/schema/string)
-- [number](https://live-input-vector-output-node.github.io/livon-ts/docs/schema/number)
-- [boolean](https://live-input-vector-output-node.github.io/livon-ts/docs/schema/boolean)
-- [date](https://live-input-vector-output-node.github.io/livon-ts/docs/schema/date)
-- [enumeration](https://live-input-vector-output-node.github.io/livon-ts/docs/schema/enumeration)
-- [object](https://live-input-vector-output-node.github.io/livon-ts/docs/schema/object)
-- [array](https://live-input-vector-output-node.github.io/livon-ts/docs/schema/array)
-- [tuple](https://live-input-vector-output-node.github.io/livon-ts/docs/schema/tuple)
-- [literal](https://live-input-vector-output-node.github.io/livon-ts/docs/schema/literal)
-- [union](https://live-input-vector-output-node.github.io/livon-ts/docs/schema/union)
-- [or](https://live-input-vector-output-node.github.io/livon-ts/docs/schema/or)
-- [binary](https://live-input-vector-output-node.github.io/livon-ts/docs/schema/binary)
-- [before](https://live-input-vector-output-node.github.io/livon-ts/docs/schema/before)
-- [after](https://live-input-vector-output-node.github.io/livon-ts/docs/schema/after)
-- [and](https://live-input-vector-output-node.github.io/livon-ts/docs/schema/and)
-- [api](https://live-input-vector-output-node.github.io/livon-ts/docs/schema/api)
-- [operation](https://live-input-vector-output-node.github.io/livon-ts/docs/schema/operation)
-- [subscription](https://live-input-vector-output-node.github.io/livon-ts/docs/schema/subscription)
-- [fieldResolver](https://live-input-vector-output-node.github.io/livon-ts/docs/schema/field-resolver)
-- [schemaFactory](https://live-input-vector-output-node.github.io/livon-ts/docs/schema/schema-factory)
-- [typeGuards](https://live-input-vector-output-node.github.io/livon-ts/docs/schema/type-guards)
+- [Schema APIs overview](https://livon.tech/docs/schema)
+- [Schema Type Safety](https://livon.tech/docs/schema/type-safety)
+- [Schema Context](https://livon.tech/docs/schema/context)
+- [string](https://livon.tech/docs/schema/string)
+- [number](https://livon.tech/docs/schema/number)
+- [boolean](https://livon.tech/docs/schema/boolean)
+- [date](https://livon.tech/docs/schema/date)
+- [enumeration](https://livon.tech/docs/schema/enumeration)
+- [object](https://livon.tech/docs/schema/object)
+- [array](https://livon.tech/docs/schema/array)
+- [tuple](https://livon.tech/docs/schema/tuple)
+- [literal](https://livon.tech/docs/schema/literal)
+- [union](https://livon.tech/docs/schema/union)
+- [or](https://livon.tech/docs/schema/or)
+- [binary](https://livon.tech/docs/schema/binary)
+- [before](https://livon.tech/docs/schema/before)
+- [after](https://livon.tech/docs/schema/after)
+- [and](https://livon.tech/docs/schema/and)
+- [api](https://livon.tech/docs/schema/api)
+- [operation](https://livon.tech/docs/schema/operation)
+- [subscription](https://livon.tech/docs/schema/subscription)
+- [fieldResolver](https://livon.tech/docs/schema/field-resolver)
+- [schemaFactory](https://livon.tech/docs/schema/schema-factory)
+- [typeGuards](https://livon.tech/docs/schema/type-guards)
 
 ## Type safety model
 
-LIVON [schemas](https://live-input-vector-output-node.github.io/livon-ts/docs/schema) are both runtime validators and type sources.
+LIVON [schemas](https://livon.tech/docs/schema) are both runtime validators and type sources.
 Primitive schema names are optional, so `string()` and `number()` are valid defaults.
 
-1. Define payload shape once in [schema](https://live-input-vector-output-node.github.io/livon-ts/docs/schema).
+1. Define payload shape once in [schema](https://livon.tech/docs/schema).
 2. Validate unknown input with `parse()`.
 3. Reuse schema entrypoint with `typed()`.
 4. Derive types with `Infer` instead of hand-written payload interfaces.
@@ -131,10 +131,10 @@ export const serverSchema = apiSchema;
 
 For focused usage patterns:
 
-- [api](https://live-input-vector-output-node.github.io/livon-ts/docs/schema/api)
-- [operation](https://live-input-vector-output-node.github.io/livon-ts/docs/schema/operation)
-- [subscription](https://live-input-vector-output-node.github.io/livon-ts/docs/schema/subscription)
-- [fieldResolver](https://live-input-vector-output-node.github.io/livon-ts/docs/schema/field-resolver)
+- [api](https://livon.tech/docs/schema/api)
+- [operation](https://livon.tech/docs/schema/operation)
+- [subscription](https://livon.tech/docs/schema/subscription)
+- [fieldResolver](https://livon.tech/docs/schema/field-resolver)
 
 ## Mount schema module into runtime
 
@@ -154,12 +154,12 @@ runtime(schemaModule(serverSchema, {explain: true}));
 
 ## Explain endpoint
 
-If `explain: true`, [schema module](https://live-input-vector-output-node.github.io/livon-ts/docs/technical/runtime-design) responds to `$explain` with AST/checksum metadata.
+If `explain: true`, [schema module](https://livon.tech/docs/technical/runtime-design) responds to `$explain` with AST/checksum metadata.
 
 ## Related pages
 
-- [Validated by Default](https://live-input-vector-output-node.github.io/livon-ts/docs/core/validated-by-default)
-- [parse vs typed](https://live-input-vector-output-node.github.io/livon-ts/docs/core/parse-vs-typed)
-- [Schema APIs overview](https://live-input-vector-output-node.github.io/livon-ts/docs/schema)
-- [Runtime Design](https://live-input-vector-output-node.github.io/livon-ts/docs/technical/runtime-design)
-- [Architecture](https://live-input-vector-output-node.github.io/livon-ts/docs/technical/architecture)
+- [Validated by Default](https://livon.tech/docs/core/validated-by-default)
+- [parse vs typed](https://livon.tech/docs/core/parse-vs-typed)
+- [Schema APIs overview](https://livon.tech/docs/schema)
+- [Runtime Design](https://livon.tech/docs/technical/runtime-design)
+- [Architecture](https://livon.tech/docs/technical/architecture)

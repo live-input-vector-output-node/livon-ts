@@ -4,7 +4,7 @@
  * Edit this file to change how generated interfaces, call signatures, and
  * property/method signatures are rendered across all generated clients.
  *
- * @see https://live-input-vector-output-node.github.io/livon-ts/docs/packages/client
+ * @see https://livon.tech/docs/packages/client
  */
 import { fileURLToPath } from 'node:url';
 

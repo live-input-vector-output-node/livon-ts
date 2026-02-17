@@ -1,7 +1,7 @@
 /**
  * Shared Vitest base config helpers exported by `@livon/config`.
  *
- * @see https://live-input-vector-output-node.github.io/livon-ts/docs/packages/config
+ * @see https://livon.tech/docs/packages/config
  */
 type VitestProjectType = 'unit' | 'integration';
 
@@ -37,7 +37,7 @@ export interface VitestConfig {
  * export default createVitestConfig({ type: 'unit' });
  * ```
  *
- * @see https://live-input-vector-output-node.github.io/livon-ts/docs/packages/config
+ * @see https://livon.tech/docs/packages/config
  */
 export const createVitestConfig = (input: VitestConfigInput): VitestConfig => {
   const mockExcludes = ['**/testing/mocks/**', '**/__mocks__/**'];

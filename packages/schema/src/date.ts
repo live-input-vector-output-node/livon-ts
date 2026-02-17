@@ -13,7 +13,7 @@ export interface DateFactoryInput {
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/date
+ * @see https://livon.tech/docs/schema/date
  *
  * @example
  * // Creates a date schema and validates a Date object.

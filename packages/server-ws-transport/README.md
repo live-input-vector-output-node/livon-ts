@@ -9,7 +9,7 @@
 
 ## Purpose
 
-Node transport adapter for [@livon/runtime](https://live-input-vector-output-node.github.io/livon-ts/docs/packages/runtime).  
+Node transport adapter for [@livon/runtime](https://livon.tech/docs/packages/runtime).  
 It maps websocket wire envelopes to deterministic runtime envelopes.
 
 ## Install
@@ -47,6 +47,6 @@ The transport enriches event context with:
 
 ## Related pages
 
-- [@livon/runtime](https://live-input-vector-output-node.github.io/livon-ts/docs/packages/runtime)
-- [@livon/client-ws-transport](https://live-input-vector-output-node.github.io/livon-ts/docs/packages/client-ws-transport)
-- [Event Flow](https://live-input-vector-output-node.github.io/livon-ts/docs/technical/event-flow)
+- [@livon/runtime](https://livon.tech/docs/packages/runtime)
+- [@livon/client-ws-transport](https://livon.tech/docs/packages/client-ws-transport)
+- [Event Flow](https://livon.tech/docs/technical/event-flow)

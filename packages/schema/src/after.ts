@@ -11,7 +11,7 @@ export interface AfterInput<T> {
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/after
+ * @see https://livon.tech/docs/schema/after
  *
  * @example
  * // Postprocesses validated string output by converting it to uppercase.

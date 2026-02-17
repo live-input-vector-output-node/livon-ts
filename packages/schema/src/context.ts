@@ -31,7 +31,7 @@ export interface CreateState {
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/context
+ * @see https://livon.tech/docs/schema/context
  *
  * @example
  * const result = createBuilder(undefined as never);
@@ -53,7 +53,7 @@ export const createBuilder: CreateBuilder = () => {
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/context
+ * @see https://livon.tech/docs/schema/context
  *
  * @example
  * const result = createState(undefined as never);
@@ -87,7 +87,7 @@ export interface NormalizeBuildContext {
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/context
+ * @see https://livon.tech/docs/schema/context
  *
  * @example
  * const result = normalizeBuildContext(undefined as never);
@@ -110,7 +110,7 @@ export interface IsNormalizedRequest {
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/context
+ * @see https://livon.tech/docs/schema/context
  *
  * @example
  * const result = isNormalizedRequest(undefined as never);
@@ -129,7 +129,7 @@ export interface NormalizeRequestContext {
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/context
+ * @see https://livon.tech/docs/schema/context
  *
  * @example
  * const result = normalizeRequestContext(undefined as never);
@@ -170,7 +170,7 @@ export interface CreateSchemaContext {
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/context
+ * @see https://livon.tech/docs/schema/context
  *
  * @example
  * const result = createSchemaContext(undefined as never);

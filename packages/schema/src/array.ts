@@ -14,7 +14,7 @@ export interface ArraySchemaInput<T> {
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/array
+ * @see https://livon.tech/docs/schema/array
  *
  * @example
  * // Creates an array schema that validates string items.

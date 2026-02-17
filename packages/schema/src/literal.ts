@@ -13,7 +13,7 @@ export interface LiteralSchemaInput<T extends string | number | boolean> {
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/literal
+ * @see https://livon.tech/docs/schema/literal
  *
  * @example
  * // Creates a literal schema that accepts only the value 'ok'.

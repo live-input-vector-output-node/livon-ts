@@ -11,7 +11,7 @@ export interface BeforeInput<T> {
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/before
+ * @see https://livon.tech/docs/schema/before
  *
  * @example
  * // Preprocesses string input by trimming whitespace before validation.

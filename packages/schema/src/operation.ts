@@ -187,7 +187,7 @@ export interface OperationFactory {
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/operation
+ * @see https://livon.tech/docs/schema/operation
  *
  * @example
  * const result = operation(undefined as never);
@@ -235,7 +235,7 @@ export interface FieldOperationFactory {
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/operation
+ * @see https://livon.tech/docs/schema/operation
  *
  * @example
  * const result = fieldOperation(undefined as never);
@@ -298,7 +298,7 @@ export function fieldOperation<TDependsOnSchema extends AnySchema, TResult>(
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/operation
+ * @see https://livon.tech/docs/schema/operation
  *
  * @example
  * const result = withOperationName(undefined as never);
@@ -321,7 +321,7 @@ export const withOperationName = <
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/operation
+ * @see https://livon.tech/docs/schema/operation
  *
  * @example
  * const result = withFieldOperationName(undefined as never);
@@ -420,7 +420,7 @@ const wrapPublisher = (ctx: SchemaContext) => {
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/operation
+ * @see https://livon.tech/docs/schema/operation
  *
  * @example
  * const result = runOperation(undefined as never);
@@ -455,7 +455,7 @@ export const runOperation = async <
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/operation
+ * @see https://livon.tech/docs/schema/operation
  *
  * @example
  * const result = runFieldOperation(undefined as never);

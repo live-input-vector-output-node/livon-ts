@@ -62,7 +62,7 @@ const resolveOrMatch = <TValues extends readonly AnySchema[]>({
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/or
+ * @see https://livon.tech/docs/schema/or
  *
  * @example
  * // Creates an or-schema that accepts either string or number identifiers.

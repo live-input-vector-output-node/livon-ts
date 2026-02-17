@@ -1,7 +1,7 @@
 /**
  * Public package entrypoint for `@livon/node-ws-transport`.
  *
- * @see https://live-input-vector-output-node.github.io/livon-ts/docs/packages/node-ws-transport
+ * @see https://livon.tech/docs/packages/node-ws-transport
  */
 import { randomUUID } from 'node:crypto';
 import type { IncomingMessage } from 'node:http';
@@ -315,7 +315,7 @@ const buildReceiveEmitInput = ({ envelope, context }: BuildReceiveEmitInput): Em
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see https://live-input-vector-output-node.github.io/livon-ts/docs/packages/node-ws-transport
+ * @see https://livon.tech/docs/packages/node-ws-transport
  *
  * @example
  * const result = nodeWsTransport(undefined as never);

@@ -1,7 +1,7 @@
 /**
  * Shared Rsbuild base config helpers exported by `@livon/config`.
  *
- * @see https://live-input-vector-output-node.github.io/livon-ts/docs/packages/config
+ * @see https://livon.tech/docs/packages/config
  */
 import { defineConfig } from '@rsbuild/core';
 import { pluginReact } from '@rsbuild/plugin-react';
@@ -19,7 +19,7 @@ import { pluginReact } from '@rsbuild/plugin-react';
  * });
  * ```
  *
- * @see https://live-input-vector-output-node.github.io/livon-ts/docs/packages/config
+ * @see https://livon.tech/docs/packages/config
  */
 export const createRsbuildReactConfig = ({
   entry,

@@ -13,7 +13,7 @@ export interface BinarySchemaInput {
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/binary
+ * @see https://livon.tech/docs/schema/binary
  *
  * @example
  * // Creates a binary schema and validates a Uint8Array payload.

@@ -15,7 +15,7 @@ pnpm add @livon/runtime
 
 ## Purpose
 
-[@livon/runtime](https://live-input-vector-output-node.github.io/livon-ts/docs/packages/runtime) is the event pipeline core. It composes modules and executes hook chains for:
+[@livon/runtime](https://livon.tech/docs/packages/runtime) is the event pipeline core. It composes modules and executes hook chains for:
 
 - `onReceive`
 - `onSend`
@@ -157,7 +157,7 @@ You can also scope to rooms via `ctx.room(roomId)`.
 
 ## Related pages
 
-- [Validated by Default](https://live-input-vector-output-node.github.io/livon-ts/docs/core/validated-by-default)
-- [@livon/schema](https://live-input-vector-output-node.github.io/livon-ts/docs/packages/schema)
-- [Runtime Design](https://live-input-vector-output-node.github.io/livon-ts/docs/technical/runtime-design)
-- [Event Flow](https://live-input-vector-output-node.github.io/livon-ts/docs/technical/event-flow)
+- [Validated by Default](https://livon.tech/docs/core/validated-by-default)
+- [@livon/schema](https://livon.tech/docs/packages/schema)
+- [Runtime Design](https://livon.tech/docs/technical/runtime-design)
+- [Event Flow](https://livon.tech/docs/technical/event-flow)

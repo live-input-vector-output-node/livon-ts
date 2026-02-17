@@ -62,7 +62,7 @@ export default createVitestConfig({type: 'unit'});
 
 TypeScript:
 
-- `extends` (`string`): path to shared tsconfig preset from [@livon/config](https://live-input-vector-output-node.github.io/livon-ts/docs/packages/config).
+- `extends` (`string`): path to shared tsconfig preset from [@livon/config](https://livon.tech/docs/packages/config).
 
 ESLint:
 
@@ -78,6 +78,6 @@ Rslib / Vitest:
 
 ## Related pages
 
-- [Packages Overview](https://live-input-vector-output-node.github.io/livon-ts/docs/packages)
-- [Contributing](https://live-input-vector-output-node.github.io/livon-ts/docs/core/contributing)
-- [Roadmap](https://live-input-vector-output-node.github.io/livon-ts/docs/technical/roadmap)
+- [Packages Overview](https://livon.tech/docs/packages)
+- [Contributing](https://livon.tech/docs/core/contributing)
+- [Roadmap](https://livon.tech/docs/technical/roadmap)

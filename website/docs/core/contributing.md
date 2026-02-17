@@ -196,7 +196,7 @@ For package-local commands:
 
 Update documentation whenever public behavior, API schemas, or workflows change.
 
-For JSDoc `@see` links, use `https://live-input-vector-output-node.github.io/livon-ts` as host prefix
+For JSDoc `@see` links, use `https://livon.tech` as host prefix
 to keep links stable against the published docs site.
 
 ## Rule sources

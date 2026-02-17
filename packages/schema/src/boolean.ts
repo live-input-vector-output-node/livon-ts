@@ -13,7 +13,7 @@ export interface BooleanFactoryInput {
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/boolean
+ * @see https://livon.tech/docs/schema/boolean
  *
  * @example
  * // Creates a boolean schema and validates a true value.

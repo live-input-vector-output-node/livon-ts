@@ -15,7 +15,7 @@ pnpm add @livon/client-ws-transport
 
 ## Purpose
 
-Browser/client websocket transport module for [@livon/runtime](https://live-input-vector-output-node.github.io/livon-ts/docs/packages/runtime).
+Browser/client websocket transport module for [@livon/runtime](https://livon.tech/docs/packages/runtime).
 
 It provides:
 
@@ -65,7 +65,7 @@ runtime(transport, api);
 
 ## Related pages
 
-- [@livon/runtime](https://live-input-vector-output-node.github.io/livon-ts/docs/packages/runtime)
-- [@livon/client](https://live-input-vector-output-node.github.io/livon-ts/docs/packages/client)
-- [@livon/node-ws-transport](https://live-input-vector-output-node.github.io/livon-ts/docs/packages/node-ws-transport)
-- [Architecture](https://live-input-vector-output-node.github.io/livon-ts/docs/technical/architecture)
+- [@livon/runtime](https://livon.tech/docs/packages/runtime)
+- [@livon/client](https://livon.tech/docs/packages/client)
+- [@livon/node-ws-transport](https://livon.tech/docs/packages/node-ws-transport)
+- [Architecture](https://livon.tech/docs/technical/architecture)

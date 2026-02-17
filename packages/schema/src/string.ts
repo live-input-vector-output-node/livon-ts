@@ -10,7 +10,7 @@ export interface StringFactoryInput {
 /**
  * Chain operation: validates minimum length.
  *
- * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/string
+ * @see https://livon.tech/docs/schema/string
  *
  * @example
  * // Enforces at least 3 characters for a string value.
@@ -23,7 +23,7 @@ export interface StringChainMin {
 /**
  * Chain operation: validates maximum length.
  *
- * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/string
+ * @see https://livon.tech/docs/schema/string
  *
  * @example
  * // Enforces at most 120 characters for a string value.
@@ -36,7 +36,7 @@ export interface StringChainMax {
 /**
  * Chain operation: validates e-mail format.
  *
- * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/string
+ * @see https://livon.tech/docs/schema/string
  *
  * @example
  * // Validates that the string matches a basic e-mail pattern.
@@ -49,7 +49,7 @@ export interface StringChainEmail {
 /**
  * Chain operation: validates a custom regular expression.
  *
- * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/string
+ * @see https://livon.tech/docs/schema/string
  *
  * @example
  * // Validates the string against a custom regular expression.
@@ -62,7 +62,7 @@ export interface StringChainRegex {
 /**
  * Chain map for `string()` schemas.
  *
- * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/string
+ * @see https://livon.tech/docs/schema/string
  */
 export interface StringChainDefinition extends SchemaFactoryChainDefinition<string> {
   min: StringChainMin;
@@ -79,7 +79,7 @@ export type StringSchema = ReturnType<typeof string>;
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/string
+ * @see https://livon.tech/docs/schema/string
  *
  * @example
  * // Creates a basic string schema and validates a username.

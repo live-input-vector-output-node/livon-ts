@@ -15,7 +15,7 @@ pnpm add @livon/dlq-module
 
 ## Purpose
 
-[@livon/dlq-module](https://live-input-vector-output-node.github.io/livon-ts/docs/packages/dlq-module) listens to [runtime](https://live-input-vector-output-node.github.io/livon-ts/docs/packages/runtime) `onError` events, tracks retry attempts in event context, and replays events until `maxAttempts` is reached.
+[@livon/dlq-module](https://livon.tech/docs/packages/dlq-module) listens to [runtime](https://livon.tech/docs/packages/runtime) `onError` events, tracks retry attempts in event context, and replays events until `maxAttempts` is reached.
 
 ## Basic usage
 
@@ -69,6 +69,6 @@ context.dlq = {
 
 ## Related pages
 
-- [@livon/runtime](https://live-input-vector-output-node.github.io/livon-ts/docs/packages/runtime)
-- [Event Flow](https://live-input-vector-output-node.github.io/livon-ts/docs/technical/event-flow)
-- [Architecture](https://live-input-vector-output-node.github.io/livon-ts/docs/technical/architecture)
+- [@livon/runtime](https://livon.tech/docs/packages/runtime)
+- [Event Flow](https://livon.tech/docs/technical/event-flow)
+- [Architecture](https://livon.tech/docs/technical/architecture)

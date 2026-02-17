@@ -6,7 +6,7 @@ import type { SchemaDoc } from './types.js';
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see https://live-input-vector-output-node.github.io/livon-ts/docs/packages/schema
+ * @see https://livon.tech/docs/packages/schema
  *
  * @example
  * const result = normalizeDoc(undefined as never);
@@ -30,7 +30,7 @@ export const normalizeDoc = (doc?: SchemaDoc): Readonly<Record<string, unknown>>
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see https://live-input-vector-output-node.github.io/livon-ts/docs/packages/schema
+ * @see https://livon.tech/docs/packages/schema
  *
  * @example
  * const result = mergeDoc(undefined as never);

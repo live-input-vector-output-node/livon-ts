@@ -6,7 +6,7 @@ export type EnumValues = readonly [string | number, ...(string | number)[]];
 /**
  * Chain operation: enforces one exact enum literal.
  *
- * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/enumeration
+ * @see https://livon.tech/docs/schema/enumeration
  *
  * @example
  * // Restricts parsed values to one exact enum literal.
@@ -19,7 +19,7 @@ export interface EnumLiteralChain<TValue extends string | number> {
 /**
  * Chain map for enum schemas.
  *
- * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/enumeration
+ * @see https://livon.tech/docs/schema/enumeration
  */
 export interface EnumChainDefinition<TValue extends string | number>
   extends SchemaFactoryChainDefinition<TValue> {
@@ -29,7 +29,7 @@ export interface EnumChainDefinition<TValue extends string | number>
 /**
  * Factory returned by `enumeration(...)`.
  *
- * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/enumeration
+ * @see https://livon.tech/docs/schema/enumeration
  */
 export interface EnumFactory {
   values: <TValues extends EnumValues>(
@@ -43,7 +43,7 @@ export interface EnumFactory {
  * @remarks
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/enumeration
+ * @see https://livon.tech/docs/schema/enumeration
  *
  * @example
  * // Creates an enum schema that accepts only 'admin' or 'user'.

@@ -9,7 +9,7 @@
 
 ## Purpose
 
-[@livon/client](https://live-input-vector-output-node.github.io/livon-ts/docs/packages/client) provides deterministic client interface execution and generated-client foundations.
+[@livon/client](https://livon.tech/docs/packages/client) provides deterministic client interface execution and generated-client foundations.
 
 Exports include:
 
@@ -110,7 +110,7 @@ runtime(transport, module);
 
 ## Related pages
 
-- [@livon/runtime](https://live-input-vector-output-node.github.io/livon-ts/docs/packages/runtime)
-- [@livon/client-ws-transport](https://live-input-vector-output-node.github.io/livon-ts/docs/packages/client-ws-transport)
-- [@livon/schema](https://live-input-vector-output-node.github.io/livon-ts/docs/packages/schema)
-- [Schema APIs](https://live-input-vector-output-node.github.io/livon-ts/docs/schema)
+- [@livon/runtime](https://livon.tech/docs/packages/runtime)
+- [@livon/client-ws-transport](https://livon.tech/docs/packages/client-ws-transport)
+- [@livon/schema](https://livon.tech/docs/packages/schema)
+- [Schema APIs](https://livon.tech/docs/schema)

@@ -1,7 +1,7 @@
 /**
  * Shared Vitest base config helpers exported by `@livon/config/vitest/base.cjs`.
  *
- * @see https://live-input-vector-output-node.github.io/livon-ts/docs/packages/config
+ * @see https://livon.tech/docs/packages/config
  */
 
 /**
@@ -14,7 +14,7 @@
  * module.exports = createVitestConfig({ type: 'unit' });
  * ```
  *
- * @see https://live-input-vector-output-node.github.io/livon-ts/docs/packages/config
+ * @see https://livon.tech/docs/packages/config
  *
  * @param {{ type: 'unit' | 'integration' }} input
  * @returns {{

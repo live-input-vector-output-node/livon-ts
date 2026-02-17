@@ -11,7 +11,7 @@ type AnySchema = Schema<any>;
  * `union` is an alias of `or`.
  * Parameter and return types are defined in the TypeScript signature.
  *
- * @see https://live-input-vector-output-node.github.io/livon-ts/docs/schema/union
+ * @see https://livon.tech/docs/schema/union
  *
  * @example
  * // Creates a union schema that accepts either string or number identifiers.
