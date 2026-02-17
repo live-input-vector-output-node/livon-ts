@@ -125,20 +125,20 @@ const config: Config = {
               to: '/docs',
             },
             {
-              label: 'Core Concepts',
-              to: '/docs/core/why-livon-exists',
+              label: 'Packages',
+              to: '/docs/packages/runtime',
             },
             {
-              label: 'Technical',
-              to: '/docs/technical/architecture',
+              label: 'Core Concepts',
+              to: '/docs/core/why-livon-exists',
             },
             {
               label: 'Contribution',
               to: '/docs/core/contributing',
             },
             {
-              label: 'Packages',
-              to: '/docs/packages/runtime',
+              label: 'Technical',
+              to: '/docs/technical/architecture',
             },
           ],
         },
