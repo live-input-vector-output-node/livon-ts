@@ -20,6 +20,7 @@ export type AndLegacyInput<T, U> = {
 };
 
 const isLegacyInput = (
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Heterogeneous schema types in array require any for variance.
   input: AndLegacyInput<unknown, unknown> | AndSchemaInput<readonly [Schema<any>, ...Schema<any>[]]>,
 ): input is AndLegacyInput<unknown, unknown> => 'left' in input && 'right' in input;
 
@@ -68,10 +69,12 @@ const isLegacyInput = (
  * });
  * MessageComplete.parse({ text: 'Hello', id: 'm-1', timestamp: Date.now() });
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Heterogeneous schema types in array require any for variance.
 export function and<TSchemas extends readonly [Schema<any>, ...Schema<any>[]]>(
   input: AndSchemaInput<TSchemas>,
 ): Schema<IntersectTuple<InferSchemasTuple<TSchemas>>>;
 export function and<T, U>(input: AndLegacyInput<T, U>): Schema<T & U>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Heterogeneous schema types in array require any for variance.
 export function and(
   input: AndLegacyInput<unknown, unknown> | AndSchemaInput<readonly [Schema<any>, ...Schema<any>[]]>,
 ): Schema<unknown> {
