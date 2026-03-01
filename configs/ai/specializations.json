@@ -1,0 +1,65 @@
+{
+  "version": 1,
+  "specializations": [
+    {
+      "id": "client-generator",
+      "scopePatterns": [
+        "packages/client/**"
+      ],
+      "instructionFiles": [
+        "packages/client/AGENTS.md",
+        ".github/instructions/client.instructions.md"
+      ],
+      "requiredLoad": [
+        "packages/client/PROMPT.md",
+        "website/docs/packages/client.md",
+        "website/docs/core/generators.md",
+        "website/docs/core/schema-doc-and-generated-jsdoc.md"
+      ],
+      "deltaRules": [
+        "Treat generator output behavior changes as doc-sensitive changes.",
+        "Run scoped generator tests when generated surface behavior changes."
+      ]
+    },
+    {
+      "id": "runtime-core",
+      "scopePatterns": [
+        "packages/runtime/**"
+      ],
+      "instructionFiles": [
+        "packages/runtime/AGENTS.md",
+        ".github/instructions/runtime.instructions.md"
+      ],
+      "requiredLoad": [
+        "website/docs/technical/runtime-design.md",
+        "website/docs/technical/architecture.mdx",
+        "website/docs/technical/event-flow.mdx",
+        "website/docs/core/testing-and-quality.md"
+      ],
+      "deltaRules": [
+        "Preserve deterministic hook order and context boundaries.",
+        "Keep runtime concerns separate from transport and schema-specific concerns."
+      ]
+    },
+    {
+      "id": "schema-core",
+      "scopePatterns": [
+        "packages/schema/**"
+      ],
+      "instructionFiles": [
+        "packages/schema/AGENTS.md",
+        ".github/instructions/schema.instructions.md"
+      ],
+      "requiredLoad": [
+        "packages/schema/PROMPT.md",
+        "website/docs/packages/schema.md",
+        "website/docs/schema/index.md",
+        "website/docs/core/testing-and-quality.md"
+      ],
+      "deltaRules": [
+        "Maintain branch-complete happy/sad coverage for changed schema behavior.",
+        "Keep schema runtime behavior and schema docs aligned in the same change."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,168 @@
+{
+  "alwaysLoad": [
+    "PROMPT.md",
+    "PROMPTS.md",
+    "website/docs/ai/context-routing.md",
+    "website/docs/ai/active-rules-and-gates.md",
+    "website/docs/ai/root-gate.md"
+  ],
+  "baselineLoad": [
+    "website/docs/core/governance.md",
+    "website/docs/core/coding-style-guide.md",
+    "website/docs/core/definition-of-done.md"
+  ],
+  "routes": [
+    {
+      "id": "schema-package",
+      "patterns": [
+        "packages/schema/**"
+      ],
+      "load": [
+        "packages/schema/PROMPT.md",
+        "website/docs/packages/schema.md",
+        "website/docs/schema/index.md"
+      ]
+    },
+    {
+      "id": "schema-api",
+      "patterns": [
+        "website/docs/schema/**",
+        "packages/schema/src/**"
+      ],
+      "load": [
+        "website/docs/schema/index.md",
+        "website/docs/schema/schema-factory.md",
+        "website/docs/schema/type-safety.md"
+      ]
+    },
+    {
+      "id": "client-package",
+      "patterns": [
+        "packages/client/**"
+      ],
+      "load": [
+        "packages/client/PROMPT.md",
+        "website/docs/packages/client.md",
+        "website/docs/core/generators.md",
+        "website/docs/core/schema-doc-and-generated-jsdoc.md"
+      ]
+    },
+    {
+      "id": "runtime-and-transport",
+      "patterns": [
+        "packages/runtime/**",
+        "packages/*transport/**",
+        "apps/server/**"
+      ],
+      "load": [
+        "website/docs/technical/runtime-design.md",
+        "website/docs/technical/architecture.mdx",
+        "website/docs/technical/event-flow.mdx",
+        "website/docs/technical/roadmap.mdx"
+      ]
+    },
+    {
+      "id": "testing-quality",
+      "patterns": [
+        "**/*.spec.ts",
+        "**/*.test.ts",
+        "vitest*.ts",
+        "tools/policies/**"
+      ],
+      "load": [
+        "website/docs/core/testing-and-quality.md"
+      ]
+    },
+    {
+      "id": "governance-and-workflow",
+      "patterns": [
+        ".github/**",
+        "tools/**",
+        "package.json",
+        "turbo.json"
+      ],
+      "load": [
+        "website/docs/core/governance.md",
+        "website/docs/core/contributing.md"
+      ]
+    },
+    {
+      "id": "ai-specializations",
+      "patterns": [
+        "packages/*/AGENTS.md",
+        ".github/instructions/**",
+        "configs/ai/specializations.json",
+        "tools/policies/**"
+      ],
+      "load": [
+        "configs/ai/specializations.json",
+        "website/docs/ai/specializations.md"
+      ]
+    },
+    {
+      "id": "project-context",
+      "patterns": [
+        "website/docs/core/project-context.md",
+        "website/docs/core/change-history.md",
+        "website/docs/technical/roadmap.mdx"
+      ],
+      "load": [
+        "website/docs/core/project-context.md",
+        "website/docs/core/change-history.md",
+        "website/docs/technical/roadmap.mdx"
+      ]
+    },
+    {
+      "id": "packages-catalog",
+      "patterns": [
+        "website/sidebars.ts",
+        "website/docs/packages/**",
+        "packages/**/README.md"
+      ],
+      "load": [
+        "website/docs/packages/index.md"
+      ]
+    }
+  ],
+  "fixtures": [
+    {
+      "path": "packages/schema/src/index.ts",
+      "mustLoad": [
+        "packages/schema/PROMPT.md",
+        "website/docs/packages/schema.md",
+        "website/docs/schema/index.md"
+      ]
+    },
+    {
+      "path": "packages/client/src/generate.ts",
+      "mustLoad": [
+        "packages/client/PROMPT.md",
+        "website/docs/core/generators.md",
+        "website/docs/core/schema-doc-and-generated-jsdoc.md"
+      ]
+    },
+    {
+      "path": "packages/runtime/src/runtime.ts",
+      "mustLoad": [
+        "website/docs/technical/runtime-design.md",
+        "website/docs/technical/event-flow.mdx"
+      ]
+    },
+    {
+      "path": "tools/policies/check.ts",
+      "mustLoad": [
+        "website/docs/core/governance.md",
+        "website/docs/core/contributing.md",
+        "website/docs/core/testing-and-quality.md",
+        "website/docs/ai/root-gate.md",
+        "configs/ai/specializations.json",
+        "website/docs/ai/specializations.md"
+      ]
+    }
+  ],
+  "enforcement": {
+    "maxRootAgentLoads": 6,
+    "maxActiveRules": 12,
+    "maxAlwaysLoadItems": 5
+  }
+}

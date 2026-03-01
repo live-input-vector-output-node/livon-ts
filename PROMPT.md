@@ -1,18 +1,7 @@
 <!-- @agent.entry -->
 <!-- @agent.load: PROMPTS.md -->
 <!-- @agent.load: website/docs/core/governance.md -->
-<!-- @agent.load: website/docs/core/coding-style-guide.md -->
-<!-- @agent.load: website/docs/core/definition-of-done.md -->
-<!-- @agent.load: website/docs/core/project-context.md -->
-<!-- @agent.load: website/docs/core/change-history.md -->
-<!-- @agent.load: website/docs/core/contributing.md -->
-<!-- @agent.load: website/docs/core/testing-and-quality.md -->
-<!-- @agent.load: website/docs/technical/runtime-design.md -->
-<!-- @agent.load: website/docs/technical/architecture.mdx -->
-<!-- @agent.load: website/docs/technical/event-flow.mdx -->
-<!-- @agent.load: website/docs/technical/roadmap.mdx -->
-<!-- @agent.load: packages/client/PROMPT.md -->
-<!-- @agent.load: packages/schema/PROMPT.md -->
+<!-- @agent.load: website/docs/ai/root-gate.md -->
 
 # LIVON - Root Prompt
 
@@ -43,4 +32,19 @@ Technical pages:
 - `/docs/technical/event-flow`
 - `/docs/technical/roadmap`
 
-This file is an agent entrypoint and redirect only.
+AI control pages:
+
+- `/docs/ai`
+- `/docs/ai/root-gate`
+- `/docs/ai/specializations`
+- `/docs/ai/context-routing`
+- `/docs/ai/active-rules-and-gates`
+- `/docs/ai/tool-mapping`
+
+Rule highlights:
+
+- Repository-wide recurring rules are centralized in `/docs/ai/root-gate`.
+- Scope-specific deviations are centralized in `/docs/ai/specializations`.
+- Keep implementation and documentation synchronized in both directions: implementation changes require docs updates, and rule/behavior docs changes require matching implementation updates.
+
+This file is an agent entrypoint only.

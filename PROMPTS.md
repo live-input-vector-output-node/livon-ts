@@ -1,21 +1,8 @@
 <!-- @agent.entry -->
 <!-- @agent.load: PROMPT.md -->
-<!-- @agent.load: website/docs/index.md -->
-<!-- @agent.load: website/docs/core/governance.md -->
-<!-- @agent.load: website/docs/core/coding-style-guide.md -->
-<!-- @agent.load: website/docs/core/definition-of-done.md -->
-<!-- @agent.load: website/docs/core/project-context.md -->
-<!-- @agent.load: website/docs/core/change-history.md -->
-<!-- @agent.load: website/docs/core/contributing.md -->
-<!-- @agent.load: website/docs/core/testing-and-quality.md -->
-<!-- @agent.load: website/docs/core/generators.md -->
-<!-- @agent.load: website/docs/technical/runtime-design.md -->
-<!-- @agent.load: website/docs/technical/architecture.mdx -->
-<!-- @agent.load: website/docs/technical/event-flow.mdx -->
-<!-- @agent.load: website/docs/technical/roadmap.mdx -->
-<!-- @agent.load: website/docs/packages/index.md -->
-<!-- @agent.load: packages/client/PROMPT.md -->
-<!-- @agent.load: packages/schema/PROMPT.md -->
+<!-- @agent.load: website/docs/ai/root-gate.md -->
+<!-- @agent.load: website/docs/ai/specializations.md -->
+<!-- @agent.load: website/docs/ai/context-routing.md -->
 
 # Prompt Index
 
@@ -27,6 +14,16 @@ This file lists prompt entrypoints and canonical Docusaurus rule/documentation p
 - `PROMPTS.md` – prompt inventory entrypoint
 - `packages/client/PROMPT.md` – client package prompt entrypoint
 - `packages/schema/PROMPT.md` – schema package prompt entrypoint
+
+## AI control entrypoints
+
+- `website/docs/ai/index.md` – AI control-plane overview
+- `website/docs/ai/root-gate.md` – centralized recurring repository-wide rules
+- `website/docs/ai/specializations.md` – centralized scope-specific deviations
+- `website/docs/ai/context-routing.md` – deterministic context routing policy
+- `website/docs/ai/active-rules-and-gates.md` – active rule set + gate review contract
+- `website/docs/ai/tool-mapping.md` – Codex/Copilot capability mapping
+- `website/docs/ai/approach-and-rationale.md` – design rationale and official references
 
 ## Canonical documentation source
 

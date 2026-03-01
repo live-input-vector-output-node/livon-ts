@@ -20,6 +20,7 @@ Use this page as the primary reference instead of repeating the same rule text a
 | `root-no-hardcoded-filter` | Root scripts must not hardcode `--filter`; filters are caller-supplied. | root script policy check |
 | `workspace-tool-packages` | Shared automation lives in dedicated workspace packages and runs via Turbo tasks. | governance + workspace structure checks |
 | `dual-track-rule-publication` | New or changed rules must be documented for humans and agents. | gate review + docs workflow |
+| `docs-implementation-sync` | Keep documentation and implementation synchronized in both directions: implementation changes require docs updates, and docs changes that alter contracts/behavior require matching implementation updates. | gate review + definition-of-done + code review |
 | `docs-canonical-source` | Documentation content is edited in `website/docs` only; other docs artifacts are generated/derived from canonical docs. | governance + docs workflows + generated artifact checks |
 | `pre-push-full-gates` | Before every push, run `pnpm qg` (full repository gates: `check:readmes`, `check:policies`, `lint`, `typecheck`, `test`, `build`). | contributing workflow + CI parity |
 | `lint-warning-no-regressions` | Lint warning counts are budgeted per package and must not increase without explicitly updating the central budget config. | lint scripts + `configs/quality/lint-warning-budgets.json` + policy checks |

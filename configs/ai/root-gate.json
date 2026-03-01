@@ -65,6 +65,18 @@
       ]
     },
     {
+      "id": "docs-implementation-sync",
+      "statement": "Keep documentation and implementation synchronized in both directions: implementation changes require docs updates, and docs changes that alter contracts or behavior require matching implementation updates.",
+      "humanSources": [
+        "website/docs/core/definition-of-done.md",
+        "website/docs/ai/root-gate.md"
+      ],
+      "agentSources": [
+        "PROMPT.md",
+        "AGENTS.md"
+      ]
+    },
+    {
       "id": "docs-canonical-source",
       "statement": "Documentation content must be edited in website/docs only; other documentation artifacts are generated or derived from canonical docs.",
       "humanSources": [
