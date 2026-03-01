@@ -1,0 +1,16 @@
+{
+  "name": "@livon/policies",
+  "version": "0.27.0-rc.5",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "true",
+    "dev": "true",
+    "lint": "true",
+    "typecheck": "true",
+    "test": "true",
+    "check:policies": "node --experimental-strip-types check.ts",
+    "check:links": "node --experimental-strip-types link-check.ts",
+    "metrics:ai-control": "node --experimental-strip-types ai-metrics.ts"
+  }
+}
