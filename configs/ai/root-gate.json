@@ -103,6 +103,18 @@
       ]
     },
     {
+      "id": "workflow-action-version-consistency",
+      "statement": "GitHub Actions referenced across repository workflows must use one consistent version per action; when updating workflow actions, prefer the newest compatible version and align all workflows.",
+      "humanSources": [
+        "website/docs/core/contributing.md",
+        "website/docs/ai/root-gate.md"
+      ],
+      "agentSources": [
+        "PROMPT.md",
+        "AGENTS.md"
+      ]
+    },
+    {
       "id": "lint-warning-no-regressions",
       "statement": "Lint warning counts are budgeted per package and must not increase without explicitly updating the central budget config.",
       "humanSources": [
