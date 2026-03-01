@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "budgets": {
+    "@livon/app-client": 2,
+    "@livon/app-name": 0,
+    "@livon/app-server": 5,
+    "@livon/browser-lib": 0,
+    "@livon/cli": 7,
+    "@livon/client": 19,
+    "@livon/client-ws-transport": 1,
+    "@livon/dlq-module": 0,
+    "@livon/frontend-app": 0,
+    "@livon/node-lib": 0,
+    "@livon/node-ws-transport": 2,
+    "@livon/package-name": 0,
+    "@livon/rspack-app": 0,
+    "@livon/runtime": 8,
+    "@livon/schema": 14
+  }
+}

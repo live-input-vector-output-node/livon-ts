@@ -35,7 +35,7 @@
     "postbuild": "rslib build -c rslib.mini.config.ts",
     "build:watch": "rslib dev",
     "dev": "true",
-    "lint": "eslint .",
+    "lint": "eslint . --max-warnings 7",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "true",
     "test:unit": "true",
