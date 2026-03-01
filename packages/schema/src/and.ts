@@ -19,7 +19,7 @@ export interface AndLegacyInput<T, U> {
   name?: string;
 }
 
-type VariadicSchemaTuple = readonly [Schema<any>, ...Schema<any>[]]; // eslint-disable-line @typescript-eslint/no-explicit-any -- Schema<T> is invariant; this tuple supports heterogeneous schema chaining.
+type VariadicSchemaTuple = readonly [Schema<any>, Schema<any>, ...Schema<any>[]]; // eslint-disable-line @typescript-eslint/no-explicit-any -- Schema<T> is invariant; this tuple supports heterogeneous schema chaining while enforcing at least two schemas.
 
 const isLegacyInput = (
   input: AndLegacyInput<unknown, unknown> | AndSchemaInput<VariadicSchemaTuple>,
