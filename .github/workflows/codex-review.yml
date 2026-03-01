@@ -71,8 +71,15 @@ jobs:
 
       - name: Finalize output
         id: finalize
+        env:
+          FINAL_MESSAGE: ${{ steps.run_codex.outputs['final-message'] || '' }}
         run: |
-          echo "final_message=${{ steps.run_codex.outputs['final-message'] || '' }}" >> "$GITHUB_OUTPUT"
+          delimiter="__CODEX_FINAL_MESSAGE_$(date +%s%N)__"
+          {
+            echo "final_message<<$delimiter"
+            printf '%s\n' "$FINAL_MESSAGE"
+            echo "$delimiter"
+          } >> "$GITHUB_OUTPUT"
 
   post-feedback:
     needs: codex-review
