@@ -40,6 +40,7 @@ jobs:
       - name: Run Codex review
         id: run_codex
         if: ${{ env.OPENAI_API_KEY != '' }}
+        continue-on-error: true
         uses: openai/codex-action@v1
         with:
           openai-api-key: ${{ env.OPENAI_API_KEY }}
@@ -68,6 +69,11 @@ jobs:
 
             PR body:
             ${{ github.event.pull_request.body }}
+
+      - name: Warn when Codex review is unavailable
+        if: ${{ env.OPENAI_API_KEY != '' && steps.run_codex.outcome == 'failure' }}
+        run: |
+          echo "::warning::Codex review failed (quota/service issue). Continuing without blocking PR checks."
 
       - name: Finalize output
         id: finalize
