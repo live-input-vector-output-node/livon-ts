@@ -14,6 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      pull-requests: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -60,30 +61,19 @@ jobs:
       - name: Run monorepo CI
         run: pnpm run ci
 
-      - name: Commit generated package READMEs
+      - name: Create PR for generated README and size badge updates
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: |
-          if git diff --quiet -- packages/*/README.md; then
-            echo "No README changes."
-            exit 0
-          fi
+        uses: peter-evans/create-pull-request@v7
+        with:
+          add-paths: |
+            packages/*/README.md
+            .github/badges/size-*.json
+          branch: chore/generated-artifacts-sync
+          commit-message: chore: sync generated readmes and size badges [skip ci]
+          title: chore: sync generated readmes and size badges
+          body: |
+            This PR was created automatically by CI.
 
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add packages/*/README.md
-          git commit -m "chore: sync package readmes from docs [skip ci]"
-          git push
-
-      - name: Commit updated size badges
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: |
-          if git diff --quiet -- .github/badges/size-*.json; then
-            echo "No size badge changes."
-            exit 0
-          fi
-
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .github/badges/size-*.json
-          git commit -m "chore: update minified package size badges [skip ci]"
-          git push
+            It syncs generated artifacts that can change after running the full gate pipeline:
+            - `packages/*/README.md` (generated from canonical docs)
+            - `.github/badges/size-*.json` (generated package size badges)
