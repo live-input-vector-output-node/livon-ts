@@ -1,0 +1,23 @@
+version: 2
+
+updates:
+  - package-ecosystem: "npm"
+    directories:
+      - "/"
+      - "/apps/*"
+      - "/packages/*"
+      - "/tools/*"
+      - "/website"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 20
+    groups:
+      all-npm-dependencies:
+        patterns:
+          - "*"
+        group-by: dependency-name
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"
