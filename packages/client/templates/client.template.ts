@@ -1,14 +1,14 @@
 // Template for generated Livon client module
-${{LIVON_CLIENT_IMPORTS}}
+/*__LIVON_CLIENT_IMPORTS__*/
 
-${{LIVON_CLIENT_TYPE_DEFS}}
-${{LIVON_CLIENT_EVENT_MAP}}
-${{LIVON_CLIENT_FIELD_OPS}}
-${{LIVON_CLIENT_OP_DEFS}}
+/*__LIVON_CLIENT_TYPE_DEFS__*/
+/*__LIVON_CLIENT_EVENT_MAP__*/
+/*__LIVON_CLIENT_FIELD_OPS__*/
+/*__LIVON_CLIENT_OP_DEFS__*/
 
 export type SubscriptionName = keyof LivonEventMap;
 export type SubscriptionHandler<TName extends SubscriptionName> = (payload: LivonEventMap[TName], ctx: ClientHandlerContext) => void;
-${{LIVON_CLIENT_SUB_HANDLER_DEFS}}
+/*__LIVON_CLIENT_SUB_HANDLER_DEFS__*/
 export interface SubscriptionToggleEntry { on(): void; off(): void; }
 export type SubscriptionToggles = { [K in SubscriptionName]: SubscriptionToggleEntry };
 export interface RoomApi extends SubscriptionToggles {
@@ -17,12 +17,12 @@ export interface RoomApi extends SubscriptionToggles {
 export interface LivonClient extends SubscriptionToggles, ClientModule {
   (handlers: SubscriptionHandlers): void;
   room(roomId: string): RoomApi;
-${{LIVON_CLIENT_OP_LINES}}
+/*__LIVON_CLIENT_OP_LINES__*/
   __register?: (handlers: Record<string, SubscriptionHandler<SubscriptionName>>, roomId?: string) => void;
   __toggle?: (event: SubscriptionName, enabled: boolean, roomId?: string) => void;
 }
 
-const subscriptionNames = [${{LIVON_CLIENT_SUB_NAMES}}] as const;
+const subscriptionNames = [/*__LIVON_CLIENT_SUB_NAMES__*/] as const;
 
 const runtimeClient = createRuntimeClient({ ast }) as unknown as LivonClient;
 
@@ -45,5 +45,5 @@ const createApi = (roomId?: string): LivonClient => {
   });
 };
 
-export const ${{LIVON_CLIENT_EXPORT_NAME}} = createApi();
+export const __LIVON_CLIENT_EXPORT_NAME__ = createApi();
 export const createApiClient = () => createApi();
