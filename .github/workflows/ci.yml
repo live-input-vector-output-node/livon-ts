@@ -57,6 +57,18 @@ jobs:
       - name: Generate package READMEs from docs
         run: pnpm turbo run gen:readmes
 
+      - name: Check for README drift
+        run: |
+          if [ -n "$(git status --porcelain packages/*/README.md)" ]; then
+            echo "Error: Package READMEs are out of sync with canonical docs."
+            echo "The following files were modified by gen:readmes:"
+            git status --porcelain packages/*/README.md
+            echo ""
+            echo "Please run 'pnpm turbo run gen:readmes' locally and commit the updated READMEs."
+            exit 1
+          fi
+          echo "README sync check passed: all package READMEs are up to date."
+
       - name: Run monorepo CI
         run: pnpm run ci
 
