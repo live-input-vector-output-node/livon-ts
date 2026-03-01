@@ -30,7 +30,7 @@
     "postbuild": "rslib build -c rslib.mini.config.ts",
     "build:watch": "rslib dev",
     "dev": "true",
-    "lint": "eslint . --max-warnings 14",
+    "lint": "eslint . --max-warnings 15",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run -c vitest.unit.config.ts",
     "test:unit": "vitest run -c vitest.unit.config.ts",

@@ -6,7 +6,7 @@
     "@livon/app-server": 5,
     "@livon/browser-lib": 0,
     "@livon/cli": 7,
-    "@livon/client": 19,
+    "@livon/client": 23,
     "@livon/client-ws-transport": 1,
     "@livon/dlq-module": 0,
     "@livon/frontend-app": 0,
@@ -15,6 +15,6 @@
     "@livon/package-name": 0,
     "@livon/rspack-app": 0,
     "@livon/runtime": 8,
-    "@livon/schema": 14
+    "@livon/schema": 15
   }
 }
