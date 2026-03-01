@@ -176,6 +176,7 @@ Use Turborepo as the monorepo execution layer:
 - Root scripts must not hardcode `--filter`; when scoped execution is needed, the caller adds the filter at invocation time.
 - Shared automation belongs in dedicated workspace packages (for example `tools/policies`, `tools/gen`, `tools/release`).
 - Package README synchronization is owned by `tools/readmes` and sourced from `website/docs/packages/*.md`.
+- GitHub Actions used across multiple `.github/workflows/*.yml` files must use one consistent version per action. When updating workflow actions, align all workflows to the newest compatible version.
 - Lint warning budgets are centralized in `configs/quality/lint-warning-budgets.json`; `eslint` scripts must use `--max-warnings` values from that file to prevent warning regressions.
 - Shared recurring rules belong in `/docs/ai/root-gate`; package/folder deviations belong in `/docs/ai/specializations`.
 
