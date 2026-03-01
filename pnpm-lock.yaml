@@ -376,6 +376,14 @@ importers:
         specifier: workspace:*
         version: link:../../packages/schema
 
+  tools/gen: {}
+
+  tools/policies: {}
+
+  tools/readmes: {}
+
+  tools/release: {}
+
   tools/rslib-browser:
     devDependencies:
       '@livon/config':
