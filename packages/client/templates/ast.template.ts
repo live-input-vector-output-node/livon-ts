@@ -1,4 +1,4 @@
 // Template for generated AST module
-export const ast = ${{LIVON_AST}} as const;
+export const ast = __LIVON_AST__ as const;
 
 export default ast;
