@@ -8,18 +8,24 @@ For contributors and reviewers, this page defines required test and quality stan
 ## Root quality gates
 
 ```sh
-pnpm lint
-pnpm typecheck
-pnpm test
-pnpm build
-pnpm check:policies
+pnpm qg
 ```
 
-For a single Turbo command across apps/packages:
+`qg` runs `check:readmes`, `check:policies`, `lint`, `typecheck`, `test`, and `build`.
+
+For fast local iteration on changed scope only:
 
 ```sh
-pnpm run ci
+pnpm qg:changed
 ```
+
+`qg:changed` runs the same gate graph with Turbo `--affected`.
+
+Lint warnings use per-package budgets (no regression policy):
+
+- Budgets: `configs/quality/lint-warning-budgets.json`
+- Enforcement: each `eslint` lint script uses `--max-warnings <budget>`
+- Verification: `pnpm check:policies`
 
 ## Monorepo Vitest workspace
 

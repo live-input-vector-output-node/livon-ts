@@ -69,11 +69,16 @@ pnpm dev
 ### 4. Build and run quality gates
 
 ```sh
-pnpm check:policies
-pnpm lint
-pnpm typecheck
-pnpm test
-pnpm build
+pnpm qg
+```
+
+`qg` runs the full repository gate set via Turbo:
+`check:readmes`, `check:policies`, `lint`, `typecheck`, `test`, `build`.
+
+For fast local loops, run only affected scope with the same gate graph:
+
+```sh
+pnpm qg:changed
 ```
 
 Single-command Turbo pipeline for packages/apps:
@@ -100,7 +105,7 @@ Monorepo test run via central Vitest workspace config:
 
 ```sh
 pnpm test
-pnpm run test --config vitest.workspace.ts
+pnpm exec vitest run --config vitest.workspace.ts --passWithNoTests
 ```
 
 Coverage example:
@@ -136,6 +141,24 @@ pnpm gen node schema
 pnpm -C apps/client gen:client
 ```
 
+### 9. Generate package READMEs from docs
+
+Package READMEs are generated from `website/docs/packages/*.md`.
+Do not manually maintain duplicated package README content.
+Canonical edits go into `website/docs/**`; generated README files are derived artifacts.
+
+Generate:
+
+```sh
+pnpm turbo run gen:readmes
+```
+
+Validate sync:
+
+```sh
+pnpm turbo run check:readmes
+```
+
 ## Tooling and build policy
 
 Use default tool configs and standard commands first.
@@ -148,22 +171,26 @@ Use default tool configs and standard commands first.
 Use Turborepo as the monorepo execution layer:
 
 - Cross-package sequencing, caching, and parallelism must be managed in `turbo.json`.
-- Root workflows should call `pnpm run ci` instead of bespoke orchestration scripts.
+- Root workflows should call Turbo tasks (for example `pnpm run ci`) instead of bespoke orchestration scripts.
+- Root `package.json` scripts must use `turbo run ...` and must not execute ad-hoc Node or shell commands directly.
+- Root scripts must not hardcode `--filter`; when scoped execution is needed, the caller adds the filter at invocation time.
+- Shared automation belongs in dedicated workspace packages (for example `tools/policies`, `tools/gen`, `tools/release`).
+- Package README synchronization is owned by `tools/readmes` and sourced from `website/docs/packages/*.md`.
+- Lint warning budgets are centralized in `configs/quality/lint-warning-budgets.json`; `eslint` scripts must use `--max-warnings` values from that file to prevent warning regressions.
+- Shared recurring rules belong in `/docs/ai/root-gate`; package/folder deviations belong in `/docs/ai/specializations`.
 
 Custom scripts are acceptable only when standard tooling cannot express required product behavior.
 When that happens, document the reason in the relevant docs and keep scope minimal.
 
-## Before opening a pull request
+## Before every push (mandatory)
 
 Run:
 
 ```sh
-pnpm check:policies
-pnpm lint
-pnpm typecheck
-pnpm test
-pnpm build
+pnpm qg
 ```
+
+Use the same gate set before opening a pull request.
 
 ## Commit naming convention
 

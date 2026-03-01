@@ -1,0 +1,146 @@
+{
+  "version": 1,
+  "rules": [
+    {
+      "id": "typescript-first",
+      "statement": "Prefer TypeScript over JavaScript when technically feasible.",
+      "humanSources": [
+        "website/docs/core/coding-style-guide.md",
+        "website/docs/ai/root-gate.md"
+      ],
+      "agentSources": [
+        "PROMPT.md",
+        "AGENTS.md"
+      ]
+    },
+    {
+      "id": "root-turbo-orchestration",
+      "statement": "Root package scripts must orchestrate through turbo run.",
+      "humanSources": [
+        "website/docs/core/governance.md",
+        "website/docs/core/contributing.md",
+        "website/docs/ai/root-gate.md"
+      ],
+      "agentSources": [
+        "PROMPT.md",
+        "AGENTS.md"
+      ]
+    },
+    {
+      "id": "root-no-hardcoded-filter",
+      "statement": "Root scripts must not hardcode --filter; filters are caller-supplied.",
+      "humanSources": [
+        "website/docs/core/governance.md",
+        "website/docs/core/contributing.md",
+        "website/docs/ai/root-gate.md"
+      ],
+      "agentSources": [
+        "PROMPT.md",
+        "AGENTS.md"
+      ]
+    },
+    {
+      "id": "workspace-tool-packages",
+      "statement": "Shared automation must live in dedicated workspace packages and be executed via Turbo tasks.",
+      "humanSources": [
+        "website/docs/core/governance.md",
+        "website/docs/core/contributing.md",
+        "website/docs/ai/root-gate.md"
+      ],
+      "agentSources": [
+        "PROMPT.md",
+        "AGENTS.md"
+      ]
+    },
+    {
+      "id": "dual-track-rule-publication",
+      "statement": "Any new or changed rule must be documented for both humans and agents.",
+      "humanSources": [
+        "website/docs/core/governance.md",
+        "website/docs/ai/root-gate.md"
+      ],
+      "agentSources": [
+        "PROMPT.md",
+        "AGENTS.md"
+      ]
+    },
+    {
+      "id": "docs-canonical-source",
+      "statement": "Documentation content must be edited in website/docs only; other documentation artifacts are generated or derived from canonical docs.",
+      "humanSources": [
+        "website/docs/core/governance.md",
+        "website/docs/core/contributing.md",
+        "website/docs/ai/root-gate.md"
+      ],
+      "agentSources": [
+        "PROMPT.md",
+        "AGENTS.md"
+      ]
+    },
+    {
+      "id": "pre-push-full-gates",
+      "statement": "Before every push, run `pnpm qg` (full repository gates: check:readmes, check:policies, lint, typecheck, test, build).",
+      "humanSources": [
+        "website/docs/core/contributing.md",
+        "website/docs/core/governance.md",
+        "website/docs/ai/root-gate.md"
+      ],
+      "agentSources": [
+        "PROMPT.md",
+        "AGENTS.md"
+      ]
+    },
+    {
+      "id": "lint-warning-no-regressions",
+      "statement": "Lint warning counts are budgeted per package and must not increase without explicitly updating the central budget config.",
+      "humanSources": [
+        "website/docs/core/contributing.md",
+        "website/docs/core/testing-and-quality.md",
+        "website/docs/ai/root-gate.md",
+        "configs/quality/lint-warning-budgets.json"
+      ],
+      "agentSources": [
+        "PROMPT.md",
+        "AGENTS.md"
+      ]
+    },
+    {
+      "id": "package-readmes-from-docs",
+      "statement": "Package README files are generated from website/docs/packages sources and must stay in sync.",
+      "humanSources": [
+        "website/docs/core/contributing.md",
+        "website/docs/core/governance.md",
+        "website/docs/ai/root-gate.md"
+      ],
+      "agentSources": [
+        "PROMPT.md",
+        "AGENTS.md"
+      ]
+    },
+    {
+      "id": "aggregated-policy-reporting",
+      "statement": "Policy checks must run as a set and report one aggregated result.",
+      "humanSources": [
+        "website/docs/ai/active-rules-and-gates.md",
+        "website/docs/ai/context-routing.md",
+        "website/docs/ai/root-gate.md"
+      ],
+      "agentSources": [
+        "AGENTS.md"
+      ]
+    },
+    {
+      "id": "centralize-shared-rules",
+      "statement": "Shared recurring rules must be centralized in root gate; scoped deviations must be registered in specializations.",
+      "humanSources": [
+        "website/docs/ai/root-gate.md",
+        "website/docs/ai/specializations.md",
+        "website/docs/core/governance.md"
+      ],
+      "agentSources": [
+        "PROMPT.md",
+        "AGENTS.md"
+      ]
+    }
+  ]
+}

@@ -9,12 +9,13 @@ Use it as the reference when deciding where canonical rules and process docs bel
 ## Single source of truth
 
 Canonical project documentation lives in Docusaurus under `/docs`.
+Canonical documentation content edits must happen in `website/docs/**`.
 
-Root markdown files outside `website/docs` are entrypoints and compatibility stubs only.
+Derived documentation artifacts (for example `packages/*/README.md`) must be generated from canonical docs and must not be manually maintained as separate content sources.
 
 ## Rule source map
 
-1. [What Is LIVON and Why](what-is-livon)
+1. [Why Livon Exists](why-livon-exists)
 2. [Getting Started](getting-started)
 3. [Contributing](contributing)
 4. [Coding Style Guide](coding-style-guide)
@@ -33,13 +34,24 @@ Root markdown files outside `website/docs` are entrypoints and compatibility stu
 - `PROMPTS.md` is the prompt index entrypoint that links to these docs.
 - Package prompt files must link to the relevant Docusaurus pages for package scope.
 
+## Rule publication contract
+
+When adding or changing rules, document them in both tracks:
+
+1. Human-facing canonical docs in Docusaurus (`/docs`).
+2. Agent-facing entrypoints and routing (`PROMPT.md`, `PROMPTS.md`, `AGENTS.md`, package prompts/instructions).
+
+A rule change is only complete when both tracks are updated.
+
+Shared recurring rules must be centralized in `/docs/ai/root-gate`.
+If a package/folder deviates, register the deviation in `/docs/ai/specializations` and its machine-readable config.
+
 ## Migration policy
 
 When adding or updating repository documentation:
 
 1. Update the Docusaurus page first.
-2. Keep root/package README-style files as short redirects only.
-3. Avoid duplicate rule text across non-doc files.
+2. Avoid duplicate rule text across non-doc files.
 
 ## Tooling governance policy
 
@@ -47,3 +59,11 @@ Tooling policy is defined in [Contributing](contributing).
 
 - Prefer default configs and standard tool commands over custom wrappers.
 - Use Turborepo (`turbo.json`) as the orchestration layer for monorepo tasks.
+- Root `package.json` scripts must orchestrate via `turbo run ...`.
+- Root scripts must not hardcode `--filter`; callers may pass filters when needed.
+- Shared automation must live in dedicated workspace packages (for example `tools/*`) and run via Turbo tasks.
+- Package README files under `packages/*/README.md` are generated artifacts sourced from `website/docs/packages/*.md`.
+- README sync is executed via `tools/readmes` (`gen:readmes`, `check:readmes`) and is part of CI/publish enforcement.
+- Lint warning budgets are centralized in `configs/quality/lint-warning-budgets.json` and enforced through package `lint` scripts + `check:policies`.
+- Before every push, run `pnpm qg` (full repository gates: `check:readmes`, `check:policies`, `lint`, `typecheck`, `test`, `build`).
+- For local development speed, `pnpm qg:changed` runs the same gate graph for affected scope only.
