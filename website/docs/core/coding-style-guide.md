@@ -17,6 +17,7 @@ Use it to keep implementation style consistent across packages and apps.
 ## Language and syntax
 
 - Use English for identifiers, comments, docs, and public APIs.
+- Prefer TypeScript over JavaScript when technically feasible.
 - Use lambda-first style (arrow functions only).
 - Do not use classes or `this`.
 - Avoid loop keywords (`for`, `while`) when declarative methods are practical.

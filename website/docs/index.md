@@ -239,12 +239,14 @@ onMessage?(payload: MessageWithId, ctx: ClientHandlerContext): void;
 - [parse vs typed](/docs/core/parse-vs-typed)
 - [Backend / Frontend Symmetry](/docs/core/backend-frontend-symmetry)
 - [SchemaDoc & Generated JSDoc](/docs/core/schema-doc-and-generated-jsdoc)
-- [How Livon Differs](/docs/core/how-livon-differs)
+- [How Livon Differs](/docs/core/why-livon-exists#how-livon-differs-from-other-tools)
 - [When Not to Use Livon](/docs/core/when-not-to-use-livon)
 
 ## Next sections
 
-- [Guides](/docs/core/getting-started): onboarding and role-focused guidance.
+- [Start Here](/docs/core/getting-started): quickest path from first install to working runtime + client sync.
+- [Guides](/docs/core/for-fullstack-developers): role-focused implementation paths for teams.
+- [Reference](/docs/packages): package docs and full schema API reference.
 - [Technical](/docs/technical/runtime-design): runtime architecture and event flow.
-- [Packages](/docs/packages): package-level usage details and schema API references.
-- [Contribution](/docs/core/contributing): governance, quality gates, and contributor workflows.
+- [Contribution](/docs/core/contributing): quality gates, workflows, and governance.
+- [AI Control](/docs/ai): agent routing, scoped context, and gate-based enforcement.

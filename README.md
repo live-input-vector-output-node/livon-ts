@@ -71,8 +71,8 @@ LIVON combines these pieces so your team can move faster with less glue code.
 ## Quick Links (GitHub Pages)
 
 - Documentation Home: https://livon.tech/docs
-- What Is LIVON and Why: https://livon.tech/docs/core/what-is-livon
-- How LIVON Differs From Other Tools: https://livon.tech/docs/core/livon-vs-others
+- Why Livon Exists: https://livon.tech/docs/core/why-livon-exists
+- How LIVON Differs From Other Tools: https://livon.tech/docs/core/why-livon-exists#how-livon-differs-from-other-tools
 - For Engineering Managers: https://livon.tech/docs/core/for-managers
 - For Frontend Developers: https://livon.tech/docs/core/for-frontend-developers
 - For Backend Developers: https://livon.tech/docs/core/for-backend-developers

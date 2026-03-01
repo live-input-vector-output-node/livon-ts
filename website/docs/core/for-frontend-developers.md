@@ -21,7 +21,7 @@ Benefit: component state updates use one schema shape, so refactors stay predict
 
 ## Compare all dimensions
 
-Use [How Livon Differs](how-livon-differs) for the full cross-tool comparison table.
+Use [How Livon Differs](why-livon-exists#how-livon-differs-from-other-tools) for the full cross-tool comparison table.
 
 ## Tradeoffs
 

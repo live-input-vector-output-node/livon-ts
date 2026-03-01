@@ -54,4 +54,3 @@ The quality-gate commands above are executed at repository root and do not requi
 ## Documentation
 
 - Update Docusaurus pages for public API or behavior changes.
-- Keep root/package markdown files as redirect stubs only.

@@ -27,4 +27,4 @@ If these integration points are not a meaningful risk or coordination surface, a
 ## Related concepts
 
 - [Why Livon Exists](why-livon-exists)
-- [How Livon Differs](how-livon-differs)
+- [How Livon Differs](why-livon-exists#how-livon-differs-from-other-tools)

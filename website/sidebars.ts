@@ -9,20 +9,41 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: 'category',
-      label: 'Guides',
+      label: 'Start Here',
       items: [
         'core/getting-started',
-        'core/for-managers',
-        'core/for-frontend-developers',
-        'core/for-backend-developers',
-        'core/for-fullstack-developers',
+        'core/why-livon-exists',
       ],
     },
     {
       type: 'category',
-      label: 'Packages',
+      label: 'Guides',
       items: [
-        'packages/index',
+        'core/for-fullstack-developers',
+        'core/for-frontend-developers',
+        'core/for-backend-developers',
+        'core/for-managers',
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Core Concepts',
+      items: [
+        'core/validated-by-default',
+        'core/parse-vs-typed',
+        'core/backend-frontend-symmetry',
+        'core/schema-doc-and-generated-jsdoc',
+        'core/when-not-to-use-livon',
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Reference',
+      link: {
+        type: 'doc',
+        id: 'packages/index',
+      },
+      items: [
         'packages/runtime',
         'packages/schema',
         {
@@ -58,40 +79,9 @@ const sidebars: SidebarsConfig = {
         'packages/client',
         'packages/client-ws-transport',
         'packages/node-ws-transport',
+        'packages/cli',
         'packages/dlq-module',
         'packages/config',
-        'packages/cli',
-      ],
-    },
-    {
-      type: 'category',
-      label: 'Contribution',
-      link: {
-        type: 'doc',
-        id: 'core/governance',
-      },
-      items: [
-        'core/coding-style-guide',
-        'core/definition-of-done',
-        'core/project-context',
-        'core/change-history',
-        'core/examples-and-apps',
-        'core/generators',
-        'core/testing-and-quality',
-        'core/contributing',
-      ],
-    },
-    {
-      type: 'category',
-      label: 'Core Concepts',
-      items: [
-        'core/why-livon-exists',
-        'core/validated-by-default',
-        'core/parse-vs-typed',
-        'core/backend-frontend-symmetry',
-        'core/schema-doc-and-generated-jsdoc',
-        'core/how-livon-differs',
-        'core/when-not-to-use-livon',
       ],
     },
     {
@@ -107,6 +97,40 @@ const sidebars: SidebarsConfig = {
         'technical/roadmap',
         'technical/custom-schema',
         'technical/custom-module',
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Contribution',
+      link: {
+        type: 'doc',
+        id: 'core/contributing',
+      },
+      items: [
+        'core/testing-and-quality',
+        'core/coding-style-guide',
+        'core/definition-of-done',
+        'core/governance',
+        'core/project-context',
+        'core/change-history',
+        'core/examples-and-apps',
+        'core/generators',
+      ],
+    },
+    {
+      type: 'category',
+      label: 'AI Control',
+      link: {
+        type: 'doc',
+        id: 'ai/index',
+      },
+      items: [
+        'ai/root-gate',
+        'ai/specializations',
+        'ai/context-routing',
+        'ai/active-rules-and-gates',
+        'ai/tool-mapping',
+        'ai/approach-and-rationale',
       ],
     },
     {

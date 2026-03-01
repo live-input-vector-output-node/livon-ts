@@ -33,7 +33,7 @@ const user = User.parse(unknownInput);
 ## `typed(validInput)` for invariant entrypoints
 
 Use `typed` when data is already local and should be structurally aligned at compile time before entering runtime flow.
-`typed` is also useful for editor autocomplete, because the schema-derived type guides field suggestions while building payloads.
+`typed` also supports full IDE autocomplete for the schema-derived payload shape (including nested fields), because the input is typed as `Infer<typeof Schema>`.
 
 ```ts
 import {type Infer} from '@livon/schema';
@@ -51,7 +51,7 @@ Autocomplete example:
 ```ts
 const draft = User.typed({
   id: 'u-1',
-  // IDE suggests: age
+  // IDE suggests remaining fields from the full schema shape, e.g. age
   age: 21,
 });
 ```

@@ -20,7 +20,7 @@ Benefit: payload mismatch is caught in runtime flow instead of surfacing later a
 
 ## Compare all dimensions
 
-Use [How Livon Differs](how-livon-differs) for the full cross-tool comparison table.
+Use [How Livon Differs](why-livon-exists#how-livon-differs-from-other-tools) for the full cross-tool comparison table.
 
 ## Tradeoffs
 
