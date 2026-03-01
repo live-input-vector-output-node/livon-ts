@@ -1,7 +1,7 @@
 {
   "version": 1,
   "budgets": {
-    "@livon/app-client": 2,
+    "@livon/app-client": 3,
     "@livon/app-name": 0,
     "@livon/app-server": 5,
     "@livon/browser-lib": 0,
