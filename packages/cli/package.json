@@ -51,7 +51,7 @@
   "devDependencies": {
     "@types/ws": "latest",
     "@typescript-eslint/eslint-plugin": "8.54.0",
-    "@typescript-eslint/parser": "8.54.0",
+    "@typescript-eslint/parser": "8.56.1",
     "@types/node": "latest",
     "eslint": "9.0.0",
     "typescript": "latest",
