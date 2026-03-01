@@ -132,8 +132,8 @@ jobs:
             packages/*/README.md
             .github/badges/size-*.json
           branch: chore/generated-artifacts-sync
-          commit-message: chore: sync generated readmes and size badges
-          title: chore: sync generated readmes and size badges
+          commit-message: "chore: sync generated readmes and size badges"
+          title: "chore: sync generated readmes and size badges"
           body: |
             This PR was created automatically by CI.
 
