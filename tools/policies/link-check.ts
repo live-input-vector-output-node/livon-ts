@@ -220,19 +220,30 @@ const listTrackedFiles = async (baseDir) => {
 
 const extractStaticReferences = (filePath, sourceText) => {
   const references = [];
+  const sourceExtension = path.extname(filePath).toLowerCase();
+  const includeMarkdownPatterns = sourceExtension === '.md' || sourceExtension === '.mdx';
+  const includeHtmlPatterns = !CODE_EXTENSIONS.has(sourceExtension);
   const patterns = [
-    {
-      kind: 'markdown_link',
-      regex: /\[[^\]]*\]\(([^)]+)\)/g,
-    },
-    {
-      kind: 'markdown_reference',
-      regex: /^\[[^\]]+\]:\s*(\S+)/gm,
-    },
-    {
-      kind: 'html_attr',
-      regex: /\b(?:href|src)=['"]([^'"]+)['"]/g,
-    },
+    ...(includeMarkdownPatterns
+      ? [
+          {
+            kind: 'markdown_link',
+            regex: /\[[^\]]*\]\(([^)]+)\)/g,
+          },
+          {
+            kind: 'markdown_reference',
+            regex: /^\[[^\]]+\]:\s*(\S+)/gm,
+          },
+        ]
+      : []),
+    ...(includeHtmlPatterns
+      ? [
+          {
+            kind: 'html_attr',
+            regex: /\b(?:href|src)=['"]([^'"]+)['"]/g,
+          },
+        ]
+      : []),
     {
       kind: 'agent_load',
       regex: /@agent\.load:\s*([^\s>]+)/g,
@@ -251,7 +262,7 @@ const extractStaticReferences = (filePath, sourceText) => {
         references.push({
           kind,
           sourcePath: filePath,
-          sourceExtension: path.extname(filePath).toLowerCase(),
+          sourceExtension,
           line: countLineNumber(sourceText, match.index),
           target,
         });
