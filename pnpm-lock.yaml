@@ -452,6 +452,14 @@ importers:
 
   tools/release: {}
 
+  tools/gen: {}
+
+  tools/policies: {}
+
+  tools/readmes: {}
+
+  tools/release: {}
+
   tools/rslib-browser:
     devDependencies:
       '@livon/config':
