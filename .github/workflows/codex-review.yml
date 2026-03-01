@@ -17,12 +17,14 @@ concurrency:
 
 jobs:
   codex-review:
-    if: ${{ !github.event.pull_request.draft && secrets.OPENAI_API_KEY != '' }}
+    if: ${{ !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
     outputs:
-      final_message: ${{ steps.run_codex.outputs.final-message }}
+      final_message: ${{ steps.finalize.outputs.final_message }}
     steps:
       - name: Checkout PR merge ref
         uses: actions/checkout@v4
@@ -37,9 +39,10 @@ jobs:
 
       - name: Run Codex review
         id: run_codex
+        if: ${{ env.OPENAI_API_KEY != '' }}
         uses: openai/codex-action@v1
         with:
-          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          openai-api-key: ${{ env.OPENAI_API_KEY }}
           allow-bots: true
           sandbox: read-only
           prompt: |
@@ -65,6 +68,11 @@ jobs:
 
             PR body:
             ${{ github.event.pull_request.body }}
+
+      - name: Finalize output
+        id: finalize
+        run: |
+          echo "final_message=${{ steps.run_codex.outputs['final-message'] || '' }}" >> "$GITHUB_OUTPUT"
 
   post-feedback:
     needs: codex-review
