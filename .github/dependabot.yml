@@ -10,6 +10,7 @@ updates:
       - "/website"
     schedule:
       interval: "daily"
+    rebase-strategy: "auto"
     open-pull-requests-limit: 20
     groups:
       all-npm-dependencies:
@@ -21,3 +22,4 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
+    rebase-strategy: "auto"
