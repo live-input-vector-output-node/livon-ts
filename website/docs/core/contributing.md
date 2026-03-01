@@ -192,6 +192,30 @@ pnpm qg
 
 Use the same gate set before opening a pull request.
 
+## Codex AI pull request review
+
+Use Codex review as an additional reviewer signal for pull requests.
+This does not replace required quality gates (`pnpm qg`).
+
+Setup:
+
+1. Install the Codex GitHub app for the repository.
+2. In ChatGPT Codex settings, enable GitHub access and repository access.
+3. Enable "Pull request reviews" in Codex settings.
+4. For GitHub Actions based review, add repository secret `OPENAI_API_KEY`.
+
+Review modes:
+
+- Manual on demand: comment `@codex review` in the pull request.
+- Automatic: in Codex repository settings, enable automatic reviews.
+- GitHub Actions automatic review: `.github/workflows/codex-review.yml`.
+
+Recommended team policy:
+
+1. Request Codex review for every non-trivial pull request.
+2. Resolve or explicitly document rationale for any high-impact Codex findings.
+3. Keep human code review as the final merge authority.
+
 ## Commit naming convention
 
 Use this commit prefix pattern:
@@ -248,25 +272,6 @@ It:
 4. Deploys to GitHub Pages.
 
 `docusaurus.config.ts` automatically adapts `url` and `baseUrl` in GitHub Actions mode.
-
-## PR branch auto-update
-
-Open pull requests targeting the default base branch (`main`/`master`) are auto-rebased via `.github/workflows/auto-update-pr-branches.yml`.
-
-It triggers on:
-
-1. every push to `main`,
-2. hourly schedule,
-3. manual workflow dispatch.
-
-Behavior:
-
-- Uses `git fetch + git rebase + git push --force-with-lease` for open PRs that are behind their base.
-- Runs automatically when new commits land on `main`/`master`.
-- Rebase is applied only when the PR branch does not already contain the latest base commit.
-- Skips drafts and PRs from forks (`head.repo` differs).
-- Skips conflicting rebases safely (with warning), without creating merge commits.
-- Works together with Dependabot `rebase-strategy: auto` in `.github/dependabot.yml`.
 
 ## Package publishing
 
