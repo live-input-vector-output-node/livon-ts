@@ -1,26 +1,32 @@
-name: Auto Update PR Branches
+name: Auto Rebase PR Branches
 
 on:
   push:
     branches:
       - main
+      - master
   workflow_dispatch:
   schedule:
     - cron: '0 * * * *'
 
 permissions:
   contents: write
-  pull-requests: write
+  pull-requests: read
 
 concurrency:
   group: auto-update-pr-branches
   cancel-in-progress: true
 
 jobs:
-  update-branches:
+  rebase-branches:
     runs-on: ubuntu-latest
     steps:
-      - name: Update open PR branches targeting main
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Rebase open PR branches that are behind
         env:
           API_URL: https://api.github.com
           REPO: ${{ github.repository }}
@@ -28,74 +34,132 @@ jobs:
         run: |
           set -euo pipefail
 
-          pulls_endpoint="$API_URL/repos/$REPO/pulls?state=open&base=main&per_page=100"
-          pulls_json="$(curl -fsSL \
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          repo_json="$(curl -fsSL \
             -H "Authorization: Bearer $TOKEN" \
             -H "Accept: application/vnd.github+json" \
-            "$pulls_endpoint")"
+            "$API_URL/repos/$REPO")"
+          default_branch="$(echo "$repo_json" | jq -r '.default_branch')"
 
-          count="$(echo "$pulls_json" | jq 'length')"
-          echo "Open PRs targeting main: $count"
-          if [ "$count" -eq 0 ]; then
-            exit 0
+          base_branches="$default_branch"
+          if [ "$default_branch" != "main" ]; then
+            base_branches="$base_branches main"
+          fi
+          if [ "$default_branch" != "master" ]; then
+            base_branches="$base_branches master"
           fi
 
+          scanned=0
           updated=0
           skipped=0
           failed=0
 
-          while IFS=$'\t' read -r pr_number pr_sha head_repo is_draft; do
-            if [ "$is_draft" = "true" ]; then
-              echo "Skipping #$pr_number (draft PR)."
-              skipped=$((skipped + 1))
+          for base_branch in $base_branches; do
+            if ! git ls-remote --exit-code --heads origin "$base_branch" >/dev/null 2>&1; then
+              echo "Skipping non-existing base branch: $base_branch"
               continue
             fi
 
-            if [ "$head_repo" != "$REPO" ]; then
-              echo "Skipping #$pr_number (head repo differs: $head_repo)."
-              skipped=$((skipped + 1))
-              continue
-            fi
+            git fetch --no-tags origin "$base_branch"
+            git checkout -B __rebase_base "origin/$base_branch"
 
-            payload="$(jq -cn --arg sha "$pr_sha" '{expected_head_sha: $sha}')"
-            response_file="$(mktemp)"
-            status_code="$(curl -sS -o "$response_file" -w "%{http_code}" \
-              -X PUT \
+            pulls_endpoint="$API_URL/repos/$REPO/pulls?state=open&base=$base_branch&per_page=100"
+            pulls_json="$(curl -fsSL \
               -H "Authorization: Bearer $TOKEN" \
               -H "Accept: application/vnd.github+json" \
-              -H "Content-Type: application/json" \
-              "$API_URL/repos/$REPO/pulls/$pr_number/update-branch" \
-              -d "$payload")"
+              "$pulls_endpoint")"
 
-            case "$status_code" in
-              202)
-                echo "Update requested for #$pr_number."
+            count="$(echo "$pulls_json" | jq 'length')"
+            echo "Open PRs targeting $base_branch: $count"
+            if [ "$count" -eq 0 ]; then
+              continue
+            fi
+
+            while IFS=$'\t' read -r pr_number head_ref head_sha head_repo is_draft; do
+              scanned=$((scanned + 1))
+
+              if [ "$is_draft" = "true" ]; then
+                echo "Skipping #$pr_number (draft PR)."
+                skipped=$((skipped + 1))
+                continue
+              fi
+
+              if [ "$head_repo" != "$REPO" ]; then
+                echo "Skipping #$pr_number (head repo differs: $head_repo)."
+                skipped=$((skipped + 1))
+                continue
+              fi
+
+              tmp_branch="__pr_${pr_number}"
+              if ! git fetch --no-tags origin "refs/heads/$head_ref:refs/heads/$tmp_branch"; then
+                echo "::warning::Skipping #$pr_number (could not fetch head ref: $head_ref)."
+                skipped=$((skipped + 1))
+                continue
+              fi
+
+              base_sha="$(git rev-parse "origin/$base_branch")"
+              local_head_sha="$(git rev-parse "$tmp_branch")"
+              if [ "$local_head_sha" != "$head_sha" ]; then
+                echo "Skipping #$pr_number (head moved while processing)."
+                skipped=$((skipped + 1))
+                git branch -D "$tmp_branch" || true
+                continue
+              fi
+
+              if git merge-base --is-ancestor "$base_sha" "$local_head_sha"; then
+                echo "Skipping #$pr_number (already up to date with $base_branch)."
+                skipped=$((skipped + 1))
+                git branch -D "$tmp_branch" || true
+                continue
+              fi
+
+              git checkout -B "$tmp_branch" "$local_head_sha"
+              set +e
+              git rebase "origin/$base_branch"
+              rebase_rc=$?
+              set -e
+              if [ "$rebase_rc" -ne 0 ]; then
+                git rebase --abort || true
+                echo "::warning::Skipping #$pr_number (rebase conflict against $base_branch)."
+                skipped=$((skipped + 1))
+                git checkout __rebase_base
+                git branch -D "$tmp_branch" || true
+                continue
+              fi
+
+              new_sha="$(git rev-parse HEAD)"
+              if [ "$new_sha" = "$head_sha" ]; then
+                echo "Skipping #$pr_number (no rebase change produced)."
+                skipped=$((skipped + 1))
+                git checkout __rebase_base
+                git branch -D "$tmp_branch" || true
+                continue
+              fi
+
+              set +e
+              git push origin "refs/heads/$tmp_branch:refs/heads/$head_ref" \
+                --force-with-lease="refs/heads/$head_ref:$head_sha"
+              push_rc=$?
+              set -e
+              if [ "$push_rc" -eq 0 ]; then
+                echo "Rebased #$pr_number onto $base_branch."
                 updated=$((updated + 1))
-                ;;
-              409|422)
-                message="$(jq -r '.message // "cannot update"' "$response_file")"
-                echo "Skipping #$pr_number ($message)."
+              else
+                echo "::warning::Skipping #$pr_number (push rejected or branch changed)."
                 skipped=$((skipped + 1))
-                ;;
-              403)
-                message="$(jq -r '.message // "forbidden"' "$response_file")"
-                echo "::warning::Skipping #$pr_number ($message)."
-                skipped=$((skipped + 1))
-                ;;
-              *)
-                message="$(jq -r '.message // "unexpected API response"' "$response_file")"
-                echo "::warning::Failed to update #$pr_number (HTTP $status_code: $message)."
-                failed=$((failed + 1))
-                ;;
-            esac
+              fi
 
-            rm -f "$response_file"
-          done < <(
-            echo "$pulls_json" \
-              | jq -r '.[] | [.number, .head.sha, .head.repo.full_name, .draft] | @tsv'
-          )
+              git checkout __rebase_base
+              git branch -D "$tmp_branch" || true
+            done < <(
+              echo "$pulls_json" \
+                | jq -r '.[] | [.number, .head.ref, .head.sha, .head.repo.full_name, .draft] | @tsv'
+            )
+          done
 
-          echo "Summary: updated=$updated skipped=$skipped failed=$failed"
+          echo "Summary: scanned=$scanned updated=$updated skipped=$skipped failed=$failed"
           if [ "$failed" -gt 0 ]; then
             exit 1
           fi
