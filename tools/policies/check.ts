@@ -11,6 +11,7 @@ import { runRootScriptOrchestrationCheck } from './src/checks/check-root-script-
 import { runSpecializationsCheck } from './src/checks/check-specializations.ts';
 import { runProjectPoliciesCheck } from './src/checks/run-project-policies.ts';
 import { runVersionParityCheck } from './src/checks/check-version-parity.ts';
+import { runWorkflowActionVersionConsistencyCheck } from './src/checks/check-workflow-action-version-consistency.ts';
 
 const printResult = (result: PolicyCheckResult): void => {
   const status = result.errors.length > 0 ? 'FAILED' : 'OK';
@@ -42,6 +43,7 @@ const run = async (): Promise<void> => {
     runProjectPoliciesCheck,
     runRootScriptOrchestrationCheck,
     runVersionParityCheck,
+    runWorkflowActionVersionConsistencyCheck,
     runAiControlFilesCheck,
     runPackageReadmesSyncCheck,
     runRootGateCheck,
