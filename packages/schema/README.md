@@ -1,11 +1,12 @@
+<!-- Generated from website/docs/packages/*.md. Do not edit directly. -->
+
 # @livon/schema
 
-[![CI](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml/badge.svg)](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml)
-[![Code Quality](https://img.shields.io/badge/code%20quality-eslint%20%2B%20tsc-1f6feb)](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml)
-[![Security Scorecard](https://api.scorecard.dev/projects/github.com/live-input-vector-output-node/livon-ts/badge)](https://scorecard.dev/viewer/?uri=github.com/live-input-vector-output-node/livon-ts)
+
 [![npm](https://img.shields.io/npm/v/%40livon%2Fschema)](https://www.npmjs.com/package/@livon/schema)
 [![Package Size](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Flive-input-vector-output-node%2Flivon-ts%2Fmain%2F.github%2Fbadges%2Fsize-schema.json)](https://www.npmjs.com/package/@livon/schema)
-[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](../../LIZENZ.md)
+[![Security Scorecard](https://api.scorecard.dev/projects/github.com/live-input-vector-output-node/livon-ts/badge)](https://scorecard.dev/viewer/?uri=github.com/live-input-vector-output-node/livon-ts)
+[![CI](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml/badge.svg)](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml)
 
 ## Install
 
@@ -20,7 +21,11 @@ pnpm add @livon/schema
 - [value schemas](https://livon.tech/docs/schema) (`string`, `number`, `object`, `array`, `or`, `union`, ...)
 - operation schemas
 - subscription schemas
-- [schema runtime module](https://livon.tech/docs/technical/runtime-design) (`schemaModule`)
+- [schema module](https://livon.tech/docs/technical/runtime-design) (`schemaModule`)
+
+## Best for
+
+Use this package when you want a single schema source for validation, typing, and generated client APIs.
 
 ## Schema API docs
 
@@ -104,7 +109,7 @@ const typed = User.typed(typedInput);
 ```ts
 import {api} from '@livon/schema';
 
-const apiSchema = api({
+const ApiSchema = api({
   type: User,
   operations: {
     sendMessage,
@@ -117,8 +122,11 @@ const apiSchema = api({
   },
 });
 
-export const serverSchema = apiSchema;
+export const serverSchema = ApiSchema;
 ```
+
+Use the `api(...)` (or `composeApi(...)`) result directly in `schemaModule(...)`.
+No additional schema-module input factory is required.
 
 ### Parameters in this example
 

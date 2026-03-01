@@ -1,11 +1,20 @@
+<!-- Generated from website/docs/packages/*.md. Do not edit directly. -->
+
 # @livon/cli
 
-[![CI](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml/badge.svg)](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml)
-[![Code Quality](https://img.shields.io/badge/code%20quality-eslint%20%2B%20tsc-1f6feb)](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml)
-[![Security Scorecard](https://api.scorecard.dev/projects/github.com/live-input-vector-output-node/livon-ts/badge)](https://scorecard.dev/viewer/?uri=github.com/live-input-vector-output-node/livon-ts)
+
 [![npm](https://img.shields.io/npm/v/%40livon%2Fcli)](https://www.npmjs.com/package/@livon/cli)
 [![Package Size](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Flive-input-vector-output-node%2Flivon-ts%2Fmain%2F.github%2Fbadges%2Fsize-cli.json)](https://www.npmjs.com/package/@livon/cli)
-[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](../../LIZENZ.md)
+[![Security Scorecard](https://api.scorecard.dev/projects/github.com/live-input-vector-output-node/livon-ts/badge)](https://scorecard.dev/viewer/?uri=github.com/live-input-vector-output-node/livon-ts)
+[![CI](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml/badge.svg)](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml)
+
+## Purpose
+
+CLI for syncing [schema AST](https://livon.tech/docs/schema) from a running server and generating/updating client outputs.
+
+## Best for
+
+Use this package when you want generated client APIs to stay in sync during local development and CI.
 
 ## Install
 
@@ -13,14 +22,14 @@
 pnpm add -D @livon/cli
 ```
 
-## Purpose
-
-CLI for syncing [schema AST](https://livon.tech/docs/schema) from a running server and generating/updating client outputs.
-
-## Basic command
+## Recommended command (sync + app)
 
 ```sh
-livon --endpoint ws://127.0.0.1:3002/ws --out src/generated/api.ts --poll 2000
+livon \
+  --endpoint ws://127.0.0.1:3002/ws \
+  --out src/generated/api.ts \
+  --poll 2000 \
+  -- pnpm dev
 ```
 
 ## Generated output mode
@@ -34,13 +43,7 @@ livon --endpoint ws://127.0.0.1:3002/ws --out src/generated/api.ts --poll 2000
 With `--out src/generated/api.ts`, compiled files are written to `src/generated/dist`.
 `livon` also writes `src/generated/package.json` with conditional exports, so `import { api } from './generated'` resolves to the matching build output.
 
-## Run sync and app command in one process
-
-You can append a command directly (without `&&`):
-
-```sh
-livon --endpoint ws://127.0.0.1:3002/ws --out src/generated/api.ts --poll 2000 pnpm dev
-```
+## Linked process lifecycle
 
 If the linked command exits, `livon` exits too.  
 If `livon` exits, it terminates the linked command.

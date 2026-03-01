@@ -1,21 +1,26 @@
+<!-- Generated from website/docs/packages/*.md. Do not edit directly. -->
+
 # @livon/dlq-module
 
-[![CI](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml/badge.svg)](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml)
-[![Code Quality](https://img.shields.io/badge/code%20quality-eslint%20%2B%20tsc-1f6feb)](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml)
-[![Security Scorecard](https://api.scorecard.dev/projects/github.com/live-input-vector-output-node/livon-ts/badge)](https://scorecard.dev/viewer/?uri=github.com/live-input-vector-output-node/livon-ts)
+
 [![npm](https://img.shields.io/npm/v/%40livon%2Fdlq-module)](https://www.npmjs.com/package/@livon/dlq-module)
 [![Package Size](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Flive-input-vector-output-node%2Flivon-ts%2Fmain%2F.github%2Fbadges%2Fsize-dlq-module.json)](https://www.npmjs.com/package/@livon/dlq-module)
-[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](../../LIZENZ.md)
+[![Security Scorecard](https://api.scorecard.dev/projects/github.com/live-input-vector-output-node/livon-ts/badge)](https://scorecard.dev/viewer/?uri=github.com/live-input-vector-output-node/livon-ts)
+[![CI](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml/badge.svg)](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml)
+
+## Purpose
+
+[@livon/dlq-module](https://livon.tech/docs/packages/dlq-module) listens to [runtime](https://livon.tech/docs/packages/runtime) `onError` events, tracks retry attempts in event context, and replays events until `maxAttempts` is reached.
+
+## Best for
+
+Use this module when you need retry control and dead-letter handling for failed runtime events.
 
 ## Install
 
 ```sh
 pnpm add @livon/dlq-module
 ```
-
-## Purpose
-
-[@livon/dlq-module](https://livon.tech/docs/packages/dlq-module) listens to [runtime](https://livon.tech/docs/packages/runtime) `onError` events, tracks retry attempts in event context, and replays events until `maxAttempts` is reached.
 
 ## Basic usage
 

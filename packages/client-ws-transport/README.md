@@ -1,21 +1,26 @@
+<!-- Generated from website/docs/packages/*.md. Do not edit directly. -->
+
 # @livon/client-ws-transport
 
-[![CI](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml/badge.svg)](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml)
-[![Code Quality](https://img.shields.io/badge/code%20quality-eslint%20%2B%20tsc-1f6feb)](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml)
-[![Security Scorecard](https://api.scorecard.dev/projects/github.com/live-input-vector-output-node/livon-ts/badge)](https://scorecard.dev/viewer/?uri=github.com/live-input-vector-output-node/livon-ts)
+
 [![npm](https://img.shields.io/npm/v/%40livon%2Fclient-ws-transport)](https://www.npmjs.com/package/@livon/client-ws-transport)
 [![Package Size](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Flive-input-vector-output-node%2Flivon-ts%2Fmain%2F.github%2Fbadges%2Fsize-client-ws-transport.json)](https://www.npmjs.com/package/@livon/client-ws-transport)
-[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](../../LIZENZ.md)
+[![Security Scorecard](https://api.scorecard.dev/projects/github.com/live-input-vector-output-node/livon-ts/badge)](https://scorecard.dev/viewer/?uri=github.com/live-input-vector-output-node/livon-ts)
+[![CI](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml/badge.svg)](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml)
+
+## Purpose
+
+Browser/client websocket transport module for [@livon/runtime](https://livon.tech/docs/packages/runtime).
+
+## Best for
+
+Use this package when browser clients need reliable request/response messaging over WebSocket.
 
 ## Install
 
 ```sh
 pnpm add @livon/client-ws-transport
 ```
-
-## Purpose
-
-Browser/client websocket transport module for [@livon/runtime](https://livon.tech/docs/packages/runtime).
 
 It provides:
 
