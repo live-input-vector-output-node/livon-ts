@@ -4,6 +4,7 @@ multi-ecosystem-groups:
   all-version-updates:
     schedule:
       interval: "daily"
+    open-pull-requests-limit: 1
 
 updates:
   - package-ecosystem: "npm"
@@ -14,7 +15,6 @@ updates:
       - "/tools/*"
       - "/website"
     rebase-strategy: "auto"
-    open-pull-requests-limit: 1
     patterns:
       - "*"
     multi-ecosystem-group: "all-version-updates"
@@ -22,7 +22,6 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     rebase-strategy: "auto"
-    open-pull-requests-limit: 1
     patterns:
       - "*"
     multi-ecosystem-group: "all-version-updates"
