@@ -456,6 +456,24 @@ const resolveLocalReference = (reference, baseDir) => {
   return existingPath;
 };
 
+const shouldAllowMissingBuildOutputReference = (reference) => {
+  if (!IMPORT_REFERENCE_KINDS.has(reference.kind)) {
+    return false;
+  }
+
+  const normalizedSourcePath = normalizePath(reference.sourcePath);
+  if (!/(^|\/)bin\/[^/]+\.[cm]?js$/i.test(normalizedSourcePath)) {
+    return false;
+  }
+
+  const normalizedTarget = stripQueryAndAnchor(reference.target);
+  if (!normalizedTarget) {
+    return false;
+  }
+
+  return /^(?:\.\.\/|\.\/)+(?:dist|build)\//.test(normalizedTarget);
+};
+
 const classifyExternalStatus = (statusCode) => {
   if (statusCode >= 200 && statusCode < 400) {
     return 'ok';
@@ -640,6 +658,9 @@ export const runLinkCheck = async ({
     .map((reference) => {
       const resolvedPath = resolveLocalReference(reference, baseDir);
       if (resolvedPath) {
+        return null;
+      }
+      if (shouldAllowMissingBuildOutputReference(reference)) {
         return null;
       }
       return {
