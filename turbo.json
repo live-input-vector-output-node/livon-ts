@@ -3,24 +3,72 @@
   "concurrency": "100",
   "tasks": {
     "build": {
-      "dependsOn": ["^build"],
-      "outputs": ["dist/**", "build/**"]
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": [
+        "dist/**",
+        "build/**"
+      ]
     },
     "@livon/badges#build": {
-      "dependsOn": ["^build"],
-      "outputs": ["../../.github/badges/size-*.json"]
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": [
+        "../../.github/badges/size-*.json"
+      ]
+    },
+    "@livon/config#build": {
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": []
+    },
+    "@livon/gen#build": {
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": []
+    },
+    "@livon/policies#build": {
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": []
+    },
+    "@livon/readmes#build": {
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": []
+    },
+    "@livon/release#build": {
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": []
     },
     "build:watch": {
-      "dependsOn": ["^build"],
+      "dependsOn": [
+        "^build"
+      ],
       "cache": false,
       "persistent": true,
-      "outputs": ["dist/**", "build/**"]
+      "outputs": [
+        "dist/**",
+        "build/**"
+      ]
     },
     "gen:client:watch": {
-      "dependsOn": ["^build"],
+      "dependsOn": [
+        "^build"
+      ],
       "cache": false,
       "persistent": true,
-      "outputs": ["src/generated/**"]
+      "outputs": [
+        "src/generated/**"
+      ]
     },
     "dev": {
       "cache": false,
@@ -37,15 +85,73 @@
       "outputs": []
     },
     "typecheck": {
-      "dependsOn": ["build", "^build"],
+      "dependsOn": [
+        "build",
+        "^build"
+      ],
       "outputs": []
     },
     "test": {
-      "dependsOn": ["build", "^build"],
+      "dependsOn": [
+        "build",
+        "^build"
+      ],
       "outputs": []
     },
     "ci": {
-      "dependsOn": ["lint", "typecheck", "test", "build"],
+      "dependsOn": [
+        "qg"
+      ],
+      "outputs": []
+    },
+    "qg": {
+      "dependsOn": [
+        "check:readmes",
+        "check:policies",
+        "lint",
+        "typecheck",
+        "test",
+        "build"
+      ],
+      "outputs": []
+    },
+    "gen:readmes": {
+      "outputs": []
+    },
+    "check:readmes": {
+      "outputs": []
+    },
+    "check:policies": {
+      "outputs": []
+    },
+    "check:links": {
+      "outputs": []
+    },
+    "metrics:ai-control": {
+      "outputs": []
+    },
+    "gen": {
+      "outputs": []
+    },
+    "badges:size": {
+      "outputs": [
+        "../../.github/badges/size-*.json"
+      ]
+    },
+    "changeset": {
+      "cache": false,
+      "outputs": []
+    },
+    "changeset:version": {
+      "cache": false,
+      "outputs": []
+    },
+    "changeset:sync-root-version": {
+      "cache": false,
+      "outputs": []
+    },
+    "changeset:publish": {
+      "cache": false,
       "outputs": []
     }
   }
