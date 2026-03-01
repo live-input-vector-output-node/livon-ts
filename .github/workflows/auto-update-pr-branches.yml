@@ -1,0 +1,101 @@
+name: Auto Update PR Branches
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+  schedule:
+    - cron: '0 * * * *'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: auto-update-pr-branches
+  cancel-in-progress: true
+
+jobs:
+  update-branches:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update open PR branches targeting main
+        env:
+          API_URL: https://api.github.com
+          REPO: ${{ github.repository }}
+          TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          pulls_endpoint="$API_URL/repos/$REPO/pulls?state=open&base=main&per_page=100"
+          pulls_json="$(curl -fsSL \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "$pulls_endpoint")"
+
+          count="$(echo "$pulls_json" | jq 'length')"
+          echo "Open PRs targeting main: $count"
+          if [ "$count" -eq 0 ]; then
+            exit 0
+          fi
+
+          updated=0
+          skipped=0
+          failed=0
+
+          while IFS=$'\t' read -r pr_number pr_sha head_repo is_draft; do
+            if [ "$is_draft" = "true" ]; then
+              echo "Skipping #$pr_number (draft PR)."
+              skipped=$((skipped + 1))
+              continue
+            fi
+
+            if [ "$head_repo" != "$REPO" ]; then
+              echo "Skipping #$pr_number (head repo differs: $head_repo)."
+              skipped=$((skipped + 1))
+              continue
+            fi
+
+            payload="$(jq -cn --arg sha "$pr_sha" '{expected_head_sha: $sha}')"
+            response_file="$(mktemp)"
+            status_code="$(curl -sS -o "$response_file" -w "%{http_code}" \
+              -X PUT \
+              -H "Authorization: Bearer $TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              -H "Content-Type: application/json" \
+              "$API_URL/repos/$REPO/pulls/$pr_number/update-branch" \
+              -d "$payload")"
+
+            case "$status_code" in
+              202)
+                echo "Update requested for #$pr_number."
+                updated=$((updated + 1))
+                ;;
+              409|422)
+                message="$(jq -r '.message // "cannot update"' "$response_file")"
+                echo "Skipping #$pr_number ($message)."
+                skipped=$((skipped + 1))
+                ;;
+              403)
+                message="$(jq -r '.message // "forbidden"' "$response_file")"
+                echo "::warning::Skipping #$pr_number ($message)."
+                skipped=$((skipped + 1))
+                ;;
+              *)
+                message="$(jq -r '.message // "unexpected API response"' "$response_file")"
+                echo "::warning::Failed to update #$pr_number (HTTP $status_code: $message)."
+                failed=$((failed + 1))
+                ;;
+            esac
+
+            rm -f "$response_file"
+          done < <(
+            echo "$pulls_json" \
+              | jq -r '.[] | [.number, .head.sha, .head.repo.full_name, .draft] | @tsv'
+          )
+
+          echo "Summary: updated=$updated skipped=$skipped failed=$failed"
+          if [ "$failed" -gt 0 ]; then
+            exit 1
+          fi
