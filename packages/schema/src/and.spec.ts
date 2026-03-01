@@ -7,11 +7,20 @@ import { captureThrow, createBaseSchemaMock } from './testing/mocks/index.js';
 const leftSchemaMock = createBaseSchemaMock<{ left: true }>({ name: 'left' });
 const rightSchemaMock = createBaseSchemaMock<{ right: true }>({ name: 'right' });
 const thirdSchemaMock = createBaseSchemaMock<{ third: true }>({ name: 'third' });
+const fourthSchemaMock = createBaseSchemaMock<{ fourth: true }>({ name: 'fourth' });
 const mergedSchemaMock = createBaseSchemaMock<{ left: true; right: true }>({
   name: 'merged',
 });
 const mergedWithThirdSchemaMock = createBaseSchemaMock<{ left: true; right: true; third: true }>({
   name: 'mergedWithThird',
+});
+const mergedWithFourthSchemaMock = createBaseSchemaMock<{
+  left: true;
+  right: true;
+  third: true;
+  fourth: true;
+}>({
+  name: 'mergedWithFourth',
 });
 
 describe('and()', () => {
@@ -28,21 +37,30 @@ describe('and()', () => {
           { left: true; right: true } & { third: true }
         >) as unknown) as Schema<{ left: true; right: true }>['and'],
     );
+    vi.mocked(mergedWithThirdSchemaMock.and).mockImplementation(
+      ((() =>
+        mergedWithFourthSchemaMock as unknown as Schema<
+          { left: true; right: true; third: true } & { fourth: true }
+        >) as unknown) as Schema<{ left: true; right: true; third: true }>['and'],
+    );
   });
 
   beforeEach(() => {
     vi.mocked(leftSchemaMock.and).mockClear();
     vi.mocked(mergedSchemaMock.and).mockClear();
+    vi.mocked(mergedWithThirdSchemaMock.and).mockClear();
   });
 
   afterEach(() => {
     vi.mocked(leftSchemaMock.and).mockClear();
     vi.mocked(mergedSchemaMock.and).mockClear();
+    vi.mocked(mergedWithThirdSchemaMock.and).mockClear();
   });
 
   afterAll(() => {
     vi.mocked(leftSchemaMock.and).mockReset();
     vi.mocked(mergedSchemaMock.and).mockReset();
+    vi.mocked(mergedWithThirdSchemaMock.and).mockReset();
   });
 
   describe('legacy API: { left, right }', () => {
@@ -127,6 +145,21 @@ describe('and()', () => {
         expect(mergedSchemaMock.and).toHaveBeenCalledTimes(1);
         expect(mergedSchemaMock.and).toHaveBeenCalledWith(thirdSchemaMock, { name: 'CustomName' });
       });
+
+      it('should chain four schemas in order when schemas array has 4 items', () => {
+        const schemas = [leftSchemaMock, rightSchemaMock, thirdSchemaMock, fourthSchemaMock] as const;
+        const result = and({
+          schemas,
+        });
+
+        expect(leftSchemaMock.and).toHaveBeenCalledTimes(1);
+        expect(leftSchemaMock.and).toHaveBeenCalledWith(rightSchemaMock);
+        expect(mergedSchemaMock.and).toHaveBeenCalledTimes(1);
+        expect(mergedSchemaMock.and).toHaveBeenCalledWith(thirdSchemaMock);
+        expect(mergedWithThirdSchemaMock.and).toHaveBeenCalledTimes(1);
+        expect(mergedWithThirdSchemaMock.and).toHaveBeenCalledWith(fourthSchemaMock);
+        expect(result).toBe(mergedWithFourthSchemaMock);
+      });
     });
 
     describe('sad', () => {
@@ -148,6 +181,26 @@ describe('and()', () => {
         expect(thrown.threw).toBe(true);
         expect(thrown.value).toBeInstanceOf(Error);
         expect((thrown.value as Error).message).toBe('and() requires at least 2 schemas in the schemas array');
+      });
+
+      it('should rethrow error when intermediate chained .and() throws in multi-schema mode', () => {
+        const andError = new Error('chained and failed');
+        vi.mocked(mergedSchemaMock.and).mockImplementationOnce(() => {
+          throw andError;
+        });
+
+        const thrown = captureThrow(() =>
+          and({
+            schemas: [leftSchemaMock, rightSchemaMock, thirdSchemaMock],
+          }),
+        );
+
+        expect(leftSchemaMock.and).toHaveBeenCalledTimes(1);
+        expect(leftSchemaMock.and).toHaveBeenCalledWith(rightSchemaMock);
+        expect(mergedSchemaMock.and).toHaveBeenCalledTimes(1);
+        expect(mergedSchemaMock.and).toHaveBeenCalledWith(thirdSchemaMock);
+        expect(thrown.threw).toBe(true);
+        expect(thrown.value).toBe(andError);
       });
     });
   });

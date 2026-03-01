@@ -8,6 +8,11 @@ type IntersectTuple<T extends readonly unknown[]> = T extends readonly [infer He
   ? Head & IntersectTuple<Tail>
   : unknown;
 
+interface AndReduceState {
+  schema: Schema<unknown>;
+  index: number;
+}
+
 export interface AndSchemaInput<TSchemas extends readonly Schema<unknown>[]> {
   name?: string;
   schemas: TSchemas;
@@ -90,17 +95,18 @@ export function and(
   }
 
   const [first, ...rest] = schemas;
-  const [lastSchema, ...remainingFromEnd] = [...rest].reverse();
-  const chainableSchemas = [...remainingFromEnd].reverse();
-
   const initial = first as Schema<unknown>;
-  const chained = chainableSchemas.reduce<Schema<unknown>>((acc, schema) => acc.and(schema), initial);
+  const lastIndex = rest.length - 1;
+  const reduced = rest.reduce<AndReduceState>(
+    (state, schema) => ({
+      schema:
+        name !== undefined && state.index === lastIndex
+          ? state.schema.and(schema, { name })
+          : state.schema.and(schema),
+      index: state.index + 1,
+    }),
+    { schema: initial, index: 0 },
+  );
 
-  if (lastSchema === undefined) {
-    return chained;
-  }
-
-  const result = name === undefined ? chained.and(lastSchema) : chained.and(lastSchema, { name });
-
-  return result;
+  return reduced.schema;
 }
