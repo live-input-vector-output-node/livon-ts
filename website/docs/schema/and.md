@@ -97,7 +97,7 @@ API schemas (`api`) are not valid in `and`.
 
 ### New API
 
-- `schemas` (`Schema[]`, required): Array of at least 2 schemas to compose. Each schema is applied in sequence.
+- `schemas` (`readonly [Schema, Schema, ...Schema[]]`, required): Tuple-style array with at least 2 schemas to compose. Each schema is applied in sequence.
 - `name` (`string`, optional): Explicit name used for generated AST/type surfaces.
 
 ### Legacy API
