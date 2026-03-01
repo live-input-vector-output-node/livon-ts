@@ -54,8 +54,25 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Generate package READMEs from docs
+        run: pnpm turbo run gen:readmes
+
       - name: Run monorepo CI
         run: pnpm run ci
+
+      - name: Commit generated package READMEs
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          if git diff --quiet -- packages/*/README.md; then
+            echo "No README changes."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add packages/*/README.md
+          git commit -m "chore: sync package readmes from docs [skip ci]"
+          git push
 
       - name: Commit updated size badges
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'

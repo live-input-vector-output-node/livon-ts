@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "docsBaseUrl": "https://livon.tech",
+  "generatedNotice": "<!-- Generated from website/docs/packages/*.md. Do not edit directly. -->",
+  "targets": [
+    {
+      "id": "@livon/runtime",
+      "source": "website/docs/packages/runtime.md",
+      "target": "packages/runtime/README.md"
+    },
+    {
+      "id": "@livon/schema",
+      "source": "website/docs/packages/schema.md",
+      "target": "packages/schema/README.md"
+    },
+    {
+      "id": "@livon/client",
+      "source": "website/docs/packages/client.md",
+      "target": "packages/client/README.md"
+    },
+    {
+      "id": "@livon/client-ws-transport",
+      "source": "website/docs/packages/client-ws-transport.md",
+      "target": "packages/client-ws-transport/README.md"
+    },
+    {
+      "id": "@livon/node-ws-transport",
+      "source": "website/docs/packages/node-ws-transport.md",
+      "target": "packages/server-ws-transport/README.md"
+    },
+    {
+      "id": "@livon/dlq-module",
+      "source": "website/docs/packages/dlq-module.md",
+      "target": "packages/dlq-module/README.md"
+    },
+    {
+      "id": "@livon/config",
+      "source": "website/docs/packages/config.md",
+      "target": "packages/config/README.md"
+    },
+    {
+      "id": "@livon/cli",
+      "source": "website/docs/packages/cli.md",
+      "target": "packages/cli/README.md"
+    }
+  ]
+}

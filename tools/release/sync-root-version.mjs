@@ -1,32 +1,47 @@
-import { readFile, writeFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import { readdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
-const ROOT_DIRECTORY = process.cwd();
+const resolveWorkspaceRoot = (startDir = process.cwd()) => {
+  let currentDir = path.resolve(startDir);
+  while (true) {
+    if (existsSync(path.join(currentDir, 'pnpm-workspace.yaml'))) {
+      return currentDir;
+    }
+    const parentDir = path.dirname(currentDir);
+    if (parentDir === currentDir) {
+      break;
+    }
+    currentDir = parentDir;
+  }
+  return path.resolve(startDir);
+};
+
+const ROOT_DIRECTORY = resolveWorkspaceRoot();
 const ROOT_PACKAGE_JSON_PATH = path.join(ROOT_DIRECTORY, 'package.json');
 
-const WORKSPACE_PACKAGE_JSON_PATHS = [
-  'apps/client/package.json',
-  'apps/server/package.json',
-  'packages/cli/package.json',
-  'packages/client/package.json',
-  'packages/client-ws-transport/package.json',
-  'packages/config/package.json',
-  'packages/dlq-module/package.json',
-  'packages/runtime/package.json',
-  'packages/schema/package.json',
-  'packages/server-ws-transport/package.json',
-  'tools/rslib-browser/package.json',
-  'tools/rslib-node/package.json',
-  'tools/rslib-package/package.json',
-  'tools/rspack-app/package.json',
-  'tools/rsstack-app/package.json',
-  'tools/rsstack-frontend/package.json',
-  'website/package.json',
-].map((relativePath) => path.join(ROOT_DIRECTORY, relativePath));
+const collectWorkspacePackageJsonPaths = async () => {
+  const scopedPackageRoots = ['apps', 'packages', 'tools'];
+  const scopedPaths = await Promise.all(
+    scopedPackageRoots.map(async (rootName) => {
+      const rootPath = path.join(ROOT_DIRECTORY, rootName);
+      const entries = await readdir(rootPath, { withFileTypes: true }).catch(() => []);
+      return entries
+        .filter((entry) => entry.isDirectory())
+        .map((entry) => path.join(rootPath, entry.name, 'package.json'));
+    }),
+  );
+
+  return [
+    ...scopedPaths.flat(),
+    path.join(ROOT_DIRECTORY, 'website', 'package.json'),
+  ];
+};
 
 const readJson = async (filePath) => JSON.parse(await readFile(filePath, 'utf8'));
 
 const run = async () => {
+  const WORKSPACE_PACKAGE_JSON_PATHS = await collectWorkspacePackageJsonPaths();
   const workspacePackages = await Promise.all(
     WORKSPACE_PACKAGE_JSON_PATHS.map(async (filePath) => {
       const json = await readJson(filePath);

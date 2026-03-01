@@ -1,11 +1,27 @@
 import { mkdir, readdir, readFile, writeFile, copyFile, stat } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 
-const ROOT = process.cwd();
-const TEMPLATES_DIR = path.join(ROOT, 'new_livon', 'tools');
-const DEST_APPS = path.join(ROOT, 'new_livon', 'apps');
-const DEST_PACKAGES = path.join(ROOT, 'new_livon', 'packages');
+const resolveWorkspaceRoot = (startDir = process.cwd()) => {
+  let currentDir = path.resolve(startDir);
+  while (true) {
+    if (existsSync(path.join(currentDir, 'pnpm-workspace.yaml'))) {
+      return currentDir;
+    }
+    const parentDir = path.dirname(currentDir);
+    if (parentDir === currentDir) {
+      break;
+    }
+    currentDir = parentDir;
+  }
+  return path.resolve(startDir);
+};
+
+const ROOT = resolveWorkspaceRoot();
+const TEMPLATES_DIR = path.join(ROOT, 'tools');
+const DEST_APPS = path.join(ROOT, 'apps');
+const DEST_PACKAGES = path.join(ROOT, 'packages');
 
 const TEMPLATE_MAP = {
   lib: {

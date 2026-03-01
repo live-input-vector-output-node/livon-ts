@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "node ../update-size-badges.mjs .github/badges",
+    "badges:size": "node ../update-size-badges.mjs .github/badges",
     "dev": "true",
     "lint": "true",
     "typecheck": "true",

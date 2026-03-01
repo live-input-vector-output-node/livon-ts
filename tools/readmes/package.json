@@ -1,0 +1,15 @@
+{
+  "name": "@livon/readmes",
+  "version": "0.27.0-rc.5",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "true",
+    "dev": "true",
+    "lint": "true",
+    "typecheck": "true",
+    "test": "true",
+    "gen:readmes": "node --experimental-strip-types src/gen-readmes.ts",
+    "check:readmes": "node --experimental-strip-types src/check-readmes.ts"
+  }
+}

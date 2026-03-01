@@ -1,0 +1,17 @@
+{
+  "name": "@livon/release",
+  "version": "0.27.0-rc.5",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "true",
+    "dev": "true",
+    "lint": "true",
+    "typecheck": "true",
+    "test": "true",
+    "changeset": "pnpm dlx @changesets/cli",
+    "changeset:version": "node changeset-version.mjs",
+    "changeset:sync-root-version": "node sync-root-version.mjs",
+    "changeset:publish": "pnpm dlx @changesets/cli publish"
+  }
+}
