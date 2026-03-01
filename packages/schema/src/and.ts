@@ -8,20 +8,21 @@ type IntersectTuple<T extends readonly unknown[]> = T extends readonly [infer He
   ? Head & IntersectTuple<Tail>
   : unknown;
 
-export type AndSchemaInput<TSchemas extends readonly Schema<unknown>[]> = {
+export interface AndSchemaInput<TSchemas extends readonly Schema<unknown>[]> {
   name?: string;
   schemas: TSchemas;
-};
+}
 
-export type AndLegacyInput<T, U> = {
+export interface AndLegacyInput<T, U> {
   left: Schema<T>;
   right: Schema<U>;
   name?: string;
-};
+}
+
+type VariadicSchemaTuple = readonly [Schema<any>, ...Schema<any>[]]; // eslint-disable-line @typescript-eslint/no-explicit-any -- Schema<T> is invariant; this tuple supports heterogeneous schema chaining.
 
 const isLegacyInput = (
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Heterogeneous schema types in array require any for variance.
-  input: AndLegacyInput<unknown, unknown> | AndSchemaInput<readonly [Schema<any>, ...Schema<any>[]]>,
+  input: AndLegacyInput<unknown, unknown> | AndSchemaInput<VariadicSchemaTuple>,
 ): input is AndLegacyInput<unknown, unknown> => 'left' in input && 'right' in input;
 
 /**
@@ -69,14 +70,13 @@ const isLegacyInput = (
  * });
  * MessageComplete.parse({ text: 'Hello', id: 'm-1', timestamp: Date.now() });
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Heterogeneous schema types in array require any for variance.
-export function and<TSchemas extends readonly [Schema<any>, ...Schema<any>[]]>(
+export function and<TSchemas extends VariadicSchemaTuple>(
   input: AndSchemaInput<TSchemas>,
 ): Schema<IntersectTuple<InferSchemasTuple<TSchemas>>>;
 export function and<T, U>(input: AndLegacyInput<T, U>): Schema<T & U>;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Heterogeneous schema types in array require any for variance.
+// eslint-disable-next-line func-style -- TypeScript overloads require function declarations.
 export function and(
-  input: AndLegacyInput<unknown, unknown> | AndSchemaInput<readonly [Schema<any>, ...Schema<any>[]]>,
+  input: AndLegacyInput<unknown, unknown> | AndSchemaInput<VariadicSchemaTuple>,
 ): Schema<unknown> {
   if (isLegacyInput(input)) {
     const { left, right, name } = input;
@@ -90,14 +90,17 @@ export function and(
   }
 
   const [first, ...rest] = schemas;
-  const lastIndex = rest.length - 1;
+  const [lastSchema, ...remainingFromEnd] = [...rest].reverse();
+  const chainableSchemas = [...remainingFromEnd].reverse();
 
-  const result = rest.reduce<Schema<unknown>>((acc, schema, index) => {
-    if (index === lastIndex && name) {
-      return acc.and(schema, { name });
-    }
-    return acc.and(schema);
-  }, first as Schema<unknown>);
+  const initial = first as Schema<unknown>;
+  const chained = chainableSchemas.reduce<Schema<unknown>>((acc, schema) => acc.and(schema), initial);
+
+  if (lastSchema === undefined) {
+    return chained;
+  }
+
+  const result = name === undefined ? chained.and(lastSchema) : chained.and(lastSchema, { name });
 
   return result;
 }
