@@ -273,25 +273,6 @@ It:
 
 `docusaurus.config.ts` automatically adapts `url` and `baseUrl` in GitHub Actions mode.
 
-## PR branch auto-update
-
-Open pull requests targeting the default base branch (`main`/`master`) are auto-rebased via `.github/workflows/auto-update-pr-branches.yml`.
-
-It triggers on:
-
-1. every push to `main`,
-2. hourly schedule,
-3. manual workflow dispatch.
-
-Behavior:
-
-- Uses `git fetch + git rebase + git push --force-with-lease` for open PRs that are behind their base.
-- Runs automatically when new commits land on `main`/`master`.
-- Rebase is applied only when the PR branch does not already contain the latest base commit.
-- Skips drafts and PRs from forks (`head.repo` differs).
-- Skips conflicting rebases safely (with warning), without creating merge commits.
-- Works together with Dependabot `rebase-strategy: auto` in `.github/dependabot.yml`.
-
 ## Package publishing
 
 Publishing is handled by `.github/workflows/publish.yml`.
