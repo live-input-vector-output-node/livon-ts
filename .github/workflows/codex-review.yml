@@ -1,0 +1,116 @@
+name: Codex Review
+
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+
+permissions:
+  contents: read
+
+concurrency:
+  group: codex-review-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  codex-review:
+    if: ${{ !github.event.pull_request.draft && secrets.OPENAI_API_KEY != '' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      final_message: ${{ steps.run_codex.outputs.final-message }}
+    steps:
+      - name: Checkout PR merge ref
+        uses: actions/checkout@v4
+        with:
+          ref: refs/pull/${{ github.event.pull_request.number }}/merge
+
+      - name: Pre-fetch base and head refs
+        run: |
+          git fetch --no-tags origin \
+            "${{ github.event.pull_request.base.ref }}" \
+            "+refs/pull/${{ github.event.pull_request.number }}/head"
+
+      - name: Run Codex review
+        id: run_codex
+        uses: openai/codex-action@v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          allow-bots: true
+          sandbox: read-only
+          prompt: |
+            You are reviewing PR #${{ github.event.pull_request.number }} in ${{ github.repository }}.
+
+            Review only changes introduced by this PR.
+            Base SHA: ${{ github.event.pull_request.base.sha }}
+            Head SHA: ${{ github.event.pull_request.head.sha }}
+
+            Provide concise feedback with this structure:
+            1. Findings (critical -> low)
+            2. Missing tests
+            3. Suggested fixes
+
+            Requirements:
+            - Focus on correctness, security, regressions, and maintainability.
+            - Prefer specific file/line references when possible.
+            - If no issues are found, explicitly say so.
+            - Keep response concise and actionable.
+
+            PR title:
+            ${{ github.event.pull_request.title }}
+
+            PR body:
+            ${{ github.event.pull_request.body }}
+
+  post-feedback:
+    needs: codex-review
+    if: ${{ needs.codex-review.outputs.final_message != '' }}
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Upsert Codex comment
+        uses: actions/github-script@v7
+        env:
+          CODEX_FINAL_MESSAGE: ${{ needs.codex-review.outputs.final_message }}
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const marker = '<!-- codex-review-comment -->';
+            const body = `${marker}\n## Codex Review\n\n${process.env.CODEX_FINAL_MESSAGE}`;
+
+            const {owner, repo} = context.repo;
+            const issue_number = context.payload.pull_request.number;
+            const {data: comments} = await github.rest.issues.listComments({
+              owner,
+              repo,
+              issue_number,
+              per_page: 100,
+            });
+
+            const existing = comments.find((comment) =>
+              comment.user?.type === 'Bot' &&
+              typeof comment.body === 'string' &&
+              comment.body.includes(marker)
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body,
+              });
+            }
