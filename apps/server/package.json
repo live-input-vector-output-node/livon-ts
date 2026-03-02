@@ -28,7 +28,7 @@
     "@rslib/core": "latest",
     "@types/node": "latest",
     "@types/ws": "latest",
-    "eslint": "9.0.0",
+    "eslint": "10.0.2",
     "superwstest": "latest",
     "typescript": "latest",
     "vitest": "latest"
