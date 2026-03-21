@@ -12,7 +12,7 @@ on:
 
 jobs:
   publish:
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') || (github.event_name != 'workflow_dispatch' && github.event.workflow_run.conclusion == 'success') }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -65,6 +65,9 @@ jobs:
 
       - name: Run monorepo CI
         run: pnpm run ci
+
+      - name: Check publish artifacts
+        run: pnpm run release:check
 
       - name: Validate npm token
         env:
