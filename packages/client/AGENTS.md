@@ -1,5 +1,5 @@
 <!-- @agent.entry -->
-<!-- @agent.load: ../../AGENTS.md -->
+<!-- @agent.load: ../AGENTS.md -->
 <!-- @agent.load: ../../configs/ai/specializations.json -->
 <!-- @agent.load: ./PROMPT.md -->
 

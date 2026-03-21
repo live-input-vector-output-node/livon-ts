@@ -16,6 +16,12 @@ Use this page as the primary reference instead of repeating the same rule text a
 | Rule ID | Rule | Primary enforcement |
 | --- | --- | --- |
 | `typescript-first` | Prefer TypeScript over JavaScript when technically feasible. | coding style + review gates |
+| `arrow-functions-only` | Use arrow functions as the default for implementations and exported callable APIs; avoid the `function` keyword, including overload declarations (use callable interfaces plus `const` arrow assignments). | coding style + review gates |
+| `destructured-config-defaults` | When functions accept config objects, destructure parameters directly and set defaults with ES6 parameter defaults; keep property names aligned and avoid `config.*` access. | coding style + review gates |
+| `test-setup-deduplication` | Before adding new tests, inspect existing tests for similar setup and extract shared setup into `beforeEach` blocks or reusable test utilities to avoid duplicated `entity/source/action/stream` scaffolding. | testing style + review gates |
+| `modular-file-structure` | Keep utilities in scoped `utils` folders with one utility per file and `index` barrel exports; split main functionality into focused files and expose public boundaries through `package.json` exports plus index barrels. | architecture + coding style + review gates |
+| `core-framework-separation` | When changing framework adapters, evaluate first whether logic is framework-agnostic; shared runtime/state/sync behavior belongs in `@livon/sync` core, while framework packages keep adapter integration only. | architecture review + `core-framework-separation` policy check |
+| `module-responsibility-boundaries` | For every implementation change, enforce package responsibilities at the correct layer: runtime/core/schema/transport/framework modules must not absorb each other's concerns, and cross-layer coupling must stay within defined architecture boundaries. | architecture review + `package-responsibility-boundaries` policy check |
 | `root-turbo-orchestration` | Root package scripts must orchestrate through `turbo run ...`. | root script policy check |
 | `root-no-hardcoded-filter` | Root scripts must not hardcode `--filter`; filters are caller-supplied. | root script policy check |
 | `workspace-tool-packages` | Shared automation lives in dedicated workspace packages and runs via Turbo tasks. | governance + workspace structure checks |
@@ -27,6 +33,7 @@ Use this page as the primary reference instead of repeating the same rule text a
 | `lint-warning-no-regressions` | Lint warning counts are budgeted per package and must not increase without explicitly updating the central budget config. | lint scripts + `configs/quality/lint-warning-budgets.json` + policy checks |
 | `package-readmes-from-docs` | Package README files are generated from `website/docs/packages` and must stay in sync. | `turbo run gen:readmes` + `turbo run check:readmes` |
 | `aggregated-policy-reporting` | Policy checks run as a set and produce one aggregated report. | `tools/policies/check.ts` |
+| `hierarchical-instruction-inheritance` | Scoped instruction files must inherit through the nearest parent AGENTS chain so root + scope rules compose deterministically. | AGENTS hierarchy policy check + context routing |
 | `centralize-shared-rules` | Shared recurring rules are centralized in root gate; scoped deviations are registered in specializations. | root-gate + specialization checks |
 
 ## Usage

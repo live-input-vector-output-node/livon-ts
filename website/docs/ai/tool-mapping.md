@@ -23,12 +23,14 @@ Codex/Copilot mappings should reference rule ids and specialization ids rather t
 - Root: `AGENTS.md`
 - Scoped: nested `AGENTS.md` files in touched areas
 - Optional: skills for on-demand deep tasks
+- Optional: role council orchestration via `configs/ai/multi-agent-council.json`
 
 ## Copilot mapping
 
 - Root: `.github/copilot-instructions.md`
 - Scoped: `.github/instructions/*.instructions.md` with `applyTo`
 - Optional: `.github/skills/*/SKILL.md` for reusable workflows
+- Optional: role council skill set (`po-dx-designer`, `system-architect`, `backend-architect`, `frontend-architect`, `performance-specialist`, `test-quality-specialist`)
 
 ## Compatibility note
 

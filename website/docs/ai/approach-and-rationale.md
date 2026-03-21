@@ -39,6 +39,7 @@ Scoped routing and progressive disclosure keep high-signal context active while 
 
 Use multi-agent mode for parallelizable tasks (exploration, review shards, migration decomposition).
 Keep single-agent mode for small or linear tasks.
+Use the role council contract from [Multi-Agent Council](multi-agent-council) when product intent, architecture, and performance decisions must be coordinated.
 
 ## Official references
 

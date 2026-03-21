@@ -28,8 +28,11 @@ Canonical product and engineering documentation lives in Docusaurus (`/docs`).
 2. Read `PROMPTS.md`.
 3. Read `/docs/ai/root-gate`.
 4. Read `/docs/ai/context-routing`.
-5. Resolve matching entries in `configs/ai/specializations.json` for touched scope.
-6. Load only docs and prompts that match touched scope.
+5. Resolve nearest scope `AGENTS.md` files from root to target path (hierarchical inheritance).
+   - Example: `apps/AGENTS.md` applies to all `apps/**`; `apps/server/AGENTS.md` extends it for `apps/server/**`.
+   - Same principle for `packages/**`, `tools/**`, and any deeper subfolder.
+6. Resolve matching entries in `configs/ai/specializations.json` for touched scope.
+7. Load only docs and prompts that match touched scope.
 
 ## Scope Lock
 - The agent must not propose edits outside task scope unless requested.
@@ -43,6 +46,7 @@ Canonical product and engineering documentation lives in Docusaurus (`/docs`).
 - Before implementation, produce an active rules summary (max 12 bullets).
 - The summary must include:
   - architecture constraints,
+  - owning-layer decision for touched logic (runtime/schema/transport/client/sync/framework adapter),
   - coding style constraints,
   - required checks for changed scope,
   - conflict resolution when multiple rules overlap.
@@ -86,7 +90,18 @@ Canonical product and engineering documentation lives in Docusaurus (`/docs`).
     - `/docs/core/schema-doc-and-generated-jsdoc`
   - docs/package navigation or package catalog updates:
     - `/docs/packages/index`
-  - runtime behavior or transport changes:
+  - `packages/runtime/**`:
+    - `packages/runtime/PROMPT.md`
+    - `/docs/technical/runtime-design`
+    - `/docs/technical/architecture`
+    - `/docs/technical/event-flow`
+    - `/docs/technical/roadmap`
+  - `packages/sync/**`, `packages/react/**`, `packages/angular/**`, `packages/svelte/**`:
+    - `/docs/packages/sync`
+    - `/docs/packages/react`
+    - `/docs/technical/architecture`
+    - `/docs/core/coding-style-guide`
+  - transport/runtime lifecycle changes:
     - `/docs/technical/runtime-design`
     - `/docs/technical/architecture`
     - `/docs/technical/event-flow`
@@ -113,11 +128,13 @@ Canonical product and engineering documentation lives in Docusaurus (`/docs`).
 ## Execution Workflow
 1. Identify target area from user request.
 2. Load relevant prompt files for that area.
-3. Implement according to canonical constraints in `PROMPT.md` and local package prompts.
-4. Run relevant checks:
+3. Decide the owning package boundary for touched logic before editing (runtime/schema/transport/client/sync/framework adapter), then implement at that layer.
+4. For complex cross-domain tasks (multi-domain scope, policy/gate updates, or explicit cross-role tradeoffs), follow the role council flow in `configs/ai/multi-agent-council.json` (`po-dx-designer` -> architecture roles -> `performance-specialist` -> `test-quality-specialist` -> final council). Use single-agent mode for local linear changes with no cross-role tradeoff.
+5. Implement according to canonical constraints in `PROMPT.md` and local package prompts.
+6. Run relevant checks:
    - local iteration: `pnpm qg:changed`
    - pre-push/full gate: `pnpm qg`
-5. Report what changed, what was validated, and any remaining risks.
+7. Report what changed, what was validated, and any remaining risks.
 
 ## Documentation maintenance workflow
 1. For repository-wide rule updates, modify `PROMPT.md` first.

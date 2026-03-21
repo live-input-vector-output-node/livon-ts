@@ -13,6 +13,7 @@ This file lists prompt entrypoints and canonical Docusaurus rule/documentation p
 - `PROMPT.md` – root prompt entrypoint
 - `PROMPTS.md` – prompt inventory entrypoint
 - `packages/client/PROMPT.md` – client package prompt entrypoint
+- `packages/runtime/PROMPT.md` – runtime package prompt entrypoint
 - `packages/schema/PROMPT.md` – schema package prompt entrypoint
 
 ## AI control entrypoints
@@ -24,6 +25,7 @@ This file lists prompt entrypoints and canonical Docusaurus rule/documentation p
 - `website/docs/ai/active-rules-and-gates.md` – active rule set + gate review contract
 - `website/docs/ai/tool-mapping.md` – Codex/Copilot capability mapping
 - `website/docs/ai/approach-and-rationale.md` – design rationale and official references
+- `website/docs/ai/multi-agent-council.md` – role-based multi-agent collaboration contract
 
 ## Canonical documentation source
 
@@ -42,4 +44,5 @@ This file lists prompt entrypoints and canonical Docusaurus rule/documentation p
 4. `/docs/core/definition-of-done`
 5. `/docs/core/testing-and-quality` (mandatory for test strategy and branch coverage rules)
 6. `/docs/technical/runtime-design`
-7. package-specific prompt entrypoints
+7. `/docs/technical/architecture`
+8. package-specific prompt entrypoints
