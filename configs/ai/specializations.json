@@ -31,6 +31,7 @@
         ".github/instructions/runtime.instructions.md"
       ],
       "requiredLoad": [
+        "packages/runtime/PROMPT.md",
         "website/docs/technical/runtime-design.md",
         "website/docs/technical/architecture.mdx",
         "website/docs/technical/event-flow.mdx",
@@ -38,7 +39,8 @@
       ],
       "deltaRules": [
         "Preserve deterministic hook order and context boundaries.",
-        "Keep runtime concerns separate from transport and schema-specific concerns."
+        "Keep runtime concerns separate from transport and schema-specific concerns.",
+        "Runtime source code must not import @livon/client, @livon/schema, or transport packages."
       ]
     },
     {

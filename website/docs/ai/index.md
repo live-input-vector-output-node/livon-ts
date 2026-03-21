@@ -19,10 +19,12 @@ Use these pages as the control layer:
 - [Active Rules and Gates](active-rules-and-gates)
 - [Tool Mapping](tool-mapping)
 - [Approach and Rationale](approach-and-rationale)
+- [Multi-Agent Council](multi-agent-council)
 
 Machine-readable routing source:
 
 - `configs/ai/context-routing.json`
+- `configs/ai/multi-agent-council.json`
 
 Operational commands:
 

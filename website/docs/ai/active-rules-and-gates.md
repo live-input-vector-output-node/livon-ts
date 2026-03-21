@@ -12,11 +12,12 @@ Before implementation, produce an Active Rule Set with up to 12 bullets.
 It must include:
 
 1. architecture boundaries,
-2. coding style constraints,
-3. required validation/test commands for changed scope,
-4. explicit conflict resolution (`higher priority rule wins`),
-5. applicable recurring rules from [Root Gate](root-gate) by rule id,
-6. applicable scope-specific deviations from [Specializations](specializations) by specialization id.
+2. owning-layer decision for touched logic (runtime/schema/transport/client/sync/framework adapter),
+3. coding style constraints,
+4. required validation/test commands for changed scope,
+5. explicit conflict resolution (`higher priority rule wins`),
+6. applicable recurring rules from [Root Gate](root-gate) by rule id,
+7. applicable scope-specific deviations from [Specializations](specializations) by specialization id.
 
 Priority order:
 

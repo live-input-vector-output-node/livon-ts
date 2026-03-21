@@ -48,9 +48,36 @@
       ]
     },
     {
-      "id": "runtime-and-transport",
+      "id": "runtime-core",
       "patterns": [
-        "packages/runtime/**",
+        "packages/runtime/**"
+      ],
+      "load": [
+        "packages/runtime/PROMPT.md",
+        "website/docs/technical/runtime-design.md",
+        "website/docs/technical/architecture.mdx",
+        "website/docs/technical/event-flow.mdx",
+        "website/docs/technical/roadmap.mdx"
+      ]
+    },
+    {
+      "id": "sync-and-framework-adapters",
+      "patterns": [
+        "packages/sync/**",
+        "packages/react/**",
+        "packages/angular/**",
+        "packages/svelte/**"
+      ],
+      "load": [
+        "website/docs/packages/sync.md",
+        "website/docs/packages/react.md",
+        "website/docs/technical/architecture.mdx",
+        "website/docs/core/coding-style-guide.md"
+      ]
+    },
+    {
+      "id": "transport-and-server",
+      "patterns": [
         "packages/*transport/**",
         "apps/server/**"
       ],
@@ -89,6 +116,7 @@
     {
       "id": "ai-specializations",
       "patterns": [
+        "**/AGENTS.md",
         "packages/*/AGENTS.md",
         ".github/instructions/**",
         "configs/ai/specializations.json",
@@ -97,6 +125,20 @@
       "load": [
         "configs/ai/specializations.json",
         "website/docs/ai/specializations.md"
+      ]
+    },
+    {
+      "id": "ai-multi-agent",
+      "patterns": [
+        "configs/ai/multi-agent-council.json",
+        "website/docs/ai/multi-agent-council.md",
+        ".github/skills/**",
+        "tools/policies/src/checks/check-multi-agent-council.ts"
+      ],
+      "load": [
+        "configs/ai/multi-agent-council.json",
+        "website/docs/ai/multi-agent-council.md",
+        "website/docs/ai/approach-and-rationale.md"
       ]
     },
     {
@@ -144,8 +186,16 @@
     {
       "path": "packages/runtime/src/runtime.ts",
       "mustLoad": [
+        "packages/runtime/PROMPT.md",
         "website/docs/technical/runtime-design.md",
         "website/docs/technical/event-flow.mdx"
+      ]
+    },
+    {
+      "path": "packages/sync/src/entity.ts",
+      "mustLoad": [
+        "website/docs/packages/sync.md",
+        "website/docs/technical/architecture.mdx"
       ]
     },
     {

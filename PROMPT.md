@@ -45,6 +45,7 @@ Rule highlights:
 
 - Repository-wide recurring rules are centralized in `/docs/ai/root-gate`.
 - Scope-specific deviations are centralized in `/docs/ai/specializations`.
+- For implementation work, decide the owning layer first (`runtime`, `schema`, `transport`, `client`, `sync`, framework adapter) and implement logic in that boundary.
 - Keep implementation and documentation synchronized in both directions: implementation changes require docs updates, and rule/behavior docs changes require matching implementation updates.
 
 This file is an agent entrypoint only.

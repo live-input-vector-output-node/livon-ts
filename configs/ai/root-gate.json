@@ -14,6 +14,83 @@
       ]
     },
     {
+      "id": "arrow-functions-only",
+      "statement": "Use arrow functions as the default for implementations and exported callable APIs; avoid the function keyword, including overload declarations (use callable interfaces plus const arrow assignments).",
+      "humanSources": [
+        "website/docs/core/coding-style-guide.md",
+        "website/docs/ai/root-gate.md"
+      ],
+      "agentSources": [
+        "PROMPT.md",
+        "AGENTS.md"
+      ]
+    },
+    {
+      "id": "destructured-config-defaults",
+      "statement": "When functions accept config objects, destructure parameters directly and set defaults with ES6 parameter defaults; keep property names aligned and avoid config.* access.",
+      "humanSources": [
+        "website/docs/core/coding-style-guide.md",
+        "website/docs/ai/root-gate.md"
+      ],
+      "agentSources": [
+        "PROMPT.md",
+        "AGENTS.md"
+      ]
+    },
+    {
+      "id": "test-setup-deduplication",
+      "statement": "Before adding new tests, inspect existing tests for similar setup and extract shared setup into beforeEach blocks or reusable test utilities to avoid duplicated entity/source/action/stream scaffolding.",
+      "humanSources": [
+        "website/docs/core/testing-and-quality.md",
+        "website/docs/ai/root-gate.md"
+      ],
+      "agentSources": [
+        "PROMPT.md",
+        "AGENTS.md"
+      ]
+    },
+    {
+      "id": "modular-file-structure",
+      "statement": "Keep utilities in scoped utils folders with one utility per file and index barrel exports; split main functionality into focused files and expose public boundaries through package.json exports plus index barrels.",
+      "humanSources": [
+        "website/docs/core/coding-style-guide.md",
+        "website/docs/core/testing-and-quality.md",
+        "website/docs/ai/root-gate.md"
+      ],
+      "agentSources": [
+        "PROMPT.md",
+        "AGENTS.md"
+      ]
+    },
+    {
+      "id": "core-framework-separation",
+      "statement": "When changing framework adapters, evaluate first whether logic is framework-agnostic; shared runtime/state/sync behavior must be implemented in @livon/sync core, while framework packages keep only adapter integration code.",
+      "humanSources": [
+        "website/docs/core/coding-style-guide.md",
+        "website/docs/ai/root-gate.md"
+      ],
+      "agentSources": [
+        "PROMPT.md",
+        "AGENTS.md",
+        "tools/policies/src/checks/check-core-framework-separation.ts"
+      ]
+    },
+    {
+      "id": "module-responsibility-boundaries",
+      "statement": "For every implementation change, enforce package responsibilities at the correct layer: runtime/core/schema/transport/framework modules must not absorb each other's concerns, and cross-layer coupling must stay within defined architecture boundaries.",
+      "humanSources": [
+        "website/docs/technical/architecture.mdx",
+        "website/docs/technical/runtime-design.md",
+        "website/docs/core/coding-style-guide.md",
+        "website/docs/ai/root-gate.md"
+      ],
+      "agentSources": [
+        "PROMPT.md",
+        "AGENTS.md",
+        "tools/policies/src/checks/check-package-responsibility-boundaries.ts"
+      ]
+    },
+    {
       "id": "root-turbo-orchestration",
       "statement": "Root package scripts must orchestrate through turbo run.",
       "humanSources": [
@@ -151,6 +228,18 @@
       ],
       "agentSources": [
         "AGENTS.md"
+      ]
+    },
+    {
+      "id": "hierarchical-instruction-inheritance",
+      "statement": "Instruction files must compose hierarchically: root AGENTS plus nearest parent AGENTS chain for scoped work.",
+      "humanSources": [
+        "website/docs/ai/context-routing.md",
+        "website/docs/ai/root-gate.md"
+      ],
+      "agentSources": [
+        "AGENTS.md",
+        "tools/policies/src/checks/check-ai-instruction-hierarchy.ts"
       ]
     },
     {

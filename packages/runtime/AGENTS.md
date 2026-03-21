@@ -1,7 +1,7 @@
 <!-- @agent.entry -->
-<!-- @agent.load: ../../AGENTS.md -->
+<!-- @agent.load: ../AGENTS.md -->
 <!-- @agent.load: ../../configs/ai/specializations.json -->
-<!-- @agent.load: ../../website/docs/technical/runtime-design.md -->
+<!-- @agent.load: ./PROMPT.md -->
 
 # packages/runtime AGENTS
 
