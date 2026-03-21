@@ -37,6 +37,13 @@ const includesSpecializationMarker = (source: string, specializationId: string):
   return marker.test(source);
 };
 
+const extractSpecializationMarkers = (source: string): string[] => {
+  const markers = [...source.matchAll(/specialization-id:\s*(?:`)?([a-z0-9-]+)(?:`)?/gi)]
+    .map((match) => match[1]?.trim())
+    .filter((value): value is string => Boolean(value));
+  return [...new Set(markers)];
+};
+
 export const runSpecializationsCheck = async (context: PolicyContext): Promise<PolicyCheckResult> => {
   const errors: string[] = [];
   const info: string[] = [];
@@ -114,12 +121,42 @@ export const runSpecializationsCheck = async (context: PolicyContext): Promise<P
     .filter((filePath) => filePath.endsWith('.instructions.md'))
     .map((filePath) => normalizeRelativePath(path.relative(context.baseDir, filePath)));
 
-  const actualSpecializationFiles = [...packageAgentFiles, ...githubInstructionFiles];
+  const actualInstructionFiles = [...packageAgentFiles, ...githubInstructionFiles];
   const declaredSpecializationFiles = new Set(declaredInstructionFiles.map(normalizeRelativePath));
+  const knownSpecializationIds = new Set(specializationIds);
 
-  actualSpecializationFiles.forEach((relativePath) => {
-    if (!declaredSpecializationFiles.has(relativePath)) {
-      errors.push(`configs/ai/specializations.json: instruction file is not registered (${relativePath})`);
+  const markerChecks = await Promise.all(
+    actualInstructionFiles.map(async (relativePath) => {
+      const absolutePath = path.join(context.baseDir, relativePath);
+      const source = await readFile(absolutePath, 'utf8').catch(() => null);
+      if (!source) {
+        return null;
+      }
+      const markers = extractSpecializationMarkers(source);
+      return { markers, relativePath };
+    }),
+  );
+
+  markerChecks.forEach((entry) => {
+    if (!entry) {
+      return;
+    }
+    if (entry.markers.length === 0) {
+      return;
+    }
+    if (entry.markers.length > 1) {
+      errors.push(`${entry.relativePath}: multiple specialization-id markers found (${entry.markers.join(', ')})`);
+      return;
+    }
+
+    const markerId = entry.markers[0];
+    if (!knownSpecializationIds.has(markerId)) {
+      errors.push(`${entry.relativePath}: unknown specialization-id marker ${markerId}`);
+      return;
+    }
+
+    if (!declaredSpecializationFiles.has(entry.relativePath)) {
+      errors.push(`configs/ai/specializations.json: instruction file with specialization-id must be registered (${entry.relativePath})`);
     }
   });
 

@@ -1,13 +1,18 @@
 import { createPolicyContext } from './src/shared/context.ts';
 import type { PolicyCheckResult } from './src/shared/types.ts';
 import { runAiControlFilesCheck } from './src/checks/check-ai-control-files.ts';
+import { runAiInstructionHierarchyCheck } from './src/checks/check-ai-instruction-hierarchy.ts';
 import { runAiMarkdownNamingCheck } from './src/checks/check-ai-markdown-naming.ts';
 import { runAiRoutingConfigCheck } from './src/checks/check-ai-routing-config.ts';
+import { runCoreFrameworkSeparationCheck } from './src/checks/check-core-framework-separation.ts';
 import { runLinksCheck } from './src/checks/check-links.ts';
 import { runLintWarningBudgetCheck } from './src/checks/check-lint-warning-budget.ts';
+import { runMultiAgentCouncilCheck } from './src/checks/check-multi-agent-council.ts';
 import { runPackageReadmesSyncCheck } from './src/checks/check-package-readmes-sync.ts';
+import { runPackageResponsibilityBoundariesCheck } from './src/checks/check-package-responsibility-boundaries.ts';
 import { runRootGateCheck } from './src/checks/check-root-gate.ts';
 import { runRootScriptOrchestrationCheck } from './src/checks/check-root-script-orchestration.ts';
+import { runRuntimeBoundariesCheck } from './src/checks/check-runtime-boundaries.ts';
 import { runSpecializationsCheck } from './src/checks/check-specializations.ts';
 import { runProjectPoliciesCheck } from './src/checks/run-project-policies.ts';
 import { runVersionParityCheck } from './src/checks/check-version-parity.ts';
@@ -45,11 +50,16 @@ const run = async (): Promise<void> => {
     runVersionParityCheck,
     runWorkflowActionVersionConsistencyCheck,
     runAiControlFilesCheck,
+    runAiInstructionHierarchyCheck,
     runPackageReadmesSyncCheck,
     runRootGateCheck,
     runSpecializationsCheck,
     runAiMarkdownNamingCheck,
     runAiRoutingConfigCheck,
+    runMultiAgentCouncilCheck,
+    runRuntimeBoundariesCheck,
+    runCoreFrameworkSeparationCheck,
+    runPackageResponsibilityBoundariesCheck,
     runLintWarningBudgetCheck,
     runLinksCheck,
   ];

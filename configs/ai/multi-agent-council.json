@@ -1,0 +1,115 @@
+{
+  "version": 1,
+  "roles": [
+    {
+      "id": "po-dx-designer",
+      "name": "PO/DX Designer",
+      "skillFile": ".github/skills/po-dx-designer/SKILL.md"
+    },
+    {
+      "id": "system-architect",
+      "name": "System Architect",
+      "skillFile": ".github/skills/system-architect/SKILL.md"
+    },
+    {
+      "id": "backend-architect",
+      "name": "Backend Architect",
+      "skillFile": ".github/skills/backend-architect/SKILL.md"
+    },
+    {
+      "id": "frontend-architect",
+      "name": "Frontend Architect",
+      "skillFile": ".github/skills/frontend-architect/SKILL.md"
+    },
+    {
+      "id": "performance-specialist",
+      "name": "Performance Specialist",
+      "skillFile": ".github/skills/performance-specialist/SKILL.md"
+    },
+    {
+      "id": "test-quality-specialist",
+      "name": "Test Quality Specialist",
+      "skillFile": ".github/skills/test-quality-specialist/SKILL.md"
+    },
+    {
+      "id": "multi-agent-council",
+      "name": "Multi-Agent Council Orchestrator",
+      "skillFile": ".github/skills/multi-agent-council/SKILL.md"
+    }
+  ],
+  "stages": [
+    {
+      "id": "product-intent",
+      "ownerRoleId": "po-dx-designer",
+      "mustCompleteBefore": [
+        "architecture-design",
+        "performance-budget"
+      ]
+    },
+    {
+      "id": "architecture-design",
+      "ownerRoleId": "system-architect",
+      "consultedRoleIds": [
+        "backend-architect",
+        "frontend-architect"
+      ],
+      "mustCompleteBefore": [
+        "implementation-plan"
+      ]
+    },
+    {
+      "id": "implementation-plan",
+      "ownerRoleId": "backend-architect",
+      "consultedRoleIds": [
+        "frontend-architect",
+        "system-architect"
+      ],
+      "mustCompleteBefore": [
+        "performance-budget"
+      ]
+    },
+    {
+      "id": "performance-budget",
+      "ownerRoleId": "performance-specialist",
+      "consultedRoleIds": [
+        "system-architect",
+        "backend-architect",
+        "frontend-architect"
+      ],
+      "mustCompleteBefore": [
+        "quality-gates",
+        "final-council-decision"
+      ]
+    },
+    {
+      "id": "quality-gates",
+      "ownerRoleId": "test-quality-specialist",
+      "consultedRoleIds": [
+        "system-architect",
+        "backend-architect",
+        "frontend-architect",
+        "performance-specialist"
+      ],
+      "mustCompleteBefore": [
+        "final-council-decision"
+      ]
+    },
+    {
+      "id": "final-council-decision",
+      "ownerRoleId": "multi-agent-council",
+      "consultedRoleIds": [
+        "po-dx-designer",
+        "system-architect",
+        "backend-architect",
+        "frontend-architect",
+        "performance-specialist",
+        "test-quality-specialist"
+      ]
+    }
+  ],
+  "constraints": {
+    "requirePoStageFirst": true,
+    "requireCrossRoleConsultation": true,
+    "requirePerformanceReviewBeforeFinalDecision": true
+  }
+}
