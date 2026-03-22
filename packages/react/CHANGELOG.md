@@ -1,5 +1,13 @@
 # @livon/react
 
+## 0.28.0-rc.1
+
+### Patch Changes
+
+- Standardize package badges across docs and generated package READMEs, including `@livon/sync` and `@livon/react`, while keeping shared CI status global to the overview pages.
+- Updated dependencies
+  - @livon/sync@0.28.0-rc.1
+
 ## 0.28.0-rc.0
 
 ### Minor Changes

@@ -1,5 +1,16 @@
 # @livon/app-server
 
+## 0.28.0-rc.1
+
+### Patch Changes
+
+- Standardize package badges across docs and generated package READMEs, including `@livon/sync` and `@livon/react`, while keeping shared CI status global to the overview pages.
+- Updated dependencies
+  - @livon/dlq-module@0.28.0-rc.1
+  - @livon/runtime@0.28.0-rc.1
+  - @livon/schema@0.28.0-rc.1
+  - @livon/node-ws-transport@0.28.0-rc.1
+
 ## 0.28.0-rc.0
 
 ### Minor Changes

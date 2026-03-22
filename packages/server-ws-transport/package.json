@@ -1,6 +1,6 @@
 {
   "name": "@livon/node-ws-transport",
-  "version": "0.28.0-rc.0",
+  "version": "0.28.0-rc.1",
   "private": false,
   "type": "module",
   "description": "Node.js WebSocket transport for the LIVON runtime.",
