@@ -8,7 +8,10 @@
     "url": "https://livon.tech"
   },
   "contributors": [
-    "cr15p1 <62719241+cr15p1@users.noreply.github.com>"
+    {
+      "name": "cr15p1",
+      "url": "https://github.com/cr15p1"
+    }
   ],
   "scripts": {
     "build": "turbo run build",
