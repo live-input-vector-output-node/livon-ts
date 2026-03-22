@@ -1,6 +1,6 @@
 {
   "name": "@livon/release",
-  "version": "0.27.0-rc.5",
+  "version": "0.28.0-rc.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,7 +8,7 @@
     "dev": "true",
     "lint": "true",
     "typecheck": "true",
-    "test": "true",
+    "test": "node --test sync-root-version.spec.mjs",
     "release:check": "node release-check.mjs",
     "changeset": "pnpm dlx @changesets/cli",
     "changeset:version": "node changeset-version.mjs",
