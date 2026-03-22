@@ -20,9 +20,14 @@
     "@livon/rspack-app": "0.27.0-rc.3",
     "@livon/app-name": "0.27.0-rc.3",
     "@livon/frontend-app": "0.27.0-rc.3",
-    "website": "0.27.0-rc.3"
+    "website": "0.27.0-rc.3",
+    "@livon/gen": "0.27.0-rc.5",
+    "@livon/policies": "0.27.0-rc.5",
+    "@livon/readmes": "0.27.0-rc.5",
+    "@livon/release": "0.27.0-rc.5"
   },
   "changesets": [
+    "quiet-owls-pump",
     "rc-five-release",
     "wise-pandas-worry"
   ]

@@ -99,6 +99,9 @@ Root quality-gate and verification commands use concise output by default:
 - Failure path: show only the failing package/task logs and the relevant error locations.
 - For deep debugging, rerun the failing package command directly or run the equivalent Turbo command with `--output-logs=full`.
 
+Repository badges must use trusted externally hosted sources such as GitHub Actions, npm, Shields, or Libraries.io.
+Do not add generated/self-hosted badge artifacts or badge workspaces back into the repository or CI.
+
 ### 5. Run package-local checks during development
 
 Example unit test run:
@@ -307,6 +310,7 @@ pnpm changeset:version
 ```
 
 `pnpm changeset:version` runs Changesets versioning and then syncs the root `package.json` version to the shared workspace version.
+It also syncs any remaining workspace `package.json` files that are governed by repo-wide version parity but are not directly versioned by Changesets.
 
 The publish workflow uses:
 

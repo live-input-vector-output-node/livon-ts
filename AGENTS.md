@@ -121,6 +121,7 @@ Canonical product and engineering documentation lives in Docusaurus (`/docs`).
 - Do not edit `dist/` or `node_modules/`.
 - Apply recurring repository-wide constraints via `/docs/ai/root-gate` instead of duplicating rule text here.
 - Keep lint warnings non-regressing: `eslint` scripts use budgeted `--max-warnings` values from `configs/quality/lint-warning-budgets.json`.
+- For repository badges, follow the root-gate policy: use trusted externally hosted badge sources only, and do not add generated/self-hosted badge artifacts, badge workspaces, or CI steps that publish local badge files.
 - Markdown naming must be consistent:
   - default: lowercase-kebab-case (`context-routing.md`)
   - tool-required exceptions: `AGENTS.md`, `PROMPT.md`, `PROMPTS.md`, `SKILL.md`

@@ -126,18 +126,16 @@ jobs:
       - name: Run monorepo CI
         run: pnpm run ci
 
-      - name: Create PR for generated README and size badge updates
+      - name: Create PR for generated README updates
         uses: peter-evans/create-pull-request@v8.1.0
         with:
           add-paths: |
             packages/*/README.md
-            .github/badges/size-*.json
           branch: chore/generated-artifacts-sync
-          commit-message: "chore: sync generated readmes and size badges"
-          title: "chore: sync generated readmes and size badges"
+          commit-message: "chore: sync generated readmes"
+          title: "chore: sync generated readmes"
           body: |
             This PR was created automatically by CI.
 
             It syncs generated artifacts that can change after running the full gate pipeline:
             - `packages/*/README.md` (generated from canonical docs)
-            - `.github/badges/size-*.json` (generated package size badges)

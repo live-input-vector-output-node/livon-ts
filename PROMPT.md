@@ -47,6 +47,7 @@ Rule highlights:
 - Scope-specific deviations are centralized in `/docs/ai/specializations`.
 - For git merge/rebase conflicts, follow the root-gate repository policy: `newest version wins` by default, which means keeping the newest compatible version and aligning related files to it unless higher-priority instructions or explicit correctness/security/build constraints require otherwise.
 - For root quality-gate and verification commands, prefer concise success output and focused failure output: surface OK/summaries when checks pass, and only the failed packages/files/error locations when checks fail unless explicit verbose debugging is requested.
+- For repository badges, use trusted externally hosted sources only; do not add generated or self-hosted badge artifacts, badge workspaces, or CI steps that publish local badge files.
 - For implementation work, decide the owning layer first (`runtime`, `schema`, `transport`, `client`, `sync`, framework adapter) and implement logic in that boundary.
 - Keep implementation and documentation synchronized in both directions: implementation changes require docs updates, and rule/behavior docs changes require matching implementation updates.
 

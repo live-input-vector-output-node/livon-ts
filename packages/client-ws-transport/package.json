@@ -1,6 +1,6 @@
 {
   "name": "@livon/client-ws-transport",
-  "version": "0.27.0-rc.5",
+  "version": "0.27.0-rc.6",
   "private": false,
   "type": "module",
   "description": "WebSocket client transport for the LIVON client runtime.",

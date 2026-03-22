@@ -217,6 +217,18 @@
       ]
     },
     {
+      "id": "trusted-external-badges",
+      "statement": "Repository badges must use trusted externally hosted sources; do not add generated or self-hosted badge artifacts, badge workspaces, or CI steps that publish local badge files.",
+      "humanSources": [
+        "website/docs/core/contributing.md",
+        "website/docs/ai/root-gate.md"
+      ],
+      "agentSources": [
+        "PROMPT.md",
+        "AGENTS.md"
+      ]
+    },
+    {
       "id": "lint-warning-no-regressions",
       "statement": "Lint warning counts are budgeted per package and must not increase without explicitly updating the central budget config.",
       "humanSources": [

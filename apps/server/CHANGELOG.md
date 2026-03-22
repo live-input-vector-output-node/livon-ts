@@ -1,5 +1,16 @@
 # @livon/app-server
 
+## 0.27.0-rc.6
+
+### Patch Changes
+
+- Harden the prerelease line with release/publish workflow cleanup, concise quality-gate output, and sync runtime safety fixes.
+- Updated dependencies
+  - @livon/dlq-module@0.27.0-rc.6
+  - @livon/runtime@0.27.0-rc.6
+  - @livon/schema@0.27.0-rc.6
+  - @livon/node-ws-transport@0.27.0-rc.6
+
 ## 0.27.0-rc.5
 
 ### Patch Changes
