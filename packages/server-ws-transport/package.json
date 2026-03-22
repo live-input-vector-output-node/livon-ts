@@ -3,32 +3,46 @@
   "version": "0.27.0-rc.5",
   "private": false,
   "type": "module",
+  "description": "Node.js WebSocket transport for the LIVON runtime.",
   "publishConfig": {
     "access": "public"
   },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "files": [
     "dist",
+    "README.md",
     "LICENSE.md",
-    "LICENCE.md",
     "THIRD_PARTY_NOTICES.md"
   ],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/live-input-vector-output-node/livon-ts.git",
+    "directory": "packages/server-ws-transport"
+  },
+  "homepage": "https://livon.tech/docs/packages/node-ws-transport",
+  "bugs": {
+    "url": "https://github.com/live-input-vector-output-node/livon-ts/issues"
+  },
+  "keywords": [
+    "livon",
+    "node",
+    "websocket",
+    "transport",
+    "typescript"
+  ],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "development": "./src/index.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
-    },
-    "./mini": {
-      "types": "./dist/mini/index.d.ts",
-      "import": "./dist/mini/index.js",
-      "require": "./dist/mini/index.cjs"
     }
   },
   "scripts": {
     "build": "rslib build",
-    "postbuild": "rslib build -c rslib.mini.config.ts",
     "build:watch": "rslib dev",
     "dev": "true",
     "lint": "eslint . --max-warnings 2",
@@ -39,8 +53,8 @@
   },
   "dependencies": {
     "@livon/runtime": "workspace:*",
-    "msgpackr": "latest",
-    "ws": "latest"
+    "msgpackr": "1.11.8",
+    "ws": "8.19.0"
   },
   "devDependencies": {
     "@types/node": "latest",

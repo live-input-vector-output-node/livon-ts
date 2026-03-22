@@ -3,19 +3,19 @@
  *
  * @see https://livon.tech/docs/packages/config
  */
-import { existsSync, readdirSync } from 'node:fs';
-import { join, relative, sep } from 'node:path';
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 import { defineConfig, type ConfigParams } from '@rslib/core';
 
 type RslibTarget = 'node' | 'web';
 type RslibFormat = 'esm' | 'cjs';
-type RslibBuildVariant = 'default' | 'mini';
+type RslibEntryValue = string | readonly string[];
+type RslibEntries = Readonly<Record<string, RslibEntryValue>>;
 
 interface CreateRslibConfigInput {
   target: RslibTarget;
   formats: ReadonlyArray<RslibFormat>;
-  entries?: Readonly<Record<string, string>>;
-  variant?: RslibBuildVariant;
+  entries?: RslibEntries;
 }
 
 interface ResolveFormatsInput {
@@ -23,18 +23,9 @@ interface ResolveFormatsInput {
   formats: ReadonlyArray<RslibFormat>;
 }
 
-interface ResolveBuildVariantInput {
-  command: ConfigParams['command'];
-  variant: RslibBuildVariant;
-}
-
 interface ResolveEntriesInput {
-  cwd: string;
-  entries?: Readonly<Record<string, string>>;
+  entries?: RslibEntries;
 }
-
-const sourceFileExtensionPattern = /\.[cm]?[jt]sx?$/;
-const sourceDeclarationFilePattern = /\.d\.[cm]?ts$/;
 
 const sourceExclude = [
   /\.spec\.[cm]?[jt]sx?$/,
@@ -45,50 +36,19 @@ const sourceExclude = [
   /(^|\/)tests?\//,
 ];
 
-const toPosixPath = (value: string): string => value.split(sep).join('/');
-
-const listSourceFiles = (directory: string): ReadonlyArray<string> => {
-  if (!existsSync(directory)) {
-    return [];
-  }
-
-  return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
-    const entryPath = join(directory, entry.name);
-    return entry.isDirectory() ? listSourceFiles(entryPath) : [entryPath];
-  });
+const defaultEntries: RslibEntries = {
+  index: [
+    './src/**',
+    '!./src/**/*.spec.*',
+    '!./src/**/*.test.*',
+    '!./src/**/__mocks__/**',
+    '!./src/**/mocks/**',
+    '!./src/**/testing/**',
+    '!./src/**/tests/**',
+  ],
 };
 
-const isExcludedSourceFile = (sourceFilePath: string): boolean =>
-  sourceExclude.some((pattern) => pattern.test(toPosixPath(sourceFilePath)));
-
-const isBuildSourceFile = (sourceFilePath: string): boolean =>
-  sourceFileExtensionPattern.test(sourceFilePath) && !sourceDeclarationFilePattern.test(sourceFilePath);
-
-const toEntryKey = (sourceRootPath: string, sourceFilePath: string): string =>
-  toPosixPath(relative(sourceRootPath, sourceFilePath)).replace(sourceFileExtensionPattern, '');
-
-const toEntryValue = (cwd: string, sourceFilePath: string): string =>
-  `./${toPosixPath(relative(cwd, sourceFilePath))}`;
-
-const resolveEntries = ({ cwd, entries }: ResolveEntriesInput): Readonly<Record<string, string>> => {
-  const sourceRootPath = join(cwd, 'src');
-  const discoveredEntries = listSourceFiles(sourceRootPath)
-    .filter(isBuildSourceFile)
-    .filter((sourceFilePath) => !isExcludedSourceFile(sourceFilePath))
-    .sort((left, right) => left.localeCompare(right))
-    .reduce<Record<string, string>>((acc, sourceFilePath) => {
-      return {
-        ...acc,
-        [toEntryKey(sourceRootPath, sourceFilePath)]: toEntryValue(cwd, sourceFilePath),
-      };
-    }, {});
-
-  const defaultEntries = Object.keys(discoveredEntries).length > 0 ? discoveredEntries : { index: './src/index.ts' };
-  return {
-    ...defaultEntries,
-    ...entries,
-  };
-};
+const resolveEntries = ({ entries }: ResolveEntriesInput): RslibEntries => entries ?? defaultEntries;
 
 const resolveBuildTsconfigPath = (cwd: string): string | undefined =>
   existsSync(join(cwd, 'tsconfig.build.json')) ? './tsconfig.build.json' : undefined;
@@ -100,13 +60,6 @@ const resolveFormats = ({ command, formats }: ResolveFormatsInput): ReadonlyArra
 
   const devFormats = formats.filter((format) => format === 'esm');
   return devFormats.length > 0 ? devFormats : formats;
-};
-
-const resolveBuildVariant = ({ command, variant }: ResolveBuildVariantInput): 'dev' | 'default' | 'mini' => {
-  if (command === 'dev') {
-    return 'dev';
-  }
-  return variant;
 };
 
 /**
@@ -124,14 +77,11 @@ const resolveBuildVariant = ({ command, variant }: ResolveBuildVariantInput): 'd
  *
  * @see https://livon.tech/docs/packages/config
  */
-export const createRslibConfig = ({ target, formats, entries, variant = 'default' }: CreateRslibConfigInput) => {
+export const createRslibConfig = ({ target, formats, entries }: CreateRslibConfigInput) => {
   return defineConfig(({ command }) => {
     const selectedFormats = resolveFormats({ command, formats });
-    const buildVariant = resolveBuildVariant({ command, variant });
-    const shouldMinify = buildVariant === 'mini';
-    const outputDistPath = buildVariant === 'mini' ? 'dist/mini' : 'dist';
     const cwd = process.cwd();
-    const selectedEntries = resolveEntries({ cwd, entries });
+    const selectedEntries = resolveEntries({ entries });
     const selectedTsconfigPath = resolveBuildTsconfigPath(cwd);
 
     return {
@@ -153,38 +103,9 @@ export const createRslibConfig = ({ target, formats, entries, variant = 'default
       }),
       output: {
         target,
-        distPath: outputDistPath,
+        distPath: 'dist',
         cleanDistPath: command !== 'dev',
-        minify: shouldMinify,
       },
     };
-  });
-};
-
-/**
- * Creates a reusable Rslib mini build configuration for `dist/mini`.
- *
- * @example
- * ```ts
- * import { createRslibMiniConfig } from '@livon/config/rslib';
- *
- * export default createRslibMiniConfig({
- *   target: 'node',
- *   formats: ['esm', 'cjs'],
- * });
- * ```
- *
- * @see https://livon.tech/docs/packages/config
- */
-export const createRslibMiniConfig = ({
-  entries,
-  formats,
-  target,
-}: Omit<CreateRslibConfigInput, 'variant'>) => {
-  return createRslibConfig({
-    entries,
-    formats,
-    target,
-    variant: 'mini',
   });
 };

@@ -2,6 +2,7 @@
   "name": "livon-monorepo",
   "private": true,
   "packageManager": "pnpm@9.0.0",
+  "license": "MIT",
   "scripts": {
     "build": "turbo run build",
     "ci": "turbo run ci",
@@ -14,7 +15,7 @@
     "format": "turbo run format",
     "typecheck": "turbo run typecheck",
     "gen": "turbo run gen --",
-    "badges:size": "turbo run badges:size",
+    "release:check": "turbo run release:check",
     "check:policies": "turbo run check:policies",
     "metrics:ai-control": "turbo run metrics:ai-control",
     "changeset": "turbo run changeset",

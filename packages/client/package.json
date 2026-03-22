@@ -3,6 +3,7 @@
   "version": "0.27.0-rc.5",
   "private": false,
   "type": "module",
+  "description": "Client runtime and generated client foundations for LIVON.",
   "publishConfig": {
     "access": "public"
   },
@@ -15,29 +16,36 @@
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     },
-    "./mini": {
-      "types": "./dist/mini/index.d.ts",
-      "import": "./dist/mini/index.js",
-      "require": "./dist/mini/index.cjs"
-    },
     "./generate": {
       "types": "./dist/generate.d.ts",
       "import": "./dist/generate.js",
       "require": "./dist/generate.cjs"
-    },
-    "./generate/mini": {
-      "types": "./dist/mini/generate.d.ts",
-      "import": "./dist/mini/generate.js",
-      "require": "./dist/mini/generate.cjs"
     }
   },
   "files": [
     "dist",
-    "LICENCE.md"
+    "LICENSE.md",
+    "THIRD_PARTY_NOTICES.md"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/live-input-vector-output-node/livon-ts.git",
+    "directory": "packages/client"
+  },
+  "homepage": "https://livon.tech/docs/packages/client",
+  "bugs": {
+    "url": "https://github.com/live-input-vector-output-node/livon-ts/issues"
+  },
+  "keywords": [
+    "livon",
+    "client",
+    "api",
+    "codegen",
+    "typescript"
   ],
   "scripts": {
     "build": "rslib build",
-    "postbuild": "rslib build -c rslib.mini.config.ts",
     "build:watch": "rslib dev",
     "dev": "true",
     "lint": "eslint . --max-warnings 23",
@@ -47,7 +55,6 @@
     "test:integration": "true"
   },
   "dependencies": {
-    "@livon/config": "workspace:*",
     "@livon/runtime": "workspace:*"
   },
   "devDependencies": {
