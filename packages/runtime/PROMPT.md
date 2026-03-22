@@ -1,5 +1,5 @@
 <!-- @agent.entry -->
-<!-- @agent.load: ../../AGENTS.md -->
+<!-- @agent.load: ../AGENTS.md -->
 <!-- @agent.load: ../../website/docs/packages/runtime.md -->
 <!-- @agent.load: ../../website/docs/technical/runtime-design.md -->
 <!-- @agent.load: ../../website/docs/technical/architecture.mdx -->
