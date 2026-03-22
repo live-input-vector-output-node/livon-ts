@@ -1,6 +1,6 @@
 {
   "name": "@livon/runtime",
-  "version": "0.28.0-rc.1",
+  "version": "0.28.0-rc.2",
   "private": false,
   "type": "module",
   "description": "Deterministic event pipeline runtime for LIVON.",

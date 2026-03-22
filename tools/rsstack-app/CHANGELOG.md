@@ -1,5 +1,11 @@
 # @livon/app-name
 
+## 0.28.0-rc.2
+
+### Patch Changes
+
+- Reformat package badge overview into a structured table and keep the order version, dependencies, code quality, package size, license.
+
 ## 0.28.0-rc.1
 
 ### Patch Changes

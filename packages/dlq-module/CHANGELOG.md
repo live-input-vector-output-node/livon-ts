@@ -1,5 +1,13 @@
 # @livon/dlq-module
 
+## 0.28.0-rc.2
+
+### Patch Changes
+
+- Reformat package badge overview into a structured table and keep the order version, dependencies, code quality, package size, license.
+- Updated dependencies
+  - @livon/runtime@0.28.0-rc.2
+
 ## 0.28.0-rc.1
 
 ### Patch Changes
