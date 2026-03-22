@@ -93,6 +93,12 @@ Release artifact validation:
 pnpm run release:check
 ```
 
+Root quality-gate and verification commands use concise output by default:
+
+- Success path: show Turbo task/package summaries instead of full tool logs.
+- Failure path: show only the failing package/task logs and the relevant error locations.
+- For deep debugging, rerun the failing package command directly or run the equivalent Turbo command with `--output-logs=full`.
+
 ### 5. Run package-local checks during development
 
 Example unit test run:
@@ -180,6 +186,7 @@ Use Turborepo as the monorepo execution layer:
 - Root workflows should call Turbo tasks (for example `pnpm run ci`) instead of bespoke orchestration scripts.
 - Root `package.json` scripts must use `turbo run ...` and must not execute ad-hoc Node or shell commands directly.
 - Root scripts must not hardcode `--filter`; when scoped execution is needed, the caller adds the filter at invocation time.
+- Root quality-gate and verification scripts should use concise log output by default and reserve full logs for explicit debugging reruns.
 - Shared automation belongs in dedicated workspace packages (for example `tools/policies`, `tools/gen`, `tools/release`).
 - Package README synchronization is owned by `tools/readmes` and sourced from `website/docs/packages/*.md`.
 - Publish-time package manifest cleanup is owned by `tools/release`; published tarballs must not ship `devDependencies`, local `development` export conditions, or unresolved `workspace:*` ranges.
@@ -199,6 +206,23 @@ pnpm qg
 ```
 
 Use the same gate set before opening a pull request.
+
+## Merge and rebase conflict resolution
+
+When resolving git conflicts in this repository, use `newest version wins` as the default rule.
+
+- Keep the newest compatible version.
+- If the conflict touches a shared dependency, workflow action, script, or config value that appears in multiple files, align all related files to that same newest compatible version.
+- Keep the older side only when a higher-priority instruction or an explicit correctness, security, or build constraint makes the newer side invalid.
+
+## Check command output policy
+
+Root verification commands should optimize for signal, not raw log volume.
+
+- On success, print short OK summaries.
+- On failure, print the failing package/task and the concrete error locations.
+- Do not dump full successful test, typecheck, lint, or build logs by default in local loops or CI.
+- If full logs are needed for diagnosis, rerun the failing command explicitly with verbose output instead of making the default path noisy.
 
 ## Commit naming convention
 

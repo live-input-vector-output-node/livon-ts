@@ -12,6 +12,7 @@ pnpm qg
 ```
 
 `qg` runs `check:readmes`, `check:policies`, `lint`, `typecheck`, `test`, and `build`.
+The root command uses concise output by default: success stays summary-only, while failures print the failing task logs.
 
 For fast local iteration on changed scope only:
 
@@ -20,6 +21,8 @@ pnpm qg:changed
 ```
 
 `qg:changed` runs the same gate graph with Turbo `--affected`.
+
+If you need full logs while debugging, rerun the failing package command directly or invoke the equivalent Turbo command with `--output-logs=full`.
 
 Lint warnings use per-package budgets (no regression policy):
 
