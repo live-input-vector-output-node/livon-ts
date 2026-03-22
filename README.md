@@ -27,8 +27,8 @@
   <a href="https://coveralls.io/github/live-input-vector-output-node/livon-ts?branch=main">
     <img src="https://coveralls.io/repos/github/live-input-vector-output-node/livon-ts/badge.svg?branch=main" alt="Coveralls Coverage" />
   </a>
-  <a href="https://github.com/live-input-vector-output-node/livon-ts">
-    <img src="https://img.shields.io/github/license/live-input-vector-output-node/livon-ts" alt="License" />
+  <a href="./LICENSE.md">
+    <img src="https://img.shields.io/badge/license-MIT-green" alt="License" />
   </a>
 </p>
 
