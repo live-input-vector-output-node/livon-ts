@@ -1,6 +1,6 @@
 {
   "name": "@livon/sync",
-  "version": "0.28.0-rc.2",
+  "version": "0.28.0-rc.3",
   "private": false,
   "type": "module",
   "description": "Entity-centric sync layer for LIVON sources, actions, and streams.",

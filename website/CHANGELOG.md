@@ -1,5 +1,11 @@
 # website
 
+## 0.28.0-rc.3
+
+### Patch Changes
+
+- Rework the overview badge layout into fixed package-name and badge rows, and keep the README aligned with the docs overview.
+
 ## 0.28.0-rc.2
 
 ### Patch Changes

@@ -29,6 +29,7 @@
   "changesets": [
     "bright-bears-fix",
     "clear-badges-structure",
+    "fixed-badge-grid",
     "fresh-ravens-kick"
   ]
 }
