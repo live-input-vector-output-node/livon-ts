@@ -307,6 +307,7 @@ pnpm changeset:version
 ```
 
 `pnpm changeset:version` runs Changesets versioning and then syncs the root `package.json` version to the shared workspace version.
+Pre-release identifiers such as `-rc.0`, `-rc.1`, or later `rc` increments are supported by the sync step and are ordered with normal SemVer precedence.
 
 The publish workflow uses:
 

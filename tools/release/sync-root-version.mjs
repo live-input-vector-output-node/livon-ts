@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs';
 import { readdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const resolveWorkspaceRoot = (startDir = process.cwd()) => {
   let currentDir = path.resolve(startDir);
@@ -20,6 +21,98 @@ const resolveWorkspaceRoot = (startDir = process.cwd()) => {
 const ROOT_DIRECTORY = resolveWorkspaceRoot();
 const ROOT_PACKAGE_JSON_PATH = path.join(ROOT_DIRECTORY, 'package.json');
 
+export const parseVersion = (input) => {
+  const match = /^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?$/.exec(input);
+  if (!match) {
+    throw new Error(`Unsupported version format: ${input}`);
+  }
+
+  return {
+    major: Number(match[1]),
+    minor: Number(match[2]),
+    patch: Number(match[3]),
+    prerelease: match[4] ? match[4].split('.') : [],
+    raw: input,
+  };
+};
+
+const comparePrereleaseIdentifiers = (left, right) => {
+  const leftIsNumeric = /^\d+$/.test(left);
+  const rightIsNumeric = /^\d+$/.test(right);
+
+  if (leftIsNumeric && rightIsNumeric) {
+    return Number(left) - Number(right);
+  }
+
+  if (leftIsNumeric) {
+    return -1;
+  }
+
+  if (rightIsNumeric) {
+    return 1;
+  }
+
+  return left.localeCompare(right);
+};
+
+export const compareVersions = (leftInput, rightInput) => {
+  const left = parseVersion(leftInput);
+  const right = parseVersion(rightInput);
+
+  if (left.major !== right.major) {
+    return left.major - right.major;
+  }
+
+  if (left.minor !== right.minor) {
+    return left.minor - right.minor;
+  }
+
+  if (left.patch !== right.patch) {
+    return left.patch - right.patch;
+  }
+
+  if (left.prerelease.length === 0 && right.prerelease.length === 0) {
+    return 0;
+  }
+
+  if (left.prerelease.length === 0) {
+    return 1;
+  }
+
+  if (right.prerelease.length === 0) {
+    return -1;
+  }
+
+  const maxLength = Math.max(left.prerelease.length, right.prerelease.length);
+  for (let index = 0; index < maxLength; index += 1) {
+    const leftIdentifier = left.prerelease[index];
+    const rightIdentifier = right.prerelease[index];
+
+    if (leftIdentifier === undefined) {
+      return -1;
+    }
+
+    if (rightIdentifier === undefined) {
+      return 1;
+    }
+
+    const difference = comparePrereleaseIdentifiers(leftIdentifier, rightIdentifier);
+    if (difference !== 0) {
+      return difference;
+    }
+  }
+
+  return 0;
+};
+
+export const resolveTargetVersion = (versions) => {
+  const uniqueVersions = Array.from(new Set(versions));
+  return uniqueVersions
+    .slice()
+    .sort(compareVersions)
+    .at(-1);
+};
+
 const collectWorkspacePackageJsonPaths = async () => {
   const scopedPackageRoots = ['apps', 'packages', 'tools'];
   const scopedPaths = await Promise.all(
@@ -28,7 +121,8 @@ const collectWorkspacePackageJsonPaths = async () => {
       const entries = await readdir(rootPath, { withFileTypes: true }).catch(() => []);
       return entries
         .filter((entry) => entry.isDirectory())
-        .map((entry) => path.join(rootPath, entry.name, 'package.json'));
+        .map((entry) => path.join(rootPath, entry.name, 'package.json'))
+        .filter((packageJsonPath) => existsSync(packageJsonPath));
     }),
   );
 
@@ -39,6 +133,10 @@ const collectWorkspacePackageJsonPaths = async () => {
 };
 
 const readJson = async (filePath) => JSON.parse(await readFile(filePath, 'utf8'));
+
+const writeJson = async ({ filePath, json }) => {
+  await writeFile(filePath, `${JSON.stringify(json, null, 2)}\n`, 'utf8');
+};
 
 const run = async () => {
   const WORKSPACE_PACKAGE_JSON_PATHS = await collectWorkspacePackageJsonPaths();
@@ -53,40 +151,58 @@ const run = async () => {
     }),
   );
 
-  const uniqueVersions = Array.from(new Set(workspacePackages.map((pkg) => pkg.version)));
+  const targetVersion = resolveTargetVersion(workspacePackages.map((pkg) => pkg.version));
 
-  if (uniqueVersions.length !== 1) {
-    const details = workspacePackages
-      .map((pkg) => `${path.relative(ROOT_DIRECTORY, pkg.filePath)}: ${pkg.version}`)
-      .join('\n');
-    throw new Error(
-      `Cannot sync root version because workspace versions differ.\n${details}`,
-    );
+  if (!targetVersion) {
+    throw new Error('Cannot sync versions because no workspace package versions were found.');
   }
 
-  const targetVersion = uniqueVersions[0];
   const rootPackageJson = await readJson(ROOT_PACKAGE_JSON_PATH);
+  const filesToUpdate = workspacePackages.filter((pkg) => pkg.version !== targetVersion);
 
-  if (rootPackageJson.version === targetVersion) {
-    process.stdout.write(`Root version already synced at ${targetVersion}.\n`);
+  for (const pkg of filesToUpdate) {
+    const packageJson = await readJson(pkg.filePath);
+    await writeJson({
+      filePath: pkg.filePath,
+      json: {
+        ...packageJson,
+        version: targetVersion,
+      },
+    });
+  }
+
+  if (rootPackageJson.version !== targetVersion) {
+    await writeJson({
+      filePath: ROOT_PACKAGE_JSON_PATH,
+      json: {
+        ...rootPackageJson,
+        version: targetVersion,
+      },
+    });
+  }
+
+  const updatedPaths = [
+    ...(rootPackageJson.version !== targetVersion ? [path.relative(ROOT_DIRECTORY, ROOT_PACKAGE_JSON_PATH)] : []),
+    ...filesToUpdate.map((pkg) => path.relative(ROOT_DIRECTORY, pkg.filePath)),
+  ];
+
+  if (updatedPaths.length === 0) {
+    process.stdout.write(`Workspace versions already synced at ${targetVersion}.\n`);
     return;
   }
 
-  const nextRootPackageJson = {
-    ...rootPackageJson,
-    version: targetVersion,
-  };
-
-  await writeFile(
-    ROOT_PACKAGE_JSON_PATH,
-    `${JSON.stringify(nextRootPackageJson, null, 2)}\n`,
-    'utf8',
+  process.stdout.write(
+    `Synced ${updatedPaths.length} workspace package.json files to ${targetVersion}.\n${updatedPaths.join('\n')}\n`,
   );
-
-  process.stdout.write(`Synced root package.json version to ${targetVersion}.\n`);
 };
 
-run().catch((error) => {
-  process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
-  process.exit(1);
-});
+const IS_DIRECT_EXECUTION =
+  process.argv[1] !== undefined &&
+  path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+
+if (IS_DIRECT_EXECUTION) {
+  run().catch((error) => {
+    process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
+    process.exit(1);
+  });
+}

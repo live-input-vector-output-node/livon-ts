@@ -1,4 +1,4 @@
-# @livon/sync
+# @livon/react
 
 ## 0.28.0-rc.0
 
@@ -6,6 +6,7 @@
 
 - Advance the unstable feature line to `0.28.0-rc.0` with `@livon/sync`, `@livon/react`, and rc-ready release tooling.
 
-## 0.27.0-rc.5
+### Patch Changes
 
-- Initial package scaffold.
+- Updated dependencies
+  - @livon/sync@0.28.0-rc.0
