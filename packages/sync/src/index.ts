@@ -43,6 +43,20 @@ export type {
   StreamUnit,
 } from './stream.js';
 
+export { view } from './view.js';
+export type {
+  View,
+  ViewConfig,
+  ViewUnit,
+} from './view.js';
+
+export { transform } from './transform.js';
+export type {
+  Transform,
+  TransformConfig,
+  TransformUnit,
+} from './transform.js';
+
 export {
   readTrackedUnitSnapshot,
   resetTrackedUnit,

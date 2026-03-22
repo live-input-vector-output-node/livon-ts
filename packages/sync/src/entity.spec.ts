@@ -47,7 +47,7 @@ describe('entity()', () => {
       expect(usersEntity.entitiesById).toBeInstanceOf(Map);
     });
 
-    it('should store a record when upsertOne is called', () => {
+    it('should store a record when upsert is called with one record', () => {
       const userId = randomString({ prefix: 'user-id' });
       const userName = randomString({ prefix: 'user-name' });
 
@@ -60,7 +60,7 @@ describe('entity()', () => {
       expect(usersEntity.getById(userId)).toEqual({ id: userId, name: userName });
     });
 
-    it('should merge existing record when upsertOne is called with merge true', () => {
+    it('should merge existing record when upsert is called with merge true', () => {
       const userId = randomString({ prefix: 'user-id' });
       const userName = randomString({ prefix: 'user-name' });
       const userStatus = randomString({ prefix: 'user-status' });
@@ -79,7 +79,7 @@ describe('entity()', () => {
       });
     });
 
-    it('should remove a record when removeOne is called', () => {
+    it('should remove a record when remove is called with one id', () => {
       const userId = randomString({ prefix: 'user-id' });
       const userName = randomString({ prefix: 'user-name' });
 
@@ -93,7 +93,7 @@ describe('entity()', () => {
       expect(usersEntity.getById(userId)).toBeUndefined();
     });
 
-    it('should remove multiple records when removeMany is called', () => {
+    it('should remove multiple records when remove is called with many ids', () => {
       const firstUserId = randomString({ prefix: 'first-user-id' });
       const secondUserId = randomString({ prefix: 'second-user-id' });
       const firstUserName = randomString({ prefix: 'first-user-name' });

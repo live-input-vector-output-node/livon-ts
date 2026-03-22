@@ -1,88 +1,73 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { entity, type Entity } from './entity.js';
-import { source, type Source } from './source.js';
 import { stream, type Stream } from './stream.js';
 import { randomNumber, randomString } from './testing/randomData.js';
 
-interface User {
+interface Todo {
   id: string;
-  name: string;
+  title: string;
 }
 
-interface UserSlug {
-  slugId: number;
+interface TodoScope {
+  listId: number;
 }
 
-type UsersResult = readonly User[];
-type UsersEntity = Entity<User>;
-type ReadUsersSource = Source<UserSlug, undefined, UsersResult, UsersResult>;
-type UserUpdatedStream = Stream<UserSlug, User, User | null, User>;
+type TodosEntity = Entity<Todo>;
+type TodoChangedStream = Stream<TodoScope, Todo, Todo | null, Todo>;
 
 describe('stream()', () => {
-  let usersEntity: UsersEntity;
-  let readUsers: ReadUsersSource;
-  let readUsersRunMock = vi.fn();
+  let todosEntity: TodosEntity;
   let streamRunMock = vi.fn();
   let unsubscribeMock = vi.fn();
-  let onUserUpdated: UserUpdatedStream;
-  let slugId: number;
-  let eventUserId: string;
-  let eventUserName: string;
+  let onTodoChanged: TodoChangedStream;
+  let listId: number;
+  let eventTodoId: string;
+  let eventTodoTitle: string;
 
   beforeEach(() => {
-    slugId = randomNumber();
-    eventUserId = randomString({ prefix: 'event-user-id' });
-    eventUserName = randomString({ prefix: 'event-user-name' });
+    listId = randomNumber();
+    eventTodoId = randomString({ prefix: 'event-todo-id' });
+    eventTodoTitle = randomString({ prefix: 'event-todo-title' });
 
-    readUsersRunMock = vi.fn(async ({ upsertMany }) => {
-      upsertMany([]);
-    });
-
-    usersEntity = entity<User>({
+    todosEntity = entity<Todo>({
       idOf: (value) => value.id,
       ttl: 30_000,
     });
 
-    readUsers = source<UserSlug, undefined, User, UsersResult, UsersResult>({
-      entity: usersEntity,
-      run: readUsersRunMock,
-    });
-
     unsubscribeMock = vi.fn();
-    streamRunMock = vi.fn(async ({ payload, upsertOne }) => {
-      upsertOne(payload, { merge: true });
+    streamRunMock = vi.fn(async ({ payload, entity }) => {
+      entity.upsertOne(payload, { merge: true });
 
       return () => {
         unsubscribeMock();
       };
     });
 
-    onUserUpdated = stream<UserSlug, User, User, User | null, User, undefined, UsersResult, UsersResult>({
-      entity: usersEntity,
-      source: readUsers,
+    onTodoChanged = stream<TodoScope, Todo, Todo, Todo | null, Todo>({
+      entity: todosEntity,
       run: streamRunMock,
     });
   });
 
   describe('happy', () => {
     it('should expose start function when stream unit is created', () => {
-      const streamStore = onUserUpdated({ slugId });
+      const streamStore = onTodoChanged({ listId });
 
       expect(typeof streamStore.start).toBe('function');
     });
 
     it('should expose stop function when stream unit is created', () => {
-      const streamStore = onUserUpdated({ slugId });
+      const streamStore = onTodoChanged({ listId });
 
       expect(typeof streamStore.stop).toBe('function');
     });
 
     it('should call run once when start is invoked once', () => {
-      const streamStore = onUserUpdated({ slugId });
+      const streamStore = onTodoChanged({ listId });
       const payload = {
-        id: eventUserId,
-        name: eventUserName,
+        id: eventTodoId,
+        title: eventTodoTitle,
       };
 
       streamStore.start(payload);
@@ -91,10 +76,10 @@ describe('stream()', () => {
     });
 
     it('should call cleanup once when stop is invoked after start', async () => {
-      const streamStore = onUserUpdated({ slugId });
+      const streamStore = onTodoChanged({ listId });
       const payload = {
-        id: eventUserId,
-        name: eventUserName,
+        id: eventTodoId,
+        title: eventTodoTitle,
       };
 
       streamStore.start(payload);
@@ -106,57 +91,57 @@ describe('stream()', () => {
     });
 
     it('should pass scope to run handler when stream starts', () => {
-      const streamStore = onUserUpdated({ slugId });
+      const streamStore = onTodoChanged({ listId });
       const payload = {
-        id: eventUserId,
-        name: eventUserName,
+        id: eventTodoId,
+        title: eventTodoTitle,
       };
 
       streamStore.start(payload);
 
       expect(streamRunMock).toHaveBeenNthCalledWith(
         1,
-        expect.objectContaining({ scope: { slugId } }),
+        expect.objectContaining({ scope: { listId } }),
       );
     });
 
     it('should pass payload to run handler when stream starts', () => {
-      const streamStore = onUserUpdated({ slugId });
+      const streamStore = onTodoChanged({ listId });
       const payload = {
-        id: eventUserId,
-        name: eventUserName,
+        id: eventTodoId,
+        title: eventTodoTitle,
       };
 
       streamStore.start(payload);
 
       expect(streamRunMock).toHaveBeenNthCalledWith(
         1,
-        expect.objectContaining({ payload: { id: eventUserId, name: eventUserName } }),
+        expect.objectContaining({ payload: { id: eventTodoId, title: eventTodoTitle } }),
       );
     });
 
-    it('should trigger source reload when run handler uses refetch', async () => {
-      streamRunMock = vi.fn(async ({ scope, payload, upsertOne, refetch }) => {
-        upsertOne(payload, { merge: true });
-        await refetch(scope)();
+    it('should not expose refetch in run context', async () => {
+      streamRunMock = vi.fn(async (context) => {
+        const hasRefetch = Object.prototype.hasOwnProperty.call(context, 'refetch');
+        const { payload, entity } = context;
+
+        expect(hasRefetch).toBe(false);
+        entity.upsertOne(payload, { merge: true });
       });
 
-      onUserUpdated = stream<UserSlug, User, User, User | null, User, undefined, UsersResult, UsersResult>({
-        entity: usersEntity,
-        source: readUsers,
+      onTodoChanged = stream<TodoScope, Todo, Todo, Todo | null, Todo>({
+        entity: todosEntity,
         run: streamRunMock,
       });
 
-      const streamStore = onUserUpdated({ slugId });
+      const streamStore = onTodoChanged({ listId });
       const payload = {
-        id: eventUserId,
-        name: eventUserName,
+        id: eventTodoId,
+        title: eventTodoTitle,
       };
 
       streamStore.start(payload);
       await Promise.resolve();
-
-      expect(readUsersRunMock).toHaveBeenCalledTimes(1);
     });
   });
 });

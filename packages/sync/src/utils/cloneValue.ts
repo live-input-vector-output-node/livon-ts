@@ -25,6 +25,8 @@ const getStructuredClone = (): StructuredCloneFunction | undefined => {
   return undefined;
 };
 
+const structuredCloneFunction = getStructuredClone();
+
 const cloneWithJson = <TInput>(value: TInput): TInput => {
   if (!isObjectLike(value)) {
     return value;
@@ -38,9 +40,8 @@ export const cloneValue = <TInput>(value: TInput): TInput => {
     return value;
   }
 
-  const structuredClone = getStructuredClone();
-  if (structuredClone) {
-    return structuredClone(value);
+  if (structuredCloneFunction) {
+    return structuredCloneFunction(value);
   }
 
   return cloneWithJson(value);

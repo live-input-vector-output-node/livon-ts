@@ -295,7 +295,10 @@ const buildSerializedObject = ({
     });
   }
 
-  const objectKeys = Object.keys(input as UnknownRecord);
+  const objectKeysBase = Object.keys(input as UnknownRecord);
+  const objectKeys = sortCollections
+    ? [...objectKeysBase].sort()
+    : objectKeysBase;
   if (objectKeys.length === 0 && !isPlainObject(input)) {
     return serializeUnsupportedValue({
       input,
@@ -513,13 +516,21 @@ export const deserializeStructuredValue = <TResult>(input: string): TResult => {
   return decodeSerializedValue(parsed) as TResult;
 };
 
-export const stableSerializeStructuredValue = (input: unknown): string => {
-  const serializedValue = buildSerializedValue({
+const createStableSerializedValue = (input: unknown): SerializedValue => {
+  return buildSerializedValue({
     input,
     unsupportedValueBehavior: 'stringify',
     sortCollections: true,
     parents: new WeakSet<object>(),
   });
+};
+
+export const createStableStructuredValue = (input: unknown): unknown => {
+  return createStableSerializedValue(input);
+};
+
+export const stableSerializeStructuredValue = (input: unknown): string => {
+  const serializedValue = createStableSerializedValue(input);
 
   return stableStringifySerializedValue(serializedValue);
 };

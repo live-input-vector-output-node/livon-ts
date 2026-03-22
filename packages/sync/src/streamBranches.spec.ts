@@ -42,8 +42,8 @@ describe('stream() branches', () => {
     });
 
     unsubscribeMock = vi.fn();
-    streamRunMock = vi.fn(async ({ payload, upsertOne }) => {
-      upsertOne(payload, { merge: true });
+    streamRunMock = vi.fn(async ({ payload, entity }) => {
+      entity.upsertOne(payload, { merge: true });
 
       return () => {
         unsubscribeMock();
@@ -82,7 +82,7 @@ describe('stream() branches', () => {
       expect(unsubscribeMock).not.toHaveBeenCalled();
     });
 
-    it('should update raw value when set is called', () => {
+    it('should update entity-backed value when set is called', () => {
       const streamStore = onUserUpdated({ slugId });
       const setUser: User = {
         id: randomString({ prefix: 'set-id' }),
@@ -145,16 +145,16 @@ describe('stream() branches', () => {
       expect(lateCleanup).toHaveBeenCalledTimes(1);
     });
 
-    it('should keep explicit run return value when run returns raw result', async () => {
-      const rawUser: User = {
-        id: randomString({ prefix: 'raw-id' }),
-        name: randomString({ prefix: 'raw-name' }),
+    it('should ignore direct run return value when run does not upsert entities', async () => {
+      const returnedUser: User = {
+        id: randomString({ prefix: 'returned-id' }),
+        name: randomString({ prefix: 'returned-name' }),
       };
 
       onUserUpdated = stream<UserSlug, User, User, User | null, User>({
         entity: usersEntity,
         run: async () => {
-          return rawUser;
+          return returnedUser;
         },
       });
 
@@ -164,14 +164,14 @@ describe('stream() branches', () => {
       streamStore.start(payload);
       await Promise.resolve();
 
-      expect(streamStore.get()).toEqual(rawUser);
+      expect(streamStore.get()).toBeNull();
     });
 
     it('should return many-mode value when run calls upsertMany', async () => {
       const onUsersUpdated = stream<UserSlug, readonly User[], User, readonly User[], readonly User[]>({
         entity: usersEntity,
-        run: async ({ payload, upsertMany }) => {
-          upsertMany(payload, { merge: true });
+        run: async ({ payload, entity }) => {
+          entity.upsertMany(payload, { merge: true });
         },
       });
       const firstUser: User = {
@@ -203,10 +203,10 @@ describe('stream() branches', () => {
 
       const onUsersUpdated = stream<UserSlug, readonly User[], User, readonly User[], readonly User[]>({
         entity: usersEntity,
-        run: async ({ payload, removeMany, removeOne, upsertMany }) => {
-          upsertMany(payload, { merge: true });
-          removeOne(firstUserId);
-          removeMany([secondUserId]);
+        run: async ({ payload, entity }) => {
+          entity.upsertMany(payload, { merge: true });
+          entity.removeOne(firstUserId);
+          entity.removeMany([secondUserId]);
         },
       });
       const streamStore = onUsersUpdated({ slugId });
@@ -217,14 +217,14 @@ describe('stream() branches', () => {
       expect(streamStore.get()).toEqual([thirdUser]);
     });
 
-    it('should resolve refetch to undefined when source is not configured', async () => {
-      let refetchResult: unknown = randomString({ prefix: 'seed-refetch' });
+    it('should not expose refetch in run context', async () => {
+      let hasRefetch = true;
 
       onUserUpdated = stream<UserSlug, User, User, User | null, User>({
         entity: usersEntity,
-        run: async ({ refetch, payload, upsertOne }) => {
-          refetchResult = await refetch()();
-          upsertOne(payload, { merge: true });
+        run: async (context) => {
+          hasRefetch = Object.prototype.hasOwnProperty.call(context, 'refetch');
+          context.entity.upsertOne(context.payload, { merge: true });
         },
       });
 
@@ -234,7 +234,7 @@ describe('stream() branches', () => {
       streamStore.start(payload);
       await Promise.resolve();
 
-      expect(refetchResult).toBeUndefined();
+      expect(hasRefetch).toBe(false);
     });
 
     it('should read current value when run calls getValue', async () => {
@@ -245,9 +245,9 @@ describe('stream() branches', () => {
 
       onUserUpdated = stream<UserSlug, User, User, User | null, User>({
         entity: usersEntity,
-        run: async ({ getValue, payload, upsertOne }) => {
+        run: async ({ getValue, payload, entity }) => {
           valueFromRun = getValue();
-          upsertOne(payload, { merge: true });
+          entity.upsertOne(payload, { merge: true });
         },
       });
 
@@ -269,9 +269,9 @@ describe('stream() branches', () => {
 
       onUserUpdated = stream<UserSlug, User, User, User | null, User>({
         entity: usersEntity,
-        run: async ({ setMeta, payload, upsertOne }) => {
+        run: async ({ setMeta, payload, entity }) => {
           setMeta(meta);
-          upsertOne(payload, { merge: true });
+          entity.upsertOne(payload, { merge: true });
         },
       });
 

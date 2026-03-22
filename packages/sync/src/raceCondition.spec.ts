@@ -71,9 +71,9 @@ describe('source() race handling', () => {
 
     readUsers = source<UserSlug, SearchPayload, User, UsersResult, UsersResult>({
       entity: usersEntity,
-      run: async ({ payload, upsertMany }) => {
+      run: async ({ payload, entity }) => {
         const result = await searchApi(payload);
-        upsertMany(result);
+        entity.upsertMany(result);
       },
     });
   });

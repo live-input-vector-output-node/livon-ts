@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { stableSerialize } from './utils/index.js';
+import { serializeKey } from './utils/index.js';
 import { randomString } from './testing/randomData.js';
 
 interface SerializableObject {
@@ -9,30 +9,33 @@ interface SerializableObject {
 }
 
 describe('runtimeUtils', () => {
-  describe('stableSerialize()', () => {
-    it('should serialize null as literal null string when input is null', () => {
-      const serialized = stableSerialize(null);
+  describe('serializeKey()', () => {
+    it('should produce stable key for null input', () => {
+      const serialized = serializeKey(null);
 
-      expect(serialized).toBe('null');
+      expect(serialized.length).toBeGreaterThan(0);
+      expect(serializeKey(null)).toBe(serialized);
     });
 
-    it('should serialize arrays recursively when input is an array', () => {
+    it('should produce deterministic key for same array input and distinct key for reordered array input', () => {
       const objectValue: SerializableObject = {
         a: 1,
         b: 2,
       };
 
-      const serialized = stableSerialize([1, 'x', objectValue]);
+      const serialized = serializeKey([1, 'x', objectValue]);
+      const reordered = serializeKey(['x', 1, { b: 2, a: 1 }]);
 
-      expect(serialized).toBe('[1,"x",{"a":1,"b":2}]');
+      expect(serialized).not.toBe(reordered);
+      expect(serializeKey([1, 'x', objectValue])).toBe(serialized);
     });
 
-    it('should serialize non-record values through fallback string conversion', () => {
+    it('should throw when key input is not msgpack-serializable', () => {
       const symbolValue = Symbol(randomString({ prefix: 'symbol' }));
 
-      const serialized = stableSerialize(symbolValue);
-
-      expect(serialized).toContain(String(symbolValue));
+      expect(() => serializeKey(symbolValue)).toThrowError(
+        'Cannot serialize key input with msgpackr. Scope and payload must be msgpack-serializable.',
+      );
     });
   });
 });

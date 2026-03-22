@@ -41,8 +41,8 @@ describe('destroy lifecycle', () => {
     readUsers = source<TemplateSlug, SearchPayload, User, UsersResult, UsersResult>({
       entity: usersEntity,
       onDestroy: onDestroyMock,
-      run: async ({ payload, upsertMany }) => {
-        upsertMany([{ id: payload.search, name: payload.search }]);
+      run: async ({ payload, entity }) => {
+        entity.upsertMany([{ id: payload.search, name: payload.search }]);
       },
     });
   });
@@ -81,15 +81,13 @@ describe('destroy lifecycle', () => {
       expect(onDestroyMock).toHaveBeenCalledTimes(1);
     });
 
-    it('should detach effect listeners after destroy', () => {
+    it('should detach effect listeners after destroy', async () => {
       const usersStore = readUsers({ templateId });
       const listener = vi.fn();
-      const setId = randomString({ prefix: 'set-id' });
-      const setName = randomString({ prefix: 'set-name' });
 
       usersStore.effect(listener);
       usersStore.destroy();
-      usersStore.set([{ id: setId, name: setName }]);
+      await usersStore.run({ search: searchValue });
 
       expect(listener).not.toHaveBeenCalled();
     });

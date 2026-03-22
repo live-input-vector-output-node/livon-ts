@@ -30,9 +30,13 @@ interface DraftUpdater<RResult, UUpdate> {
   (previous: RResult): UUpdate;
 }
 
+interface DraftApi<RResult, UUpdate extends RResult> {
+  set: (input: UUpdate | DraftUpdater<RResult, UUpdate>) => void;
+  clean: () => void;
+}
+
 interface DraftUnit<RResult, UUpdate extends RResult> {
-  setDraft: (input: UUpdate | DraftUpdater<RResult, UUpdate>) => void;
-  cleanDraft: () => void;
+  draft: DraftApi<RResult, UUpdate>;
 }
 
 type ProjectsEntity = Entity<Project>;
@@ -92,18 +96,18 @@ describe('draftOverlay', () => {
     readProject = source<ProjectSlug, undefined, Project, Project, Project>({
       entity: projectsEntity,
       ...(draft ? { draft } : {}),
-      run: async ({ scope, upsertOne }) => {
+      run: async ({ scope, entity }) => {
         const project = await readProjectApi(scope);
-        upsertOne(project);
+        entity.upsertOne(project);
       },
     });
 
     readProjects = source<ProjectSlug, undefined, Project, readonly Project[], readonly Project[]>({
       entity: projectsEntity,
       ...(draft ? { draft } : {}),
-      run: async ({ scope, upsertMany }) => {
+      run: async ({ scope, entity }) => {
         const projects = await readProjectsApi(scope);
-        upsertMany(projects);
+        entity.upsertMany(projects);
       },
     });
   };
@@ -180,19 +184,23 @@ describe('draftOverlay', () => {
   });
 
   describe('happy', () => {
-    it('should expose setDraft and cleanDraft methods on source unit', () => {
+    it('should expose draft.set and draft.clean methods on source unit', () => {
       const unit = createUnit(firstTemplateId);
+      const unitApi = unit as unknown as Record<string, unknown>;
+      const draftApi = unitApi.draft as Record<string, unknown> | undefined;
 
-      expect(typeof unit.setDraft).toBe('function');
-      expect(typeof unit.cleanDraft).toBe('function');
+      expect(unitApi.setDraft).toBeUndefined();
+      expect(unitApi.cleanDraft).toBeUndefined();
+      expect(typeof draftApi?.set).toBe('function');
+      expect(typeof draftApi?.clean).toBe('function');
     });
 
-    it('should return draft overlay value when setDraft receives direct object', async () => {
+    it('should return draft overlay value when draft.set receives direct object', async () => {
       const draftName = randomString({ prefix: 'draft-name' });
       const unit = createUnit(firstTemplateId);
 
       await unit.run();
-      unit.setDraft({
+      unit.draft.set({
         ...unit.get(),
         name: draftName,
       });
@@ -200,12 +208,44 @@ describe('draftOverlay', () => {
       expect(unit.get().name).toBe(draftName);
     });
 
+    it('should not trigger draft overlay when draft.set receives equivalent one-value object instance', async () => {
+      const unit = createUnit(firstTemplateId);
+      const listener = vi.fn();
+
+      await unit.run();
+      unit.effect(listener);
+      listener.mockClear();
+
+      unit.draft.set({
+        ...unit.get(),
+      });
+
+      expect(listener).toHaveBeenCalledTimes(0);
+      expect(unit.get().name).toBe(firstProjectName);
+    });
+
+    it('should not trigger draft overlay when draft.set receives equivalent many-value array instance', async () => {
+      const unit = createManyUnit(firstTemplateId);
+      const listener = vi.fn();
+
+      await unit.run();
+      unit.effect(listener);
+      listener.mockClear();
+
+      unit.draft.set([
+        ...unit.get(),
+      ]);
+
+      expect(listener).toHaveBeenCalledTimes(0);
+      expect(unit.get()[0]?.name).toBe(firstProjectName);
+    });
+
     it('should apply draft updater callback to current unit value', async () => {
       const draftName = randomString({ prefix: 'draft-name' });
       const unit = createUnit(firstTemplateId);
 
       await unit.run();
-      unit.setDraft((previous) => {
+      unit.draft.set((previous) => {
         return {
           ...previous,
           name: draftName,
@@ -220,11 +260,11 @@ describe('draftOverlay', () => {
       const unit = createUnit(firstTemplateId);
 
       await unit.run();
-      unit.setDraft((previous) => {
+      unit.draft.set((previous) => {
         previous.settings.title = draftTitle;
         return previous;
       });
-      unit.cleanDraft();
+      unit.draft.clean();
 
       expect(unit.get().settings.title).toBe(firstProjectTitle);
     });
@@ -234,7 +274,7 @@ describe('draftOverlay', () => {
       const firstUnit = createUnit(firstTemplateId);
 
       await firstUnit.run();
-      firstUnit.setDraft({
+      firstUnit.draft.set({
         ...firstUnit.get(),
         name: draftName,
       });
@@ -250,7 +290,7 @@ describe('draftOverlay', () => {
 
       await firstUnit.run();
       await secondUnit.run();
-      firstUnit.setDraft({
+      firstUnit.draft.set({
         ...firstUnit.get(),
         name: draftName,
       });
@@ -265,7 +305,7 @@ describe('draftOverlay', () => {
 
       await oneUnit.run();
       await manyUnit.run();
-      oneUnit.setDraft({
+      oneUnit.draft.set({
         ...oneUnit.get(),
         name: draftName,
       });
@@ -280,7 +320,7 @@ describe('draftOverlay', () => {
 
       await oneUnit.run();
       await manyUnit.run();
-      oneUnit.setDraft({
+      oneUnit.draft.set({
         ...oneUnit.get(),
         name: draftName,
       });
@@ -295,11 +335,11 @@ describe('draftOverlay', () => {
 
       await oneUnit.run();
       await manyUnit.run();
-      oneUnit.setDraft({
+      oneUnit.draft.set({
         ...oneUnit.get(),
         name: draftName,
       });
-      oneUnit.cleanDraft();
+      oneUnit.draft.clean();
 
       expect(manyUnit.get()[0]?.name).toBe(firstProjectName);
     });
@@ -312,7 +352,7 @@ describe('draftOverlay', () => {
       const manyUnit = createManyUnit(firstTemplateId);
       await oneUnit.run();
       await manyUnit.run();
-      oneUnit.setDraft({
+      oneUnit.draft.set({
         ...oneUnit.get(),
         name: draftName,
       });
@@ -329,7 +369,7 @@ describe('draftOverlay', () => {
       const manyUnit = createManyUnit(firstTemplateId);
       await oneUnit.run();
       await manyUnit.run();
-      oneUnit.setDraft({
+      oneUnit.draft.set({
         ...oneUnit.get(),
         name: draftName,
       });
@@ -346,7 +386,7 @@ describe('draftOverlay', () => {
       const manyUnit = createManyUnit(firstTemplateId);
       await oneUnit.run();
       await manyUnit.run();
-      oneUnit.setDraft({
+      oneUnit.draft.set({
         ...oneUnit.get(),
         name: draftName,
       });
@@ -361,7 +401,7 @@ describe('draftOverlay', () => {
       setupSources({ draft: 'off' });
       const unit = createUnit(firstTemplateId);
       await unit.run();
-      unit.setDraft({
+      unit.draft.set({
         ...unit.get(),
         name: draftName,
       });
@@ -375,7 +415,7 @@ describe('draftOverlay', () => {
       setupSources({ draft: 'off' });
       const unit = createUnit(firstTemplateId);
       await unit.run();
-      unit.setDraft({
+      unit.draft.set({
         ...unit.get(),
         name: draftName,
       });
@@ -389,7 +429,7 @@ describe('draftOverlay', () => {
       const unit = createUnit(firstTemplateId);
 
       await unit.run();
-      unit.setDraft({
+      unit.draft.set({
         ...unit.get(),
         name: draftName,
       });
@@ -401,7 +441,7 @@ describe('draftOverlay', () => {
         }),
       );
       await unit.force();
-      unit.cleanDraft();
+      unit.draft.clean();
 
       expect(readProjectApi).toHaveBeenCalledTimes(2);
       expect(unit.get().name).toBe(refreshedName);

@@ -1,4 +1,5 @@
-export { stableSerialize } from './stableSerialize.js';
+export { serializeKey } from './serializeKey.js';
+export { decodeBase64, encodeBase64 } from './base64.js';
 export { createCacheWriteQueue } from './cacheWriteQueue.js';
 export { cloneValue } from './cloneValue.js';
 export { resolveInput } from './resolveInput.js';

@@ -23,6 +23,12 @@ interface StructuredCacheValue {
   optional: undefined;
 }
 
+interface StructuredUser {
+  id: string;
+  name: string;
+  profile: StructuredCacheValue;
+}
+
 interface MemoryStorage {
   getItem: (key: string) => string | null;
   setItem: (key: string, value: string) => void;
@@ -101,20 +107,23 @@ describe('source cache', () => {
       const usersEntity = entity<User>({
         idOf: (value) => value.id,
       });
-      const readUser = source<UserSlug, undefined, User, User | null>({
+      const readUser = source<UserSlug, User, User, User | null>({
         entity: usersEntity,
         cache: {
           key: cacheKey,
           storage,
           ttl: 'infinity',
         },
-        run: async () => undefined,
+        run: async ({ payload, entity }) => {
+          entity.upsertOne(payload);
+        },
       });
       const unit = readUser({ slugId });
 
-      unit.set({ id: userId, name: userName });
+      const runPromise = unit.run({ id: userId, name: userName });
 
       expect(storage.setItemSpy).toHaveBeenCalledTimes(0);
+      await runPromise;
       await Promise.resolve();
 
       expect(storage.setItemSpy).toHaveBeenCalledTimes(1);
@@ -131,22 +140,27 @@ describe('source cache', () => {
       const usersEntity = entity<User>({
         idOf: (value) => value.id,
       });
-      const readUser = source<UserSlug, undefined, User, User | null>({
+      const readUser = source<UserSlug, User, User, User | null>({
         entity: usersEntity,
         cache: {
           key: cacheKey,
           storage,
           ttl: 'infinity',
         },
-        run: async () => undefined,
+        run: async ({ payload, entity }) => {
+          entity.upsertOne(payload);
+        },
       });
       const unit = readUser({ slugId });
 
-      unit.set({ id: randomString({ prefix: 'user-id' }), name: firstName });
-      unit.set({ id: randomString({ prefix: 'user-id' }), name: secondName });
-      unit.set({ id: randomString({ prefix: 'user-id' }), name: thirdName });
+      const runPromises = [
+        unit.run({ id: randomString({ prefix: 'user-id' }), name: firstName }),
+        unit.run({ id: randomString({ prefix: 'user-id' }), name: secondName }),
+        unit.run({ id: randomString({ prefix: 'user-id' }), name: thirdName }),
+      ];
 
       expect(storage.setItemSpy).toHaveBeenCalledTimes(0);
+      await Promise.all(runPromises);
       await Promise.resolve();
 
       expect(storage.setItemSpy).toHaveBeenCalledTimes(1);
@@ -159,8 +173,8 @@ describe('source cache', () => {
       const userName = randomString({ prefix: 'user-name' });
       const user = { id: userId, name: userName };
       const storage = createMemoryStorage();
-      const runMock = vi.fn(async ({ upsertOne }) => {
-        upsertOne(user);
+      const runMock = vi.fn(async ({ entity }) => {
+        entity.upsertOne(user);
       });
 
       const firstEntity = entity<User>({
@@ -197,43 +211,49 @@ describe('source cache', () => {
       expect(runMock).toHaveBeenCalledTimes(1);
     });
 
-    it('should rehydrate structured raw values from cache without losing their types', async () => {
+    it('should rehydrate structured entity values from cache without losing their types', async () => {
       const slugId = randomNumber();
       const cacheKey = randomString({ prefix: 'cache-key' });
       const storage = createMemoryStorage();
-      const value: StructuredCacheValue = {
-        createdAt: new Date('2026-03-22T12:34:56.000Z'),
-        total: 123n,
-        notANumber: Number.NaN,
-        tags: new Set(['sync', 'cache']),
-        lookup: new Map([
-          ['alpha', 1],
-          ['beta', 2],
-        ]),
-        matcher: /livon/gi,
-        optional: undefined,
+      const value: StructuredUser = {
+        id: randomString({ prefix: 'user-id' }),
+        name: randomString({ prefix: 'user-name' }),
+        profile: {
+          createdAt: new Date('2026-03-22T12:34:56.000Z'),
+          total: 123n,
+          notANumber: Number.NaN,
+          tags: new Set(['sync', 'cache']),
+          lookup: new Map([
+            ['alpha', 1],
+            ['beta', 2],
+          ]),
+          matcher: /livon/gi,
+          optional: undefined,
+        },
       };
 
-      const firstEntity = entity<User>({
+      const firstEntity = entity<StructuredUser>({
         idOf: (entry) => entry.id,
       });
-      const firstReadValue = source<UserSlug, undefined, User, StructuredCacheValue | null>({
+      const firstReadValue = source<UserSlug, undefined, StructuredUser, StructuredUser | null, StructuredUser>({
         entity: firstEntity,
         cache: {
           key: cacheKey,
           storage,
           ttl: 'infinity',
         },
-        run: async () => undefined,
+        run: async ({ entity }) => {
+          entity.upsertOne(value);
+        },
       });
 
-      firstReadValue({ slugId }).set(value);
-      await Promise.resolve();
+      await firstReadValue({ slugId }).run();
+      await vi.runAllTimersAsync();
 
-      const secondEntity = entity<User>({
+      const secondEntity = entity<StructuredUser>({
         idOf: (entry) => entry.id,
       });
-      const secondReadValue = source<UserSlug, undefined, User, StructuredCacheValue | null>({
+      const secondReadValue = source<UserSlug, undefined, StructuredUser, StructuredUser | null, StructuredUser>({
         entity: secondEntity,
         cache: {
           key: cacheKey,
@@ -246,21 +266,23 @@ describe('source cache', () => {
       const cachedValue = secondReadValue({ slugId }).get();
 
       expect(cachedValue).not.toBeNull();
-      expect(cachedValue?.createdAt).toBeInstanceOf(Date);
-      expect(cachedValue?.createdAt.toISOString()).toBe('2026-03-22T12:34:56.000Z');
-      expect(cachedValue?.total).toBe(123n);
-      expect(Number.isNaN(cachedValue?.notANumber ?? 0)).toBe(true);
-      expect(cachedValue?.tags).toBeInstanceOf(Set);
-      expect(Array.from(cachedValue?.tags.values() ?? [])).toEqual(['sync', 'cache']);
-      expect(cachedValue?.lookup).toBeInstanceOf(Map);
-      expect(Array.from(cachedValue?.lookup.entries() ?? [])).toEqual([
+      expect(cachedValue?.id).toBe(value.id);
+      expect(cachedValue?.name).toBe(value.name);
+      expect(cachedValue?.profile.createdAt).toBeInstanceOf(Date);
+      expect(cachedValue?.profile.createdAt.toISOString()).toBe('2026-03-22T12:34:56.000Z');
+      expect(cachedValue?.profile.total).toBe(123n);
+      expect(Number.isNaN(cachedValue?.profile.notANumber ?? 0)).toBe(true);
+      expect(cachedValue?.profile.tags).toBeInstanceOf(Set);
+      expect(Array.from(cachedValue?.profile.tags.values() ?? [])).toEqual(['sync', 'cache']);
+      expect(cachedValue?.profile.lookup).toBeInstanceOf(Map);
+      expect(Array.from(cachedValue?.profile.lookup.entries() ?? [])).toEqual([
         ['alpha', 1],
         ['beta', 2],
       ]);
-      expect(cachedValue?.matcher).toBeInstanceOf(RegExp);
-      expect(cachedValue?.matcher.source).toBe('livon');
-      expect(cachedValue?.matcher.flags).toBe('gi');
-      expect(cachedValue?.optional).toBeUndefined();
+      expect(cachedValue?.profile.matcher).toBeInstanceOf(RegExp);
+      expect(cachedValue?.profile.matcher.source).toBe('livon');
+      expect(cachedValue?.profile.matcher.flags).toBe('gi');
+      expect(cachedValue?.profile.optional).toBeUndefined();
     });
 
     it('should skip loading status on first run after rehydrate', async () => {
@@ -270,8 +292,8 @@ describe('source cache', () => {
       const userName = randomString({ prefix: 'user-name' });
       const user = { id: userId, name: userName };
       const storage = createMemoryStorage();
-      const runMock = vi.fn(async ({ upsertOne }) => {
-        upsertOne(user);
+      const runMock = vi.fn(async ({ entity }) => {
+        entity.upsertOne(user);
       });
 
       const firstEntity = entity<User>({
@@ -320,8 +342,8 @@ describe('source cache', () => {
       const userName = randomString({ prefix: 'user-name' });
       const user = { id: userId, name: userName };
       const storage = createMemoryStorage();
-      const runMock = vi.fn(async ({ upsertOne }) => {
-        upsertOne(user);
+      const runMock = vi.fn(async ({ entity }) => {
+        entity.upsertOne(user);
       });
 
       const firstEntity = entity<User>({
@@ -365,8 +387,8 @@ describe('source cache', () => {
       const userName = randomString({ prefix: 'user-name' });
       const user = { id: userId, name: userName };
       const storage = createMemoryStorage();
-      const runMock = vi.fn(async ({ upsertOne }) => {
-        upsertOne(user);
+      const runMock = vi.fn(async ({ entity }) => {
+        entity.upsertOne(user);
       });
 
       const firstEntity = entity<User>({
@@ -408,8 +430,8 @@ describe('source cache', () => {
       const userName = randomString({ prefix: 'user-name' });
       const user = { id: userId, name: userName };
       const storage = createMemoryStorage();
-      const runMock = vi.fn(async ({ upsertOne }) => {
-        upsertOne(user);
+      const runMock = vi.fn(async ({ entity }) => {
+        entity.upsertOne(user);
       });
 
       const firstEntity = entity<User>({

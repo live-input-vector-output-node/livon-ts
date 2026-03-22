@@ -36,8 +36,8 @@ describe('source() branches', () => {
       ttl: 30_000,
     });
 
-    runMock = vi.fn(async ({ payload, upsertOne }) => {
-      upsertOne({ id: payload.search, name: payload.search });
+    runMock = vi.fn(async ({ payload, entity }) => {
+      entity.upsertOne({ id: payload.search, name: payload.search });
     });
 
     readUser = source<UserSlug, SearchPayload, User, User | null, User>({
@@ -55,9 +55,9 @@ describe('source() branches', () => {
 
       readUser = source<UserSlug, SearchPayload, User, User | null, User>({
         entity: usersEntity,
-        run: async ({ getValue, payload, upsertOne }) => {
+        run: async ({ getValue, payload, entity }) => {
           valueFromRun = getValue();
-          upsertOne({ id: payload.search, name: payload.search });
+          entity.upsertOne({ id: payload.search, name: payload.search });
         },
       });
 
@@ -68,37 +68,33 @@ describe('source() branches', () => {
       expect(valueFromRun).toBeNull();
     });
 
-    it('should keep explicit run return value when run returns raw result', async () => {
-      const rawUser: User = {
-        id: randomString({ prefix: 'raw-id' }),
-        name: randomString({ prefix: 'raw-name' }),
+    it('should ignore direct run return value when run does not upsert entities', async () => {
+      const returnedUser: User = {
+        id: randomString({ prefix: 'returned-id' }),
+        name: randomString({ prefix: 'returned-name' }),
       };
 
       readUser = source<UserSlug, SearchPayload, User, User | null, User>({
         entity: usersEntity,
         run: async () => {
-          return rawUser;
+          return returnedUser;
         },
       });
 
       const userStore = readUser({ slugId });
 
-      await userStore.run({ search: searchValue });
+      await expect(userStore.run({ search: searchValue })).resolves.toBeNull();
 
-      expect(userStore.get()).toEqual(rawUser);
+      expect(userStore.get()).toBeNull();
     });
 
-    it('should remove effect listener when cleanup is called', () => {
+    it('should remove effect listener when cleanup is called', async () => {
       const userStore = readUser({ slugId });
       const listener = vi.fn();
       const remove = userStore.effect(listener);
-      const setUser: User = {
-        id: randomString({ prefix: 'set-id' }),
-        name: randomString({ prefix: 'set-name' }),
-      };
 
       remove?.();
-      userStore.set(setUser);
+      await userStore.run({ search: searchValue });
 
       expect(listener).not.toHaveBeenCalled();
     });
@@ -113,14 +109,14 @@ describe('source() branches', () => {
 
       const readUsers = source<UserSlug, SearchPayload, User, readonly User[], readonly User[]>({
         entity: usersEntity,
-        run: async ({ removeMany, removeOne, upsertMany }) => {
-          upsertMany([
+        run: async ({ entity }) => {
+          entity.upsertMany([
             { id: firstUserId, name: firstUserName },
             { id: secondUserId, name: secondUserName },
             { id: thirdUserId, name: thirdUserName },
           ]);
-          removeOne(firstUserId);
-          removeMany([secondUserId]);
+          entity.removeOne(firstUserId);
+          entity.removeMany([secondUserId]);
         },
       });
 

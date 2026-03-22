@@ -48,8 +48,8 @@ describe('action() branches', () => {
       ttl: 30_000,
     });
 
-    runMock = vi.fn(async ({ payload, upsertOne }) => {
-      upsertOne({ id: createdUserId, name: payload.name });
+    runMock = vi.fn(async ({ payload, entity }) => {
+      entity.upsertOne({ id: createdUserId, name: payload.name });
     });
 
     createUser = action<UserSlug, CreateUserPayload, User, User | null, User>({
@@ -68,11 +68,11 @@ describe('action() branches', () => {
 
     it('should run handler once when run is called concurrently', async () => {
       let release: Release | undefined;
-      runMock = vi.fn(async ({ payload, upsertOne }) => {
+      runMock = vi.fn(async ({ payload, entity }) => {
         await new Promise<void>((resolve) => {
           release = resolve;
         });
-        upsertOne({ id: createdUserId, name: payload.name });
+        entity.upsertOne({ id: createdUserId, name: payload.name });
       });
 
       createUser = action<UserSlug, CreateUserPayload, User, User | null, User>({
@@ -98,9 +98,9 @@ describe('action() branches', () => {
 
       createUser = action<UserSlug, CreateUserPayload, User, User | null, User>({
         entity: usersEntity,
-        run: async ({ payload, setMeta, upsertOne }) => {
+        run: async ({ payload, setMeta, entity }) => {
           setMeta(meta);
-          upsertOne({ id: createdUserId, name: payload.name });
+          entity.upsertOne({ id: createdUserId, name: payload.name });
         },
       });
 
@@ -128,8 +128,8 @@ describe('action() branches', () => {
         readonly User[]
       >({
         entity: usersEntity,
-        run: async ({ payload, upsertMany }) => {
-          upsertMany([
+        run: async ({ payload, entity }) => {
+          entity.upsertMany([
             { id: createdUserId, name: payload.name },
             { id: secondUserId, name: secondUserName },
           ]);
@@ -162,14 +162,14 @@ describe('action() branches', () => {
         readonly User[]
       >({
         entity: usersEntity,
-        run: async ({ removeMany, removeOne, upsertMany }) => {
-          upsertMany([
+        run: async ({ entity }) => {
+          entity.upsertMany([
             { id: firstUserId, name: firstUserName },
             { id: secondUserId, name: secondUserName },
             { id: thirdUserId, name: thirdUserName },
           ]);
-          removeOne(firstUserId);
-          removeMany([secondUserId]);
+          entity.removeOne(firstUserId);
+          entity.removeMany([secondUserId]);
         },
       });
 
@@ -185,9 +185,9 @@ describe('action() branches', () => {
 
       createUser = action<UserSlug, CreateUserPayload, User, User | null, User>({
         entity: usersEntity,
-        run: async ({ getValue, payload, upsertOne }) => {
+        run: async ({ getValue, payload, entity }) => {
           valueFromRun = getValue();
-          upsertOne({ id: createdUserId, name: payload.name });
+          entity.upsertOne({ id: createdUserId, name: payload.name });
         },
       });
 
@@ -198,24 +198,24 @@ describe('action() branches', () => {
       expect(valueFromRun).toBeNull();
     });
 
-    it('should keep explicit run return value when run returns raw result', async () => {
-      const rawResult: User = {
-        id: randomString({ prefix: 'raw-id' }),
-        name: randomString({ prefix: 'raw-name' }),
+    it('should ignore direct run return value when run does not upsert entities', async () => {
+      const returnedUser: User = {
+        id: randomString({ prefix: 'returned-id' }),
+        name: randomString({ prefix: 'returned-name' }),
       };
 
       createUser = action<UserSlug, CreateUserPayload, User, User | null, User>({
         entity: usersEntity,
         run: async () => {
-          return rawResult;
+          return returnedUser;
         },
       });
 
       const unit = createUser({ slugId });
 
-      await unit.run({ name: createName });
+      await expect(unit.run({ name: createName })).resolves.toBeNull();
 
-      expect(unit.get()).toEqual(rawResult);
+      expect(unit.get()).toBeNull();
     });
 
     it('should remove effect listener when cleanup is called', () => {
