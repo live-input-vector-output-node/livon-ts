@@ -1,0 +1,75 @@
+{
+  "name": "@livon/react",
+  "version": "0.27.0-rc.5",
+  "private": false,
+  "type": "module",
+  "description": "React adapter and hooks for LIVON sync units.",
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE.md",
+    "THIRD_PARTY_NOTICES.md"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/live-input-vector-output-node/livon-ts.git",
+    "directory": "packages/react"
+  },
+  "homepage": "https://livon.tech/docs/packages/react",
+  "bugs": {
+    "url": "https://github.com/live-input-vector-output-node/livon-ts/issues"
+  },
+  "keywords": [
+    "livon",
+    "react",
+    "hooks",
+    "sync",
+    "typescript"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "development": "./src/index.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "scripts": {
+    "build": "rslib build",
+    "build:watch": "rslib dev",
+    "dev": "true",
+    "lint": "eslint . --max-warnings 0",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run -c vitest.unit.config.ts",
+    "test:unit": "vitest run -c vitest.unit.config.ts",
+    "test:integration": "true"
+  },
+  "dependencies": {
+    "@livon/sync": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  },
+  "devDependencies": {
+    "@livon/config": "workspace:*",
+    "@rslib/core": "latest",
+    "@testing-library/react": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "@typescript-eslint/eslint-plugin": "8.56.1",
+    "@typescript-eslint/parser": "8.54.0",
+    "eslint": "10.0.2",
+    "jsdom": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "typescript": "latest",
+    "vitest": "latest"
+  }
+}

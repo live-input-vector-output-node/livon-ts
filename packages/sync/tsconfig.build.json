@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "include": ["src"],
+  "exclude": [
+    "dist",
+    "node_modules",
+    "src/**/*.spec.*",
+    "src/**/*.test.*",
+    "src/**/__mocks__/**",
+    "src/**/mocks/**",
+    "src/**/testing/**",
+    "src/**/tests/**"
+  ]
+}

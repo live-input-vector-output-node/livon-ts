@@ -1,0 +1,11 @@
+{
+  "extends": "@livon/config/tsconfig/library.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@livon/sync": ["../sync/src/index.ts"]
+    }
+  },
+  "include": ["src"],
+  "exclude": ["dist", "node_modules"]
+}
