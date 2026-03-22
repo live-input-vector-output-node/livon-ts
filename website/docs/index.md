@@ -21,30 +21,81 @@ Livon uses one schema to drive backend services, realtime publish/subscribe flow
 
 ## Package badges
 
-**Core**
+### Core
 
-| Package | version | dependencies | code quality | package size | license |
-| --- | --- | --- | --- | --- | --- |
-| `@livon/runtime` | [![npm](https://img.shields.io/npm/v/%40livon%2Fruntime)](https://www.npmjs.com/package/@livon/runtime) | [![dependencies](https://img.shields.io/librariesio/release/npm/%40livon%2Fruntime?label=dependencies)](https://libraries.io/npm/%40livon%2Fruntime) | [![code quality](https://img.shields.io/github/actions/workflow/status/live-input-vector-output-node/livon-ts/code-quality.yml?branch=main&label=code%20quality)](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/code-quality.yml) | [![package size](https://img.shields.io/npm/unpacked-size/%40livon%2Fruntime?label=package%20size)](https://www.npmjs.com/package/@livon/runtime) | [![license](https://img.shields.io/github/license/live-input-vector-output-node/livon-ts)](https://github.com/live-input-vector-output-node/livon-ts) |
-| `@livon/schema` | [![npm](https://img.shields.io/npm/v/%40livon%2Fschema)](https://www.npmjs.com/package/@livon/schema) | [![dependencies](https://img.shields.io/librariesio/release/npm/%40livon%2Fschema?label=dependencies)](https://libraries.io/npm/%40livon%2Fschema) | [![code quality](https://img.shields.io/github/actions/workflow/status/live-input-vector-output-node/livon-ts/code-quality.yml?branch=main&label=code%20quality)](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/code-quality.yml) | [![package size](https://img.shields.io/npm/unpacked-size/%40livon%2Fschema?label=package%20size)](https://www.npmjs.com/package/@livon/schema) | [![license](https://img.shields.io/github/license/live-input-vector-output-node/livon-ts)](https://github.com/live-input-vector-output-node/livon-ts) |
-| `@livon/sync` | [![npm](https://img.shields.io/npm/v/%40livon%2Fsync)](https://www.npmjs.com/package/@livon/sync) | [![dependencies](https://img.shields.io/librariesio/release/npm/%40livon%2Fsync?label=dependencies)](https://libraries.io/npm/%40livon%2Fsync) | [![code quality](https://img.shields.io/github/actions/workflow/status/live-input-vector-output-node/livon-ts/code-quality.yml?branch=main&label=code%20quality)](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/code-quality.yml) | [![package size](https://img.shields.io/npm/unpacked-size/%40livon%2Fsync?label=package%20size)](https://www.npmjs.com/package/@livon/sync) | [![license](https://img.shields.io/github/license/live-input-vector-output-node/livon-ts)](https://github.com/live-input-vector-output-node/livon-ts) |
+<table>
+  <tr>
+    <th><code>@livon/runtime</code></th>
+    <th><code>@livon/schema</code></th>
+    <th><code>@livon/sync</code></th>
+  </tr>
+  <tr>
+    <td>
+      [![npm](https://img.shields.io/npm/v/%40livon%2Fruntime)](https://www.npmjs.com/package/@livon/runtime) [![dependencies](https://img.shields.io/librariesio/release/npm/%40livon%2Fruntime?label=dependencies)](https://libraries.io/npm/%40livon%2Fruntime) [![code quality](https://img.shields.io/github/actions/workflow/status/live-input-vector-output-node/livon-ts/code-quality.yml?branch=main&label=code%20quality)](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/code-quality.yml)<br /> [![package size](https://img.shields.io/npm/unpacked-size/%40livon%2Fruntime?label=package%20size)](https://www.npmjs.com/package/@livon/runtime) [![license](https://img.shields.io/github/license/live-input-vector-output-node/livon-ts)](https://github.com/live-input-vector-output-node/livon-ts)
+    </td>
+    <td>
+      [![npm](https://img.shields.io/npm/v/%40livon%2Fschema)](https://www.npmjs.com/package/@livon/schema) [![dependencies](https://img.shields.io/librariesio/release/npm/%40livon%2Fschema?label=dependencies)](https://libraries.io/npm/%40livon%2Fschema) [![code quality](https://img.shields.io/github/actions/workflow/status/live-input-vector-output-node/livon-ts/code-quality.yml?branch=main&label=code%20quality)](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/code-quality.yml)<br /> [![package size](https://img.shields.io/npm/unpacked-size/%40livon%2Fschema?label=package%20size)](https://www.npmjs.com/package/@livon/schema) [![license](https://img.shields.io/github/license/live-input-vector-output-node/livon-ts)](https://github.com/live-input-vector-output-node/livon-ts)
+    </td>
+    <td>
+      [![npm](https://img.shields.io/npm/v/%40livon%2Fsync)](https://www.npmjs.com/package/@livon/sync) [![dependencies](https://img.shields.io/librariesio/release/npm/%40livon%2Fsync?label=dependencies)](https://libraries.io/npm/%40livon%2Fsync) [![code quality](https://img.shields.io/github/actions/workflow/status/live-input-vector-output-node/livon-ts/code-quality.yml?branch=main&label=code%20quality)](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/code-quality.yml)<br /> [![package size](https://img.shields.io/npm/unpacked-size/%40livon%2Fsync?label=package%20size)](https://www.npmjs.com/package/@livon/sync) [![license](https://img.shields.io/github/license/live-input-vector-output-node/livon-ts)](https://github.com/live-input-vector-output-node/livon-ts)
+    </td>
+  </tr>
+</table>
 
-**Clients & transports**
+### Runtime Adapters
 
-| Package | version | dependencies | code quality | package size | license |
-| --- | --- | --- | --- | --- | --- |
-| `@livon/client` | [![npm](https://img.shields.io/npm/v/%40livon%2Fclient)](https://www.npmjs.com/package/@livon/client) | [![dependencies](https://img.shields.io/librariesio/release/npm/%40livon%2Fclient?label=dependencies)](https://libraries.io/npm/%40livon%2Fclient) | [![code quality](https://img.shields.io/github/actions/workflow/status/live-input-vector-output-node/livon-ts/code-quality.yml?branch=main&label=code%20quality)](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/code-quality.yml) | [![package size](https://img.shields.io/npm/unpacked-size/%40livon%2Fclient?label=package%20size)](https://www.npmjs.com/package/@livon/client) | [![license](https://img.shields.io/github/license/live-input-vector-output-node/livon-ts)](https://github.com/live-input-vector-output-node/livon-ts) |
-| `@livon/client-ws-transport` | [![npm](https://img.shields.io/npm/v/%40livon%2Fclient-ws-transport)](https://www.npmjs.com/package/@livon/client-ws-transport) | [![dependencies](https://img.shields.io/librariesio/release/npm/%40livon%2Fclient-ws-transport?label=dependencies)](https://libraries.io/npm/%40livon%2Fclient-ws-transport) | [![code quality](https://img.shields.io/github/actions/workflow/status/live-input-vector-output-node/livon-ts/code-quality.yml?branch=main&label=code%20quality)](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/code-quality.yml) | [![package size](https://img.shields.io/npm/unpacked-size/%40livon%2Fclient-ws-transport?label=package%20size)](https://www.npmjs.com/package/@livon/client-ws-transport) | [![license](https://img.shields.io/github/license/live-input-vector-output-node/livon-ts)](https://github.com/live-input-vector-output-node/livon-ts) |
-| `@livon/node-ws-transport` | [![npm](https://img.shields.io/npm/v/%40livon%2Fnode-ws-transport)](https://www.npmjs.com/package/@livon/node-ws-transport) | [![dependencies](https://img.shields.io/librariesio/release/npm/%40livon%2Fnode-ws-transport?label=dependencies)](https://libraries.io/npm/%40livon%2Fnode-ws-transport) | [![code quality](https://img.shields.io/github/actions/workflow/status/live-input-vector-output-node/livon-ts/code-quality.yml?branch=main&label=code%20quality)](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/code-quality.yml) | [![package size](https://img.shields.io/npm/unpacked-size/%40livon%2Fnode-ws-transport?label=package%20size)](https://www.npmjs.com/package/@livon/node-ws-transport) | [![license](https://img.shields.io/github/license/live-input-vector-output-node/livon-ts)](https://github.com/live-input-vector-output-node/livon-ts) |
-| `@livon/react` | [![npm](https://img.shields.io/npm/v/%40livon%2Freact)](https://www.npmjs.com/package/@livon/react) | [![dependencies](https://img.shields.io/librariesio/release/npm/%40livon%2Freact?label=dependencies)](https://libraries.io/npm/%40livon%2Freact) | [![code quality](https://img.shields.io/github/actions/workflow/status/live-input-vector-output-node/livon-ts/code-quality.yml?branch=main&label=code%20quality)](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/code-quality.yml) | [![package size](https://img.shields.io/npm/unpacked-size/%40livon%2Freact?label=package%20size)](https://www.npmjs.com/package/@livon/react) | [![license](https://img.shields.io/github/license/live-input-vector-output-node/livon-ts)](https://github.com/live-input-vector-output-node/livon-ts) |
+<table>
+  <tr>
+    <th><code>@livon/client</code></th>
+    <th><code>@livon/client-ws-transport</code></th>
+    <th><code>@livon/node-ws-transport</code></th>
+  </tr>
+  <tr>
+    <td>
+      [![npm](https://img.shields.io/npm/v/%40livon%2Fclient)](https://www.npmjs.com/package/@livon/client) [![dependencies](https://img.shields.io/librariesio/release/npm/%40livon%2Fclient?label=dependencies)](https://libraries.io/npm/%40livon%2Fclient) [![code quality](https://img.shields.io/github/actions/workflow/status/live-input-vector-output-node/livon-ts/code-quality.yml?branch=main&label=code%20quality)](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/code-quality.yml)<br /> [![package size](https://img.shields.io/npm/unpacked-size/%40livon%2Fclient?label=package%20size)](https://www.npmjs.com/package/@livon/client) [![license](https://img.shields.io/github/license/live-input-vector-output-node/livon-ts)](https://github.com/live-input-vector-output-node/livon-ts)
+    </td>
+    <td>
+      [![npm](https://img.shields.io/npm/v/%40livon%2Fclient-ws-transport)](https://www.npmjs.com/package/@livon/client-ws-transport) [![dependencies](https://img.shields.io/librariesio/release/npm/%40livon%2Fclient-ws-transport?label=dependencies)](https://libraries.io/npm/%40livon%2Fclient-ws-transport) [![code quality](https://img.shields.io/github/actions/workflow/status/live-input-vector-output-node/livon-ts/code-quality.yml?branch=main&label=code%20quality)](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/code-quality.yml)<br /> [![package size](https://img.shields.io/npm/unpacked-size/%40livon%2Fclient-ws-transport?label=package%20size)](https://www.npmjs.com/package/@livon/client-ws-transport) [![license](https://img.shields.io/github/license/live-input-vector-output-node/livon-ts)](https://github.com/live-input-vector-output-node/livon-ts)
+    </td>
+    <td>
+      [![npm](https://img.shields.io/npm/v/%40livon%2Fnode-ws-transport)](https://www.npmjs.com/package/@livon/node-ws-transport) [![dependencies](https://img.shields.io/librariesio/release/npm/%40livon%2Fnode-ws-transport?label=dependencies)](https://libraries.io/npm/%40livon%2Fnode-ws-transport) [![code quality](https://img.shields.io/github/actions/workflow/status/live-input-vector-output-node/livon-ts/code-quality.yml?branch=main&label=code%20quality)](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/code-quality.yml)<br /> [![package size](https://img.shields.io/npm/unpacked-size/%40livon%2Fnode-ws-transport?label=package%20size)](https://www.npmjs.com/package/@livon/node-ws-transport) [![license](https://img.shields.io/github/license/live-input-vector-output-node/livon-ts)](https://github.com/live-input-vector-output-node/livon-ts)
+    </td>
+  </tr>
+</table>
 
-**Tooling**
+### Frontend & Tooling
 
-| Package | version | dependencies | code quality | package size | license |
-| --- | --- | --- | --- | --- | --- |
-| `@livon/cli` | [![npm](https://img.shields.io/npm/v/%40livon%2Fcli)](https://www.npmjs.com/package/@livon/cli) | [![dependencies](https://img.shields.io/librariesio/release/npm/%40livon%2Fcli?label=dependencies)](https://libraries.io/npm/%40livon%2Fcli) | [![code quality](https://img.shields.io/github/actions/workflow/status/live-input-vector-output-node/livon-ts/code-quality.yml?branch=main&label=code%20quality)](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/code-quality.yml) | [![package size](https://img.shields.io/npm/unpacked-size/%40livon%2Fcli?label=package%20size)](https://www.npmjs.com/package/@livon/cli) | [![license](https://img.shields.io/github/license/live-input-vector-output-node/livon-ts)](https://github.com/live-input-vector-output-node/livon-ts) |
-| `@livon/config` | [![npm](https://img.shields.io/npm/v/%40livon%2Fconfig)](https://www.npmjs.com/package/@livon/config) | [![dependencies](https://img.shields.io/librariesio/release/npm/%40livon%2Fconfig?label=dependencies)](https://libraries.io/npm/%40livon%2Fconfig) | [![code quality](https://img.shields.io/github/actions/workflow/status/live-input-vector-output-node/livon-ts/code-quality.yml?branch=main&label=code%20quality)](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/code-quality.yml) | [![package size](https://img.shields.io/npm/unpacked-size/%40livon%2Fconfig?label=package%20size)](https://www.npmjs.com/package/@livon/config) | [![license](https://img.shields.io/github/license/live-input-vector-output-node/livon-ts)](https://github.com/live-input-vector-output-node/livon-ts) |
-| `@livon/dlq-module` | [![npm](https://img.shields.io/npm/v/%40livon%2Fdlq-module)](https://www.npmjs.com/package/@livon/dlq-module) | [![dependencies](https://img.shields.io/librariesio/release/npm/%40livon%2Fdlq-module?label=dependencies)](https://libraries.io/npm/%40livon%2Fdlq-module) | [![code quality](https://img.shields.io/github/actions/workflow/status/live-input-vector-output-node/livon-ts/code-quality.yml?branch=main&label=code%20quality)](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/code-quality.yml) | [![package size](https://img.shields.io/npm/unpacked-size/%40livon%2Fdlq-module?label=package%20size)](https://www.npmjs.com/package/@livon/dlq-module) | [![license](https://img.shields.io/github/license/live-input-vector-output-node/livon-ts)](https://github.com/live-input-vector-output-node/livon-ts) |
+<table>
+  <tr>
+    <th><code>@livon/react</code></th>
+    <th><code>@livon/cli</code></th>
+    <th><code>@livon/config</code></th>
+  </tr>
+  <tr>
+    <td>
+      [![npm](https://img.shields.io/npm/v/%40livon%2Freact)](https://www.npmjs.com/package/@livon/react) [![dependencies](https://img.shields.io/librariesio/release/npm/%40livon%2Freact?label=dependencies)](https://libraries.io/npm/%40livon%2Freact) [![code quality](https://img.shields.io/github/actions/workflow/status/live-input-vector-output-node/livon-ts/code-quality.yml?branch=main&label=code%20quality)](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/code-quality.yml)<br /> [![package size](https://img.shields.io/npm/unpacked-size/%40livon%2Freact?label=package%20size)](https://www.npmjs.com/package/@livon/react) [![license](https://img.shields.io/github/license/live-input-vector-output-node/livon-ts)](https://github.com/live-input-vector-output-node/livon-ts)
+    </td>
+    <td>
+      [![npm](https://img.shields.io/npm/v/%40livon%2Fcli)](https://www.npmjs.com/package/@livon/cli) [![dependencies](https://img.shields.io/librariesio/release/npm/%40livon%2Fcli?label=dependencies)](https://libraries.io/npm/%40livon%2Fcli) [![code quality](https://img.shields.io/github/actions/workflow/status/live-input-vector-output-node/livon-ts/code-quality.yml?branch=main&label=code%20quality)](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/code-quality.yml)<br /> [![package size](https://img.shields.io/npm/unpacked-size/%40livon%2Fcli?label=package%20size)](https://www.npmjs.com/package/@livon/cli) [![license](https://img.shields.io/github/license/live-input-vector-output-node/livon-ts)](https://github.com/live-input-vector-output-node/livon-ts)
+    </td>
+    <td>
+      [![npm](https://img.shields.io/npm/v/%40livon%2Fconfig)](https://www.npmjs.com/package/@livon/config) [![dependencies](https://img.shields.io/librariesio/release/npm/%40livon%2Fconfig?label=dependencies)](https://libraries.io/npm/%40livon%2Fconfig) [![code quality](https://img.shields.io/github/actions/workflow/status/live-input-vector-output-node/livon-ts/code-quality.yml?branch=main&label=code%20quality)](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/code-quality.yml)<br /> [![package size](https://img.shields.io/npm/unpacked-size/%40livon%2Fconfig?label=package%20size)](https://www.npmjs.com/package/@livon/config) [![license](https://img.shields.io/github/license/live-input-vector-output-node/livon-ts)](https://github.com/live-input-vector-output-node/livon-ts)
+    </td>
+  </tr>
+</table>
+
+### Support
+
+<table>
+  <tr>
+    <th><code>@livon/dlq-module</code></th>
+  </tr>
+  <tr>
+    <td>
+      [![npm](https://img.shields.io/npm/v/%40livon%2Fdlq-module)](https://www.npmjs.com/package/@livon/dlq-module) [![dependencies](https://img.shields.io/librariesio/release/npm/%40livon%2Fdlq-module?label=dependencies)](https://libraries.io/npm/%40livon%2Fdlq-module) [![code quality](https://img.shields.io/github/actions/workflow/status/live-input-vector-output-node/livon-ts/code-quality.yml?branch=main&label=code%20quality)](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/code-quality.yml)<br /> [![package size](https://img.shields.io/npm/unpacked-size/%40livon%2Fdlq-module?label=package%20size)](https://www.npmjs.com/package/@livon/dlq-module) [![license](https://img.shields.io/github/license/live-input-vector-output-node/livon-ts)](https://github.com/live-input-vector-output-node/livon-ts)
+    </td>
+  </tr>
+</table>
 
 ## What problem does LIVON solve?
 

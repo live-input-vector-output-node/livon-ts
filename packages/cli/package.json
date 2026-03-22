@@ -1,6 +1,6 @@
 {
   "name": "@livon/cli",
-  "version": "0.28.0-rc.2",
+  "version": "0.28.0-rc.3",
   "private": false,
   "type": "module",
   "description": "CLI for LIVON client sync and generated API workflows.",
