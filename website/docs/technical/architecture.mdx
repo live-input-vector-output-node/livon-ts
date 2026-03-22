@@ -107,6 +107,19 @@ Rules:
 - Sends outbound envelopes from `registry.onSend`.
 - Must not run [schema validation](/docs/schema) or domain logic.
 
+## Responsibility boundary policy
+
+When implementing changes, choose the owning layer before writing code:
+
+- runtime: hook orchestration + envelope lifecycle only.
+- schema: validation/parse/exec/publish only.
+- transport: wire encode/decode + runtime bridge only.
+- client: generated API interface + client runtime integration only.
+- sync core: slug/entity/store synchronization only.
+- framework adapters (`react`, `angular`, `svelte`): UI integration only.
+
+If logic is shared across boundaries, move it to the right core layer and reuse it from adapters.
+
 ## Module author checklist
 
 When writing a custom module:

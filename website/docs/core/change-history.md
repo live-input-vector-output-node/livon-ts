@@ -6,6 +6,44 @@ sidebar_position: 10
 This page tracks high-impact governance and rule-system updates.
 Use it when you need to understand why repository-wide rules changed.
 
+## 2026-03-22
+
+### Arrow-only callable style added to root gate
+
+- Added recurring repository-wide rule `arrow-functions-only`.
+- Rule enforces arrow functions as default callable style and forbids `function` keyword usage for implementations and overload declarations.
+- Overload pattern is standardized to callable `interface` signatures plus `const` arrow assignments.
+- Added recurring repository-wide rule `test-setup-deduplication`.
+- Rule requires checking for similar existing tests first and extracting repeated test setup into shared `beforeEach` blocks or test utilities.
+- Extended multi-agent council with `test-quality-specialist` role and quality-gates stage before final council decision.
+- Documented explicit threshold for when to use multi-agent council versus single-agent mode.
+- Added lint warning budget entry for `@livon/react` in `configs/quality/lint-warning-budgets.json`.
+- Added recurring repository-wide rule `modular-file-structure` (scoped `utils/` folders, one utility per file, index barrel exports, focused feature files, and explicit `package.json` exports boundaries).
+
+## 2026-03-20
+
+### Hierarchical instruction inheritance enforced
+
+- Added explicit hierarchical instruction inheritance rule:
+  root `AGENTS.md` plus nearest parent `AGENTS.md` chain for scoped work.
+- Added policy enforcement for parent-chain loading in AI instruction files.
+- Updated context routing docs to describe deterministic root-to-scope inheritance.
+- Added subtree scope layers for `apps/**`, `packages/**`, and `tools/**` to support strict top-down rule propagation.
+- Updated specialization policy checks so only files with `specialization-id` markers must be registered.
+
+### Multi-agent role council introduced
+
+- Added role-based council contract with machine-readable stage flow in `configs/ai/multi-agent-council.json`.
+- Added role skills for PO/DX, system architecture, backend, frontend, performance, and council orchestration.
+- Added policy validation for council config integrity and role-skill references.
+- Added AI docs + routing entries for multi-agent council usage.
+
+### Runtime boundary guard tightened
+
+- Added runtime-scoped prompt entrypoint (`packages/runtime/PROMPT.md`).
+- Added policy checks that block runtime imports from client/schema/transport packages.
+- Runtime specialization now explicitly declares the import boundary constraint.
+
 ## 2026-02-15
 
 ### Shared coding style guide introduced

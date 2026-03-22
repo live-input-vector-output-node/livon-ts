@@ -83,6 +83,10 @@ They must communicate behavior clearly enough that readers understand the implem
 - Use one top-level `describe('<api>()')` block per tested source file.
 - Inside it, use `describe('happy')` and `describe('sad')` to separate success and failure behavior.
 - Use `beforeAll`, `beforeEach`, `afterEach`, and `afterAll` consistently for setup and cleanup.
+- Before writing new tests, check existing test files for similar setup and behaviors.
+- If setup is repeated (for example `entity/source/action/stream` construction), move it into `beforeEach` or reusable helpers in `testing/` utilities.
+- Prefer extending existing test utilities over adding near-duplicate setup code in each test file.
+- Keep reusable test helpers under `testing/utils/` with one utility per file and a local `testing/utils/index.ts` barrel export.
 
 ### Mocking and isolation
 

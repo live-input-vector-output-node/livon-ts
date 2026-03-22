@@ -64,6 +64,9 @@ const response = {...safeUser, role: 'member'};
 - Functions should be small and do one thing.
 - Prefer max two parameters for new code.
 - If inputs are simple primitives, always group them into one semantic config object.
+- When a function accepts a config object, destructure it in the parameter list.
+- When defaults exist, set them with ES6 parameter defaults in the same destructuring step.
+- Keep destructured names identical to config property names to avoid rename churn and `config.*` access.
 - Keep existing public callback signatures where external interfaces require them.
 
 ```ts
@@ -74,6 +77,21 @@ interface RequestUserInput {
 
 const requestUser = ({includePosts, userId}: RequestUserInput) =>
   apiRequest({includePosts, userId});
+```
+
+```ts
+interface EntityRecord {
+  id: string;
+}
+
+interface CreateEntityInput {
+  idOf: (input: EntityRecord) => string;
+  ttl?: number;
+}
+
+const createEntity = ({idOf, ttl = 0}: CreateEntityInput) => {
+  return {idOf, ttl};
+};
 ```
 
 Avoid primitive multi-arg signatures:
@@ -89,6 +107,7 @@ const requestUser = (userId: string, includePosts: boolean) =>
 - No inline object types for function parameters.
 - No inline function type signatures for reusable function interfaces.
 - Define function interfaces as named `interface` types.
+- For overloads, use callable `interface` signatures plus `const` arrow assignments (do not use `function` overload declarations).
 
 ```ts
 interface BuildDisplayNameInput {
@@ -150,3 +169,26 @@ const statusLabel = isReady ? 'ready' : 'waiting';
 const sorted = [...values].sort((left, right) => left - right);
 const moduleName = input.name ?? 'runtime-module';
 ```
+
+## File organization
+
+- Keep reusable helpers in scoped `utils/` folders.
+- Keep one utility per file and re-export through a local `utils/index.ts` barrel.
+- Split core functionality into focused files instead of growing large multi-purpose files.
+- Expose module boundaries explicitly through package `exports` in `package.json` plus stable `index.ts` barrel exports.
+- Prefer this structure for better testability, mockability, and dependency injection.
+
+## Core vs framework placement
+
+- For every change in a framework package (`react`, `angular`, `svelte`, ...), decide first whether the logic is framework-agnostic.
+- Put framework-agnostic runtime/state/sync behavior in core packages (`@livon/sync`), not in framework adapters.
+- Keep framework packages focused on integration concerns only (hooks, lifecycle bindings, rendering adapters, platform APIs).
+- If a framework change requires duplicating generic logic, move that logic into core and consume it from the adapter package.
+
+## Package responsibility boundaries
+
+- For every implementation change, decide the owning layer first (`runtime`, `schema`, `transport`, `client`, `sync`, framework adapters).
+- Do not implement runtime orchestration concerns in transport/client/framework packages.
+- Do not implement schema validation/execution concerns in runtime/transport/framework packages.
+- Do not implement transport wire concerns in runtime/schema/client/core state packages.
+- Keep cross-layer coupling minimal and explicit through package boundaries instead of side-loading responsibilities into a convenient module.
