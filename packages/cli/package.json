@@ -44,8 +44,8 @@
   "keywords": [
     "livon",
     "cli",
-    "sync",
     "codegen",
+    "sync",
     "typescript"
   ],
   "bin": {

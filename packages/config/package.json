@@ -39,9 +39,9 @@
   "keywords": [
     "livon",
     "config",
-    "typescript",
+    "tooling",
     "eslint",
-    "rslib"
+    "typescript"
   ],
   "peerDependencies": {
     "@rslib/core": "^0.19.5 || ^0.20.0",

@@ -36,8 +36,8 @@
   "keywords": [
     "livon",
     "runtime",
-    "api",
     "events",
+    "api",
     "typescript"
   ],
   "exports": {

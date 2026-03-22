@@ -36,8 +36,8 @@
   "keywords": [
     "livon",
     "runtime",
-    "dlq",
     "queue",
+    "dlq",
     "typescript"
   ],
   "exports": {

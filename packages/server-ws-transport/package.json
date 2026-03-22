@@ -35,9 +35,9 @@
   },
   "keywords": [
     "livon",
-    "node",
-    "websocket",
     "transport",
+    "websocket",
+    "node",
     "typescript"
   ],
   "exports": {

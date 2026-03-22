@@ -35,8 +35,8 @@
   },
   "keywords": [
     "livon",
-    "websocket",
     "transport",
+    "websocket",
     "client",
     "typescript"
   ],
