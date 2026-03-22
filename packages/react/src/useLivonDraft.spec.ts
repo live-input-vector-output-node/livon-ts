@@ -16,9 +16,9 @@ describe('useLivonDraft()', () => {
     return readUser(templateScope);
   };
 
-  it('should call unit setDraft when draft setter is executed', () => {
+  it('should call unit draft.set when draft setter is executed', () => {
     const unit = createReadUserUnit();
-    const setDraftSpy = vi.spyOn(unit, 'setDraft');
+    const setDraftSpy = vi.spyOn(unit.draft, 'set');
     const { result } = renderHook(() => useLivonDraft(unit));
 
     act(() => {
@@ -29,9 +29,9 @@ describe('useLivonDraft()', () => {
     expect(setDraftSpy).toHaveBeenCalledTimes(1);
   });
 
-  it('should call unit cleanDraft when draft cleaner is executed', () => {
+  it('should call unit draft.clean when draft cleaner is executed', () => {
     const unit = createReadUserUnit();
-    const cleanDraftSpy = vi.spyOn(unit, 'cleanDraft');
+    const cleanDraftSpy = vi.spyOn(unit.draft, 'clean');
     const { result } = renderHook(() => useLivonDraft(unit));
 
     act(() => {

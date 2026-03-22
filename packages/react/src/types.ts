@@ -42,8 +42,10 @@ export type LivonStopOf<TUnit> =
 
 export type LivonDraftOf<TUnit> =
   TUnit extends {
-    setDraft: (input: infer TInput) => infer TSetResult;
-    cleanDraft: () => infer TCleanResult;
+    draft: {
+      set: (input: infer TInput) => infer TSetResult;
+      clean: () => infer TCleanResult;
+    };
   }
     ? [
       (input: TInput) => TSetResult,
