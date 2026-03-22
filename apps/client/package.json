@@ -4,6 +4,16 @@
   "private": true,
   "type": "module",
   "license": "MIT",
+  "author": {
+    "name": "LIVON",
+    "url": "https://livon.tech"
+  },
+  "contributors": [
+    {
+      "name": "cr15p1",
+      "url": "https://github.com/cr15p1"
+    }
+  ],
   "keywords": [
     "livon",
     "app",

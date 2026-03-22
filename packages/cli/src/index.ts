@@ -68,7 +68,6 @@ interface BuildGeneratedClientResult {
 }
 
 interface GeneratedPackageManifest {
-  private: boolean;
   type: 'module';
   sideEffects: boolean;
   main?: string;
@@ -748,7 +747,6 @@ const createGeneratedPackageManifest = ({
   const module = hasEsm ? manifestOutputFile({ format: 'esm' }) : undefined;
   const types = buildResult.dts ? './dist/index.d.ts' : undefined;
   return {
-    private: true,
     type: 'module',
     sideEffects: false,
     ...(main ? { main } : {}),
@@ -794,6 +792,16 @@ const buildGeneratedClient = async ({ options }: BuildGeneratedClientInput): Pro
     clientFile,
     astFile,
   });
+  const buildResult: BuildGeneratedClientResult = {
+    dts: options.build.dts,
+    formats: options.build.formats,
+    outputPath: path.join(outDir, 'dist'),
+  };
+  await fs.mkdir(outDir, { recursive: true });
+  await writeGeneratedPackageManifest({
+    packageJsonFile,
+    buildResult,
+  });
   const rslib = await createRslib({
     cwd: outDir,
     config: {
@@ -818,15 +826,6 @@ const buildGeneratedClient = async ({ options }: BuildGeneratedClientInput): Pro
   });
 
   await rslib.build();
-  const buildResult: BuildGeneratedClientResult = {
-    dts: options.build.dts,
-    formats: options.build.formats,
-    outputPath: path.join(outDir, 'dist'),
-  };
-  await writeGeneratedPackageManifest({
-    packageJsonFile,
-    buildResult,
-  });
   return buildResult;
 };
 

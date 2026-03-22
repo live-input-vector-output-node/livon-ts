@@ -42,7 +42,7 @@ livon \
 - use `--js` when you only need `esm + cjs` and want to skip declaration files
 
 With `--out src/generated/api.ts`, compiled files are written to `src/generated/dist`.
-`livon` also writes `src/generated/package.json` with conditional exports, so `import { api } from './generated'` resolves to the matching build output.
+`livon` also writes `src/generated/package.json` with conditional exports, and the file is generated on the fly during sync/deploy so directory imports such as `import { api } from './generated'` resolve to the matching build output without keeping the manifest tracked in git.
 
 ## Linked process lifecycle
 
