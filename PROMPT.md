@@ -45,6 +45,7 @@ Rule highlights:
 
 - Repository-wide recurring rules are centralized in `/docs/ai/root-gate`.
 - Scope-specific deviations are centralized in `/docs/ai/specializations`.
+- Related-library chip rows in docs and overviews must use linked code chips: internal `@livon/*` packages link to their package docs page, and external libraries link to their npm package page.
 - For git merge/rebase conflicts, follow the root-gate repository policy: `newest version wins` by default, which means keeping the newest compatible version and aligning related files to it unless higher-priority instructions or explicit correctness/security/build constraints require otherwise.
 - For root quality-gate and verification commands, prefer concise success output and focused failure output: surface OK/summaries when checks pass, and only the failed packages/files/error locations when checks fail unless explicit verbose debugging is requested.
 - For implementation work, decide the owning layer first (`runtime`, `schema`, `transport`, `client`, `sync`, framework adapter) and implement logic in that boundary.

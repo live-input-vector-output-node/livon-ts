@@ -11,8 +11,9 @@
 
 ## Purpose
 
-[@livon/react](https://livon.tech/docs/packages/react) is the React adapter for `@livon/sync` units.
+[@livon/react](https://livon.tech/docs/packages/react) is the React framework adapter for `@livon/sync` units.
 It provides typed hooks for value, status, meta, run/start, stop, and source draft editing.
+Keep framework-agnostic state and lifecycle behavior in `@livon/sync`; keep React integration here.
 
 ## Install
 

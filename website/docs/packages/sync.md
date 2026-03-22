@@ -17,6 +17,8 @@ sidebar_position: 8
 - `action` for writes and mutations
 - `stream` for realtime subscriptions
 
+It is the shared sync core consumed by framework adapters such as `@livon/react`.
+
 ## Install
 
 ```sh

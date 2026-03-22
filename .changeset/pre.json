@@ -29,6 +29,7 @@
   "changesets": [
     "bright-bears-fix",
     "clear-badges-structure",
+    "coverage-badges-and-reporting",
     "fixed-badge-grid",
     "fresh-ravens-kick"
   ]

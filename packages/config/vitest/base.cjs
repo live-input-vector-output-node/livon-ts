@@ -42,7 +42,7 @@ const createVitestConfig = (input) => {
       globals: false,
       coverage: {
         provider: 'v8',
-        reporter: ['text', 'html'],
+        reporter: ['text-summary', 'html', 'lcov'],
         exclude: mockExcludes,
       },
     },

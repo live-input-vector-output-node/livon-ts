@@ -167,6 +167,20 @@
       ]
     },
     {
+      "id": "docs-related-library-links",
+      "statement": "Related-library chip rows in docs and overview pages must use linked code chips: internal @livon/* packages link to their package docs page, and external libraries link to their npm package page.",
+      "humanSources": [
+        "website/docs/core/contributing.md",
+        "website/docs/ai/root-gate.md"
+      ],
+      "agentSources": [
+        "PROMPT.md",
+        "AGENTS.md",
+        "tools/policies/check.ts",
+        "tools/policies/src/checks/check-doc-related-library-links.ts"
+      ]
+    },
+    {
       "id": "pre-push-full-gates",
       "statement": "Before every push, run `pnpm qg` (full repository gates: check:readmes, check:policies, lint, typecheck, test, build).",
       "humanSources": [

@@ -1,5 +1,13 @@
 # @livon/frontend-app
 
+## 0.28.0-rc.4
+
+### Patch Changes
+
+- Add external coverage publishing for Codecov and Coveralls, centralize `lcov`
+  generation in the Vitest base config, and tighten the badge layout and docs
+  presentation around the new reporting flow.
+
 ## 0.28.0-rc.3
 
 ## 0.28.0-rc.2

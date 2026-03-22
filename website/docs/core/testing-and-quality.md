@@ -63,6 +63,19 @@ CI caching includes PNPM store and local `.turbo` artifacts.
 pnpm run ci
 ```
 
+## Coverage publishing
+
+After CI succeeds on `main`, a separate coverage workflow rebuilds the workspace,
+runs the Vitest workspace with coverage enabled, and uploads the resulting
+`lcov.info` reports to Codecov and Coveralls.
+
+```sh
+pnpm run build
+pnpm exec vitest run --config vitest.workspace.ts --coverage --reporter=dot
+```
+
+The public coverage badges on the overview pages point to those hosted reports.
+
 ## Coding quality baseline
 
 - Functional style only.
