@@ -291,7 +291,7 @@ Requirements:
 - Valid package versions (no duplicate version publish).
 - Build passes for all `packages/*`.
 - Version updates are created locally (`pnpm changeset` + `pnpm changeset:version`) and committed to `main`.
-- Publish is executed in CI and starts automatically on `main` when `.changeset/**` or `**/CHANGELOG.md` changes.
+- Publish is executed in CI and starts automatically only when a push to `main` changes `.changeset/**`.
 
 Version management is handled with Changesets (fixed version group for all publishable `@livon/*` packages).
 
@@ -317,23 +317,23 @@ pnpm changeset:publish
 
 CI publish behavior:
 
-- `Publish Packages` can be started manually via workflow dispatch without any parameters.
 - Tag handling is owned by Changesets:
   - in pre mode (`.changeset/pre.json`), Changesets publishes to the pre tag (for example `rc`)
   - outside pre mode, Changesets publishes to `latest`
 - Pipeline always runs `lint`, `typecheck`, `test`, and `build` before publish.
-- Pushes to `main` that change `.changeset/**` or `**/CHANGELOG.md` trigger publish automatically.
+- Pushes to `main` that change `.changeset/**` trigger publish automatically.
+- Publish is intentionally tied to changeset-file diffs, so changelog-only or unrelated commits do not trigger npm publication.
 
 Recommended RC publish flow:
 
 1. Keep pre mode active (`pnpm dlx @changesets/cli pre enter rc` once, then stay in pre mode).
 2. Create release notes with `pnpm changeset`.
 3. Apply versions with `pnpm changeset:version`.
-4. Commit and push to `main` (auto publish), or trigger `Publish Packages` manually.
+4. Commit and push to `main` with the corresponding `.changeset/**` diff (auto publish).
 
 Recommended stable publish flow:
 
 1. Exit pre mode with `pnpm dlx @changesets/cli pre exit`.
 2. Create release notes with `pnpm changeset`.
 3. Apply versions with `pnpm changeset:version`.
-4. Commit and push to `main` (auto publish), or trigger `Publish Packages` manually.
+4. Commit and push to `main` with the corresponding `.changeset/**` diff (auto publish).

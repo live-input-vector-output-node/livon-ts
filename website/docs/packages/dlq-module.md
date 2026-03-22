@@ -4,10 +4,10 @@ sidebar_position: 6
 ---
 
 [![npm](https://img.shields.io/npm/v/%40livon%2Fdlq-module)](https://www.npmjs.com/package/@livon/dlq-module)
-[![package size](https://img.shields.io/npm/unpacked-size/%40livon%2Fdlq-module?label=package%20size)](https://www.npmjs.com/package/@livon/dlq-module)
 [![dependencies](https://img.shields.io/librariesio/release/npm/%40livon%2Fdlq-module?label=dependencies)](https://libraries.io/npm/%40livon%2Fdlq-module)
+[![code quality](https://img.shields.io/github/actions/workflow/status/live-input-vector-output-node/livon-ts/code-quality.yml?branch=main&label=code%20quality)](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/code-quality.yml)
+[![package size](https://img.shields.io/npm/unpacked-size/%40livon%2Fdlq-module?label=package%20size)](https://www.npmjs.com/package/@livon/dlq-module)
 [![license](https://img.shields.io/github/license/live-input-vector-output-node/livon-ts)](https://github.com/live-input-vector-output-node/livon-ts)
-[![CI](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml/badge.svg)](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml)
 
 ## Purpose
 

@@ -27,6 +27,7 @@
     "website": "0.27.0"
   },
   "changesets": [
+    "bright-bears-fix",
     "fresh-ravens-kick"
   ]
 }
