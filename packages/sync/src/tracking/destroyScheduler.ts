@@ -40,8 +40,6 @@ const readTimerApi = (): TimerApi => {
   throw new Error('Timer API is not available on globalThis.');
 };
 
-const timerApi = readTimerApi();
-
 const normalizeDestroyDelay = (
   input: number | undefined = DEFAULT_DESTROY_DELAY,
 ): number => {
@@ -61,6 +59,7 @@ export const clearPendingTrackedUnitDestroy = (
     return;
   }
 
+  const timerApi = readTimerApi();
   timerApi.clearTimeout(timeout);
   timeoutByUnit.delete(unit);
 };
@@ -79,6 +78,7 @@ export const scheduleTrackedUnitDestroy = ({
     return;
   }
 
+  const timerApi = readTimerApi();
   const timeout = timerApi.setTimeout(() => {
     timeoutByUnit.delete(unit);
     onDestroy();

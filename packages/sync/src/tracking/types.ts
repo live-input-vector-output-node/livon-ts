@@ -1,11 +1,6 @@
-export type UnitStatus = 'idle' | 'loading' | 'success' | 'error';
+import type { UnitSnapshot } from '../utils/types.js';
 
-export interface UnitSnapshot<RResult> {
-  value: RResult;
-  status: UnitStatus;
-  meta: unknown;
-  context: unknown;
-}
+export type { UnitSnapshot, UnitStatus } from '../utils/types.js';
 
 export interface UnitSnapshotListener<RResult> {
   (snapshot: UnitSnapshot<RResult>): void;
