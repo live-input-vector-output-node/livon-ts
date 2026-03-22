@@ -79,6 +79,8 @@ const sidebars: SidebarsConfig = {
         'packages/client',
         'packages/client-ws-transport',
         'packages/node-ws-transport',
+        'packages/sync',
+        'packages/react',
         'packages/cli',
         'packages/dlq-module',
         'packages/config',
@@ -131,6 +133,7 @@ const sidebars: SidebarsConfig = {
         'ai/active-rules-and-gates',
         'ai/tool-mapping',
         'ai/approach-and-rationale',
+        'ai/multi-agent-council',
       ],
     },
     {
