@@ -22,12 +22,12 @@ const useLivonDraftInternal = <
 >(
   unit: SourceUnit<TInput, TPayload, RResult, UUpdate>,
 ): LivonDraftOf<SourceUnit<TInput, TPayload, RResult, UUpdate>> => {
-  const setDraft = useCallback((input: Parameters<typeof unit.setDraft>[0]) => {
-    unit.setDraft(input);
+  const setDraft = useCallback((input: Parameters<typeof unit.draft.set>[0]) => {
+    unit.draft.set(input);
   }, [unit]);
 
   const cleanDraft = useCallback(() => {
-    unit.cleanDraft();
+    unit.draft.clean();
   }, [unit]);
 
   return [setDraft, cleanDraft];
