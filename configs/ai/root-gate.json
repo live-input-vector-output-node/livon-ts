@@ -192,6 +192,31 @@
       ]
     },
     {
+      "id": "git-conflicts-newest-wins",
+      "statement": "When resolving git merge or rebase conflicts, default to newest version wins: keep the newest compatible version and align related files to it unless a higher-priority instruction or explicit correctness/security/build constraint requires otherwise.",
+      "humanSources": [
+        "website/docs/core/contributing.md",
+        "website/docs/ai/root-gate.md"
+      ],
+      "agentSources": [
+        "PROMPT.md",
+        "AGENTS.md"
+      ]
+    },
+    {
+      "id": "concise-check-output",
+      "statement": "Root quality-gate and verification commands must prefer concise success output and focused failure output: show task/package summaries when checks pass, and print detailed logs only for failed checks or explicitly requested verbose debugging.",
+      "humanSources": [
+        "website/docs/core/contributing.md",
+        "website/docs/core/testing-and-quality.md",
+        "website/docs/ai/root-gate.md"
+      ],
+      "agentSources": [
+        "PROMPT.md",
+        "AGENTS.md"
+      ]
+    },
+    {
       "id": "lint-warning-no-regressions",
       "statement": "Lint warning counts are budgeted per package and must not increase without explicitly updating the central budget config.",
       "humanSources": [

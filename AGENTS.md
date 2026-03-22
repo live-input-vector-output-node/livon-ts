@@ -149,3 +149,5 @@ Canonical product and engineering documentation lives in Docusaurus (`/docs`).
 - External system/developer/user instructions take precedence over this file.
 - Inside repo context, package-specific prompt rules override generic guidance in this file.
 - Root `PROMPT.md` remains the baseline when no package prompt applies.
+- For git merge/rebase conflicts, follow the repository rule in `/docs/ai/root-gate`: `newest version wins` by default, which means keeping the newest compatible version and aligning related files unless a higher-priority instruction or explicit correctness/security/build constraint requires otherwise.
+- For root quality-gate and verification commands, follow the repository rule in `/docs/ai/root-gate`: keep success output concise and surface detailed logs only for failed checks or explicitly requested verbose debugging.
