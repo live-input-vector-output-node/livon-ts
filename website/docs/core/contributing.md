@@ -297,7 +297,8 @@ Requirements:
 - Valid package versions (no duplicate version publish).
 - Build passes for all `packages/*`.
 - Version updates are created locally (`pnpm changeset` + `pnpm changeset:version`) and committed to `main`.
-- Publish is executed in CI and starts automatically only when a push to `main` changes `.changeset/**`.
+- Publish is executed in CI and starts automatically only on a push to `main` that changes `.changeset/**`.
+- Feature branches and pull requests never publish npm packages.
 
 Version management is handled with Changesets (fixed version group for all publishable `@livon/*` packages).
 
@@ -329,6 +330,7 @@ CI publish behavior:
 - Pipeline always runs `lint`, `typecheck`, `test`, and `build` before publish.
 - Pushes to `main` that change `.changeset/**` trigger publish automatically.
 - Publish is intentionally tied to changeset-file diffs, so changelog-only or unrelated commits do not trigger npm publication.
+- Feature branches do not trigger publish, even if they contain changeset files.
 
 Recommended RC publish flow:
 
