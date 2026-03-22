@@ -13,6 +13,16 @@ interface UserSlug {
   slugId: number;
 }
 
+interface StructuredCacheValue {
+  createdAt: Date;
+  total: bigint;
+  notANumber: number;
+  tags: Set<string>;
+  lookup: Map<string, number>;
+  matcher: RegExp;
+  optional: undefined;
+}
+
 interface MemoryStorage {
   getItem: (key: string) => string | null;
   setItem: (key: string, value: string) => void;
@@ -185,6 +195,72 @@ describe('source cache', () => {
 
       expect(secondUnit.get()).toEqual(user);
       expect(runMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('should rehydrate structured raw values from cache without losing their types', async () => {
+      const slugId = randomNumber();
+      const cacheKey = randomString({ prefix: 'cache-key' });
+      const storage = createMemoryStorage();
+      const value: StructuredCacheValue = {
+        createdAt: new Date('2026-03-22T12:34:56.000Z'),
+        total: 123n,
+        notANumber: Number.NaN,
+        tags: new Set(['sync', 'cache']),
+        lookup: new Map([
+          ['alpha', 1],
+          ['beta', 2],
+        ]),
+        matcher: /livon/gi,
+        optional: undefined,
+      };
+
+      const firstEntity = entity<User>({
+        idOf: (entry) => entry.id,
+      });
+      const firstReadValue = source<UserSlug, undefined, User, StructuredCacheValue | null>({
+        entity: firstEntity,
+        cache: {
+          key: cacheKey,
+          storage,
+          ttl: 'infinity',
+        },
+        run: async () => undefined,
+      });
+
+      firstReadValue({ slugId }).set(value);
+      await Promise.resolve();
+
+      const secondEntity = entity<User>({
+        idOf: (entry) => entry.id,
+      });
+      const secondReadValue = source<UserSlug, undefined, User, StructuredCacheValue | null>({
+        entity: secondEntity,
+        cache: {
+          key: cacheKey,
+          storage,
+          ttl: 'infinity',
+        },
+        run: async () => undefined,
+      });
+
+      const cachedValue = secondReadValue({ slugId }).get();
+
+      expect(cachedValue).not.toBeNull();
+      expect(cachedValue?.createdAt).toBeInstanceOf(Date);
+      expect(cachedValue?.createdAt.toISOString()).toBe('2026-03-22T12:34:56.000Z');
+      expect(cachedValue?.total).toBe(123n);
+      expect(Number.isNaN(cachedValue?.notANumber ?? 0)).toBe(true);
+      expect(cachedValue?.tags).toBeInstanceOf(Set);
+      expect(Array.from(cachedValue?.tags.values() ?? [])).toEqual(['sync', 'cache']);
+      expect(cachedValue?.lookup).toBeInstanceOf(Map);
+      expect(Array.from(cachedValue?.lookup.entries() ?? [])).toEqual([
+        ['alpha', 1],
+        ['beta', 2],
+      ]);
+      expect(cachedValue?.matcher).toBeInstanceOf(RegExp);
+      expect(cachedValue?.matcher.source).toBe('livon');
+      expect(cachedValue?.matcher.flags).toBe('gi');
+      expect(cachedValue?.optional).toBeUndefined();
     });
 
     it('should skip loading status on first run after rehydrate', async () => {

@@ -32,7 +32,7 @@ describe('runtimeUtils', () => {
 
       const serialized = stableSerialize(symbolValue);
 
-      expect(serialized).toBe(JSON.stringify(String(symbolValue)));
+      expect(serialized).toContain(String(symbolValue));
     });
   });
 });

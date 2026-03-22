@@ -167,6 +167,22 @@ removeListener?.();
 readUnit.destroy();
 ```
 
+## Structured Value Support
+
+`@livon/sync` uses stable structured serialization for scope keys, payload keys, source-cache records, and the non-`structuredClone` fallback used for draft updates.
+
+Round-trips preserve common non-JSON values such as:
+
+- `Date`
+- `BigInt`
+- `undefined`
+- `NaN`, `Infinity`, `-Infinity`, `-0`
+- `RegExp`
+- `Map`
+- `Set`
+
+Functions and symbols are only stringified for internal key generation. They are not cache-round-tripped as callable/symbol values.
+
 ## API Summary
 
 ### `entity({ ... })`

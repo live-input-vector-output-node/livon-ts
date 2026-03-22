@@ -1,3 +1,8 @@
+import {
+  deserializeStructuredValue,
+  serializeStructuredValue,
+} from './structuredSerialization.js';
+
 interface StructuredCloneFunction {
   <TInput>(value: TInput): TInput;
 }
@@ -25,7 +30,7 @@ const cloneWithJson = <TInput>(value: TInput): TInput => {
     return value;
   }
 
-  return JSON.parse(JSON.stringify(value)) as TInput;
+  return deserializeStructuredValue<TInput>(serializeStructuredValue({ input: value }));
 };
 
 export const cloneValue = <TInput>(value: TInput): TInput => {
