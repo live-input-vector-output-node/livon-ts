@@ -46,19 +46,20 @@ const isStartCapability = (
 const useLivonRunInternal: UseLivonRun = <TUnit>(
   unit: TUnit,
 ): LivonRunOf<TUnit> => {
-  if (isRunCapability(unit)) {
-    return useCallback((...input: readonly unknown[]) => {
-      return unit.run(...input);
-    }, [unit]) as LivonRunOf<TUnit>;
+  const hasRunCapability = isRunCapability(unit);
+  const hasStartCapability = isStartCapability(unit);
+
+  if (!hasRunCapability && !hasStartCapability) {
+    throw new Error('useLivonRun requires a unit with run() or start() capability.');
   }
 
-  if (isStartCapability(unit)) {
-    return useCallback((...input: readonly unknown[]) => {
-      return unit.start(...input);
-    }, [unit]) as LivonRunOf<TUnit>;
-  }
+  const run = (
+    hasRunCapability ? unit.run : (unit as StartCapability).start
+  ) as (...input: readonly unknown[]) => unknown;
 
-  throw new Error('useLivonRun requires a unit with run() or start() capability.');
+  return useCallback((...input: readonly unknown[]) => {
+    return run(...input);
+  }, [run]) as LivonRunOf<TUnit>;
 };
 
 export const useLivonRun: UseLivonRun = useLivonRunInternal;

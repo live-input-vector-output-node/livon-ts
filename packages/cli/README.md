@@ -69,6 +69,7 @@ livon --endpoint ws://127.0.0.1:3002/ws --out src/generated/api.ts -- --some-com
 - `--esm` (`boolean`): build only ESM output (`dist/index.js`).
 - `--cjs` (`boolean`): build only CJS output (`dist/index.cjs`).
 - `--js` (`boolean`): builds only `esm + cjs` (skips `.d.ts` output).
+- `--emit-package-json` (`boolean`): writes `src/generated/package.json` during deploy/package generation when directory imports need manifest-based resolution.
 - `--no-event` (`boolean`): disables event wrapping behavior for transports expecting plain request mode.
 - `--` (delimiter): separates livon flags from linked command arguments.
 

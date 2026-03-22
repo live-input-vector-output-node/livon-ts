@@ -1,7 +1,7 @@
 <!-- @agent.entry -->
 <!-- @agent.load: ../../PROMPT.md -->
 <!-- @agent.load: ../../PROMPTS.md -->
-<!-- @agent.load: ../../AGENTS.md -->
+<!-- @agent.load: ../AGENTS.md -->
 <!-- @agent.load: ../../website/docs/core/testing-and-quality.md -->
 <!-- @agent.load: ../../website/docs/packages/schema.md -->
 <!-- @agent.load: ../../website/docs/schema/index.md -->
