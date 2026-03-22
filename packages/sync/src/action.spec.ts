@@ -33,8 +33,8 @@ describe('action()', () => {
     createName = randomString({ prefix: 'create-name' });
     createdUserId = randomString({ prefix: 'created-user-id' });
 
-    runMock = vi.fn(async ({ payload, upsertOne }) => {
-      upsertOne({ id: createdUserId, ...payload });
+    runMock = vi.fn(async ({ payload, entity }) => {
+      entity.upsertOne({ id: createdUserId, ...payload });
     });
 
     usersEntity = entity<User>({

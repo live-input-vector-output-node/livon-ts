@@ -32,8 +32,8 @@ describe('source.force()', () => {
     slugId = randomNumber();
     searchValue = randomString({ prefix: 'search' });
 
-    runMock = vi.fn(async ({ payload, upsertMany }) => {
-      upsertMany([{ id: payload.search, name: payload.search }]);
+    runMock = vi.fn(async ({ payload, entity }) => {
+      entity.upsertMany([{ id: payload.search, name: payload.search }]);
     });
 
     usersEntity = entity<User>({

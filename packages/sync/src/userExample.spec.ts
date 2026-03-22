@@ -7,163 +7,164 @@ import { stream, type Stream } from './stream.js';
 import { mockApi } from './testing/mocks/mockApi.js';
 import { randomString } from './testing/randomData.js';
 
-interface Project {
+interface Todo {
   id: string;
-  name: string;
-  templateId: string;
+  title: string;
+  listId: string;
 }
 
-interface TemplateSlug {
-  templateId: string;
+interface TodoScope {
+  listId: string;
 }
 
-type ProjectEntity = Entity<Project>;
-type ProjectsApi = ReturnType<typeof mockApi<Project>>;
-type ReadProjectSource = Source<TemplateSlug, undefined, Project | null, Project>;
-type UpdateProjectAction = Action<TemplateSlug, Project, Project | null, Project>;
-type ProjectUpdatedStream = Stream<TemplateSlug, Project, Project | null, Project>;
-interface ProjectSubscriptionEvent {
-  data?: Project;
+type TodoEntity = Entity<Todo>;
+type TodosApi = ReturnType<typeof mockApi<Todo>>;
+type ReadTodoSource = Source<TodoScope, undefined, Todo | null, Todo>;
+type UpdateTodoAction = Action<TodoScope, Todo, Todo | null, Todo>;
+type TodoChangedStream = Stream<TodoScope, Todo, Todo | null, Todo>;
+
+interface TodoSubscriptionEvent {
+  data?: Todo;
   error?: unknown;
 }
-interface ProjectSubscriptionObserver {
-  (event: ProjectSubscriptionEvent): void;
+
+interface TodoSubscriptionObserver {
+  (event: TodoSubscriptionEvent): void;
 }
 
 describe('user example flow', () => {
-  let projectEntity: ProjectEntity;
-  let projectsApi: ProjectsApi;
+  let todoEntity: TodoEntity;
+  let todosApi: TodosApi;
   let findOneSpy = vi.fn();
   let updateSpy = vi.fn();
-  let readProject: ReadProjectSource;
-  let updateProject: UpdateProjectAction;
+  let readTodo: ReadTodoSource;
+  let updateTodo: UpdateTodoAction;
   let streamRunMock = vi.fn();
   let observeMock = vi.fn();
-  let emitSubscriptionEvent: ProjectSubscriptionObserver;
+  let emitSubscriptionEvent: TodoSubscriptionObserver;
   let unsubscribeMock = vi.fn();
-  let onProjectUpdated: ProjectUpdatedStream;
-  let projectId: string;
-  let templateId: string;
-  let baseName: string;
-  let updatedName: string;
-  let streamName: string;
+  let onTodoChanged: TodoChangedStream;
+  let todoId: string;
+  let listId: string;
+  let baseTitle: string;
+  let updatedTitle: string;
+  let streamTitle: string;
 
   beforeEach(async () => {
-    projectId = randomString({ prefix: 'project-id' });
-    templateId = randomString({ prefix: 'template-id' });
-    baseName = randomString({ prefix: 'project-base-name' });
-    updatedName = randomString({ prefix: 'project-updated-name' });
-    streamName = randomString({ prefix: 'project-stream-name' });
+    todoId = randomString({ prefix: 'todo-id' });
+    listId = randomString({ prefix: 'list-id' });
+    baseTitle = randomString({ prefix: 'todo-base-title' });
+    updatedTitle = randomString({ prefix: 'todo-updated-title' });
+    streamTitle = randomString({ prefix: 'todo-stream-title' });
 
-    projectsApi = mockApi<Project>();
-    await projectsApi.insert({ id: projectId, name: baseName, templateId });
+    todosApi = mockApi<Todo>();
+    await todosApi.insert({ id: todoId, title: baseTitle, listId });
 
-    findOneSpy = vi.spyOn(projectsApi, 'findOne');
-    updateSpy = vi.spyOn(projectsApi, 'update');
+    findOneSpy = vi.spyOn(todosApi, 'findOne');
+    updateSpy = vi.spyOn(todosApi, 'update');
 
-    projectEntity = entity<Project>({
+    todoEntity = entity<Todo>({
       idOf: (value) => value.id,
       ttl: 30_000,
     });
 
-    readProject = source<TemplateSlug, undefined, Project, Project | null, Project>({
-      entity: projectEntity,
-      run: async ({ scope, upsertOne }) => {
-        const project = await projectsApi.findOne(scope);
+    readTodo = source<TodoScope, undefined, Todo, Todo | null, Todo>({
+      entity: todoEntity,
+      run: async ({ scope, entity }) => {
+        const todo = await todosApi.findOne(scope);
 
-        if (project) {
-          upsertOne(project);
+        if (todo) {
+          entity.upsertOne(todo);
         }
       },
     });
 
-    updateProject = action<TemplateSlug, Project, Project, Project | null, Project>({
-      entity: projectEntity,
-      run: async ({ payload, upsertOne }) => {
-        const updated = await projectsApi.update({ id: payload.id }, payload);
+    updateTodo = action<TodoScope, Todo, Todo, Todo | null, Todo>({
+      entity: todoEntity,
+      run: async ({ payload, entity }) => {
+        const updated = await todosApi.update({ id: payload.id }, payload);
 
         if (updated) {
-          upsertOne(updated, { merge: true });
+          entity.upsertOne(updated, { merge: true });
         }
       },
     });
 
     emitSubscriptionEvent = () => undefined;
     unsubscribeMock = vi.fn();
-    observeMock = vi.fn((observer: ProjectSubscriptionObserver) => {
+    observeMock = vi.fn((observer: TodoSubscriptionObserver) => {
       emitSubscriptionEvent = observer;
     });
 
-    streamRunMock = vi.fn(async ({ scope, refetch, upsertOne }) => {
+    streamRunMock = vi.fn(async ({ scope, entity }) => {
       const subscription = {
         observe: observeMock,
         unsubscribe: unsubscribeMock,
       };
 
-      subscription.observe((event: ProjectSubscriptionEvent) => {
+      subscription.observe((event: TodoSubscriptionEvent) => {
         const { data } = event;
 
         if (!data) {
           return;
         }
 
-        upsertOne(data, { merge: true });
-        void refetch(scope)();
+        entity.upsertOne(data, { merge: true });
+        void readTodo({ listId: scope.listId }).refetch();
       });
 
       return subscription.unsubscribe;
     });
 
-    onProjectUpdated = stream<TemplateSlug, Project, Project, Project | null, Project, undefined, Project | null, Project>({
-      entity: projectEntity,
-      source: readProject,
+    onTodoChanged = stream<TodoScope, Todo, Todo, Todo | null, Todo>({
+      entity: todoEntity,
       run: streamRunMock,
     });
   });
 
   describe('happy', () => {
-    it('should call read api once when project source run is called once', async () => {
-      const projectStore = readProject({ templateId });
+    it('should call read api once when todo source run is called once', async () => {
+      const todoStore = readTodo({ listId });
 
-      await projectStore.run();
+      await todoStore.run();
 
       expect(findOneSpy).toHaveBeenCalledTimes(1);
     });
 
-    it('should call read api with template scope when project source run is called', async () => {
-      const projectStore = readProject({ templateId });
+    it('should call read api with list scope when todo source run is called', async () => {
+      const todoStore = readTodo({ listId });
 
-      await projectStore.run();
+      await todoStore.run();
 
-      expect(findOneSpy).toHaveBeenNthCalledWith(1, { templateId });
+      expect(findOneSpy).toHaveBeenNthCalledWith(1, { listId });
     });
 
     it('should call update api with edited value when action run is called', async () => {
-      const projectStore = readProject({ templateId });
-      const updateProjectStore = updateProject({ templateId });
+      const todoStore = readTodo({ listId });
+      const updateTodoStore = updateTodo({ listId });
 
-      await projectStore.run();
-      await updateProjectStore.run({
-        id: projectId,
-        name: updatedName,
-        templateId,
+      await todoStore.run();
+      await updateTodoStore.run({
+        id: todoId,
+        title: updatedTitle,
+        listId,
       });
 
       expect(updateSpy).toHaveBeenNthCalledWith(
         1,
-        { id: projectId },
-        { id: projectId, name: updatedName, templateId },
+        { id: todoId },
+        { id: todoId, title: updatedTitle, listId },
       );
     });
 
-    it('should reload project source when stream emits update for same template', async () => {
-      const projectStore = readProject({ templateId });
-      const projectUpdatedStream = onProjectUpdated({ templateId });
+    it('should reload todo source when stream emits update for same list', async () => {
+      const todoStore = readTodo({ listId });
+      const todoChangedStream = onTodoChanged({ listId });
 
-      await projectStore.run();
-      projectUpdatedStream.start();
+      await todoStore.run();
+      todoChangedStream.start();
       emitSubscriptionEvent({
-        data: { id: projectId, templateId, name: streamName },
+        data: { id: todoId, listId, title: streamTitle },
       });
       await Promise.resolve();
 
@@ -171,19 +172,19 @@ describe('user example flow', () => {
     });
 
     it('should call stream run once when stream start is called once', () => {
-      const projectUpdatedStream = onProjectUpdated({ templateId });
+      const todoChangedStream = onTodoChanged({ listId });
 
-      projectUpdatedStream.start();
+      todoChangedStream.start();
 
       expect(streamRunMock).toHaveBeenCalledTimes(1);
     });
 
     it('should call stream unsubscribe when stream stop is called', async () => {
-      const projectUpdatedStream = onProjectUpdated({ templateId });
+      const todoChangedStream = onTodoChanged({ listId });
 
-      projectUpdatedStream.start();
+      todoChangedStream.start();
       await Promise.resolve();
-      projectUpdatedStream.stop();
+      todoChangedStream.stop();
 
       expect(unsubscribeMock).toHaveBeenCalledTimes(1);
     });

@@ -1,3 +1,5 @@
+import { Packr } from 'msgpackr';
+
 import {
   type CacheConfig,
   type CacheStorage,
@@ -11,12 +13,14 @@ import {
   createCacheWriteQueue,
   cloneValue,
   createUnitSnapshot,
+  decodeBase64,
   deserializeStructuredValue,
+  encodeBase64,
   notifyEffectListeners,
   resolveInput,
   resolveValue,
   serializeStructuredValue,
-  stableSerialize,
+  serializeKey,
   type EffectListener,
   type InputUpdater,
   type ValueUpdater,
@@ -43,10 +47,12 @@ export interface SourceRunContext<
   scope: TInput;
   payload: TPayload;
   setMeta: (meta: unknown) => void;
-  upsertOne: (input: TEntity, options?: UpsertOptions) => TEntity;
-  upsertMany: (input: readonly TEntity[], options?: UpsertOptions) => readonly TEntity[];
-  removeOne: (id: TEntityId) => boolean;
-  removeMany: (ids: readonly TEntityId[]) => readonly TEntityId[];
+  entity: {
+    upsertOne: (input: TEntity, options?: UpsertOptions) => TEntity;
+    upsertMany: (input: readonly TEntity[], options?: UpsertOptions) => readonly TEntity[];
+    removeOne: (id: TEntityId) => boolean;
+    removeMany: (ids: readonly TEntityId[]) => readonly TEntityId[];
+  };
   getValue: () => RResult;
 }
 
@@ -71,6 +77,11 @@ export interface SourceConfig<
   update?: (current: RResult, update: UUpdate) => RResult;
 }
 
+export interface SourceDraftApi<RResult, UUpdate extends RResult> {
+  set: (input: UUpdate | ValueUpdater<RResult, UUpdate>) => void;
+  clean: () => void;
+}
+
 export interface SourceUnit<
   TInput extends object | undefined,
   TPayload,
@@ -79,20 +90,13 @@ export interface SourceUnit<
 > {
   (payloadInput?: TPayload | InputUpdater<TPayload>): SourceUnit<TInput, TPayload, RResult, UUpdate>;
   ttl: number;
-  draft: DraftMode;
   cacheTtl: CacheTtl;
   destroyDelay: number;
   run: (payloadInput?: TPayload | InputUpdater<TPayload>) => Promise<RResult>;
   get: () => RResult;
-  set: (input: UUpdate | ValueUpdater<RResult, UUpdate>) => void;
-  setDraft: (input: UUpdate | ValueUpdater<RResult, UUpdate>) => void;
-  cleanDraft: () => void;
+  draft: SourceDraftApi<RResult, UUpdate>;
   effect: (listener: EffectListener<RResult>) => (() => void) | void;
-  refetch: (
-    scopeInput?: TInput | InputUpdater<TInput>,
-  ) => (
-    payloadInput?: TPayload | InputUpdater<TPayload>,
-  ) => Promise<RResult>;
+  refetch: (payloadInput?: TPayload | InputUpdater<TPayload>) => Promise<RResult>;
   force: (payloadInput?: TPayload | InputUpdater<TPayload>) => Promise<RResult>;
   stop: () => void;
   destroy: () => void;
@@ -135,7 +139,8 @@ interface SourceUnitInternal<
   scope: TInput;
   payload: TPayload;
   state: SourceUnitState<RResult>;
-  mode: 'raw' | 'one' | 'many';
+  mode: 'one' | 'many';
+  hasEntityValue: boolean;
   membershipIds: readonly TEntityId[];
   listeners: Set<EffectListener<RResult>>;
   inFlight: Promise<RResult> | null;
@@ -154,6 +159,12 @@ const DEFAULT_DESTROY_DELAY = 250;
 const DEFAULT_DRAFT_MODE: DraftMode = 'global';
 const DEFAULT_CACHE_TTL: CacheTtl = 0;
 const DEFAULT_CACHE_KEY_PREFIX = 'livon-sync-source';
+const SOURCE_CACHE_MSGPACK_PREFIX = 'm1:';
+const SOURCE_CACHE_STRUCTURED_PREFIX = 's1:';
+const sourceCachePackr = new Packr({
+  structuredClone: true,
+  moreTypes: true,
+});
 
 interface SourceContext {
   rehydrated: boolean;
@@ -164,10 +175,8 @@ interface SourceContext {
 
 interface SourceCacheRecord<
   TEntity extends object,
-  RResult,
 > {
-  mode: 'raw' | 'one' | 'many';
-  value: RResult;
+  mode: 'one' | 'many';
   entities: readonly TEntity[];
   writtenAt: number;
 }
@@ -197,6 +206,44 @@ interface ReadEntityValueById<TId extends EntityId, TEntity extends object> {
   (id: TId): TEntity | undefined;
 }
 
+const serializeSourceCacheRecord = <TEntity extends object>(
+  record: SourceCacheRecord<TEntity>,
+): string => {
+  try {
+    const packed = sourceCachePackr.pack(record);
+    return `${SOURCE_CACHE_MSGPACK_PREFIX}${encodeBase64(packed)}`;
+  } catch {
+    const structured = serializeStructuredValue({
+      input: record,
+    });
+    return `${SOURCE_CACHE_STRUCTURED_PREFIX}${structured}`;
+  }
+};
+
+const deserializeSourceCacheRecord = <TEntity extends object>(
+  value: string,
+): SourceCacheRecord<TEntity> | undefined => {
+  try {
+    if (value.startsWith(SOURCE_CACHE_MSGPACK_PREFIX)) {
+      const base64Payload = value.slice(SOURCE_CACHE_MSGPACK_PREFIX.length);
+      const decoded = sourceCachePackr.unpack(decodeBase64(base64Payload));
+      if (decoded && typeof decoded === 'object') {
+        return decoded as SourceCacheRecord<TEntity>;
+      }
+      return undefined;
+    }
+
+    if (value.startsWith(SOURCE_CACHE_STRUCTURED_PREFIX)) {
+      const structuredPayload = value.slice(SOURCE_CACHE_STRUCTURED_PREFIX.length);
+      return deserializeStructuredValue<SourceCacheRecord<TEntity>>(structuredPayload);
+    }
+
+    return deserializeStructuredValue<SourceCacheRecord<TEntity>>(value);
+  } catch {
+    return undefined;
+  }
+};
+
 const isEntityValue = <TEntity extends object>(value: unknown): value is TEntity => {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 };
@@ -205,7 +252,7 @@ const isEntityArray = <TEntity extends object>(value: unknown): value is readonl
   return Array.isArray(value);
 };
 
-const getGlobalStorage = (): CacheStorage | undefined => {
+const resolveGlobalStorage = (): CacheStorage | undefined => {
   const maybeStorage = globalThis as { localStorage?: CacheStorage };
   const localStorage = maybeStorage.localStorage;
 
@@ -223,6 +270,8 @@ const getGlobalStorage = (): CacheStorage | undefined => {
 
   return localStorage;
 };
+
+const globalStorage = resolveGlobalStorage();
 
 const resolveCacheTtl = ({
   sourceCache,
@@ -251,7 +300,7 @@ const resolveCacheStorage = ({
     return entityCache.storage;
   }
 
-  return getGlobalStorage();
+  return globalStorage;
 };
 
 const resolveCacheKey = ({
@@ -287,39 +336,31 @@ const isCacheRecordExpired = ({
   return Date.now() - writtenAt > ttl;
 };
 
-const readSourceCacheRecord = <TEntity extends object, RResult>(
+const readSourceCacheRecord = <TEntity extends object>(
   value: string | null,
-): SourceCacheRecord<TEntity, RResult> | undefined => {
+): SourceCacheRecord<TEntity> | undefined => {
   if (!value) {
     return undefined;
   }
 
-  try {
-    const parsed = deserializeStructuredValue<SourceCacheRecord<TEntity, RResult>>(value);
-    if (!parsed || typeof parsed !== 'object') {
-      return undefined;
-    }
-
-    if (
-      parsed.mode !== 'raw'
-      && parsed.mode !== 'one'
-      && parsed.mode !== 'many'
-    ) {
-      return undefined;
-    }
-
-    if (!Array.isArray(parsed.entities)) {
-      return undefined;
-    }
-
-    if (typeof parsed.writtenAt !== 'number') {
-      return undefined;
-    }
-
-    return parsed;
-  } catch {
+  const parsed = deserializeSourceCacheRecord<TEntity>(value);
+  if (!parsed || typeof parsed !== 'object') {
     return undefined;
   }
+
+  if (parsed.mode !== 'one' && parsed.mode !== 'many') {
+    return undefined;
+  }
+
+  if (!Array.isArray(parsed.entities)) {
+    return undefined;
+  }
+
+  if (typeof parsed.writtenAt !== 'number') {
+    return undefined;
+  }
+
+  return parsed;
 };
 
 const getModeValue = <
@@ -333,6 +374,10 @@ const getModeValue = <
   internal: SourceUnitInternal<TInput, TPayload, TEntityId, RResult, UUpdate>,
   readEntityValueById: ReadEntityValueById<TEntityId, TEntity>,
 ): RResult => {
+  if (!internal.hasEntityValue) {
+    return internal.state.value;
+  }
+
   if (internal.mode === 'many') {
     const manyValue = internal.membershipIds
       .map((id) => readEntityValueById(id))
@@ -391,6 +436,52 @@ const isSourceCleanup = <RResult>(
   return typeof input === 'function';
 };
 
+const isRecordValue = (value: unknown): value is Record<string, unknown> => {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+};
+
+const areDraftValuesEqual = (
+  left: unknown,
+  right: unknown,
+): boolean => {
+  if (Object.is(left, right)) {
+    return true;
+  }
+
+  if (Array.isArray(left) && Array.isArray(right)) {
+    if (left.length !== right.length) {
+      return false;
+    }
+
+    return left.every((leftEntry, index) => {
+      const rightEntry = right[index];
+      return areDraftValuesEqual(leftEntry, rightEntry);
+    });
+  }
+
+  if (!isRecordValue(left) || !isRecordValue(right)) {
+    return false;
+  }
+
+  const keys = new Set([...Object.keys(left), ...Object.keys(right)]);
+
+  return Array.from(keys).every((key) => {
+    const hasLeftKey = Object.prototype.hasOwnProperty.call(left, key);
+    const hasRightKey = Object.prototype.hasOwnProperty.call(right, key);
+    if (hasLeftKey !== hasRightKey) {
+      return false;
+    }
+
+    const leftValue = left[key];
+    const rightValue = right[key];
+    if (Object.is(leftValue, rightValue)) {
+      return true;
+    }
+
+    return serializeKey(leftValue) === serializeKey(rightValue);
+  });
+};
+
 export const source = <
   TInput extends object | undefined,
   TPayload = unknown,
@@ -424,7 +515,9 @@ export const source = <
   const cacheKeyPrefix = resolveCacheKey({
     sourceCache: cache,
     entityCache: entity.cache,
-    sourceKey: stableSerialize(run),
+    sourceKey: serializeKey({
+      mode: Array.isArray(defaultValue ?? null) ? 'many' : 'one',
+    }),
   });
 
   const unitsByKey: SourceUnitByKeyMap<TInput, TPayload, TEntityId, RResult, UUpdate> =
@@ -513,7 +606,7 @@ export const source = <
   };
 
   const sourceFactory: Source<TInput, TPayload, RResult, UUpdate> = (scope) => {
-    const key = stableSerialize(scope);
+    const key = serializeKey(scope);
     const existingUnit = unitsByKey.get(key);
 
     if (existingUnit) {
@@ -521,6 +614,7 @@ export const source = <
     }
 
     const initialValue = (defaultValue ?? null) as RResult;
+    const initialMode: 'one' | 'many' = Array.isArray(initialValue) ? 'many' : 'one';
 
     const internal: SourceUnitInternal<TInput, TPayload, TEntityId, RResult, UUpdate> = {
       key,
@@ -528,19 +622,20 @@ export const source = <
       destroyDelay,
       scope,
       payload: undefined as TPayload,
-        state: {
-          value: initialValue,
-          status: 'idle',
-          meta: null,
-          context: {
-            rehydrated: false,
-            refreshing: false,
-            cacheState: cacheStorage ? 'miss' : 'disabled',
-            error: null,
-          },
+      state: {
+        value: initialValue,
+        status: 'idle',
+        meta: null,
+        context: {
+          rehydrated: false,
+          refreshing: false,
+          cacheState: cacheStorage ? 'miss' : 'disabled',
+          error: null,
         },
-        mode: 'raw',
-        membershipIds: [],
+      },
+      mode: initialMode,
+      hasEntityValue: false,
+      membershipIds: [],
       listeners: new Set<EffectListener<RResult>>(),
       inFlight: null,
       inFlightByPayload: new Map<string, Promise<RResult>>(),
@@ -554,17 +649,12 @@ export const source = <
       unit: {} as SourceUnit<TInput, TPayload, RResult, UUpdate>,
     };
 
-      const setRawMode = (): void => {
-        internal.mode = 'raw';
-        internal.membershipIds = [];
-        entity.clearUnitMembership(internal.key);
-      };
-
       const setOneMode = (value: TEntity): void => {
         const id = entity.idOf(value);
         const membershipIds = [id];
 
         internal.mode = 'one';
+        internal.hasEntityValue = true;
         internal.membershipIds = membershipIds;
         entity.setUnitMembership({
           key: internal.key,
@@ -576,6 +666,7 @@ export const source = <
         const membershipIds = value.map((entry) => entity.idOf(entry));
 
         internal.mode = 'many';
+        internal.hasEntityValue = true;
         internal.membershipIds = membershipIds;
         entity.setUnitMembership({
           key: internal.key,
@@ -596,29 +687,26 @@ export const source = <
         && (cacheTtl === 'infinity' || cacheTtl > 0),
       );
 
-      const buildCacheRecord = (): SourceCacheRecord<TEntity, RResult> => {
+      const buildCacheRecord = (): SourceCacheRecord<TEntity> => {
         const entities = internal.membershipIds
           .map((id) => entity.getById(id))
           .filter((entry): entry is TEntity => entry !== undefined);
 
         return {
           mode: internal.mode,
-          value: internal.state.value,
           entities,
           writtenAt: Date.now(),
         };
       };
 
       const writeCacheRecord = (): void => {
-        if (!cacheEnabled || !cacheWriteQueue) {
+        if (!cacheEnabled || !cacheWriteQueue || !internal.hasEntityValue) {
           return;
         }
 
         cacheWriteQueue.enqueueSet(unitCacheKey, () => {
           const record = buildCacheRecord();
-          return serializeStructuredValue({
-            input: record,
-          });
+          return serializeSourceCacheRecord(record);
         });
       };
 
@@ -638,7 +726,7 @@ export const source = <
         }
 
         const rawRecord = cacheStorage.getItem(unitCacheKey);
-        const parsedRecord = readSourceCacheRecord<TEntity, RResult>(rawRecord);
+        const parsedRecord = readSourceCacheRecord<TEntity>(rawRecord);
         if (!parsedRecord) {
           setContext({
             cacheState: 'miss',
@@ -654,16 +742,17 @@ export const source = <
           return;
         }
 
-        if (parsedRecord.mode === 'raw') {
-          setRawMode();
-          internal.state.value = parsedRecord.value;
-        }
-
         if (parsedRecord.mode === 'one') {
           const firstEntity = parsedRecord.entities[0];
+          internal.hasEntityValue = true;
+
           if (firstEntity) {
             const upsertedEntity = entity.upsertOne(firstEntity);
             setOneMode(upsertedEntity);
+            internal.state.value = getModeValue(internal, readEntityValueById);
+          } else {
+            internal.membershipIds = [];
+            entity.clearUnitMembership(internal.key);
             internal.state.value = getModeValue(internal, readEntityValueById);
           }
         }
@@ -709,7 +798,7 @@ export const source = <
         if (hasPayloadInput) {
           internal.payload = nextPayload;
         }
-        const payloadKey = stableSerialize(internal.payload);
+        const payloadKey = serializeKey(internal.payload);
         const inFlightForPayload = internal.inFlightByPayload.get(payloadKey);
         if (inFlightForPayload) {
           return inFlightForPayload;
@@ -724,7 +813,6 @@ export const source = <
         };
 
         if (!isForce && !hasPayloadInput && shouldUseCache(internal)) {
-          internal.state.value = getModeValue(internal, readEntityValueById);
           return Promise.resolve(internal.state.value);
         }
 
@@ -740,60 +828,90 @@ export const source = <
           notifyUnit(internal);
         }
 
-        const runContext: SourceRunContext<TInput, TPayload, TEntity, RResult, TEntityId> = {
+        const upsertOne = (input: TEntity, options?: UpsertOptions): TEntity => {
+          if (!isLatestRun()) {
+            return input;
+          }
+
+          const updated = entity.upsertOne(input, options);
+          setOneMode(updated);
+          internal.state.value = getModeValue(internal, readEntityValueById);
+          return updated;
+        };
+
+        const upsertMany = (
+          input: readonly TEntity[],
+          options?: UpsertOptions,
+        ): readonly TEntity[] => {
+          if (!isLatestRun()) {
+            return input;
+          }
+
+          const updated = entity.upsertMany(input, options);
+          setManyMode(updated);
+          internal.state.value = getModeValue(internal, readEntityValueById);
+          return updated;
+        };
+
+        const removeOne = (id: TEntityId): boolean => {
+          if (!isLatestRun()) {
+            return false;
+          }
+
+          const removed = entity.removeOne(id);
+          internal.state.value = getModeValue(internal, readEntityValueById);
+          return removed;
+        };
+
+        const removeMany = (ids: readonly TEntityId[]): readonly TEntityId[] => {
+          if (!isLatestRun()) {
+            return [];
+          }
+
+          const removedIds = entity.removeMany(ids);
+          internal.state.value = getModeValue(internal, readEntityValueById);
+          return removedIds;
+        };
+
+        const runEntity = {
+          upsertOne,
+          upsertMany,
+          removeOne,
+          removeMany,
+        };
+
+        const runContextBase = {
           scope: internal.scope,
           payload: internal.payload,
-          setMeta: (meta) => {
+          setMeta: (metaInput: unknown) => {
             if (!isLatestRun()) {
               return;
             }
 
-            internal.state.meta = meta;
+            const nextMeta = resolveValue(
+              internal.state.meta,
+              metaInput as ValueUpdater<unknown, unknown>,
+            );
+            if (Object.is(nextMeta, internal.state.meta)) {
+              return;
+            }
+
+            internal.state.meta = nextMeta;
             notifyUnit(internal);
           },
-          upsertOne: (input, options) => {
-            if (!isLatestRun()) {
-              return input;
-            }
-
-            const updated = entity.upsertOne(input, options);
-            setOneMode(updated);
-            internal.state.value = getModeValue(internal, readEntityValueById);
-            return updated;
-          },
-          upsertMany: (input, options) => {
-            if (!isLatestRun()) {
-              return input;
-            }
-
-            const updated = entity.upsertMany(input, options);
-            setManyMode(updated);
-            internal.state.value = getModeValue(internal, readEntityValueById);
-            return updated;
-          },
-          removeOne: (id) => {
-            if (!isLatestRun()) {
-              return false;
-            }
-
-            const removed = entity.removeOne(id);
-            internal.state.value = getModeValue(internal, readEntityValueById);
-            return removed;
-          },
-          removeMany: (ids) => {
-            if (!isLatestRun()) {
-              return [];
-            }
-
-            const removedIds = entity.removeMany(ids);
-            internal.state.value = getModeValue(internal, readEntityValueById);
-            return removedIds;
-          },
+          entity: runEntity,
           getValue: () => {
-            internal.state.value = getModeValue(internal, readEntityValueById);
             return internal.state.value;
           },
         };
+
+        const runContext = runContextBase as SourceRunContext<
+          TInput,
+          TPayload,
+          TEntity,
+          RResult,
+          TEntityId
+        >;
 
         const runPromise: Promise<RResult> = Promise.resolve(run(runContext))
           .then((result) => {
@@ -815,9 +933,6 @@ export const source = <
               }
 
               internal.state.value = getModeValue(internal, readEntityValueById);
-            } else if (result !== undefined) {
-              setRawMode();
-              internal.state.value = result as RResult;
             } else {
               internal.state.value = getModeValue(internal, readEntityValueById);
             }
@@ -865,66 +980,60 @@ export const source = <
       }) as SourceUnit<TInput, TPayload, RResult, UUpdate>;
 
       unit.ttl = ttl;
-      unit.draft = draft;
       unit.cacheTtl = cacheTtl;
       unit.destroyDelay = destroyDelay;
       unit.run = (payloadInput) => executeRun(false, payloadInput);
       unit.get = () => {
-        internal.state.value = getModeValue(internal, readEntityValueById);
         return internal.state.value;
       };
-      unit.set = (input) => {
-        if (internal.destroyed) {
-          return;
-        }
-
-        const nextUpdate = resolveValue(internal.state.value, input);
-        const nextValue = update
-          ? update(internal.state.value, nextUpdate)
-          : nextUpdate;
-
-        setRawMode();
-        internal.state.value = nextValue;
-        notifyUnit(internal);
-        writeCacheRecord();
-      };
-      unit.setDraft = (input) => {
-        if (internal.destroyed || draft === 'off') {
-          return;
-        }
-
-        const previousValue = getModeValue(internal, readEntityValueById);
-        const nextUpdate = resolveValue(cloneValue(previousValue), input);
-
-        if (internal.mode === 'one') {
-          const firstId = internal.membershipIds[0];
-          if (!firstId || !isEntityValue<TEntity>(nextUpdate)) {
+      unit.draft = {
+        set: (input: UUpdate | ValueUpdater<RResult, UUpdate>) => {
+          if (internal.destroyed || draft === 'off') {
             return;
           }
 
-          setDraftById(firstId, cloneValue(nextUpdate));
-          return;
-        }
+          const previousValue = getModeValue(internal, readEntityValueById);
+          const draftSeed = cloneValue(previousValue);
+          const nextUpdate = resolveValue(draftSeed, input);
 
-        if (internal.mode === 'many') {
-          if (!isEntityArray<TEntity>(nextUpdate)) {
+          if (Object.is(nextUpdate, previousValue)) {
             return;
           }
 
-          nextUpdate.forEach((entry) => {
-            const entryId = entity.idOf(entry);
-            setDraftById(entryId, cloneValue(entry));
+          if (areDraftValuesEqual(previousValue, nextUpdate)) {
+            return;
+          }
+
+          if (internal.mode === 'one') {
+            const firstId = internal.membershipIds[0];
+            if (!firstId || !isEntityValue<TEntity>(nextUpdate)) {
+              return;
+            }
+
+            setDraftById(firstId, cloneValue(nextUpdate));
+            return;
+          }
+
+          if (internal.mode === 'many') {
+            if (!isEntityArray<TEntity>(nextUpdate)) {
+              return;
+            }
+
+            nextUpdate.forEach((entry) => {
+              const entryId = entity.idOf(entry);
+              setDraftById(entryId, cloneValue(entry));
+            });
+          }
+        },
+        clean: () => {
+          if (internal.destroyed || draft === 'off') {
+            return;
+          }
+
+          internal.membershipIds.forEach((id) => {
+            clearDraftById(id);
           });
-        }
-      };
-      unit.cleanDraft = () => {
-        if (internal.destroyed || draft === 'off') {
-          return;
-        }
-
-        internal.membershipIds.forEach((id) => {
-          clearDraftById(id);
-        });
+        },
       };
       unit.effect = (listener) => {
         if (internal.destroyed) {
@@ -937,13 +1046,9 @@ export const source = <
           internal.listeners.delete(listener);
         };
       };
-      unit.refetch = (scopeInput) => {
-        return (payloadInput) => {
-          const nextScope = resolveInput(internal.scope, scopeInput);
-          const nextPayload = resolveInput(internal.payload, payloadInput);
-
-          return sourceFactory(nextScope).force(nextPayload);
-        };
+      unit.refetch = (payloadInput) => {
+        const nextPayload = resolveInput(internal.payload, payloadInput);
+        return sourceFactory(internal.scope).force(nextPayload);
       };
       unit.force = (payloadInput) => executeRun(true, payloadInput);
       unit.stop = () => {
@@ -982,6 +1087,20 @@ export const source = <
 
         unitsByKey.delete(internal.key);
       };
+
+      Object.defineProperty(unit, 'getSnapshot', {
+        configurable: false,
+        enumerable: false,
+        writable: false,
+        value: () => {
+          return createUnitSnapshot({
+            value: internal.state.value,
+            status: internal.state.status,
+            meta: internal.state.meta,
+            context: internal.state.context,
+          });
+        },
+      });
 
       internal.unit = unit;
       unitsByKey.set(key, internal);

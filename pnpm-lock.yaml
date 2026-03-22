@@ -421,6 +421,10 @@ importers:
         version: 4.0.18(@types/node@25.2.2)(jiti@2.6.1)(jsdom@29.0.1)(terser@5.46.0)
 
   packages/sync:
+    dependencies:
+      msgpackr:
+        specifier: 1.11.8
+        version: 1.11.8
     devDependencies:
       '@livon/config':
         specifier: workspace:*

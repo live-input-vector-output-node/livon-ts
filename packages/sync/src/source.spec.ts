@@ -32,8 +32,8 @@ describe('source()', () => {
     slugId = randomNumber();
     searchValue = randomString({ prefix: 'search' });
 
-    runMock = vi.fn(async ({ payload, upsertMany }) => {
-      upsertMany([{ id: payload.search, name: payload.search }]);
+    runMock = vi.fn(async ({ payload, entity }) => {
+      entity.upsertMany([{ id: payload.search, name: payload.search }]);
     });
 
     usersEntity = entity<User>({
@@ -97,10 +97,11 @@ describe('source()', () => {
       expect(typeof usersStore.get).toBe('function');
     });
 
-    it('should expose set function when source unit is created', () => {
+    it('should not expose top-level set function when source unit is created', () => {
       const usersStore = readUsers({ slugId });
+      const usersStoreApi = usersStore as unknown as Record<string, unknown>;
 
-      expect(typeof usersStore.set).toBe('function');
+      expect(usersStoreApi.set).toBeUndefined();
     });
 
     it('should expose effect function when source unit is created', () => {
@@ -141,32 +142,13 @@ describe('source()', () => {
       expect(usersStore.get()).toEqual([{ id: searchValue, name: searchValue }]);
     });
 
-    it('should notify effect listener when set is called', () => {
+    it('should expose draft api when source unit is created', () => {
       const usersStore = readUsers({ slugId });
-      const listener = vi.fn();
-      const firstSetId = randomString({ prefix: 'set-id' });
-      const firstSetName = randomString({ prefix: 'set-name' });
+      const usersStoreApi = usersStore as unknown as Record<string, unknown>;
+      const draftApi = usersStoreApi.draft as Record<string, unknown> | undefined;
 
-      usersStore.effect(listener);
-      usersStore.set([{ id: firstSetId, name: firstSetName }]);
-
-      expect(listener).toHaveBeenCalledTimes(1);
-    });
-
-    it('should update value when set receives callback', () => {
-      const usersStore = readUsers({ slugId });
-      const firstSetId = randomString({ prefix: 'set-id' });
-      const firstSetName = randomString({ prefix: 'set-name' });
-      const secondSetId = randomString({ prefix: 'set-id' });
-      const secondSetName = randomString({ prefix: 'set-name' });
-
-      usersStore.set([{ id: firstSetId, name: firstSetName }]);
-      usersStore.set((oldValue) => [...oldValue, { id: secondSetId, name: secondSetName }]);
-
-      expect(usersStore.get()).toEqual([
-        { id: firstSetId, name: firstSetName },
-        { id: secondSetId, name: secondSetName },
-      ]);
+      expect(typeof draftApi?.set).toBe('function');
+      expect(typeof draftApi?.clean).toBe('function');
     });
   });
 });

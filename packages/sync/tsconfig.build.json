@@ -6,6 +6,8 @@
     "node_modules",
     "src/**/*.spec.*",
     "src/**/*.test.*",
+    "src/**/*.bench.*",
+    "src/**/*.benchmark.*",
     "src/**/__mocks__/**",
     "src/**/mocks/**",
     "src/**/testing/**",

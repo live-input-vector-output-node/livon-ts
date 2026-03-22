@@ -4,12 +4,11 @@ import {
   notifyEffectListeners,
   resolveInput,
   resolveValue,
-  stableSerialize,
+  serializeKey,
   type EffectListener,
   type InputUpdater,
   type ValueUpdater,
 } from './utils/index.js';
-import { type Source } from './source.js';
 
 export interface StreamCleanup {
   (): void;
@@ -18,8 +17,6 @@ export interface StreamCleanup {
 export interface StreamRunContext<
   TInput,
   TPayload,
-  TSourcePayload,
-  TSourceResult,
   TEntity extends object,
   RResult,
   TEntityId extends EntityId = string,
@@ -27,15 +24,12 @@ export interface StreamRunContext<
   scope: TInput;
   payload: TPayload;
   setMeta: (meta: unknown) => void;
-  upsertOne: (input: TEntity, options?: UpsertOptions) => TEntity;
-  upsertMany: (input: readonly TEntity[], options?: UpsertOptions) => readonly TEntity[];
-  removeOne: (id: TEntityId) => boolean;
-  removeMany: (ids: readonly TEntityId[]) => readonly TEntityId[];
-  refetch: (
-    scopeInput?: TInput | InputUpdater<TInput>,
-  ) => (
-    payloadInput?: TSourcePayload | InputUpdater<TSourcePayload>,
-  ) => Promise<TSourceResult>;
+  entity: {
+    upsertOne: (input: TEntity, options?: UpsertOptions) => TEntity;
+    upsertMany: (input: readonly TEntity[], options?: UpsertOptions) => readonly TEntity[];
+    removeOne: (id: TEntityId) => boolean;
+    removeMany: (ids: readonly TEntityId[]) => readonly TEntityId[];
+  };
   getValue: () => RResult;
 }
 
@@ -47,20 +41,14 @@ export interface StreamConfig<
   TEntity extends object,
   RResult,
   UUpdate extends RResult,
-  TSourcePayload = unknown,
-  TSourceResult = unknown,
-  TSourceUpdate extends TSourceResult = TSourceResult,
   TEntityId extends EntityId = string,
 > {
   entity: Entity<TEntity, TEntityId>;
   destroyDelay?: number;
-  source?: Source<TInput, TSourcePayload, TSourceResult, TSourceUpdate>;
   run: (
     context: StreamRunContext<
       TInput,
       TPayload,
-      TSourcePayload,
-      TSourceResult,
       TEntity,
       RResult,
       TEntityId
@@ -120,7 +108,8 @@ interface StreamUnitInternal<
   destroyDelay: number;
   scope: TInput;
   payload: TPayload;
-  mode: 'raw' | 'one' | 'many';
+  mode: 'one' | 'many';
+  hasEntityValue: boolean;
   membershipIds: readonly TEntityId[];
   state: StreamUnitState<RResult>;
   listeners: Set<EffectListener<RResult>>;
@@ -138,6 +127,12 @@ const isStreamCleanup = <RResult>(
   return typeof input === 'function';
 };
 
+const isEntityValue = <TEntity extends object>(
+  value: unknown,
+): value is TEntity => {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+};
+
 const getModeValue = <
   TInput extends object | undefined,
   TPayload,
@@ -149,6 +144,10 @@ const getModeValue = <
   internal: StreamUnitInternal<TInput, TPayload, TEntityId, RResult, UUpdate>,
   entityStore: Entity<TEntity, TEntityId>,
 ): RResult => {
+  if (!internal.hasEntityValue) {
+    return internal.state.value;
+  }
+
   if (internal.mode === 'many') {
     const manyValue = internal.membershipIds
       .map((id) => entityStore.getById(id))
@@ -173,14 +172,10 @@ export const stream = <
   TEntity extends object = object,
   RResult = unknown,
   UUpdate extends RResult = RResult,
-  TSourcePayload = unknown,
-  TSourceResult = unknown,
-  TSourceUpdate extends TSourceResult = TSourceResult,
   TEntityId extends EntityId = string,
 >({
   entity,
   destroyDelay = entity.destroyDelay ?? DEFAULT_DESTROY_DELAY,
-  source,
   run,
   defaultValue,
   update,
@@ -190,9 +185,6 @@ export const stream = <
   TEntity,
   RResult,
   UUpdate,
-  TSourcePayload,
-  TSourceResult,
-  TSourceUpdate,
   TEntityId
 >,
 ): Stream<TInput, TPayload, RResult, UUpdate> => {
@@ -216,7 +208,7 @@ export const stream = <
   };
 
   const streamFactory: Stream<TInput, TPayload, RResult, UUpdate> = (scope) => {
-    const key = stableSerialize(scope);
+    const key = serializeKey(scope);
     const existingUnit = unitsByKey.get(key);
 
     if (existingUnit) {
@@ -224,39 +216,35 @@ export const stream = <
     }
 
     const initialValue = (defaultValue ?? null) as RResult;
+    const initialMode: 'one' | 'many' = Array.isArray(initialValue) ? 'many' : 'one';
 
     const internal: StreamUnitInternal<TInput, TPayload, TEntityId, RResult, UUpdate> = {
       key,
       destroyDelay,
       scope,
       payload: undefined as TPayload,
-        mode: 'raw',
-        membershipIds: [],
-        state: {
-          value: initialValue,
-          status: 'idle',
-          meta: null,
-          context: null,
-        },
-        listeners: new Set<EffectListener<RResult>>(),
-        stopCallback: null,
-        started: false,
-        destroyed: false,
+      mode: initialMode,
+      hasEntityValue: false,
+      membershipIds: [],
+      state: {
+        value: initialValue,
+        status: 'idle',
+        meta: null,
+        context: null,
+      },
+      listeners: new Set<EffectListener<RResult>>(),
+      stopCallback: null,
+      started: false,
+      destroyed: false,
       unit: {} as StreamUnit<TPayload, RResult, UUpdate>,
     };
-    let sourcePayload: TSourcePayload | undefined;
-
-      const setRawMode = (): void => {
-        internal.mode = 'raw';
-        internal.membershipIds = [];
-        entity.clearUnitMembership(internal.key);
-      };
 
       const setOneMode = (value: TEntity): void => {
         const id = entity.idOf(value);
         const membershipIds = [id];
 
         internal.mode = 'one';
+        internal.hasEntityValue = true;
         internal.membershipIds = membershipIds;
         entity.setUnitMembership({
           key: internal.key,
@@ -268,6 +256,7 @@ export const stream = <
         const membershipIds = value.map((entry) => entity.idOf(entry));
 
         internal.mode = 'many';
+        internal.hasEntityValue = true;
         internal.membershipIds = membershipIds;
         entity.setUnitMembership({
           key: internal.key,
@@ -295,77 +284,71 @@ export const stream = <
         internal.state.context = null;
         notifyUnit(internal);
 
-        const runContext: StreamRunContext<
-          TInput,
-          TPayload,
-          TSourcePayload,
-          TSourceResult,
-          TEntity,
-          RResult,
-          TEntityId
-        > = {
+        const upsertOne = (input: TEntity, options?: UpsertOptions): TEntity => {
+          const updated = entity.upsertOne(input, options);
+          setOneMode(updated);
+          internal.state.value = getModeValue(internal, entity);
+          return updated;
+        };
+
+        const upsertMany = (
+          input: readonly TEntity[],
+          options?: UpsertOptions,
+        ): readonly TEntity[] => {
+          const updated = entity.upsertMany(input, options);
+          setManyMode(updated);
+          internal.state.value = getModeValue(internal, entity);
+          return updated;
+        };
+
+        const removeOne = (id: TEntityId): boolean => {
+          const removed = entity.removeOne(id);
+          internal.state.value = getModeValue(internal, entity);
+          return removed;
+        };
+
+        const removeMany = (ids: readonly TEntityId[]): readonly TEntityId[] => {
+          const removedIds = entity.removeMany(ids);
+          internal.state.value = getModeValue(internal, entity);
+          return removedIds;
+        };
+
+        const runEntity = {
+          upsertOne,
+          upsertMany,
+          removeOne,
+          removeMany,
+        };
+
+        const runContextBase = {
           scope: internal.scope,
           payload: eventPayload,
-          setMeta: (meta) => {
-            internal.state.meta = meta;
+          setMeta: (metaInput: unknown) => {
+            const nextMeta = resolveValue(
+              internal.state.meta,
+              metaInput as ValueUpdater<unknown, unknown>,
+            );
+            if (Object.is(nextMeta, internal.state.meta)) {
+              return;
+            }
+
+            internal.state.meta = nextMeta;
             notifyUnit(internal);
           },
-          upsertOne: (input, options) => {
-            const updated = entity.upsertOne(input, options);
-            setOneMode(updated);
-            internal.state.value = getModeValue(internal, entity);
-            return updated;
-          },
-          upsertMany: (input, options) => {
-            const updated = entity.upsertMany(input, options);
-            setManyMode(updated);
-            internal.state.value = getModeValue(internal, entity);
-            return updated;
-          },
-          removeOne: (id) => {
-            const removed = entity.removeOne(id);
-            internal.state.value = getModeValue(internal, entity);
-            return removed;
-          },
-          removeMany: (ids) => {
-            const removedIds = entity.removeMany(ids);
-            internal.state.value = getModeValue(internal, entity);
-            return removedIds;
-          },
-          refetch: (scopeInput) => {
-            return (payloadInput) => {
-              if (!source) {
-                return Promise.resolve(undefined as TSourceResult);
-              }
-
-              const nextScope = resolveInput(internal.scope, scopeInput);
-
-              if (payloadInput === undefined) {
-                if (sourcePayload === undefined) {
-                  return source(nextScope).force();
-                }
-
-                return source(nextScope).force(sourcePayload);
-              }
-
-              if (typeof payloadInput === 'function') {
-                if (sourcePayload === undefined) {
-                  return source(nextScope).force();
-                }
-
-                sourcePayload = resolveInput(sourcePayload, payloadInput);
-                return source(nextScope).force(sourcePayload);
-              }
-
-              sourcePayload = payloadInput;
-              return source(nextScope).force(sourcePayload);
-            };
-          },
+          entity: runEntity,
           getValue: () => {
             internal.state.value = getModeValue(internal, entity);
             return internal.state.value;
           },
         };
+
+        const runContext = runContextBase as StreamRunContext<
+          TInput,
+          TPayload,
+          TEntity,
+          RResult,
+          TEntityId
+        >;
 
         return Promise.resolve(run(runContext))
           .then((result) => {
@@ -384,12 +367,7 @@ export const stream = <
               return internal.state.value;
             }
 
-            if (result !== undefined) {
-              setRawMode();
-              internal.state.value = result as RResult;
-            } else {
-              internal.state.value = getModeValue(internal, entity);
-            }
+            internal.state.value = getModeValue(internal, entity);
 
             internal.state.status = 'success';
             internal.state.context = null;
@@ -442,19 +420,49 @@ export const stream = <
       internal.state.value = getModeValue(internal, entity);
       return internal.state.value;
     };
-    unit.set = (input) => {
-      if (internal.destroyed) {
-        return;
-      }
+      unit.set = (input) => {
+        if (internal.destroyed) {
+          return;
+        }
 
-      const nextUpdate = resolveValue(internal.state.value, input);
-      const nextValue = update
-        ? update(internal.state.value, nextUpdate)
-        : nextUpdate;
+        const currentValue = getModeValue(internal, entity);
+        internal.state.value = currentValue;
+        const nextUpdate = resolveValue(currentValue, input);
+        const nextValue = update
+          ? update(currentValue, nextUpdate)
+          : nextUpdate;
+        if (Object.is(nextValue, currentValue)) {
+          return;
+        }
 
-      setRawMode();
-      internal.state.value = nextValue;
-      notifyUnit(internal);
+        if (Array.isArray(nextValue)) {
+          if (nextValue.length === 0) {
+            internal.hasEntityValue = true;
+            internal.membershipIds = [];
+            entity.clearUnitMembership(internal.key);
+            internal.state.value = getModeValue(internal, entity);
+            notifyUnit(internal);
+            return;
+          }
+
+          setManyMode(nextValue as readonly TEntity[]);
+          entity.upsertMany(nextValue as readonly TEntity[]);
+          return;
+        }
+
+        if (isEntityValue<TEntity>(nextValue)) {
+          setOneMode(nextValue);
+          entity.upsertOne(nextValue);
+          return;
+        }
+
+        if (nextValue === null || nextValue === undefined) {
+          internal.hasEntityValue = true;
+          internal.membershipIds = [];
+          entity.clearUnitMembership(internal.key);
+          internal.state.value = getModeValue(internal, entity);
+          notifyUnit(internal);
+        }
     };
     unit.effect = (listener) => {
       if (internal.destroyed) {
@@ -478,6 +486,21 @@ export const stream = <
       internal.listeners.clear();
       unitsByKey.delete(internal.key);
     };
+
+    Object.defineProperty(unit, 'getSnapshot', {
+      configurable: false,
+      enumerable: false,
+      writable: false,
+      value: () => {
+        internal.state.value = getModeValue(internal, entity);
+        return createUnitSnapshot({
+          value: internal.state.value,
+          status: internal.state.status,
+          meta: internal.state.meta,
+          context: internal.state.context,
+        });
+      },
+    });
 
       internal.unit = unit;
       unitsByKey.set(key, internal);
