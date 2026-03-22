@@ -4,8 +4,9 @@
 
 
 [![npm](https://img.shields.io/npm/v/%40livon%2Fclient)](https://www.npmjs.com/package/@livon/client)
-[![Package Size](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Flive-input-vector-output-node%2Flivon-ts%2Fmain%2F.github%2Fbadges%2Fsize-client.json)](https://www.npmjs.com/package/@livon/client)
-[![Security Scorecard](https://api.scorecard.dev/projects/github.com/live-input-vector-output-node/livon-ts/badge)](https://scorecard.dev/viewer/?uri=github.com/live-input-vector-output-node/livon-ts)
+[![package size](https://img.shields.io/npm/unpacked-size/%40livon%2Fclient?label=package%20size)](https://www.npmjs.com/package/@livon/client)
+[![dependencies](https://img.shields.io/librariesio/release/npm/%40livon%2Fclient?label=dependencies)](https://libraries.io/npm/%40livon%2Fclient)
+[![license](https://img.shields.io/github/license/live-input-vector-output-node/livon-ts)](https://github.com/live-input-vector-output-node/livon-ts)
 [![CI](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml/badge.svg)](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml)
 
 ## Purpose

@@ -4,8 +4,9 @@ sidebar_position: 8
 ---
 
 [![npm](https://img.shields.io/npm/v/%40livon%2Fcli)](https://www.npmjs.com/package/@livon/cli)
-[![Package Size](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Flive-input-vector-output-node%2Flivon-ts%2Fmain%2F.github%2Fbadges%2Fsize-cli.json)](https://www.npmjs.com/package/@livon/cli)
-[![Security Scorecard](https://api.scorecard.dev/projects/github.com/live-input-vector-output-node/livon-ts/badge)](https://scorecard.dev/viewer/?uri=github.com/live-input-vector-output-node/livon-ts)
+[![package size](https://img.shields.io/npm/unpacked-size/%40livon%2Fcli?label=package%20size)](https://www.npmjs.com/package/@livon/cli)
+[![dependencies](https://img.shields.io/librariesio/release/npm/%40livon%2Fcli?label=dependencies)](https://libraries.io/npm/%40livon%2Fcli)
+[![license](https://img.shields.io/github/license/live-input-vector-output-node/livon-ts)](https://github.com/live-input-vector-output-node/livon-ts)
 [![CI](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml/badge.svg)](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml)
 
 ## Purpose

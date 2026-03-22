@@ -42,6 +42,16 @@
       "id": "@livon/cli",
       "source": "website/docs/packages/cli.md",
       "target": "packages/cli/README.md"
+    },
+    {
+      "id": "@livon/sync",
+      "source": "website/docs/packages/sync.md",
+      "target": "packages/sync/README.md"
+    },
+    {
+      "id": "@livon/react",
+      "source": "website/docs/packages/react.md",
+      "target": "packages/react/README.md"
     }
   ]
 }
