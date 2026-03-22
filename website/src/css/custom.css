@@ -35,6 +35,8 @@
   --livon-inline-code-bg: #e2dcfb;
   --livon-inline-code-color: #2f2557;
   --livon-code-block-bg: #efebff;
+  --livon-tech-chip-bg: rgba(119, 86, 255, 0.08);
+  --livon-badge-gap: 4px;
   --livon-chevron-cut: 8px;
   --docusaurus-highlighted-code-line-bg: rgba(119, 86, 255, 0.14);
   --ifm-global-shadow-lw: none;
@@ -117,6 +119,7 @@ html {
   --livon-inline-code-bg: #4b3e74;
   --livon-inline-code-color: #f7f3ff;
   --livon-code-block-bg: #120d22;
+  --livon-tech-chip-bg: rgba(223, 212, 255, 0.12);
   --ifm-table-border-color: transparent;
   --ifm-hover-overlay: rgba(255, 255, 255, 0.14);
   --docusaurus-highlighted-code-line-bg: rgba(223, 212, 255, 0.18);
@@ -215,6 +218,138 @@ html {
 
 .theme-doc-toc-mobile {
   margin-bottom: 0.9rem;
+}
+
+.livon-badge-section + .livon-badge-section {
+  margin-top: 1.4rem;
+}
+
+.livon-badge-strip {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--livon-badge-gap);
+  justify-content: center;
+  margin: 0 0 var(--livon-badge-gap);
+}
+
+.livon-badge-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin: 0;
+  max-width: none;
+  align-items: stretch;
+  width: 100%;
+}
+
+@media (min-width: 640px) {
+  .livon-badge-grid {
+    --livon-badge-card-basis: calc((100% - 1rem) / 2);
+  }
+}
+
+@media (min-width: 960px) {
+  .livon-badge-grid {
+    --livon-badge-card-basis: calc((100% - 2rem) / 3);
+  }
+}
+
+@media (min-width: 1280px) {
+  .livon-badge-grid {
+    --livon-badge-card-basis: calc((100% - 3rem) / 4);
+  }
+}
+
+.livon-badge-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  height: 100%;
+  flex: 1 1 100%;
+  min-width: 0;
+  padding: 1rem 1.05rem 1.1rem;
+  background: var(--ifm-background-surface-color);
+  clip-path: var(--livon-octagon-shape-sm);
+  width: 100%;
+}
+
+.livon-badge-grid > .livon-badge-card {
+  flex-basis: var(--livon-badge-card-basis, 100%);
+}
+
+.livon-badge-card-title {
+  margin: 0;
+  color: var(--ifm-heading-color);
+  font-size: 1rem;
+  line-height: 1.2;
+}
+
+.livon-badge-card-title code {
+  display: inline-block;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.livon-badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--livon-badge-gap);
+  align-items: center;
+}
+
+.livon-tech-row {
+  gap: var(--livon-badge-gap);
+  font-size: 0.8rem;
+  line-height: 1.15;
+}
+
+.livon-tech-row code {
+  background: var(--livon-tech-chip-bg) !important;
+  border-radius: 999px !important;
+  clip-path: none !important;
+  color: var(--ifm-toc-link-color) !important;
+  font-size: 0.92em;
+  overflow-wrap: anywhere;
+  padding: 0.08rem 0.5rem;
+  white-space: normal;
+}
+
+.livon-tech-row a {
+  color: inherit;
+  display: inline-flex;
+  text-decoration: none;
+}
+
+.livon-tech-row a:focus-visible code,
+.livon-tech-row a:hover code {
+  background: color-mix(in srgb, var(--livon-tech-chip-bg) 70%, var(--ifm-color-primary) 30%) !important;
+}
+
+.livon-badge-image {
+  display: block;
+  max-width: 100%;
+}
+
+.livon-badge-row--secondary {
+  margin-top: var(--livon-badge-gap);
+}
+
+.livon-tech-meta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--livon-badge-gap);
+  margin-top: auto;
+  padding-top: 0.6rem;
+}
+
+.livon-tech-label {
+  color: var(--ifm-toc-link-color);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  line-height: 1;
+  text-transform: uppercase;
 }
 
 .pagination-nav__link {

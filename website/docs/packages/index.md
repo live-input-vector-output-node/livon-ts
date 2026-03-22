@@ -4,7 +4,7 @@ sidebar_position: 1
 ---
 
 LIVON packages live under `packages/*` and are documented here.
-Use this page to choose the right package set for runtime, transport, reliability, and tooling.
+Use this page to choose the right package set for runtime, transport, framework adapters, reliability, and tooling.
 
 ## Module formats
 
@@ -29,6 +29,14 @@ const {runtime: runtimeCjs} = require('@livon/runtime');
 5. [@livon/node-ws-transport](node-ws-transport)
 6. [@livon/sync](sync)
 7. [@livon/react](react)
+
+## Framework adapter boundary
+
+`@livon/sync` is the shared sync core that keeps state, caching, and tracking framework-agnostic.
+`@livon/react` is the React framework adapter that consumes tracked sync units.
+
+- Keep shared sync behavior in `@livon/sync`.
+- Keep React-only integration in `@livon/react`.
 
 ## Reliability and tooling
 

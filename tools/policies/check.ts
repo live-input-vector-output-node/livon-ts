@@ -5,6 +5,7 @@ import { runAiInstructionHierarchyCheck } from './src/checks/check-ai-instructio
 import { runAiMarkdownNamingCheck } from './src/checks/check-ai-markdown-naming.ts';
 import { runAiRoutingConfigCheck } from './src/checks/check-ai-routing-config.ts';
 import { runCoreFrameworkSeparationCheck } from './src/checks/check-core-framework-separation.ts';
+import { runDocRelatedLibraryLinksCheck } from './src/checks/check-doc-related-library-links.ts';
 import { runLinksCheck } from './src/checks/check-links.ts';
 import { runLintWarningBudgetCheck } from './src/checks/check-lint-warning-budget.ts';
 import { runMultiAgentCouncilCheck } from './src/checks/check-multi-agent-council.ts';
@@ -61,6 +62,7 @@ const run = async (): Promise<void> => {
     runCoreFrameworkSeparationCheck,
     runPackageResponsibilityBoundariesCheck,
     runLintWarningBudgetCheck,
+    runDocRelatedLibraryLinksCheck,
     runLinksCheck,
   ];
 

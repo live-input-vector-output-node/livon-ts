@@ -74,6 +74,7 @@ pnpm qg
 
 `qg` runs the full repository gate set via Turbo:
 `check:readmes`, `check:policies`, `lint`, `typecheck`, `test`, `build`.
+`check:policies` also enforces the linked related-library chip format in docs and overviews.
 
 For fast local loops, run only affected scope with the same gate graph:
 
@@ -125,6 +126,10 @@ Coverage example:
 ```sh
 pnpm -C packages/schema exec vitest run -c vitest.unit.config.ts --coverage
 ```
+
+The coverage workflow uses the same Vitest coverage format and publishes the
+resulting `lcov.info` reports to Codecov and Coveralls after CI succeeds on
+`main`.
 
 Packages without test files currently return `No test files found` for direct `test:unit` calls.
 For local verification in those packages, use:
@@ -189,6 +194,7 @@ Use Turborepo as the monorepo execution layer:
 - Root quality-gate and verification scripts should use concise log output by default and reserve full logs for explicit debugging reruns.
 - Shared automation belongs in dedicated workspace packages (for example `tools/policies`, `tools/gen`, `tools/release`).
 - Package README synchronization is owned by `tools/readmes` and sourced from `website/docs/packages/*.md`.
+- Related-library chips in docs and overview pages must be linked code chips: internal `@livon/*` entries point to package docs pages, external libraries point to npm package pages.
 - Publish-time package manifest cleanup is owned by `tools/release`; published tarballs must not ship `devDependencies`, local `development` export conditions, or unresolved `workspace:*` ranges.
 - GitHub Actions used across multiple `.github/workflows/*.yml` files must use one consistent version per action. When updating workflow actions, align all workflows to the newest compatible version.
 - Lint warning budgets are centralized in `configs/quality/lint-warning-budgets.json`; `eslint` scripts must use `--max-warnings` values from that file to prevent warning regressions.
