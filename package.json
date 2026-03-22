@@ -3,7 +3,10 @@
   "private": true,
   "packageManager": "pnpm@9.0.0",
   "license": "MIT",
-  "author": "cr15p1 <62719241+cr15p1@users.noreply.github.com>",
+  "author": {
+    "name": "LIVON",
+    "url": "https://livon.tech"
+  },
   "contributors": [
     "cr15p1 <62719241+cr15p1@users.noreply.github.com>"
   ],
