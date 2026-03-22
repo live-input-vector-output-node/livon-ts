@@ -4,6 +4,10 @@ export { cloneValue } from './cloneValue.js';
 export { resolveInput } from './resolveInput.js';
 export { resolveValue } from './resolveValue.js';
 export { scheduleAsync } from './scheduleAsync.js';
+export {
+  deserializeStructuredValue,
+  serializeStructuredValue,
+} from './structuredSerialization.js';
 export { createUnitSnapshot } from './createUnitSnapshot.js';
 export { notifyEffectListeners } from './notifyEffectListeners.js';
 

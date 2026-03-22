@@ -11,9 +11,11 @@ import {
   createCacheWriteQueue,
   cloneValue,
   createUnitSnapshot,
+  deserializeStructuredValue,
   notifyEffectListeners,
   resolveInput,
   resolveValue,
+  serializeStructuredValue,
   stableSerialize,
   type EffectListener,
   type InputUpdater,
@@ -285,7 +287,7 @@ const isCacheRecordExpired = ({
   return Date.now() - writtenAt > ttl;
 };
 
-const parseSourceCacheRecord = <TEntity extends object, RResult>(
+const readSourceCacheRecord = <TEntity extends object, RResult>(
   value: string | null,
 ): SourceCacheRecord<TEntity, RResult> | undefined => {
   if (!value) {
@@ -293,7 +295,7 @@ const parseSourceCacheRecord = <TEntity extends object, RResult>(
   }
 
   try {
-    const parsed = JSON.parse(value) as SourceCacheRecord<TEntity, RResult>;
+    const parsed = deserializeStructuredValue<SourceCacheRecord<TEntity, RResult>>(value);
     if (!parsed || typeof parsed !== 'object') {
       return undefined;
     }
@@ -614,7 +616,9 @@ export const source = <
 
         cacheWriteQueue.enqueueSet(unitCacheKey, () => {
           const record = buildCacheRecord();
-          return JSON.stringify(record);
+          return serializeStructuredValue({
+            input: record,
+          });
         });
       };
 
@@ -634,7 +638,7 @@ export const source = <
         }
 
         const rawRecord = cacheStorage.getItem(unitCacheKey);
-        const parsedRecord = parseSourceCacheRecord<TEntity, RResult>(rawRecord);
+        const parsedRecord = readSourceCacheRecord<TEntity, RResult>(rawRecord);
         if (!parsedRecord) {
           setContext({
             cacheState: 'miss',
