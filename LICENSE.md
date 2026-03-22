@@ -19,14 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
-## Package-specific license references
-
-- Some packages may provide additional or package-specific license files, e.g.:
-  - `packages/server-ws-transport/LICENSE.md`
-- Third-party dependency notices are maintained per package where required, e.g.:
-  - `packages/runtime/THIRD_PARTY_NOTICES.md`
-  - `packages/cli/THIRD_PARTY_NOTICES.md`
-  - `packages/client-ws-transport/THIRD_PARTY_NOTICES.md`
-  - `packages/server-ws-transport/THIRD_PARTY_NOTICES.md`
-

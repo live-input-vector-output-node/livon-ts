@@ -28,6 +28,10 @@
     "THIRD_PARTY_NOTICES.md"
   ],
   "license": "MIT",
+  "author": "cr15p1 <62719241+cr15p1@users.noreply.github.com>",
+  "contributors": [
+    "cr15p1 <62719241+cr15p1@users.noreply.github.com>"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/live-input-vector-output-node/livon-ts.git",

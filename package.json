@@ -3,6 +3,10 @@
   "private": true,
   "packageManager": "pnpm@9.0.0",
   "license": "MIT",
+  "author": "cr15p1 <62719241+cr15p1@users.noreply.github.com>",
+  "contributors": [
+    "cr15p1 <62719241+cr15p1@users.noreply.github.com>"
+  ],
   "scripts": {
     "build": "turbo run build",
     "ci": "turbo run ci --output-logs=errors-only",
