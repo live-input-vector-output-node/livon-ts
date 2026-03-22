@@ -8,7 +8,7 @@ export const runLinksCheck = async (context: PolicyContext): Promise<PolicyCheck
     verbose: false,
   });
 
-  const warnings = result.externalRestricted.map(
+  const warnings = [...result.externalBroken, ...result.externalRestricted].map(
     (entry) => `${entry.url}: status ${entry.statusCode}`,
   );
 
@@ -22,7 +22,9 @@ export const runLinksCheck = async (context: PolicyContext): Promise<PolicyCheck
 
   return {
     id: 'links',
-    errors: result.errors,
+    errors: result.localErrors.map(
+      (issue) => `${issue.source}:${issue.line} [${issue.kind}] -> ${issue.target}`,
+    ),
     warnings,
     info,
   };
