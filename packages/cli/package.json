@@ -3,6 +3,7 @@
   "version": "0.27.0-rc.5",
   "private": false,
   "type": "module",
+  "description": "CLI for LIVON client sync and generated API workflows.",
   "publishConfig": {
     "access": "public"
   },
@@ -14,25 +15,37 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
-    },
-    "./mini": {
-      "types": "./dist/mini/index.d.ts",
-      "import": "./dist/mini/index.js",
-      "require": "./dist/mini/index.cjs"
     }
   },
   "files": [
     "bin",
     "dist",
-    "LICENCE.md",
+    "README.md",
+    "LICENSE.md",
     "THIRD_PARTY_NOTICES.md"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/live-input-vector-output-node/livon-ts.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://livon.tech/docs/packages/cli",
+  "bugs": {
+    "url": "https://github.com/live-input-vector-output-node/livon-ts/issues"
+  },
+  "keywords": [
+    "livon",
+    "cli",
+    "sync",
+    "codegen",
+    "typescript"
   ],
   "bin": {
     "livon": "bin/livon.js"
   },
   "scripts": {
     "build": "rslib build",
-    "postbuild": "rslib build -c rslib.mini.config.ts",
     "build:watch": "rslib dev",
     "dev": "true",
     "lint": "eslint . --max-warnings 7",
@@ -42,11 +55,10 @@
     "test:integration": "true"
   },
   "dependencies": {
-    "@rslib/core": "latest",
+    "@rslib/core": "0.19.5",
     "@livon/client": "workspace:*",
-    "@livon/config": "workspace:*",
-    "msgpackr": "latest",
-    "ws": "latest"
+    "msgpackr": "1.11.8",
+    "ws": "8.19.0"
   },
   "devDependencies": {
     "@types/ws": "latest",

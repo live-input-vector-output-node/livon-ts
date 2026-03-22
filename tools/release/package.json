@@ -9,9 +9,10 @@
     "lint": "true",
     "typecheck": "true",
     "test": "true",
+    "release:check": "node release-check.mjs",
     "changeset": "pnpm dlx @changesets/cli",
     "changeset:version": "node changeset-version.mjs",
     "changeset:sync-root-version": "node sync-root-version.mjs",
-    "changeset:publish": "pnpm dlx @changesets/cli publish"
+    "changeset:publish": "node changeset-publish.mjs"
   }
 }

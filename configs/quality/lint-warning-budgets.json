@@ -13,8 +13,10 @@
     "@livon/node-lib": 0,
     "@livon/node-ws-transport": 2,
     "@livon/package-name": 0,
+    "@livon/react": 0,
     "@livon/rspack-app": 0,
     "@livon/runtime": 8,
-    "@livon/schema": 15
+    "@livon/schema": 15,
+    "@livon/sync": 0
   }
 }

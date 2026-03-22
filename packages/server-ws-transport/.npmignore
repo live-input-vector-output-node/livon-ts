@@ -6,11 +6,24 @@ tests/
 coverage/
 .turbo/
 node_modules/
+dist/**/*.spec.*
+dist/**/*.test.*
+dist/**/__mocks__/
+dist/**/mocks/
+dist/**/testing/
+dist/**/tests/
+
+# local instructions
+AGENTS.md
+PROMPT.md
+PROMPTS.md
 
 # tooling config
 vitest*.config.ts
 rslib.config.ts
+rslib.mini.config.ts
 tsconfig.json
+tsconfig.build.json
 eslint.config.cjs
 
 # misc

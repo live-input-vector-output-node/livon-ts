@@ -3,12 +3,14 @@
   "version": "0.27.0-rc.5",
   "private": false,
   "type": "module",
+  "description": "Shared TypeScript, ESLint, Rsbuild, Rslib, Rspack, SWC, and Vitest config for LIVON.",
   "publishConfig": {
     "access": "public"
   },
   "files": [
     "README.md",
-    "LICENCE.md",
+    "LICENSE.md",
+    "THIRD_PARTY_NOTICES.md",
     "eslint",
     "rsbuild",
     "rslib",
@@ -17,6 +19,59 @@
     "tsconfig",
     "vitest"
   ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/live-input-vector-output-node/livon-ts.git",
+    "directory": "packages/config"
+  },
+  "homepage": "https://livon.tech/docs/packages/config",
+  "bugs": {
+    "url": "https://github.com/live-input-vector-output-node/livon-ts/issues"
+  },
+  "keywords": [
+    "livon",
+    "config",
+    "typescript",
+    "eslint",
+    "rslib"
+  ],
+  "peerDependencies": {
+    "@rslib/core": "^0.19.5 || ^0.20.0",
+    "@rsbuild/core": "^1.7.3",
+    "@rsbuild/plugin-react": "^1.4.5",
+    "@rspack/core": "^1.7.5",
+    "@rspack/plugin-react-refresh": "^1.6.0",
+    "@typescript-eslint/eslint-plugin": "^8.56.1",
+    "@typescript-eslint/parser": "^8.54.0",
+    "eslint": "^10.0.2"
+  },
+  "peerDependenciesMeta": {
+    "@rslib/core": {
+      "optional": true
+    },
+    "@rsbuild/core": {
+      "optional": true
+    },
+    "@rsbuild/plugin-react": {
+      "optional": true
+    },
+    "@rspack/core": {
+      "optional": true
+    },
+    "@rspack/plugin-react-refresh": {
+      "optional": true
+    },
+    "@typescript-eslint/eslint-plugin": {
+      "optional": true
+    },
+    "@typescript-eslint/parser": {
+      "optional": true
+    },
+    "eslint": {
+      "optional": true
+    }
+  },
   "exports": {
     "./tsconfig/base.json": "./tsconfig/base.json",
     "./tsconfig/library.json": "./tsconfig/library.json",
