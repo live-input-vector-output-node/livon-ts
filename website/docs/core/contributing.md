@@ -156,6 +156,7 @@ pnpm -C packages/runtime build:watch
 ```sh
 pnpm gen node schema
 pnpm -C apps/client gen:client
+pnpm -C apps/client gen:client:deploy
 ```
 
 ### 9. Generate package READMEs from docs

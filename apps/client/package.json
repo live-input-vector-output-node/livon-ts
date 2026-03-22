@@ -26,6 +26,7 @@
     "build:watch": "true",
     "dev": "PORT=3001 rsbuild dev",
     "gen:client:watch": "livon --endpoint ws://127.0.0.1:3002/ws --out src/generated/api.ts --poll 2000",
+    "gen:client:deploy": "livon --endpoint ws://127.0.0.1:3002/ws --out src/generated/api.ts --emit-package-json",
     "preview": "rsbuild preview",
     "lint": "eslint . --max-warnings 3",
     "typecheck": "tsc -p tsconfig.json --noEmit",

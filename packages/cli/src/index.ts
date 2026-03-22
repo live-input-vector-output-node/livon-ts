@@ -27,6 +27,7 @@ interface BuildOptions {
   dts: boolean;
   formats: readonly BuildFormat[];
   customFormats: boolean;
+  emitPackageJson: boolean;
 }
 
 interface ExplainResponse {
@@ -185,6 +186,7 @@ const createDefaultOptions = (): Options => ({
     dts: true,
     formats: BUILD_FORMATS,
     customFormats: false,
+    emitPackageJson: false,
   },
 });
 
@@ -234,6 +236,20 @@ const readCliArgs = ({ argv, index, options }: ReadCliArgsInput): ReadCliArgsRes
         build: {
           ...options.build,
           dts: false,
+        },
+      },
+    });
+  }
+
+  if (arg === '--emit-package-json') {
+    return readCliArgs({
+      argv,
+      index: index + 1,
+      options: {
+        ...options,
+        build: {
+          ...options.build,
+          emitPackageJson: true,
         },
       },
     });
@@ -798,10 +814,6 @@ const buildGeneratedClient = async ({ options }: BuildGeneratedClientInput): Pro
     outputPath: path.join(outDir, 'dist'),
   };
   await fs.mkdir(outDir, { recursive: true });
-  await writeGeneratedPackageManifest({
-    packageJsonFile,
-    buildResult,
-  });
   const rslib = await createRslib({
     cwd: outDir,
     config: {
@@ -826,6 +838,9 @@ const buildGeneratedClient = async ({ options }: BuildGeneratedClientInput): Pro
   });
 
   await rslib.build();
+  if (options.build.emitPackageJson) {
+    await writeGeneratedPackageManifest({ packageJsonFile, buildResult });
+  }
   return buildResult;
 };
 
@@ -1004,7 +1019,8 @@ const run = async () => {
       generatedAt: result.generatedAt,
     }, { forceWrite: initialSyncPending });
     initialSyncPending = false;
-    if (writeResult.updated) {
+    const shouldBuildGeneratedClient = writeResult.updated || options.build.emitPackageJson;
+    if (shouldBuildGeneratedClient) {
       const buildResult = await buildGeneratedClient({ options });
       // eslint-disable-next-line no-console
       const details: string[] = [];
@@ -1019,6 +1035,9 @@ const run = async () => {
         details.push(`${writeResult.summary.fieldResolvers} fieldResolvers`);
         details.push(`${writeResult.summary.inputs} inputs`);
         details.push(`${writeResult.summary.outputs} outputs`);
+      }
+      if (options.build.emitPackageJson && !writeResult.updated) {
+        details.push('package manifest emitted');
       }
       details.push(`build ${buildResult.formats.join('+')}${buildResult.dts ? '+dts' : ''}`);
       details.push(`dist ${buildResult.outputPath}`);
