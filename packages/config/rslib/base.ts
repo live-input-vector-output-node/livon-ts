@@ -30,6 +30,7 @@ interface ResolveEntriesInput {
 const sourceExclude = [
   /\.spec\.[cm]?[jt]sx?$/,
   /\.test\.[cm]?[jt]sx?$/,
+  /\.bench(mark)?\.[cm]?[jt]sx?$/,
   /(^|\/)__mocks__\//,
   /(^|\/)testing\//,
   /(^|\/)mocks\//,
@@ -41,6 +42,8 @@ const defaultEntries: RslibEntries = {
     './src/**',
     '!./src/**/*.spec.*',
     '!./src/**/*.test.*',
+    '!./src/**/*.bench.*',
+    '!./src/**/*.benchmark.*',
     '!./src/**/__mocks__/**',
     '!./src/**/mocks/**',
     '!./src/**/testing/**',
