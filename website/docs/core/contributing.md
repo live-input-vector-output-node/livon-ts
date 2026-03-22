@@ -200,30 +200,6 @@ pnpm qg
 
 Use the same gate set before opening a pull request.
 
-## Codex AI pull request review
-
-Use Codex review as an additional reviewer signal for pull requests.
-This does not replace required quality gates (`pnpm qg`).
-
-Setup:
-
-1. Install the Codex GitHub app for the repository.
-2. In ChatGPT Codex settings, enable GitHub access and repository access.
-3. Enable "Pull request reviews" in Codex settings.
-4. For GitHub Actions based review, add repository secret `OPENAI_API_KEY`.
-
-Review modes:
-
-- Manual on demand: comment `@codex review` in the pull request.
-- Automatic: in Codex repository settings, enable automatic reviews.
-- GitHub Actions automatic review: `.github/workflows/codex-review.yml`.
-
-Recommended team policy:
-
-1. Request Codex review for every non-trivial pull request.
-2. Resolve or explicitly document rationale for any high-impact Codex findings.
-3. Keep human code review as the final merge authority.
-
 ## Commit naming convention
 
 Use this commit prefix pattern:
