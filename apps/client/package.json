@@ -4,6 +4,13 @@
   "private": true,
   "type": "module",
   "license": "MIT",
+  "keywords": [
+    "livon",
+    "app",
+    "client",
+    "react",
+    "typescript"
+  ],
   "scripts": {
     "build": "rsbuild build",
     "build:watch": "true",

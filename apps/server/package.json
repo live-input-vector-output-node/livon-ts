@@ -4,6 +4,13 @@
   "private": true,
   "type": "module",
   "license": "MIT",
+  "keywords": [
+    "livon",
+    "app",
+    "server",
+    "node",
+    "typescript"
+  ],
   "scripts": {
     "build": "rslib build",
     "build:watch": "rslib dev",

@@ -36,8 +36,8 @@
   "keywords": [
     "livon",
     "sync",
-    "state",
     "realtime",
+    "state",
     "typescript"
   ],
   "exports": {

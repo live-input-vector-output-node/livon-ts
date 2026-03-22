@@ -36,8 +36,8 @@
   "keywords": [
     "livon",
     "schema",
-    "validation",
     "api",
+    "validation",
     "typescript"
   ],
   "exports": {
