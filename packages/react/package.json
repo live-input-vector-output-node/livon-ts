@@ -1,6 +1,6 @@
 {
   "name": "@livon/react",
-  "version": "0.28.0-rc.1",
+  "version": "0.28.0-rc.2",
   "private": false,
   "type": "module",
   "description": "React adapter and hooks for LIVON sync units.",

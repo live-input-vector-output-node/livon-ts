@@ -1,5 +1,16 @@
 # @livon/app-server
 
+## 0.28.0-rc.2
+
+### Patch Changes
+
+- Reformat package badge overview into a structured table and keep the order version, dependencies, code quality, package size, license.
+- Updated dependencies
+  - @livon/dlq-module@0.28.0-rc.2
+  - @livon/runtime@0.28.0-rc.2
+  - @livon/schema@0.28.0-rc.2
+  - @livon/node-ws-transport@0.28.0-rc.2
+
 ## 0.28.0-rc.1
 
 ### Patch Changes

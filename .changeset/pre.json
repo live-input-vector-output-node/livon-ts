@@ -28,6 +28,7 @@
   },
   "changesets": [
     "bright-bears-fix",
+    "clear-badges-structure",
     "fresh-ravens-kick"
   ]
 }
