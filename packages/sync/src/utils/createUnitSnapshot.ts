@@ -1,10 +1,8 @@
 import type { CreateUnitSnapshotInput, UnitSnapshot } from './types.js';
 
 export const createUnitSnapshot = <RResult>(
-  input: CreateUnitSnapshotInput<RResult>,
+  { value, status, meta, context }: CreateUnitSnapshotInput<RResult>,
 ): UnitSnapshot<RResult> => {
-  const { value, status, meta, context } = input;
-
   return {
     value,
     status,
