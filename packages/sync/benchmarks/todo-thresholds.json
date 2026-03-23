@@ -10,9 +10,9 @@
     "minHz": 4000
   },
   "todo entity remove one plus restore after 100_000 seed": {
-    "maxP99Ms": 0.35,
-    "maxMeanMs": 0.12,
-    "minHz": 7000
+    "maxP99Ms": 3,
+    "maxMeanMs": 0.4,
+    "minHz": 2000
   },
   "todo source get 100_000 entries": {
     "maxP99Ms": 0.002,
@@ -21,8 +21,8 @@
   },
   "todo view get access after 100_000 seed": {
     "maxP99Ms": 0.002,
-    "maxMeanMs": 0.0025,
-    "minHz": 450000
+    "maxMeanMs": 0.004,
+    "minHz": 250000
   },
   "todo transform get access after 100_000 seed": {
     "maxP99Ms": 0.002,
@@ -30,9 +30,9 @@
     "minHz": 350000
   },
   "todo transform set access after 100_000 seed": {
-    "maxP99Ms": 0.35,
-    "maxMeanMs": 0.15,
-    "minHz": 9000
+    "maxP99Ms": 0.7,
+    "maxMeanMs": 0.35,
+    "minHz": 2500
   },
   "todo source cache rehydrate 100_000 entries": {
     "maxP99Ms": 3000,

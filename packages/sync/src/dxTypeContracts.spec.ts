@@ -169,12 +169,11 @@ type _actionUnitHasNoSet = AssertFalse<ActionUnitHasSet>;
 type _streamUnitHasNoSet = AssertFalse<StreamUnitHasSet>;
 
 const todoCountView = view<TodoScope, number>({
-  out: async (rawContext: unknown) => {
-    const context = rawContext as {
-      scope: TodoScope;
-      get: (unit: unknown) => Promise<UnitSnapshot<readonly Todo[]>>;
-    };
-    const todoSnapshot = await context.get(readTodos(context.scope));
+  out: async ({
+    get,
+    scope,
+  }) => {
+    const todoSnapshot: UnitSnapshot<readonly Todo[]> = await get(readTodos(scope));
     return todoSnapshot.value.length;
   },
   defaultValue: 0,
@@ -213,60 +212,64 @@ type _transformUnitHasEffect = AssertTrue<TransformUnitHasEffect>;
 type _transformGetIsSnapshot = AssertTrue<TransformGetIsSnapshot>;
 type _transformSetPayloadMatches = AssertTrue<TransformSetPayloadMatches>;
 
-if (false) {
-  todosEntity.upsertOne({
-    id: 'legacy-id',
-    title: 'legacy-title',
-    completed: false,
-  });
-
-  // @ts-expect-error entity unified upsert must not exist in split DX
-  todosEntity.upsert({
-    id: 'legacy-id',
-    title: 'legacy-title',
-    completed: false,
-  });
-
-  // @ts-expect-error source unit set must not exist in the new DX
-  readTodosUnit.set([
-    {
-      id: 'legacy-id',
-      title: 'legacy-title',
-      completed: false,
-    },
-  ]);
-
-  // @ts-expect-error source top-level draft setter must not exist in the new DX
-  readTodosUnit.setDraft([
-    {
-      id: 'legacy-id',
-      title: 'legacy-title',
-      completed: false,
-    },
-  ]);
-
-  // @ts-expect-error source top-level draft cleaner must not exist in the new DX
-  readTodosUnit.cleanDraft();
-
-  // @ts-expect-error action unit set must not exist in the new DX
-  updateTodoUnit.set({
-    id: 'legacy-id',
-    title: 'legacy-title',
-    completed: false,
-  });
-
-  // @ts-expect-error stream unit set must not exist in the new DX
-  onTodoChangedUnit.set({
-    id: 'legacy-id',
-    title: 'legacy-title',
-    completed: false,
-  });
-}
-
 describe('dx type-level contracts', () => {
   describe('happy', () => {
     it('should compile type-level contracts for split DX surface', () => {
       expect(true).toBe(true);
+    });
+
+    it('should reject legacy APIs at type-level only', () => {
+      const assertLegacyApisDoNotExist = () => {
+        todosEntity.upsertOne({
+          id: 'legacy-id',
+          title: 'legacy-title',
+          completed: false,
+        });
+
+        // @ts-expect-error entity unified upsert must not exist in split DX
+        todosEntity.upsert({
+          id: 'legacy-id',
+          title: 'legacy-title',
+          completed: false,
+        });
+
+        // @ts-expect-error source unit set must not exist in the new DX
+        readTodosUnit.set([
+          {
+            id: 'legacy-id',
+            title: 'legacy-title',
+            completed: false,
+          },
+        ]);
+
+        // @ts-expect-error source top-level draft setter must not exist in the new DX
+        readTodosUnit.setDraft([
+          {
+            id: 'legacy-id',
+            title: 'legacy-title',
+            completed: false,
+          },
+        ]);
+
+        // @ts-expect-error source top-level draft cleaner must not exist in the new DX
+        readTodosUnit.cleanDraft();
+
+        // @ts-expect-error action unit set must not exist in the new DX
+        updateTodoUnit.set({
+          id: 'legacy-id',
+          title: 'legacy-title',
+          completed: false,
+        });
+
+        // @ts-expect-error stream unit set must not exist in the new DX
+        onTodoChangedUnit.set({
+          id: 'legacy-id',
+          title: 'legacy-title',
+          completed: false,
+        });
+      };
+
+      expect(typeof assertLegacyApisDoNotExist).toBe('function');
     });
   });
 });

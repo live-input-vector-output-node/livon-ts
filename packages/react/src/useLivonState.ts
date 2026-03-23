@@ -8,7 +8,7 @@ import type {
 } from '@livon/sync';
 
 import { useLivonSelection } from './useLivonSelection.js';
-import type { LivonStateOf } from './types.js';
+import type { LivonState, LivonStateOf } from './types.js';
 
 export interface UseLivonState {
   <
@@ -43,7 +43,7 @@ const useLivonStateInternal = <
   TUnit extends TrackedUnit<TResult> & AnyStateUnit,
 >(
   unit: TUnit,
-): LivonStateOf<TUnit> => {
+): LivonState<TResult, UnitStatus, unknown> => {
   const value = useLivonSelection({
     unit,
     select: (snapshot: UnitSnapshot<TResult>) => {
@@ -67,7 +67,7 @@ const useLivonStateInternal = <
     value,
     status,
     meta,
-  } as LivonStateOf<TUnit>;
+  };
 };
 
 export const useLivonState: UseLivonState = useLivonStateInternal;
