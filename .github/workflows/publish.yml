@@ -56,7 +56,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Generate package READMEs from docs
-        run: pnpm turbo run gen:readmes
+        run: pnpm run gen:readmes
 
       - name: Run monorepo CI
         run: pnpm run ci

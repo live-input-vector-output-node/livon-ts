@@ -242,7 +242,7 @@
     },
     {
       "id": "pre-push-full-gates",
-      "statement": "Before every push, run `pnpm qg` (full repository gates: check:readmes, check:policies, lint, typecheck, test, build).",
+      "statement": "Before every push, run `pnpm qg` (full repository gates: check:readmes, check:policies, lint, typecheck, test, bench:gate, build).",
       "humanSources": [
         "website/docs/core/contributing.md",
         "website/docs/core/governance.md",
