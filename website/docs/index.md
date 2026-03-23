@@ -10,7 +10,6 @@ slug: /
 </p>
 <p align="center" class="livon-badge-strip">
   <a href="https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/code-quality.yml"><img src="https://img.shields.io/github/actions/workflow/status/live-input-vector-output-node/livon-ts/code-quality.yml?branch=main&label=code%20quality" alt="Code Quality" /></a>
-  <a href="https://app.codecov.io/github/live-input-vector-output-node/livon-ts"><img src="https://codecov.io/gh/live-input-vector-output-node/livon-ts/branch/main/graph/badge.svg" alt="Codecov Coverage" /></a>
   <a href="https://coveralls.io/github/live-input-vector-output-node/livon-ts?branch=main"><img src="https://coveralls.io/repos/github/live-input-vector-output-node/livon-ts/badge.svg?branch=main" alt="Coveralls Coverage" /></a>
   <a href="https://github.com/live-input-vector-output-node/livon-ts/blob/main/LICENSE.md"><img src="https://img.shields.io/badge/license-MIT-green" alt="License" /></a>
 </p>
