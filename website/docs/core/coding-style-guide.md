@@ -19,6 +19,11 @@ Use it to keep implementation style consistent across packages and apps.
 - Use the Todo domain as the default use case in repository examples (`Todo`, `TodoScope`, `readTodos`, `updateTodo`, ...).
 - Apply this rule to new examples and when updating existing examples, so documentation converges to one consistent domain language over time.
 
+## Example destructuring style
+
+- In documentation examples, destructure hook return values with semantic names (`run: loadTodoList`, `stop: abortTodoListLoad`).
+- Keep sync unit instances (`source(...)`, `action(...)`, `stream(...)`, `view(...)`, `transform(...)`) as objects and call methods via dot access (`todoListUnit.run(...)`, `todoListUnit.refetch(...)`, `todoStreamUnit.start(...)`).
+
 ## Language and syntax
 
 - Use English for identifiers, comments, docs, and public APIs.

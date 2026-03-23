@@ -217,6 +217,18 @@
       ]
     },
     {
+      "id": "docs-example-destructuring",
+      "statement": "Documentation examples should destructure hook return values with semantic names, but keep unit instances as objects and call unit methods via dot access (for example unit.run(...), unit.refetch(...)).",
+      "humanSources": [
+        "website/docs/core/coding-style-guide.md",
+        "website/docs/ai/root-gate.md"
+      ],
+      "agentSources": [
+        "PROMPT.md",
+        "AGENTS.md"
+      ]
+    },
+    {
       "id": "tests-example-domain-todo",
       "statement": "Repository tests should use the Todo domain as the default use case when feasible so tests and docs stay aligned in language and intent.",
       "humanSources": [
