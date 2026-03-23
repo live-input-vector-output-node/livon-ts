@@ -193,8 +193,8 @@ const stableStringifySerializedValue = (input: SerializedValue): string => {
 const decodeSerializedRecord = (input: SerializedRecord): UnknownRecord => {
   const decodedRecord: UnknownRecord = {};
 
-  Object.keys(input).forEach((key) => {
-    decodedRecord[key] = decodeSerializedValue(input[key] as SerializedValue);
+  Object.entries(input).forEach(([key, value]) => {
+    decodedRecord[key] = decodeSerializedValue(value);
   });
 
   return decodedRecord;
@@ -295,11 +295,11 @@ const buildSerializedObject = ({
     });
   }
 
-  const objectKeysBase = Object.keys(input as UnknownRecord);
-  const objectKeys = sortCollections
-    ? [...objectKeysBase].sort()
-    : objectKeysBase;
-  if (objectKeys.length === 0 && !isPlainObject(input)) {
+  const objectEntriesBase = Object.entries(input);
+  const objectEntries = sortCollections
+    ? [...objectEntriesBase].sort(([leftKey], [rightKey]) => leftKey.localeCompare(rightKey))
+    : objectEntriesBase;
+  if (objectEntries.length === 0 && !isPlainObject(input)) {
     return serializeUnsupportedValue({
       input,
       unsupportedValueBehavior,
@@ -313,9 +313,9 @@ const buildSerializedObject = ({
     run: () => {
     const serializedRecord: SerializedRecord = {};
 
-    objectKeys.forEach((key) => {
+    objectEntries.forEach(([key, value]) => {
       serializedRecord[key] = buildSerializedValue({
-        input: (input as UnknownRecord)[key],
+        input: value,
         unsupportedValueBehavior,
         sortCollections,
         parents,
@@ -525,7 +525,9 @@ const createStableSerializedValue = (input: unknown): SerializedValue => {
   });
 };
 
-export const createStableStructuredValue = (input: unknown): unknown => {
+export type StableStructuredValue = ReturnType<typeof createStableSerializedValue>;
+
+export const createStableStructuredValue = (input: unknown): StableStructuredValue => {
   return createStableSerializedValue(input);
 };
 

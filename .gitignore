@@ -9,7 +9,6 @@ dist/
 build/
 coverage/
 website/build/
-apps/client/src/generated/package.json
 
 # tooling caches
 .turbo/

@@ -3,9 +3,10 @@ import { describe, expect, it, vi } from 'vitest';
 import { action } from './action.js';
 import { entity } from './entity.js';
 import { source } from './source.js';
+import { randomString } from './testing/randomData.js';
+import type { UnitSnapshot } from './tracking/index.js';
 import { transform } from './transform.js';
 import { view } from './view.js';
-import { randomString } from './testing/randomData.js';
 
 interface Todo {
   id: string;
@@ -21,13 +22,6 @@ interface UpdateTodoTitlePayload {
   title: string;
 }
 
-interface Snapshot<TValue> {
-  value: TValue;
-  status: 'idle' | 'loading' | 'success' | 'error';
-  meta: unknown;
-  context: unknown;
-}
-
 describe('view() DX', () => {
   describe('happy', () => {
     it('should expose snapshot-style get and effect on view unit', () => {
@@ -40,23 +34,19 @@ describe('view() DX', () => {
       });
 
       const todoCountView = view<TodoScope, number>({
-        out: async (rawContext: unknown) => {
-          const context = rawContext as {
-            scope: TodoScope;
-            get: (unit: unknown) => Promise<Snapshot<readonly Todo[]>>;
-          };
-          const todosSnapshot = await context.get(readTodos(context.scope));
+        out: async ({ get, scope }) => {
+          const todosSnapshot = await get(readTodos(scope));
           return todosSnapshot.value.length;
         },
         defaultValue: 0,
       });
 
       const listId = randomString({ prefix: 'list-id' });
-      const todoCountViewUnit = todoCountView({ listId }) as unknown as Record<string, unknown>;
-      const readSnapshot = todoCountViewUnit.get as () => unknown;
+      const todoCountViewUnit = todoCountView({ listId });
+      const snapshot = todoCountViewUnit.get();
 
       expect(typeof todoCountViewUnit.effect).toBe('function');
-      expect(readSnapshot()).toEqual(
+      expect(snapshot).toEqual(
         expect.objectContaining({
           value: 0,
           status: 'idle',
@@ -88,24 +78,16 @@ describe('view() DX', () => {
       });
 
       const todoCountView = view<TodoScope, number>({
-        out: async (rawContext: unknown) => {
-          const context = rawContext as {
-            scope: TodoScope;
-            get: (unit: unknown) => Promise<Snapshot<readonly Todo[]>>;
-          };
-          const todosSnapshot = await context.get(readTodos(context.scope));
+        out: async ({ get, scope }) => {
+          const todosSnapshot = await get(readTodos(scope));
           return todosSnapshot.value.length;
         },
         defaultValue: 0,
       });
 
-      const todoCountViewUnitApi = todoCountView({ listId }) as unknown as Record<string, unknown>;
+      const todoCountViewUnit = todoCountView({ listId });
 
-      expect(typeof todoCountViewUnitApi.effect).toBe('function');
-      const todoCountViewUnit = todoCountView({ listId }) as unknown as {
-        get: () => Snapshot<number>;
-        effect: (listener: (snapshot: Snapshot<number>) => void) => void;
-      };
+      expect(typeof todoCountViewUnit.effect).toBe('function');
 
       const receivedValues: number[] = [];
       todoCountViewUnit.effect((snapshot) => {
@@ -130,11 +112,11 @@ describe('transform() DX', () => {
       });
 
       const listId = randomString({ prefix: 'list-id' });
-      const todoTitleTransformUnit = todoTitleTransform({ listId }) as unknown as Record<string, unknown>;
-      const readSnapshot = todoTitleTransformUnit.get as () => unknown;
+      const todoTitleTransformUnit = todoTitleTransform({ listId });
+      const snapshot = todoTitleTransformUnit.get();
 
       expect(typeof todoTitleTransformUnit.effect).toBe('function');
-      expect(readSnapshot()).toEqual(
+      expect(snapshot).toEqual(
         expect.objectContaining({
           value: '',
           status: 'idle',
@@ -178,21 +160,15 @@ describe('transform() DX', () => {
       });
 
       const todoTitleTransform = transform<TodoScope, UpdateTodoTitlePayload, string>({
-        out: async (rawContext: unknown) => {
-          const context = rawContext as {
-            scope: TodoScope;
-            get: (unit: unknown) => Promise<Snapshot<Todo | null>>;
-          };
-          const todoSnapshot = await context.get(readTodo(context.scope));
+        out: async ({
+          get,
+          scope,
+        }) => {
+          const todoSnapshot: UnitSnapshot<Todo | null> = await get(readTodo(scope));
           return todoSnapshot.value?.title ?? '';
         },
-        in: async (rawContext: unknown) => {
-          const context = rawContext as {
-            payload: UpdateTodoTitlePayload;
-            scope: TodoScope;
-            set: (unit: unknown, payload: unknown) => Promise<unknown>;
-          };
-          await context.set(updateTodo(context.scope), context.payload);
+        in: async ({ payload, scope, set }) => {
+          await set(updateTodo(scope), payload);
         },
         defaultValue: '',
       });

@@ -1,9 +1,19 @@
 import { useCallback } from 'react';
 
-import type { LivonRunOf } from './types.js';
-
 export interface UseLivonRun {
-  <TUnit>(unit: TUnit): LivonRunOf<TUnit>;
+  <
+    TInput extends readonly unknown[],
+    TResult,
+  >(unit: {
+    run: (...input: TInput) => TResult;
+  }): (...input: TInput) => TResult;
+
+  <
+    TInput extends readonly unknown[],
+    TResult,
+  >(unit: {
+    start: (...input: TInput) => TResult;
+  }): (...input: TInput) => TResult;
 }
 
 interface RunCapability {
@@ -14,52 +24,52 @@ interface StartCapability {
   start: (...input: readonly unknown[]) => unknown;
 }
 
-interface RunCapabilityRoot {
-  run?: unknown;
-  start?: unknown;
+interface ReadCallablePropertyInput {
+  input: unknown;
+  key: 'run' | 'start';
 }
 
-const isRunCapability = (
-  unit: unknown,
-): unit is RunCapability => {
-  const unitType = typeof unit;
-  if ((unitType !== 'object' && unitType !== 'function') || unit === null) {
-    return false;
+const readCallableProperty = ({
+  input,
+  key,
+}: ReadCallablePropertyInput): unknown => {
+  if ((typeof input !== 'object' && typeof input !== 'function') || input === null) {
+    return undefined;
   }
 
-  const root = unit as RunCapabilityRoot;
-  return typeof root.run === 'function';
+  return Reflect.get(input, key);
 };
 
-const isStartCapability = (
-  unit: unknown,
-): unit is StartCapability => {
-  const unitType = typeof unit;
-  if ((unitType !== 'object' && unitType !== 'function') || unit === null) {
-    return false;
-  }
+const isRunCapability = <TUnit>(
+  unit: TUnit,
+): unit is TUnit & RunCapability => {
+  return typeof readCallableProperty({ input: unit, key: 'run' }) === 'function';
+};
 
-  const root = unit as RunCapabilityRoot;
-  return typeof root.start === 'function';
+const isStartCapability = <TUnit>(
+  unit: TUnit,
+): unit is TUnit & StartCapability => {
+  return typeof readCallableProperty({ input: unit, key: 'start' }) === 'function';
 };
 
 const useLivonRunInternal: UseLivonRun = <TUnit>(
   unit: TUnit,
-): LivonRunOf<TUnit> => {
-  const hasRunCapability = isRunCapability(unit);
-  const hasStartCapability = isStartCapability(unit);
-
-  if (!hasRunCapability && !hasStartCapability) {
-    throw new Error('useLivonRun requires a unit with run() or start() capability.');
+): ((...input: readonly unknown[]) => unknown) => {
+  if (isRunCapability(unit)) {
+    const run = unit.run;
+    return useCallback((...input: Parameters<typeof run>) => {
+      return run(...input);
+    }, [run]);
   }
 
-  const run = (
-    hasRunCapability ? unit.run : (unit as StartCapability).start
-  ) as (...input: readonly unknown[]) => unknown;
+  if (isStartCapability(unit)) {
+    const start = unit.start;
+    return useCallback((...input: Parameters<typeof start>) => {
+      return start(...input);
+    }, [start]);
+  }
 
-  return useCallback((...input: readonly unknown[]) => {
-    return run(...input);
-  }, [run]) as LivonRunOf<TUnit>;
+  throw new Error('useLivonRun requires a unit with run() or start() capability.');
 };
 
 export const useLivonRun: UseLivonRun = useLivonRunInternal;
