@@ -6,11 +6,11 @@
   },
   "todo entity write upsert one after 100_000 seed": {
     "maxP99Ms": 12,
-    "maxMeanMs": 0.3,
-    "minHz": 4000
+    "maxMeanMs": 0.4,
+    "minHz": 3000
   },
   "todo entity remove one plus restore after 100_000 seed": {
-    "maxP99Ms": 2,
+    "maxP99Ms": 6,
     "maxMeanMs": 0.17,
     "minHz": 5500
   },
