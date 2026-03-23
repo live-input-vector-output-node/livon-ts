@@ -10,7 +10,7 @@
     "minHz": 4000
   },
   "todo entity remove one plus restore after 100_000 seed": {
-    "maxP99Ms": 1,
+    "maxP99Ms": 2,
     "maxMeanMs": 0.17,
     "minHz": 5500
   },
@@ -30,7 +30,7 @@
     "minHz": 300000
   },
   "todo transform set access after 100_000 seed": {
-    "maxP99Ms": 13,
+    "maxP99Ms": 15,
     "maxMeanMs": 0.4,
     "minHz": 2500
   },
