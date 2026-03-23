@@ -41,8 +41,8 @@ describe('destroy lifecycle', () => {
     readUsers = source<TemplateSlug, SearchPayload, User, UsersResult, UsersResult>({
       entity: usersEntity,
       onDestroy: onDestroyMock,
-      run: async ({ payload, entity }) => {
-        entity.upsertMany([{ id: payload.search, name: payload.search }]);
+      run: async ({ payload }) => {
+        return [{ id: payload.search, name: payload.search }];
       },
     });
   });

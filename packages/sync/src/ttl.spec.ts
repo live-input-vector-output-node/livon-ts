@@ -42,9 +42,8 @@ describe('ttl rules', () => {
 
       const readUsers = source<UserSlug, undefined, User, UsersResult, UsersResult>({
         entity: usersEntity,
-        run: async ({ entity }) => {
-          const users = await readUsersApi();
-          entity.upsertMany(users);
+        run: async () => {
+          return readUsersApi();
         },
       });
 
@@ -72,9 +71,8 @@ describe('ttl rules', () => {
 
       const readUsers = source<UserSlug, undefined, User, UsersResult, UsersResult>({
         entity: usersEntity,
-        run: async ({ entity }) => {
-          const users = await readUsersApi();
-          entity.upsertMany(users);
+        run: async () => {
+          return readUsersApi();
         },
       });
 
@@ -103,9 +101,8 @@ describe('ttl rules', () => {
       const readUsers = source<UserSlug, undefined, User, UsersResult, UsersResult>({
         entity: usersEntity,
         ttl: 10_000,
-        run: async ({ entity }) => {
-          const users = await readUsersApi();
-          entity.upsertMany(users);
+        run: async () => {
+          return readUsersApi();
         },
       });
 
@@ -133,9 +130,8 @@ describe('ttl rules', () => {
       const readUsers = source<UserSlug, undefined, User, UsersResult, UsersResult>({
         entity: usersEntity,
         ttl: 10_000,
-        run: async ({ entity }) => {
-          const users = await readUsersApi();
-          entity.upsertMany(users);
+        run: async () => {
+          return readUsersApi();
         },
       });
 
@@ -168,9 +164,8 @@ describe('ttl rules', () => {
       const readUsers = source<UserSlug, undefined, User, UsersResult, UsersResult>({
         entity: usersEntity,
         ttl: 10_000,
-        run: async ({ entity }) => {
-          const users = await readUsersApi();
-          entity.upsertMany(users);
+        run: async () => {
+          return readUsersApi();
         },
       });
 
@@ -203,9 +198,8 @@ describe('ttl rules', () => {
       const readUsers = source<UserSlug, undefined, User, UsersResult, UsersResult>({
         entity: usersEntity,
         ttl: 10_000,
-        run: async ({ entity }) => {
-          const users = await readUsersApi();
-          entity.upsertMany(users);
+        run: async () => {
+          return readUsersApi();
         },
       });
 
@@ -235,9 +229,8 @@ describe('ttl rules', () => {
       const readUsers = source<UserSlug, undefined, User, UsersResult, UsersResult>({
         entity: usersEntity,
         ttl: 30_000,
-        run: async ({ entity }) => {
-          const users = await readUsersApi();
-          entity.upsertMany(users);
+        run: async () => {
+          return readUsersApi();
         },
       });
 
@@ -265,9 +258,8 @@ describe('ttl rules', () => {
       const readUsers = source<UserSlug, undefined, User, UsersResult, UsersResult>({
         entity: usersEntity,
         ttl: 30_000,
-        run: async ({ entity }) => {
-          const users = await readUsersApi();
-          entity.upsertMany(users);
+        run: async () => {
+          return readUsersApi();
         },
       });
 
@@ -296,9 +288,8 @@ describe('ttl rules', () => {
       const readUsers = source<UserSlug, undefined, User, UsersResult, UsersResult>({
         entity: usersEntity,
         ttl: 30_000,
-        run: async ({ entity }) => {
-          const users = await readUsersApi();
-          entity.upsertMany(users);
+        run: async () => {
+          return readUsersApi();
         },
       });
 

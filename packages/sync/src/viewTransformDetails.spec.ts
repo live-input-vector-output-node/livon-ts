@@ -57,13 +57,13 @@ describe('view() detail behavior', () => {
       });
       const readTodo = source<TodoScope, TodoPayload, Todo, Todo | null>({
         entity: todosEntity,
-        run: async ({ scope, payload, setMeta, entity }) => {
+        run: async ({ scope, payload, setMeta }) => {
           setMeta(sourceMeta);
-          entity.upsertOne({
+          return {
             id: `${scope.listId}:${todoId}`,
             title: payload.title,
             completed: false,
-          });
+          };
         },
       });
       const todoTitleView = view<TodoScope, string>({
@@ -108,22 +108,22 @@ describe('view() detail behavior', () => {
       });
       const readTodoA = source<TodoScope, TodoPayload, Todo, Todo | null>({
         entity: todosEntity,
-        run: async ({ scope, payload, entity }) => {
-          entity.upsertOne({
+        run: async ({ scope, payload }) => {
+          return {
             id: `${scope.listId}:${firstTodoId}`,
             title: payload.title,
             completed: false,
-          });
+          };
         },
       });
       const readTodoB = source<TodoScope, TodoPayload, Todo, Todo | null>({
         entity: todosEntity,
-        run: async ({ scope, payload, entity }) => {
-          entity.upsertOne({
+        run: async ({ scope, payload }) => {
+          return {
             id: `${scope.listId}:${secondTodoId}`,
             title: payload.title,
             completed: false,
-          });
+          };
         },
       });
       let outCallCount = 0;
@@ -171,12 +171,12 @@ describe('view() detail behavior', () => {
       });
       const readTodo = source<TodoScope, TodoPayload, Todo, Todo | null>({
         entity: todosEntity,
-        run: async ({ scope, payload, entity }) => {
-          entity.upsertOne({
+        run: async ({ scope, payload }) => {
+          return {
             id: `${scope.listId}:${todoId}`,
             title: payload.title,
             completed: false,
-          });
+          };
         },
       });
       const failingView = view<TodoScope, string>({
@@ -216,12 +216,12 @@ describe('view() detail behavior', () => {
       });
       const readTodo = source<TodoScope, TodoPayload, Todo, Todo | null>({
         entity: todosEntity,
-        run: async ({ scope, payload, entity }) => {
-          entity.upsertOne({
+        run: async ({ scope, payload }) => {
+          return {
             id: `${scope.listId}:${todoId}`,
             title: payload.title,
             completed: false,
-          });
+          };
         },
       });
       let outCallCount = 0;
@@ -271,13 +271,13 @@ describe('transform() detail behavior', () => {
       });
       const readTodo = source<TodoScope, TodoPayload, Todo, Todo | null>({
         entity: todosEntity,
-        run: async ({ scope, payload, setMeta, entity }) => {
+        run: async ({ scope, payload, setMeta }) => {
           setMeta(sourceMeta);
-          entity.upsertOne({
+          return {
             id: `${scope.listId}:${todoId}`,
             title: payload.title,
             completed: false,
-          });
+          };
         },
       });
       const todoTitleTransform = transform<TodoScope, UpdateTodoPayload, string>({
@@ -323,22 +323,22 @@ describe('transform() detail behavior', () => {
       });
       const readTodoA = source<TodoScope, TodoPayload, Todo, Todo | null>({
         entity: todosEntity,
-        run: async ({ scope, payload, entity }) => {
-          entity.upsertOne({
+        run: async ({ scope, payload }) => {
+          return {
             id: `${scope.listId}:${firstTodoId}`,
             title: payload.title,
             completed: false,
-          });
+          };
         },
       });
       const readTodoB = source<TodoScope, TodoPayload, Todo, Todo | null>({
         entity: todosEntity,
-        run: async ({ scope, payload, entity }) => {
-          entity.upsertOne({
+        run: async ({ scope, payload }) => {
+          return {
             id: `${scope.listId}:${secondTodoId}`,
             title: payload.title,
             completed: false,
-          });
+          };
         },
       });
       let outCallCount = 0;
@@ -387,12 +387,12 @@ describe('transform() detail behavior', () => {
       });
       const readTodo = source<TodoScope, TodoPayload, Todo, Todo | null>({
         entity: todosEntity,
-        run: async ({ scope, payload, entity }) => {
-          entity.upsertOne({
+        run: async ({ scope, payload }) => {
+          return {
             id: `${scope.listId}:${todoId}`,
             title: payload.title,
             completed: false,
-          });
+          };
         },
       });
       const failingTransform = transform<TodoScope, UpdateTodoPayload, string>({
@@ -485,12 +485,12 @@ describe('transform() detail behavior', () => {
       });
       const readTodo = source<TodoScope, TodoPayload, Todo, Todo | null>({
         entity: todosEntity,
-        run: async ({ scope, payload, entity }) => {
-          entity.upsertOne({
+        run: async ({ scope, payload }) => {
+          return {
             id: `${scope.listId}:${todoId}`,
             title: payload.title,
             completed: false,
-          });
+          };
         },
       });
       let outCallCount = 0;

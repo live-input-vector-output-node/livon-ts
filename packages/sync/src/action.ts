@@ -40,7 +40,6 @@ export interface ActionConfig<
   TPayload,
   TEntity extends object,
   RResult,
-  UUpdate extends RResult,
   TEntityId extends EntityId = string,
 > {
   entity: Entity<TEntity, TEntityId>;
@@ -49,7 +48,6 @@ export interface ActionConfig<
     context: ActionRunContext<TInput, TPayload, TEntity, RResult, TEntityId>,
   ) => Promise<ActionRunResult<RResult>> | ActionRunResult<RResult>;
   defaultValue?: RResult;
-  update?: (current: RResult, update: UUpdate) => RResult;
 }
 
 export interface ActionUnit<
@@ -63,7 +61,6 @@ export interface ActionUnit<
   destroyDelay: number;
   run: (payloadInput?: TPayload | InputUpdater<TPayload>) => Promise<RResult>;
   get: () => RResult;
-  set: (input: UUpdate | ValueUpdater<RResult, UUpdate>) => void;
   effect: (listener: EffectListener<RResult>) => (() => void) | void;
   stop: () => void;
   destroy: () => void;
@@ -141,10 +138,12 @@ const isActionCleanup = <RResult>(
   return typeof input === 'function';
 };
 
-const isEntityValue = <TEntity extends object>(
-  value: unknown,
-): value is TEntity => {
+const isEntityValue = <TEntity extends object>(value: unknown): value is TEntity => {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
+};
+
+const isEntityArray = <TEntity extends object>(value: unknown): value is readonly TEntity[] => {
+  return Array.isArray(value) && value.every((entry) => isEntityValue<TEntity>(entry));
 };
 
 const getModeValue = <
@@ -192,8 +191,7 @@ export const action = <
   destroyDelay = entity.destroyDelay ?? DEFAULT_DESTROY_DELAY,
   run,
   defaultValue,
-  update,
-}: ActionConfig<TInput, TPayload, TEntity, RResult, UUpdate, TEntityId>,
+}: ActionConfig<TInput, TPayload, TEntity, RResult, TEntityId>,
 ): Action<TInput, TPayload, RResult, UUpdate> => {
   const unitsByKey: ActionUnitByKeyMap<TInput, TPayload, TEntityId, RResult, UUpdate> =
     new Map<string, ActionUnitInternal<TInput, TPayload, TEntityId, RResult, UUpdate>>();
@@ -275,6 +273,12 @@ export const action = <
         });
       };
 
+      const clearEntityMode = (): void => {
+        internal.hasEntityValue = false;
+        internal.membershipIds = [];
+        entity.clearUnitMembership(internal.key);
+      };
+
       const unregisterFromEntity = entity.registerUnit({
         key: internal.key,
         onChange: () => {
@@ -350,6 +354,34 @@ export const action = <
           removeMany,
         };
 
+        const applyRunValue = (nextValue: RResult | void): void => {
+          if (!isLatestRun()) {
+            return;
+          }
+
+          if (nextValue === undefined) {
+            internal.state.value = getModeValue(internal, entity);
+            return;
+          }
+
+          if (isEntityArray<TEntity>(nextValue)) {
+            const upsertedEntities = entity.upsertMany(nextValue);
+            setManyMode(upsertedEntities);
+            internal.state.value = getModeValue(internal, entity);
+            return;
+          }
+
+          if (isEntityValue<TEntity>(nextValue)) {
+            const upsertedEntity = entity.upsertOne(nextValue);
+            setOneMode(upsertedEntity);
+            internal.state.value = getModeValue(internal, entity);
+            return;
+          }
+
+          clearEntityMode();
+          internal.state.value = nextValue;
+        };
+
         const runContextBase = {
           scope: internal.scope,
           payload: internal.payload,
@@ -403,7 +435,7 @@ export const action = <
                 internal.state.value = getModeValue(internal, entity);
               }
             } else if (isLatestRun()) {
-              internal.state.value = getModeValue(internal, entity);
+              applyRunValue(result);
             }
 
             if (isLatestRun()) {
@@ -445,50 +477,6 @@ export const action = <
     unit.get = () => {
       internal.state.value = getModeValue(internal, entity);
       return internal.state.value;
-    };
-    unit.set = (input) => {
-      if (internal.destroyed) {
-        return;
-      }
-
-      const currentValue = getModeValue(internal, entity);
-      internal.state.value = currentValue;
-      const nextUpdate = resolveValue(currentValue, input);
-      const nextValue = update
-        ? update(currentValue, nextUpdate)
-        : nextUpdate;
-      if (Object.is(nextValue, currentValue)) {
-        return;
-      }
-
-        if (Array.isArray(nextValue)) {
-        if (nextValue.length === 0) {
-          internal.hasEntityValue = true;
-          internal.membershipIds = [];
-          entity.clearUnitMembership(internal.key);
-          internal.state.value = getModeValue(internal, entity);
-          notifyUnit(internal);
-          return;
-        }
-
-          setManyMode(nextValue as readonly TEntity[]);
-          entity.upsertMany(nextValue as readonly TEntity[]);
-          return;
-        }
-
-      if (isEntityValue<TEntity>(nextValue)) {
-        setOneMode(nextValue);
-        entity.upsertOne(nextValue);
-        return;
-      }
-
-      if (nextValue === null || nextValue === undefined) {
-        internal.hasEntityValue = true;
-        internal.membershipIds = [];
-        entity.clearUnitMembership(internal.key);
-        internal.state.value = getModeValue(internal, entity);
-        notifyUnit(internal);
-      }
     };
     unit.effect = (listener) => {
       if (internal.destroyed) {

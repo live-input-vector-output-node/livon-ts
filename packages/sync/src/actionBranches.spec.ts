@@ -48,8 +48,8 @@ describe('action() branches', () => {
       ttl: 30_000,
     });
 
-    runMock = vi.fn(async ({ payload, entity }) => {
-      entity.upsertOne({ id: createdUserId, name: payload.name });
+    runMock = vi.fn(async ({ payload }) => {
+      return { id: createdUserId, name: payload.name };
     });
 
     createUser = action<UserSlug, CreateUserPayload, User, User | null, User>({
@@ -68,11 +68,11 @@ describe('action() branches', () => {
 
     it('should run handler once when run is called concurrently', async () => {
       let release: Release | undefined;
-      runMock = vi.fn(async ({ payload, entity }) => {
+      runMock = vi.fn(async ({ payload }) => {
         await new Promise<void>((resolve) => {
           release = resolve;
         });
-        entity.upsertOne({ id: createdUserId, name: payload.name });
+        return { id: createdUserId, name: payload.name };
       });
 
       createUser = action<UserSlug, CreateUserPayload, User, User | null, User>({
@@ -98,9 +98,9 @@ describe('action() branches', () => {
 
       createUser = action<UserSlug, CreateUserPayload, User, User | null, User>({
         entity: usersEntity,
-        run: async ({ payload, setMeta, entity }) => {
+        run: async ({ payload, setMeta }) => {
           setMeta(meta);
-          entity.upsertOne({ id: createdUserId, name: payload.name });
+          return { id: createdUserId, name: payload.name };
         },
       });
 
@@ -116,7 +116,7 @@ describe('action() branches', () => {
       expect(metas).toContainEqual(meta);
     });
 
-    it('should return many-mode value when run calls upsertMany', async () => {
+    it('should return many-mode value when run resolves an entity array', async () => {
       const secondUserId = randomString({ prefix: 'second-user-id' });
       const secondUserName = randomString({ prefix: 'second-user-name' });
 
@@ -128,11 +128,11 @@ describe('action() branches', () => {
         readonly User[]
       >({
         entity: usersEntity,
-        run: async ({ payload, entity }) => {
-          entity.upsertMany([
+        run: async ({ payload }) => {
+          return [
             { id: createdUserId, name: payload.name },
             { id: secondUserId, name: secondUserName },
-          ]);
+          ];
         },
       });
 
@@ -146,12 +146,8 @@ describe('action() branches', () => {
       ]);
     });
 
-    it('should remove records when run calls removeOne and removeMany', async () => {
-      const firstUserId = randomString({ prefix: 'first-user-id' });
-      const secondUserId = randomString({ prefix: 'second-user-id' });
+    it('should use returned entity array as action value', async () => {
       const thirdUserId = randomString({ prefix: 'third-user-id' });
-      const firstUserName = randomString({ prefix: 'first-user-name' });
-      const secondUserName = randomString({ prefix: 'second-user-name' });
       const thirdUserName = randomString({ prefix: 'third-user-name' });
 
       const removeUsers = action<
@@ -162,14 +158,8 @@ describe('action() branches', () => {
         readonly User[]
       >({
         entity: usersEntity,
-        run: async ({ entity }) => {
-          entity.upsertMany([
-            { id: firstUserId, name: firstUserName },
-            { id: secondUserId, name: secondUserName },
-            { id: thirdUserId, name: thirdUserName },
-          ]);
-          entity.removeOne(firstUserId);
-          entity.removeMany([secondUserId]);
+        run: async () => {
+          return [{ id: thirdUserId, name: thirdUserName }];
         },
       });
 
@@ -185,9 +175,9 @@ describe('action() branches', () => {
 
       createUser = action<UserSlug, CreateUserPayload, User, User | null, User>({
         entity: usersEntity,
-        run: async ({ getValue, payload, entity }) => {
+        run: async ({ getValue, payload }) => {
           valueFromRun = getValue();
-          entity.upsertOne({ id: createdUserId, name: payload.name });
+          return { id: createdUserId, name: payload.name };
         },
       });
 
@@ -198,7 +188,7 @@ describe('action() branches', () => {
       expect(valueFromRun).toBeNull();
     });
 
-    it('should ignore direct run return value when run does not upsert entities', async () => {
+    it('should use direct run return value when no previous entity value exists', async () => {
       const returnedUser: User = {
         id: randomString({ prefix: 'returned-id' }),
         name: randomString({ prefix: 'returned-name' }),
@@ -213,22 +203,17 @@ describe('action() branches', () => {
 
       const unit = createUser({ slugId });
 
-      await expect(unit.run({ name: createName })).resolves.toBeNull();
-
-      expect(unit.get()).toBeNull();
+      await expect(unit.run({ name: createName })).resolves.toEqual(returnedUser);
+      expect(unit.get()).toEqual(returnedUser);
     });
 
-    it('should remove effect listener when cleanup is called', () => {
+    it('should remove effect listener when cleanup is called', async () => {
       const unit = createUser({ slugId });
       const listener = vi.fn();
       const remove = unit.effect(listener);
-      const setUser: User = {
-        id: randomString({ prefix: 'set-id' }),
-        name: randomString({ prefix: 'set-name' }),
-      };
 
       remove?.();
-      unit.set(setUser);
+      await unit.run({ name: createName });
 
       expect(listener).not.toHaveBeenCalled();
     });
@@ -266,15 +251,12 @@ describe('action() branches', () => {
       expect(statuses).toContain('error');
     });
 
-    it('should ignore set when unit was destroyed', () => {
+    it('should not expose set when unit was destroyed', () => {
       const unit = createUser({ slugId });
-      const setUser: User = {
-        id: randomString({ prefix: 'set-id' }),
-        name: randomString({ prefix: 'set-name' }),
-      };
+      const actionApi = unit as unknown as Record<string, unknown>;
 
       unit.destroy();
-      unit.set(setUser);
+      expect(actionApi.set).toBeUndefined();
 
       expect(unit.get()).toBeNull();
     });

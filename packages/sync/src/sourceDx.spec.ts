@@ -27,14 +27,14 @@ describe('source() DX', () => {
 
       const readTodos = source<TodoScope, undefined, Todo, readonly Todo[]>({
         entity: todosEntity,
-        run: async ({ entity }) => {
-          entity.upsertMany([
+        run: async () => {
+          return [
             {
               id: todoId,
               title: todoTitle,
               completed: false,
             },
-          ]);
+          ];
         },
       });
 

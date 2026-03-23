@@ -32,8 +32,8 @@ describe('source.refetch()', () => {
     listId = randomNumber();
     queryValue = randomString({ prefix: 'query' });
 
-    runMock = vi.fn(async ({ payload, entity }) => {
-      entity.upsertMany([{ id: payload.query, title: payload.query }]);
+    runMock = vi.fn(async ({ payload }) => {
+      return [{ id: payload.query, title: payload.query }];
     });
 
     todosEntity = entity<Todo>({

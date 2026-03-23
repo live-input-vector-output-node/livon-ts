@@ -177,7 +177,7 @@ const applySnapshot = <
   return true;
 };
 
-const toSnapshot = <TValue>(
+const createSnapshotFromValue = <TValue>(
   value: TValue | UnitSnapshot<TValue>,
 ): UnitSnapshot<TValue> => {
   if (isSnapshotLike(value)) {
@@ -205,7 +205,7 @@ const readCurrentDependencySnapshot = <TValue>(
     }
   }
 
-  return toSnapshot(unit.get());
+  return createSnapshotFromValue(unit.get());
 };
 
 const unsubscribeDependency = (dependency: DependencyInternal): void => {
@@ -266,14 +266,26 @@ const queueRecompute = <
   });
 };
 
+interface EnsureDependencySubscriptionInput<
+  TInput extends object | undefined,
+  RResult,
+> {
+  internal: ViewUnitInternal<TInput, RResult>;
+  dependencyKey: object;
+  dependency: DependencyInternal;
+  out: (context: ViewGetContext<TInput>) => Promise<RResult> | RResult;
+}
+
 const ensureDependencySubscription = <
   TInput extends object | undefined,
   RResult,
 >(
-  internal: ViewUnitInternal<TInput, RResult>,
-  dependencyKey: object,
-  dependency: DependencyInternal,
-  out: (context: ViewGetContext<TInput>) => Promise<RResult> | RResult,
+  {
+    internal,
+    dependencyKey,
+    dependency,
+    out,
+  }: EnsureDependencySubscriptionInput<TInput, RResult>,
 ): void => {
   if (dependency.removeEffect || !shouldTrackDependencies(internal)) {
     return;
@@ -379,13 +391,24 @@ const ensureDependencySubscription = <
   }
 };
 
+interface SyncDependenciesInput<
+  TInput extends object | undefined,
+  RResult,
+> {
+  internal: ViewUnitInternal<TInput, RResult>;
+  usedDependencies: Map<object, DependencyInternal>;
+  out: (context: ViewGetContext<TInput>) => Promise<RResult> | RResult;
+}
+
 const syncDependencies = <
   TInput extends object | undefined,
   RResult,
 >(
-  internal: ViewUnitInternal<TInput, RResult>,
-  usedDependencies: Map<object, DependencyInternal>,
-  out: (context: ViewGetContext<TInput>) => Promise<RResult> | RResult,
+  {
+    internal,
+    usedDependencies,
+    out,
+  }: SyncDependenciesInput<TInput, RResult>,
 ): void => {
   Array.from(internal.dependencies.entries()).forEach(([dependencyKey, dependency]) => {
     if (usedDependencies.has(dependencyKey)) {
@@ -400,11 +423,21 @@ const syncDependencies = <
     const existing = internal.dependencies.get(dependencyKey);
     if (existing) {
       existing.snapshot = nextDependency.snapshot;
-      ensureDependencySubscription(internal, dependencyKey, existing, out);
+      ensureDependencySubscription({
+        internal,
+        dependencyKey,
+        dependency: existing,
+        out,
+      });
       return;
     }
 
-    ensureDependencySubscription(internal, dependencyKey, nextDependency, out);
+    ensureDependencySubscription({
+      internal,
+      dependencyKey,
+      dependency: nextDependency,
+      out,
+    });
   });
 
   if (!shouldTrackDependencies(internal)) {
@@ -475,7 +508,11 @@ const runRecompute = async <
       },
     });
 
-    syncDependencies(internal, usedDependencies, out);
+    syncDependencies({
+      internal,
+      usedDependencies,
+      out,
+    });
 
     const dependencies = Array.from(usedDependencies.values());
     const latestDependency = dependencies.at(-1);
@@ -493,7 +530,11 @@ const runRecompute = async <
 
     return nextValue;
   } catch (error: unknown) {
-    syncDependencies(internal, usedDependencies, out);
+    syncDependencies({
+      internal,
+      usedDependencies,
+      out,
+    });
 
     applySnapshot(internal, {
       status: 'error',

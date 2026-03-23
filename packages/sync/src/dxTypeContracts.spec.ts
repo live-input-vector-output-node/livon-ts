@@ -1,6 +1,8 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { describe, expect, it } from 'vitest';
 
 import type { ActionRunContext } from './action.js';
+import { action } from './action.js';
 import { entity, type Entity } from './entity.js';
 import { source } from './source.js';
 import type { SourceRunContext } from './source.js';
@@ -127,6 +129,24 @@ const readTodosUnit = readTodos({
   listId: 'type-check',
 });
 
+const updateTodo = action<TodoScope, UpdateTodoPayload, Todo, Todo | null>({
+  entity: todosEntity,
+  run: async () => undefined,
+});
+
+const updateTodoUnit = updateTodo({
+  listId: 'type-check',
+});
+
+const onTodoChanged = stream<TodoScope, UpdateTodoPayload, Todo, Todo | null>({
+  entity: todosEntity,
+  run: async () => undefined,
+});
+
+const onTodoChangedUnit = onTodoChanged({
+  listId: 'type-check',
+});
+
 type SourceUnitHasSet = 'set' extends keyof typeof readTodosUnit ? true : false;
 type SourceUnitHasSetDraft = 'setDraft' extends keyof typeof readTodosUnit ? true : false;
 type SourceUnitHasCleanDraft = 'cleanDraft' extends keyof typeof readTodosUnit ? true : false;
@@ -141,6 +161,12 @@ type _sourceUnitHasNoCleanDraft = AssertFalse<SourceUnitHasCleanDraft>;
 type _sourceUnitHasDraft = AssertTrue<SourceUnitHasDraft>;
 type _sourceUnitHasDraftSet = AssertTrue<SourceUnitHasDraftSet>;
 type _sourceUnitHasDraftClean = AssertTrue<SourceUnitHasDraftClean>;
+
+type ActionUnitHasSet = 'set' extends keyof typeof updateTodoUnit ? true : false;
+type StreamUnitHasSet = 'set' extends keyof typeof onTodoChangedUnit ? true : false;
+
+type _actionUnitHasNoSet = AssertFalse<ActionUnitHasSet>;
+type _streamUnitHasNoSet = AssertFalse<StreamUnitHasSet>;
 
 const todoCountView = view<TodoScope, number>({
   out: async (rawContext: unknown) => {
@@ -221,6 +247,20 @@ if (false) {
 
   // @ts-expect-error source top-level draft cleaner must not exist in the new DX
   readTodosUnit.cleanDraft();
+
+  // @ts-expect-error action unit set must not exist in the new DX
+  updateTodoUnit.set({
+    id: 'legacy-id',
+    title: 'legacy-title',
+    completed: false,
+  });
+
+  // @ts-expect-error stream unit set must not exist in the new DX
+  onTodoChangedUnit.set({
+    id: 'legacy-id',
+    title: 'legacy-title',
+    completed: false,
+  });
 }
 
 describe('dx type-level contracts', () => {
