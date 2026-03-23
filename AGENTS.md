@@ -134,6 +134,7 @@ Canonical product and engineering documentation lives in Docusaurus (`/docs`).
 6. Run relevant checks:
    - local iteration: `pnpm qg:changed`
    - pre-push/full gate: `pnpm qg`
+   - run repository workflows only through root script entrypoints (`pnpm run <task>`); direct `pnpm turbo run ...`, manual orchestration scripts/commands, and direct `pnpm -C <package>` workflow execution are not allowed; workflow tasks must be declared in `turbo.json`
 7. Report what changed, what was validated, and any remaining risks.
 
 ## Documentation maintenance workflow

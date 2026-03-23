@@ -6,6 +6,22 @@ sidebar_position: 10
 This page tracks high-impact governance and rule-system updates.
 Use it when you need to understand why repository-wide rules changed.
 
+## 2026-03-23
+
+### Todo domain consistency for examples
+
+- Added recurring repository-wide rule `docs-example-domain-todo`.
+- Rule sets Todo as the default domain for repository examples to keep docs and API snippets consistent across packages.
+- Registered the rule in machine-readable root gate config (`configs/ai/root-gate.json`) and human-readable root gate docs (`website/docs/ai/root-gate.md`).
+- Added coding-style guidance that new and updated examples should converge to Todo domain naming.
+
+### Todo domain consistency for tests
+
+- Added recurring repository-wide rule `tests-example-domain-todo`.
+- Rule sets Todo as the default domain for tests when feasible so test language stays aligned with docs and examples.
+- Registered the rule in machine-readable root gate config (`configs/ai/root-gate.json`) and human-readable root gate docs (`website/docs/ai/root-gate.md`).
+- Added testing guidance that new and updated tests should converge to Todo domain naming.
+
 ## 2026-03-22
 
 ### Arrow-only callable style added to root gate

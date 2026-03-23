@@ -14,6 +14,11 @@ Use it to keep implementation style consistent across packages and apps.
 4. [Schema-first validation and typing](/docs/schema).
 5. Clear naming where function name and parameter names describe one coherent intent.
 
+## Example domain consistency
+
+- Use the Todo domain as the default use case in repository examples (`Todo`, `TodoScope`, `readTodos`, `updateTodo`, ...).
+- Apply this rule to new examples and when updating existing examples, so documentation converges to one consistent domain language over time.
+
 ## Language and syntax
 
 - Use English for identifiers, comments, docs, and public APIs.
@@ -144,6 +149,8 @@ interface ModuleInput {
 ## Types and validation
 
 - Avoid `any`. If unavoidable, document why.
+- Do not use TypeScript `as` assertions in repository code.
+- Shape APIs and helpers so assertions are unnecessary (generics, overloads, discriminated unions, type guards).
 - Use `interface` for object shapes.
 - Do not use manual `parseX...` or `toX...` validation helpers.
 - Use [schema composition](/docs/schema) and `schema.parse`.

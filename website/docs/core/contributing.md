@@ -40,13 +40,13 @@ pnpm add -D @livon/cli
 Run server app:
 
 ```sh
-pnpm -C apps/server dev
+pnpm run dev -- --filter=./apps/server
 ```
 
 Run client app:
 
 ```sh
-pnpm -C apps/client dev
+pnpm run dev -- --filter=./apps/client
 ```
 
 Default local endpoints:
@@ -57,7 +57,7 @@ Default local endpoints:
 Run client API generation watcher:
 
 ```sh
-pnpm -C apps/client gen:client:watch
+pnpm run gen:client:watch -- --filter=./apps/client
 ```
 
 Run monorepo dev orchestration:
@@ -98,44 +98,43 @@ Root quality-gate and verification commands use concise output by default:
 
 - Success path: show Turbo task/package summaries instead of full tool logs.
 - Failure path: show only the failing package/task logs and the relevant error locations.
-- For deep debugging, rerun the failing package command directly or run the equivalent Turbo command with `--output-logs=full`.
+- For deep debugging, rerun the same root script with `-- --output-logs=full`.
 
 ### 5. Run package-local checks during development
 
 Example unit test run:
 
 ```sh
-pnpm -C packages/runtime test:unit
+pnpm run test:unit -- --filter=./packages/runtime
 ```
 
 Example integration test run:
 
 ```sh
-pnpm -C apps/server test:integration
+pnpm run test:integration -- --filter=./apps/server
 ```
 
 Monorepo test run via central Vitest workspace config:
 
 ```sh
 pnpm test
-pnpm exec vitest run --config vitest.workspace.ts --passWithNoTests
 ```
 
 Coverage example:
 
 ```sh
-pnpm -C packages/schema exec vitest run -c vitest.unit.config.ts --coverage
+pnpm run test:unit -- --filter=./packages/schema -- --coverage
 ```
 
 The coverage workflow uses the same Vitest coverage format and publishes the
 resulting `lcov.info` reports to Codecov and Coveralls after CI succeeds on
 `main`.
 
-Packages without test files currently return `No test files found` for direct `test:unit` calls.
+Packages without test files currently return `No test files found` for `test:unit` calls.
 For local verification in those packages, use:
 
 ```sh
-pnpm -C <package-path> exec vitest run -c vitest.unit.config.ts --passWithNoTests
+pnpm run test:unit -- --filter=./<package-path> -- --passWithNoTests
 ```
 
 ### 6. Build and run docs locally
@@ -147,16 +146,16 @@ pnpm docs
 ### 7. Build only one package while iterating
 
 ```sh
-pnpm -C packages/schema build
-pnpm -C packages/runtime build:watch
+pnpm run build -- --filter=./packages/schema
+pnpm run build:watch -- --filter=./packages/runtime
 ```
 
-### 8. Generate client API manually
+### 8. Generate client API via root scripts
 
 ```sh
 pnpm gen node schema
-pnpm -C apps/client gen:client
-pnpm -C apps/client gen:client:deploy
+pnpm run gen:client -- --filter=./apps/client
+pnpm run gen:client:deploy -- --filter=./apps/client
 ```
 
 ### 9. Generate package READMEs from docs
@@ -168,13 +167,13 @@ Canonical edits go into `website/docs/**`; generated README files are derived ar
 Generate:
 
 ```sh
-pnpm turbo run gen:readmes
+pnpm run gen:readmes
 ```
 
 Validate sync:
 
 ```sh
-pnpm turbo run check:readmes
+pnpm run check:readmes
 ```
 
 ## Tooling and build policy
@@ -185,12 +184,14 @@ Use default tool configs and standard commands first.
 - Prefer standard tooling commands (`rslib`, `rsbuild`, `vitest`, `eslint`, `tsc`) in package scripts.
 - Avoid custom wrapper scripts for normal build, lint, test, and typecheck flows.
 - Keep package scripts atomic (single-tool command); orchestration belongs to Turborepo.
+- Manual orchestration scripts/commands are forbidden; new workflow scripts must be integrated into the Turborepo task graph.
 
 Use Turborepo as the monorepo execution layer:
 
 - Cross-package sequencing, caching, and parallelism must be managed in `turbo.json`.
-- Root workflows should call Turbo tasks (for example `pnpm run ci`) instead of bespoke orchestration scripts.
+- Root workflows must be invoked via root scripts (for example `pnpm run ci`) and must not use bespoke orchestration scripts.
 - Root `package.json` scripts must use `turbo run ...` and must not execute ad-hoc Node or shell commands directly.
+- Repository-standard workflows must be run through root script entrypoints (`pnpm run <task>`), not direct `pnpm turbo run ...` or `pnpm -C <package>` commands.
 - Root scripts must not hardcode `--filter`; when scoped execution is needed, the caller adds the filter at invocation time.
 - Root quality-gate and verification scripts should use concise log output by default and reserve full logs for explicit debugging reruns.
 - Shared automation belongs in dedicated workspace packages (for example `tools/policies`, `tools/gen`, `tools/release`).
@@ -201,8 +202,7 @@ Use Turborepo as the monorepo execution layer:
 - Lint warning budgets are centralized in `configs/quality/lint-warning-budgets.json`; `eslint` scripts must use `--max-warnings` values from that file to prevent warning regressions.
 - Shared recurring rules belong in `/docs/ai/root-gate`; package/folder deviations belong in `/docs/ai/specializations`.
 
-Custom scripts are acceptable only when standard tooling cannot express required product behavior.
-When that happens, document the reason in the relevant docs and keep scope minimal.
+There are no exceptions for manual workflow orchestration: if a script is needed, it must be wired into `turbo.json` and invoked through a root `pnpm run <task>` entrypoint.
 
 ## Before every push (mandatory)
 
