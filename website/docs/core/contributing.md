@@ -127,8 +127,7 @@ pnpm run test:unit -- --filter=./packages/schema -- --coverage
 ```
 
 The coverage workflow uses the same Vitest coverage format and publishes the
-resulting `lcov.info` reports to Codecov and Coveralls after CI succeeds on
-`main`.
+resulting `lcov.info` reports to Coveralls after CI succeeds on `main`.
 
 Packages without test files currently return `No test files found` for `test:unit` calls.
 For local verification in those packages, use:

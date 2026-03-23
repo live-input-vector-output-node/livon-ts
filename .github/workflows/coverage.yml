@@ -12,7 +12,9 @@ on:
 
 permissions:
   contents: read
-  id-token: write
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   coverage:
@@ -32,7 +34,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6.3.0
         with:
-          node-version: 22
+          node-version: lts/*
           cache: pnpm
           cache-dependency-path: pnpm-lock.yaml
 
@@ -65,12 +67,6 @@ jobs:
 
       - name: Run workspace coverage
         run: pnpm exec vitest run --config vitest.workspace.ts --coverage --reporter=dot
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5.5.1
-        with:
-          use_oidc: true
-          fail_ci_if_error: true
 
       - name: Upload coverage to Coveralls
         uses: coverallsapp/github-action@v2.3.6

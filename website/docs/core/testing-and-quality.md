@@ -67,7 +67,7 @@ pnpm run ci
 
 After CI succeeds on `main`, a separate coverage workflow rebuilds the workspace,
 runs the Vitest workspace with coverage enabled, and uploads the resulting
-`lcov.info` reports to Codecov and Coveralls.
+`lcov.info` reports to Coveralls.
 
 ```sh
 pnpm run build
