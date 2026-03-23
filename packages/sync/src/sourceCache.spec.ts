@@ -114,8 +114,8 @@ describe('source cache', () => {
           storage,
           ttl: 'infinity',
         },
-        run: async ({ payload, entity }) => {
-          entity.upsertOne(payload);
+        run: async ({ payload }) => {
+          return payload;
         },
       });
       const unit = readUser({ slugId });
@@ -147,8 +147,8 @@ describe('source cache', () => {
           storage,
           ttl: 'infinity',
         },
-        run: async ({ payload, entity }) => {
-          entity.upsertOne(payload);
+        run: async ({ payload }) => {
+          return payload;
         },
       });
       const unit = readUser({ slugId });
@@ -173,8 +173,8 @@ describe('source cache', () => {
       const userName = randomString({ prefix: 'user-name' });
       const user = { id: userId, name: userName };
       const storage = createMemoryStorage();
-      const runMock = vi.fn(async ({ entity }) => {
-        entity.upsertOne(user);
+      const runMock = vi.fn(async () => {
+        return user;
       });
 
       const firstEntity = entity<User>({
@@ -242,8 +242,8 @@ describe('source cache', () => {
           storage,
           ttl: 'infinity',
         },
-        run: async ({ entity }) => {
-          entity.upsertOne(value);
+        run: async () => {
+          return value;
         },
       });
 
@@ -292,8 +292,8 @@ describe('source cache', () => {
       const userName = randomString({ prefix: 'user-name' });
       const user = { id: userId, name: userName };
       const storage = createMemoryStorage();
-      const runMock = vi.fn(async ({ entity }) => {
-        entity.upsertOne(user);
+      const runMock = vi.fn(async () => {
+        return user;
       });
 
       const firstEntity = entity<User>({
@@ -342,8 +342,8 @@ describe('source cache', () => {
       const userName = randomString({ prefix: 'user-name' });
       const user = { id: userId, name: userName };
       const storage = createMemoryStorage();
-      const runMock = vi.fn(async ({ entity }) => {
-        entity.upsertOne(user);
+      const runMock = vi.fn(async () => {
+        return user;
       });
 
       const firstEntity = entity<User>({
@@ -387,8 +387,8 @@ describe('source cache', () => {
       const userName = randomString({ prefix: 'user-name' });
       const user = { id: userId, name: userName };
       const storage = createMemoryStorage();
-      const runMock = vi.fn(async ({ entity }) => {
-        entity.upsertOne(user);
+      const runMock = vi.fn(async () => {
+        return user;
       });
 
       const firstEntity = entity<User>({
@@ -430,8 +430,8 @@ describe('source cache', () => {
       const userName = randomString({ prefix: 'user-name' });
       const user = { id: userId, name: userName };
       const storage = createMemoryStorage();
-      const runMock = vi.fn(async ({ entity }) => {
-        entity.upsertOne(user);
+      const runMock = vi.fn(async () => {
+        return user;
       });
 
       const firstEntity = entity<User>({

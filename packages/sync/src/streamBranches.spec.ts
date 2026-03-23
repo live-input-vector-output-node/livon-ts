@@ -42,9 +42,7 @@ describe('stream() branches', () => {
     });
 
     unsubscribeMock = vi.fn();
-    streamRunMock = vi.fn(async ({ payload, entity }) => {
-      entity.upsertOne(payload, { merge: true });
-
+    streamRunMock = vi.fn(async () => {
       return () => {
         unsubscribeMock();
       };
@@ -82,29 +80,20 @@ describe('stream() branches', () => {
       expect(unsubscribeMock).not.toHaveBeenCalled();
     });
 
-    it('should update entity-backed value when set is called', () => {
+    it('should not expose set on stream unit', () => {
       const streamStore = onUserUpdated({ slugId });
-      const setUser: User = {
-        id: randomString({ prefix: 'set-id' }),
-        name: randomString({ prefix: 'set-name' }),
-      };
+      const streamApi = streamStore as unknown as Record<string, unknown>;
 
-      streamStore.set(setUser);
-
-      expect(streamStore.get()).toEqual(setUser);
+      expect(streamApi.set).toBeUndefined();
     });
 
     it('should remove effect listener when cleanup is called', () => {
       const streamStore = onUserUpdated({ slugId });
       const listener = vi.fn();
       const remove = streamStore.effect(listener);
-      const setUser: User = {
-        id: randomString({ prefix: 'set-id' }),
-        name: randomString({ prefix: 'set-name' }),
-      };
 
       remove?.();
-      streamStore.set(setUser);
+      streamStore.start({ id: eventUserId, name: eventUserName });
 
       expect(listener).not.toHaveBeenCalled();
     });
@@ -145,7 +134,7 @@ describe('stream() branches', () => {
       expect(lateCleanup).toHaveBeenCalledTimes(1);
     });
 
-    it('should ignore direct run return value when run does not upsert entities', async () => {
+    it('should use direct run return value when stream run resolves an entity', async () => {
       const returnedUser: User = {
         id: randomString({ prefix: 'returned-id' }),
         name: randomString({ prefix: 'returned-name' }),
@@ -164,14 +153,14 @@ describe('stream() branches', () => {
       streamStore.start(payload);
       await Promise.resolve();
 
-      expect(streamStore.get()).toBeNull();
+      expect(streamStore.get()).toEqual(returnedUser);
     });
 
-    it('should return many-mode value when run calls upsertMany', async () => {
+    it('should return many-mode value when run resolves an entity array', async () => {
       const onUsersUpdated = stream<UserSlug, readonly User[], User, readonly User[], readonly User[]>({
         entity: usersEntity,
-        run: async ({ payload, entity }) => {
-          entity.upsertMany(payload, { merge: true });
+        run: async ({ payload }) => {
+          return payload;
         },
       });
       const firstUser: User = {
@@ -190,28 +179,20 @@ describe('stream() branches', () => {
       expect(streamStore.get()).toEqual([firstUser, secondUser]);
     });
 
-    it('should remove records when run calls removeOne and removeMany', async () => {
-      const firstUserId = randomString({ prefix: 'first-user-id' });
-      const secondUserId = randomString({ prefix: 'second-user-id' });
+    it('should use returned entity array as stream value', async () => {
       const thirdUserId = randomString({ prefix: 'third-user-id' });
-      const firstUserName = randomString({ prefix: 'first-user-name' });
-      const secondUserName = randomString({ prefix: 'second-user-name' });
       const thirdUserName = randomString({ prefix: 'third-user-name' });
-      const firstUser: User = { id: firstUserId, name: firstUserName };
-      const secondUser: User = { id: secondUserId, name: secondUserName };
       const thirdUser: User = { id: thirdUserId, name: thirdUserName };
 
       const onUsersUpdated = stream<UserSlug, readonly User[], User, readonly User[], readonly User[]>({
         entity: usersEntity,
-        run: async ({ payload, entity }) => {
-          entity.upsertMany(payload, { merge: true });
-          entity.removeOne(firstUserId);
-          entity.removeMany([secondUserId]);
+        run: async () => {
+          return [thirdUser];
         },
       });
       const streamStore = onUsersUpdated({ slugId });
 
-      streamStore.start([firstUser, secondUser, thirdUser]);
+      streamStore.start([thirdUser]);
       await Promise.resolve();
 
       expect(streamStore.get()).toEqual([thirdUser]);
@@ -219,12 +200,14 @@ describe('stream() branches', () => {
 
     it('should not expose refetch in run context', async () => {
       let hasRefetch = true;
+      let hasEntity = true;
 
       onUserUpdated = stream<UserSlug, User, User, User | null, User>({
         entity: usersEntity,
         run: async (context) => {
           hasRefetch = Object.prototype.hasOwnProperty.call(context, 'refetch');
-          context.entity.upsertOne(context.payload, { merge: true });
+          hasEntity = Object.prototype.hasOwnProperty.call(context, 'entity');
+          return context.payload;
         },
       });
 
@@ -235,6 +218,7 @@ describe('stream() branches', () => {
       await Promise.resolve();
 
       expect(hasRefetch).toBe(false);
+      expect(hasEntity).toBe(true);
     });
 
     it('should read current value when run calls getValue', async () => {
@@ -245,9 +229,9 @@ describe('stream() branches', () => {
 
       onUserUpdated = stream<UserSlug, User, User, User | null, User>({
         entity: usersEntity,
-        run: async ({ getValue, payload, entity }) => {
+        run: async ({ getValue, payload }) => {
           valueFromRun = getValue();
-          entity.upsertOne(payload, { merge: true });
+          return payload;
         },
       });
 
@@ -269,9 +253,9 @@ describe('stream() branches', () => {
 
       onUserUpdated = stream<UserSlug, User, User, User | null, User>({
         entity: usersEntity,
-        run: async ({ setMeta, payload, entity }) => {
+        run: async ({ setMeta, payload }) => {
           setMeta(meta);
-          entity.upsertOne(payload, { merge: true });
+          return payload;
         },
       });
 
@@ -315,15 +299,12 @@ describe('stream() branches', () => {
       expect(statuses).toContain('error');
     });
 
-    it('should ignore set when stream unit was destroyed', () => {
+    it('should not expose set when stream unit was destroyed', () => {
       const streamStore = onUserUpdated({ slugId });
-      const setUser: User = {
-        id: randomString({ prefix: 'set-id' }),
-        name: randomString({ prefix: 'set-name' }),
-      };
+      const streamApi = streamStore as unknown as Record<string, unknown>;
 
       streamStore.destroy();
-      streamStore.set(setUser);
+      expect(streamApi.set).toBeUndefined();
 
       expect(streamStore.get()).toBeNull();
     });

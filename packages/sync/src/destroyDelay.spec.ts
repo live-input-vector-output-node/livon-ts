@@ -87,8 +87,8 @@ describe('destroyDelay config', () => {
       const createUser = action<UserSlug, UserPayload, User, User | null>({
         entity: usersEntity,
         destroyDelay: 300,
-        run: async ({ payload, entity }) => {
-          entity.upsertOne(payload);
+        run: async ({ payload }) => {
+          return payload;
         },
       });
 
@@ -105,8 +105,8 @@ describe('destroyDelay config', () => {
       const onUserUpdated = stream<UserSlug, UserPayload, User, User | null>({
         entity: usersEntity,
         destroyDelay: 500,
-        run: async ({ payload, entity }) => {
-          entity.upsertOne(payload);
+        run: async ({ payload }) => {
+          return payload;
         },
       });
 

@@ -33,9 +33,9 @@ describe('status and meta transitions', () => {
 
       const readUsers = source<TemplateSlug, undefined, User, readonly User[]>({
         entity: usersEntity,
-        run: async ({ entity }) => {
+        run: async () => {
           await Promise.resolve();
-          entity.upsertMany([{ id: userId, name: userName }]);
+          return [{ id: userId, name: userName }];
         },
       });
 
@@ -63,9 +63,9 @@ describe('status and meta transitions', () => {
 
       const readUsers = source<TemplateSlug, undefined, User, readonly User[]>({
         entity: usersEntity,
-        run: async ({ setMeta, entity }) => {
+        run: async ({ setMeta }) => {
           setMeta({ severity: 'info', text: infoText });
-          entity.upsertMany([{ id: userId, name: userName }]);
+          return [{ id: userId, name: userName }];
         },
       });
 
@@ -124,9 +124,9 @@ describe('status and meta transitions', () => {
 
       const readUsers = source<TemplateSlug, undefined, User, readonly User[]>({
         entity: usersEntity,
-        run: async ({ setMeta, entity }) => {
+        run: async ({ setMeta }) => {
           setMeta(warningMeta);
-          entity.upsertMany([{ id: userId, name: userName }]);
+          return [{ id: userId, name: userName }];
         },
       });
 

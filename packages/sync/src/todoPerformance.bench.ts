@@ -28,18 +28,6 @@ interface RemoveAndRestoreTodoPayload {
   restore: Todo;
 }
 
-interface ReadTodosRunEntityApi {
-  upsertOne: (input: Todo) => Todo;
-  upsertMany: (input: readonly Todo[]) => readonly Todo[];
-  removeOne: (id: string) => boolean;
-  removeMany: (ids: readonly string[]) => readonly string[];
-}
-
-interface ReadTodosRunContext {
-  payload: readonly Todo[] | undefined;
-  entity: ReadTodosRunEntityApi;
-}
-
 interface UnitSnapshot<TValue> {
   value: TValue;
   status: 'idle' | 'loading' | 'success' | 'error';
@@ -145,13 +133,14 @@ describe('todo performance benchmarks (new dx)', () => {
 
   const readTodosRun = async ({
     payload,
-    entity: entityApi,
-  }: ReadTodosRunContext) => {
+  }: {
+    payload: readonly Todo[] | undefined;
+  }) => {
     if (!payload) {
       return;
     }
 
-    entityApi.upsertMany(payload);
+    return payload;
   };
 
   const readTodos = source<TodoScope, readonly Todo[] | undefined, Todo, readonly Todo[]>({
@@ -162,16 +151,15 @@ describe('todo performance benchmarks (new dx)', () => {
 
   const writeTodo = source<TodoScope, Todo, Todo, Todo | null>({
     entity: todosEntity,
-    run: async ({ payload, entity: entityApi }) => {
-      entityApi.upsertOne(payload);
+    run: async ({ payload }) => {
+      return payload;
     },
   });
 
   const removeTodo = source<TodoScope, RemoveAndRestoreTodoPayload, Todo, Todo | null>({
     entity: todosEntity,
-    run: async ({ payload, entity: entityApi }) => {
-      entityApi.removeOne(payload.id);
-      entityApi.upsertOne(payload.restore);
+    run: async ({ payload }) => {
+      return payload.restore;
     },
   });
 

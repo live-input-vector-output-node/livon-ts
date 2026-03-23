@@ -56,7 +56,7 @@ describe('effect chain stability', () => {
       });
       const readTodo = source<TodoScope, SourcePayload, Todo, Todo | null>({
         entity: todosEntity,
-        run: async ({ scope, payload, setMeta, entity }) => {
+        run: async ({ scope, payload, setMeta }) => {
           if (payload.mode === 'seed') {
             setMeta({
               severity: 'info',
@@ -64,12 +64,11 @@ describe('effect chain stability', () => {
                 text: payload.messageText,
               },
             });
-            entity.upsertOne({
+            return {
               id: `${scope.listId}:${todoId}`,
               title: payload.title,
               completed: false,
-            });
-            return;
+            };
           }
 
           if (payload.mode === 'noop') {
@@ -178,7 +177,7 @@ describe('effect chain stability', () => {
       });
       const readTodo = source<TodoScope, SourcePayload, Todo, Todo | null>({
         entity: todosEntity,
-        run: async ({ scope, payload, setMeta, entity }) => {
+        run: async ({ scope, payload, setMeta }) => {
           if (payload.mode === 'seed') {
             setMeta({
               severity: 'info',
@@ -186,12 +185,11 @@ describe('effect chain stability', () => {
                 text: payload.messageText,
               },
             });
-            entity.upsertOne({
+            return {
               id: `${scope.listId}:${todoId}`,
               title: payload.title,
               completed: false,
-            });
-            return;
+            };
           }
 
           if (payload.mode === 'noop') {

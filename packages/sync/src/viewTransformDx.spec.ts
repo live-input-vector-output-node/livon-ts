@@ -75,14 +75,14 @@ describe('view() DX', () => {
 
       const readTodos = source<TodoScope, undefined, Todo, readonly Todo[]>({
         entity: todosEntity,
-        run: async ({ scope, entity }) => {
-          entity.upsertMany([
+        run: async ({ scope }) => {
+          return [
             {
               id: `${scope.listId}:${todoId}`,
               title: todoTitle,
               completed: false,
             },
-          ]);
+          ];
         },
         defaultValue: [],
       });
@@ -155,21 +155,21 @@ describe('transform() DX', () => {
 
       const readTodo = source<TodoScope, undefined, Todo, Todo | null>({
         entity: todosEntity,
-        run: async ({ scope, entity }) => {
-          entity.upsertOne({
+        run: async ({ scope }) => {
+          return {
             id: `${scope.listId}:${todoId}`,
             title: initialTitle,
             completed: false,
-          });
+          };
         },
       });
 
-      const updateTodoRunMock = vi.fn(async ({ scope, payload, entity }) => {
-        entity.upsertOne({
+      const updateTodoRunMock = vi.fn(async ({ scope, payload }) => {
+        return {
           id: `${scope.listId}:${todoId}`,
           title: payload.title,
           completed: false,
-        });
+        };
       });
 
       const updateTodo = action<TodoScope, UpdateTodoTitlePayload, Todo, Todo | null>({

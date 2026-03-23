@@ -49,14 +49,14 @@ describe('meta updater semantics', () => {
 
       const readTodo = source<TodoScope, SourcePayload, Todo, Todo | null>({
         entity: todosEntity,
-        run: async ({ payload, setMeta, entity }) => {
+        run: async ({ payload, setMeta }) => {
           if (payload.mode === 'seed') {
             setMeta(warningMeta);
           } else {
             setMeta((oldMeta: unknown) => oldMeta);
           }
 
-          entity.upsertOne(payload.todo);
+          return payload.todo;
         },
       });
 
@@ -98,14 +98,14 @@ describe('meta updater semantics', () => {
 
       const updateTodo = action<TodoScope, ActionPayload, Todo, Todo | null>({
         entity: todosEntity,
-        run: async ({ payload, setMeta, entity }) => {
+        run: async ({ payload, setMeta }) => {
           if (payload.mode === 'seed') {
             setMeta(warningMeta);
           } else {
             setMeta((oldMeta: unknown) => oldMeta);
           }
 
-          entity.upsertOne(payload.todo);
+          return payload.todo;
         },
       });
 
@@ -147,14 +147,14 @@ describe('meta updater semantics', () => {
 
       const todoChanged = stream<TodoScope, StreamPayload, Todo, Todo | null>({
         entity: todosEntity,
-        run: async ({ payload, setMeta, entity }) => {
+        run: async ({ payload, setMeta }) => {
           if (payload.mode === 'seed') {
             setMeta(warningMeta);
           } else {
             setMeta((oldMeta: unknown) => oldMeta);
           }
 
-          entity.upsertOne(payload.todo);
+          return payload.todo;
         },
       });
 

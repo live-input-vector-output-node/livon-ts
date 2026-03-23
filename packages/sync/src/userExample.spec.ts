@@ -70,23 +70,17 @@ describe('user example flow', () => {
 
     readTodo = source<TodoScope, undefined, Todo, Todo | null, Todo>({
       entity: todoEntity,
-      run: async ({ scope, entity }) => {
+      run: async ({ scope }) => {
         const todo = await todosApi.findOne(scope);
-
-        if (todo) {
-          entity.upsertOne(todo);
-        }
+        return todo ?? null;
       },
     });
 
     updateTodo = action<TodoScope, Todo, Todo, Todo | null, Todo>({
       entity: todoEntity,
-      run: async ({ payload, entity }) => {
+      run: async ({ payload }) => {
         const updated = await todosApi.update({ id: payload.id }, payload);
-
-        if (updated) {
-          entity.upsertOne(updated, { merge: true });
-        }
+        return updated ?? null;
       },
     });
 
@@ -96,7 +90,7 @@ describe('user example flow', () => {
       emitSubscriptionEvent = observer;
     });
 
-    streamRunMock = vi.fn(async ({ scope, entity }) => {
+    streamRunMock = vi.fn(async ({ scope }) => {
       const subscription = {
         observe: observeMock,
         unsubscribe: unsubscribeMock,
@@ -109,7 +103,6 @@ describe('user example flow', () => {
           return;
         }
 
-        entity.upsertOne(data, { merge: true });
         void readTodo({ listId: scope.listId }).refetch();
       });
 

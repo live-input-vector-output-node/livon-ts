@@ -36,9 +36,7 @@ describe('stream()', () => {
     });
 
     unsubscribeMock = vi.fn();
-    streamRunMock = vi.fn(async ({ payload, entity }) => {
-      entity.upsertOne(payload, { merge: true });
-
+    streamRunMock = vi.fn(async () => {
       return () => {
         unsubscribeMock();
       };
@@ -123,10 +121,10 @@ describe('stream()', () => {
     it('should not expose refetch in run context', async () => {
       streamRunMock = vi.fn(async (context) => {
         const hasRefetch = Object.prototype.hasOwnProperty.call(context, 'refetch');
-        const { payload, entity } = context;
+        const hasEntity = Object.prototype.hasOwnProperty.call(context, 'entity');
 
         expect(hasRefetch).toBe(false);
-        entity.upsertOne(payload, { merge: true });
+        expect(hasEntity).toBe(false);
       });
 
       onTodoChanged = stream<TodoScope, Todo, Todo, Todo | null, Todo>({

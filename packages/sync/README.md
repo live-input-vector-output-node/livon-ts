@@ -17,7 +17,12 @@
 - `action` for writes and mutations
 - `stream` for realtime subscriptions
 
-It is the shared sync core consumed by framework adapters such as `@livon/react`.
+It also provides:
+
+- `view` for read-only derived units
+- `transform` for derived read/write units
+
+`@livon/sync` is framework-agnostic and consumed by adapters such as `@livon/react`.
 
 ## Install
 
@@ -28,76 +33,100 @@ pnpm add @livon/sync
 ## Core DX
 
 ```ts
-import { action, entity, source, stream } from '@livon/sync';
+import { action, entity, source, stream, transform, view } from '@livon/sync';
 
-interface Project {
+interface Todo {
   id: string;
-  name: string;
-  templateId: string;
+  title: string;
+  completed: boolean;
+  listId: string;
 }
 
-interface ProjectScope {
-  templateId: string;
+interface TodoScope {
+  listId: string;
 }
 
-interface SearchPayload {
-  search: string;
+interface ReadTodosPayload {
+  query: string;
 }
 
-interface CreateProjectPayload {
-  name: string;
+interface UpdateTodoPayload {
+  id: string;
+  title: string;
 }
 
-const projectEntity = entity<Project>({
+const todoEntity = entity<Todo>({
   idOf: (value) => value.id,
   ttl: 30_000,
   draft: 'global',
   destroyDelay: 250,
 });
 
-const readProjects = source<ProjectScope, SearchPayload, Project, readonly Project[]>({
-  entity: projectEntity,
+const readTodos = source<TodoScope, ReadTodosPayload, Todo, readonly Todo[]>({
+  entity: todoEntity,
   ttl: 60_000,
-  run: async ({ scope, payload, upsertMany }) => {
-    const projects = await api.readProjects({
-      templateId: scope.templateId,
-      search: payload.search,
+  defaultValue: [],
+  run: async ({ scope, payload, setMeta, entity }) => {
+    setMeta({ request: 'loading-todos' });
+    const todos = await api.readTodos({
+      listId: scope.listId,
+      query: payload.query,
     });
 
-    upsertMany(projects, { merge: true });
+    entity.upsertMany(todos, { merge: true });
   },
 });
 
-const createProject = action<ProjectScope, CreateProjectPayload, Project, Project | null>({
-  entity: projectEntity,
-  run: async ({ scope, payload, upsertOne }) => {
-    const created = await api.createProject({
-      templateId: scope.templateId,
-      name: payload.name,
+const updateTodo = action<TodoScope, UpdateTodoPayload, Todo, Todo | null>({
+  entity: todoEntity,
+  run: async ({ scope, payload, entity }) => {
+    const updated = await api.updateTodo({
+      id: payload.id,
+      listId: scope.listId,
+      title: payload.title,
     });
 
-    upsertOne(created);
+    entity.upsertOne(updated, { merge: true });
   },
 });
 
-const onProjectUpdated = stream<ProjectScope, undefined, Project, Project | null>({
-  entity: projectEntity,
-  source: readProjects,
-  run: async ({ scope, upsertOne, refetch }) => {
-    const subscription = api.subscribeProjectUpdated({
-      templateId: scope.templateId,
-    });
+const onTodoEvents = stream<TodoScope, undefined, Todo, null>({
+  entity: todoEntity,
+  run: async ({ scope }) => {
+    return api.subscribeTodoEvents({
+      listId: scope.listId,
+      onEvent: (event) => {
+        if (event.type !== 'changed') {
+          return;
+        }
 
-    subscription.observe(({ data, error }) => {
-      if (error || !data) {
+        // Source stays read-only; stream triggers explicit source refetch.
+        const todoListUnit = readTodos({ listId: scope.listId });
+        void todoListUnit.refetch();
+      },
+      onError: () => {
         return;
-      }
-
-      upsertOne(data, { merge: true });
-      void refetch(scope)();
+      },
     });
+  },
+});
 
-    return subscription.unsubscribe;
+const todoCount = view<TodoScope, number>({
+  defaultValue: 0,
+  out: async ({ scope, get }) => {
+    const todosSnapshot = await get(readTodos(scope));
+    return todosSnapshot.value.length;
+  },
+});
+
+const todoTitleTransform = transform<TodoScope, UpdateTodoPayload, string>({
+  defaultValue: '',
+  out: async ({ scope, get }) => {
+    const todosSnapshot = await get(readTodos(scope));
+    return todosSnapshot.value[0]?.title ?? '';
+  },
+  in: async ({ scope, payload, set }) => {
+    await set(updateTodo(scope), payload);
   },
 });
 ```
@@ -114,10 +143,10 @@ const onProjectUpdated = stream<ProjectScope, undefined, Project, Project | null
 Use `run(payload)` when all consumers should share one store:
 
 ```ts
-const unit = readProjects({ templateId: 't-1' });
+const todoListUnit = readTodos({ listId: 'list-1' });
 
-await unit.run({ search: 'alpha' });
-await unit.run({ search: 'beta' });
+await todoListUnit.run({ query: 'open' });
+await todoListUnit.run({ query: 'mine' });
 
 // same unit, same shared store, latest run updates that store
 ```
@@ -127,21 +156,22 @@ await unit.run({ search: 'beta' });
 Put search into `scope` when each search result needs its own store:
 
 ```ts
-interface ProjectSearchScope {
-  templateId: string;
-  search: string;
+interface TodoSearchScope {
+  listId: string;
+  query: string;
 }
 
-const readProjectsByScope = source<ProjectSearchScope, undefined, Project, readonly Project[]>({
-  entity: projectEntity,
-  run: async ({ scope, upsertMany }) => {
-    const projects = await api.readProjects(scope);
-    upsertMany(projects);
+const readTodosByScope = source<TodoSearchScope, undefined, Todo, readonly Todo[]>({
+  entity: todoEntity,
+  defaultValue: [],
+  run: async ({ scope, entity }) => {
+    const todos = await api.readTodos(scope);
+    entity.upsertMany(todos);
   },
 });
 
-const alphaUnit = readProjectsByScope({ templateId: 't-1', search: 'alpha' });
-const betaUnit = readProjectsByScope({ templateId: 't-1', search: 'beta' });
+const openUnit = readTodosByScope({ listId: 'list-1', query: 'open' });
+const mineUnit = readTodosByScope({ listId: 'list-1', query: 'mine' });
 
 // different scopes => different stores
 ```
@@ -149,32 +179,66 @@ const betaUnit = readProjectsByScope({ templateId: 't-1', search: 'beta' });
 ## Runtime Usage
 
 ```ts
-const readUnit = readProjects({ templateId: 't-1' });
-const createUnit = createProject({ templateId: 't-1' });
-const streamUnit = onProjectUpdated({ templateId: 't-1' });
+const todoListUnit = readTodos({ listId: 'list-1' });
+const updateTodoUnit = updateTodo({ listId: 'list-1' });
+const todoEventsUnit = onTodoEvents({ listId: 'list-1' });
+const todoCountViewUnit = todoCount({ listId: 'list-1' });
+const todoTitleTransformUnit = todoTitleTransform({ listId: 'list-1' });
 
-await readUnit.run({ search: 'active' });
-const value = readUnit.get();
+await todoListUnit.run({ query: 'open' });
+await todoListUnit.refetch(); // reuse previous payload
+await todoListUnit.refetch({ query: 'mine' }); // override payload for refetch
+await todoListUnit.force({ query: 'mine' }); // bypass run dedupe for same payload
 
-await createUnit.run({ name: 'New Project' });
+const todoList = todoListUnit.get();
 
-streamUnit.start();
-streamUnit.stop();
+await updateTodoUnit.run({
+  id: todoList[0].id,
+  title: 'Updated title',
+});
 
-const removeListener = readUnit.effect((snapshot) => {
-  // snapshot.value
-  // snapshot.status: idle | loading | success | error
-  // snapshot.meta
-  // snapshot.context
+todoEventsUnit.start();
+todoEventsUnit.stop();
+
+todoListUnit.draft.set((previousTodos) => {
+  return previousTodos.map((todo, index) => {
+    if (index !== 0) {
+      return todo;
+    }
+
+    return {
+      ...todo,
+      title: `${todo.title} (draft)`,
+    };
+  });
+});
+todoListUnit.draft.clean();
+
+const todoCountSnapshot = todoCountViewUnit.get();
+await todoTitleTransformUnit.set({
+  id: todoList[0].id,
+  title: 'From transform',
+});
+const todoTitleSnapshot = todoTitleTransformUnit.get();
+
+const removeListener = todoListUnit.effect((snapshot) => {
+  console.log(snapshot.status, snapshot.meta, snapshot.context);
 });
 
 removeListener?.();
-readUnit.destroy();
+todoListUnit.destroy();
 ```
+
+## `view` and `transform`
+
+- `view` is read-only and recomputes from dependencies accessed via `get(...)`.
+- `transform` has `out` (read) and optional `in` (write). Its `set(...)` calls `in`.
+- In both units, `get()` returns a full snapshot (`value`, `status`, `meta`, `context`), not only raw `value`.
 
 ## Structured Value Support
 
-`@livon/sync` uses stable structured serialization for scope keys, payload keys, source-cache records, and the non-`structuredClone` fallback used for draft updates.
+`@livon/sync` uses msgpack-based serialization for scope/payload keys and source cache rehydration.
+Scope and payload inputs must be msgpack-serializable.
 
 Round-trips preserve common non-JSON values such as:
 
@@ -186,7 +250,7 @@ Round-trips preserve common non-JSON values such as:
 - `Map`
 - `Set`
 
-Functions and symbols are only stringified for internal key generation. They are not cache-round-tripped as callable/symbol values.
+Functions and symbols are not valid scope/payload values for key serialization.
 
 ## API Summary
 
@@ -207,30 +271,58 @@ Entity mutation methods exposed to units:
 
 - config: `entity`, optional `ttl`, `draft`, `cache`, `destroyDelay`, `onDestroy`, `defaultValue`, `update`, `run`
 - unit from `source(scope)`:
+  - `(payload?)` to set/reuse the next payload and return the same unit
   - `run(payload?)`
   - `force(payload?)`
-  - `refetch(scopeInput?)(payloadInput?)`
-  - `get`, `set`
-  - `setDraft`, `cleanDraft`
+  - `refetch(payload?)`
+  - `get`
+  - `draft.set(...)`, `draft.clean()`
   - `effect`, `stop`, `destroy`
+
+`source` is read-only at unit level: there is no direct `unit.set(...)`.
 
 ### `action({ ... })`
 
-- config: `entity`, optional `destroyDelay`, `defaultValue`, `update`, `run`
+- config: `entity`, optional `destroyDelay`, `defaultValue`, `run`
 - unit from `action(scope)`:
+  - `(payload?)` to set/reuse the next payload and return the same unit
   - `run(payload?)`
-  - `get`, `set`
+  - `get`
   - `effect`, `stop`, `destroy`
 
 ### `stream({ ... })`
 
-- config: `entity`, optional `source`, `destroyDelay`, `defaultValue`, `update`, `run`
+- config: `entity`, optional `destroyDelay`, `defaultValue`, `run`
 - unit from `stream(scope)`:
+  - `(payload?)` to set/reuse the next payload and return the same unit
   - `start(payload?)`
-  - `get`, `set`
+  - `get`
   - `effect`, `stop`, `destroy`
 
-`run` may return a cleanup function for all unit types.
+### `view({ ... })`
+
+- config: `out`, optional `defaultValue`, `destroyDelay`
+- unit from `view(scope)`:
+  - `get()` -> snapshot
+  - `effect`, `stop`, `destroy`
+
+### `transform({ ... })`
+
+- config: `out`, optional `in`, `defaultValue`, `destroyDelay`
+- unit from `transform(scope)`:
+  - `get()` -> snapshot
+  - `set(payload)` -> executes `in(...)`
+  - `effect`, `stop`, `destroy`
+
+### Shared run context (`source` / `action` / `stream`)
+
+- `scope`
+- `payload`
+- `setMeta`
+- `getValue`
+- `entity.upsertOne`, `entity.upsertMany`, `entity.removeOne`, `entity.removeMany`
+
+`run` may return a cleanup function for run-based units (`source`, `action`, `stream`).
 That cleanup executes on `stop()`/`destroy()`.
 
 ## Advanced Tracking API (framework adapters)

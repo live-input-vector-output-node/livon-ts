@@ -96,18 +96,16 @@ describe('draftOverlay', () => {
     readProject = source<ProjectSlug, undefined, Project, Project, Project>({
       entity: projectsEntity,
       ...(draft ? { draft } : {}),
-      run: async ({ scope, entity }) => {
-        const project = await readProjectApi(scope);
-        entity.upsertOne(project);
+      run: async ({ scope }) => {
+        return readProjectApi(scope);
       },
     });
 
     readProjects = source<ProjectSlug, undefined, Project, readonly Project[], readonly Project[]>({
       entity: projectsEntity,
       ...(draft ? { draft } : {}),
-      run: async ({ scope, entity }) => {
-        const projects = await readProjectsApi(scope);
-        entity.upsertMany(projects);
+      run: async ({ scope }) => {
+        return readProjectsApi(scope);
       },
     });
   };

@@ -36,8 +36,8 @@ describe('source() branches', () => {
       ttl: 30_000,
     });
 
-    runMock = vi.fn(async ({ payload, entity }) => {
-      entity.upsertOne({ id: payload.search, name: payload.search });
+    runMock = vi.fn(async ({ payload }) => {
+      return { id: payload.search, name: payload.search };
     });
 
     readUser = source<UserSlug, SearchPayload, User, User | null, User>({
@@ -55,9 +55,9 @@ describe('source() branches', () => {
 
       readUser = source<UserSlug, SearchPayload, User, User | null, User>({
         entity: usersEntity,
-        run: async ({ getValue, payload, entity }) => {
+        run: async ({ getValue, payload }) => {
           valueFromRun = getValue();
-          entity.upsertOne({ id: payload.search, name: payload.search });
+          return { id: payload.search, name: payload.search };
         },
       });
 
@@ -68,7 +68,7 @@ describe('source() branches', () => {
       expect(valueFromRun).toBeNull();
     });
 
-    it('should ignore direct run return value when run does not upsert entities', async () => {
+    it('should use direct run return value when no previous entity value exists', async () => {
       const returnedUser: User = {
         id: randomString({ prefix: 'returned-id' }),
         name: randomString({ prefix: 'returned-name' }),
@@ -83,9 +83,8 @@ describe('source() branches', () => {
 
       const userStore = readUser({ slugId });
 
-      await expect(userStore.run({ search: searchValue })).resolves.toBeNull();
-
-      expect(userStore.get()).toBeNull();
+      await expect(userStore.run({ search: searchValue })).resolves.toEqual(returnedUser);
+      expect(userStore.get()).toEqual(returnedUser);
     });
 
     it('should remove effect listener when cleanup is called', async () => {
@@ -99,24 +98,14 @@ describe('source() branches', () => {
       expect(listener).not.toHaveBeenCalled();
     });
 
-    it('should remove records when run calls removeOne and removeMany', async () => {
-      const firstUserId = randomString({ prefix: 'first-user-id' });
-      const secondUserId = randomString({ prefix: 'second-user-id' });
+    it('should use returned many-mode value when run resolves an entity list', async () => {
       const thirdUserId = randomString({ prefix: 'third-user-id' });
-      const firstUserName = randomString({ prefix: 'first-user-name' });
-      const secondUserName = randomString({ prefix: 'second-user-name' });
       const thirdUserName = randomString({ prefix: 'third-user-name' });
 
       const readUsers = source<UserSlug, SearchPayload, User, readonly User[], readonly User[]>({
         entity: usersEntity,
-        run: async ({ entity }) => {
-          entity.upsertMany([
-            { id: firstUserId, name: firstUserName },
-            { id: secondUserId, name: secondUserName },
-            { id: thirdUserId, name: thirdUserName },
-          ]);
-          entity.removeOne(firstUserId);
-          entity.removeMany([secondUserId]);
+        run: async () => {
+          return [{ id: thirdUserId, name: thirdUserName }];
         },
       });
 

@@ -61,7 +61,6 @@ export interface SourceConfig<
   TPayload,
   TEntity extends object,
   RResult,
-  UUpdate extends RResult,
   TEntityId extends EntityId = string,
 > {
   entity: Entity<TEntity, TEntityId>;
@@ -74,7 +73,6 @@ export interface SourceConfig<
     context: SourceRunContext<TInput, TPayload, TEntity, RResult, TEntityId>,
   ) => Promise<SourceRunResult<RResult>> | SourceRunResult<RResult>;
   defaultValue?: RResult;
-  update?: (current: RResult, update: UUpdate) => RResult;
 }
 
 export interface SourceDraftApi<RResult, UUpdate extends RResult> {
@@ -249,7 +247,7 @@ const isEntityValue = <TEntity extends object>(value: unknown): value is TEntity
 };
 
 const isEntityArray = <TEntity extends object>(value: unknown): value is readonly TEntity[] => {
-  return Array.isArray(value);
+  return Array.isArray(value) && value.every((entry) => isEntityValue<TEntity>(entry));
 };
 
 const resolveGlobalStorage = (): CacheStorage | undefined => {
@@ -498,8 +496,7 @@ export const source = <
   onDestroy,
   run,
   defaultValue,
-  update,
-}: SourceConfig<TInput, TPayload, TEntity, RResult, UUpdate, TEntityId>,
+}: SourceConfig<TInput, TPayload, TEntity, RResult, TEntityId>,
 ): Source<TInput, TPayload, RResult, UUpdate> => {
   const cacheTtl = resolveCacheTtl({
     sourceCache: cache,
@@ -674,6 +671,12 @@ export const source = <
         });
       };
 
+      const clearEntityMode = (): void => {
+        internal.hasEntityValue = false;
+        internal.membershipIds = [];
+        entity.clearUnitMembership(internal.key);
+      };
+
       const setContext = (input: Partial<SourceContext>): void => {
         internal.state.context = {
           ...internal.state.context,
@@ -828,6 +831,34 @@ export const source = <
           notifyUnit(internal);
         }
 
+        const applyRunValue = (nextValue: RResult | void): void => {
+          if (!isLatestRun()) {
+            return;
+          }
+
+          if (nextValue === undefined) {
+            internal.state.value = getModeValue(internal, readEntityValueById);
+            return;
+          }
+
+          if (isEntityArray<TEntity>(nextValue)) {
+            const upsertedEntities = entity.upsertMany(nextValue);
+            setManyMode(upsertedEntities);
+            internal.state.value = getModeValue(internal, readEntityValueById);
+            return;
+          }
+
+          if (isEntityValue<TEntity>(nextValue)) {
+            const upsertedEntity = entity.upsertOne(nextValue);
+            setOneMode(upsertedEntity);
+            internal.state.value = getModeValue(internal, readEntityValueById);
+            return;
+          }
+
+          clearEntityMode();
+          internal.state.value = nextValue;
+        };
+
         const upsertOne = (input: TEntity, options?: UpsertOptions): TEntity => {
           if (!isLatestRun()) {
             return input;
@@ -934,7 +965,7 @@ export const source = <
 
               internal.state.value = getModeValue(internal, readEntityValueById);
             } else {
-              internal.state.value = getModeValue(internal, readEntityValueById);
+              applyRunValue(result);
             }
 
             internal.lastRunAt = Date.now();

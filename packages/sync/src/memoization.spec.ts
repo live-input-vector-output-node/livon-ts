@@ -49,8 +49,8 @@ describe('source memoization', () => {
     templateId = randomString({ prefix: 'template-id' });
     searchValue = randomString({ prefix: 'search' });
 
-    runMock = vi.fn(async ({ payload, entity }) => {
-      entity.upsertMany([{ id: payload.search, name: payload.search }]);
+    runMock = vi.fn(async ({ payload }) => {
+      return [{ id: payload.search, name: payload.search }];
     });
 
     usersEntity = entity<User>({
@@ -93,9 +93,8 @@ describe('source memoization', () => {
     it('should dedupe in-flight run calls for same serialized scope and payload', async () => {
       const blocker = deferred<UsersResult>();
 
-      runMock = vi.fn(async ({ entity }) => {
-        const users = await blocker.promise;
-        entity.upsertOne(users);
+      runMock = vi.fn(async () => {
+        return blocker.promise;
       });
 
       readUsers = source<TemplateSlug, SearchPayload, User, UsersResult, UsersResult>({

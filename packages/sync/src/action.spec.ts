@@ -33,8 +33,8 @@ describe('action()', () => {
     createName = randomString({ prefix: 'create-name' });
     createdUserId = randomString({ prefix: 'created-user-id' });
 
-    runMock = vi.fn(async ({ payload, entity }) => {
-      entity.upsertOne({ id: createdUserId, ...payload });
+    runMock = vi.fn(async ({ payload }) => {
+      return { id: createdUserId, ...payload };
     });
 
     usersEntity = entity<User>({
@@ -97,10 +97,11 @@ describe('action()', () => {
       expect(typeof createUserStore.get).toBe('function');
     });
 
-    it('should expose set function when action unit is created', () => {
+    it('should not expose set function when action unit is created', () => {
       const createUserStore = createUser({ slugId });
+      const actionApi = createUserStore as unknown as Record<string, unknown>;
 
-      expect(typeof createUserStore.set).toBe('function');
+      expect(actionApi.set).toBeUndefined();
     });
 
     it('should expose effect function when action unit is created', () => {
@@ -129,38 +130,11 @@ describe('action()', () => {
       expect(createUserStore.get()).toEqual({ id: createdUserId, name: createName });
     });
 
-    it('should support direct object set when set is called with object', () => {
+    it('should not expose set api on action unit at runtime', () => {
       const createUserStore = createUser({ slugId });
-      const setUserId = randomString({ prefix: 'set-user-id' });
-      const setUserName = randomString({ prefix: 'set-user-name' });
+      const actionApi = createUserStore as unknown as Record<string, unknown>;
 
-      createUserStore.set({ id: setUserId, name: setUserName });
-
-      expect(createUserStore.get()).toEqual({ id: setUserId, name: setUserName });
-    });
-
-    it('should support updater callback when set is called with function', () => {
-      const createUserStore = createUser({ slugId });
-      const setUserId = randomString({ prefix: 'set-user-id' });
-      const setUserName = randomString({ prefix: 'set-user-name' });
-      const updatedName = randomString({ prefix: 'updated-user-name' });
-
-      createUserStore.set({ id: setUserId, name: setUserName });
-      createUserStore.set((oldValue) => ({ ...oldValue, name: updatedName }));
-
-      expect(createUserStore.get()).toEqual({ id: setUserId, name: updatedName });
-    });
-
-    it('should notify effect listener when set is called', () => {
-      const createUserStore = createUser({ slugId });
-      const listener = vi.fn();
-      const setUserId = randomString({ prefix: 'set-user-id' });
-      const setUserName = randomString({ prefix: 'set-user-name' });
-
-      createUserStore.effect(listener);
-      createUserStore.set({ id: setUserId, name: setUserName });
-
-      expect(listener).toHaveBeenCalledTimes(1);
+      expect(actionApi.set).toBeUndefined();
     });
   });
 });

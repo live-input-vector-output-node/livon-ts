@@ -70,17 +70,15 @@ describe('entity membership sync across sources', () => {
 
     readUser = source<UserByIdSlug, undefined, User, User | null, User>({
       entity: usersEntity,
-      run: async ({ scope, entity }) => {
-        const user = await readUserApi(scope);
-        entity.upsertOne(user);
+      run: async ({ scope }) => {
+        return readUserApi(scope);
       },
     });
 
     readUsers = source<UsersByTemplateSlug, undefined, User, readonly User[], readonly User[]>({
       entity: usersEntity,
-      run: async ({ scope, entity }) => {
-        const users = await readUsersApi(scope);
-        entity.upsertMany(users);
+      run: async ({ scope }) => {
+        return readUsersApi(scope);
       },
     });
   });
