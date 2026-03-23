@@ -60,6 +60,9 @@ Tooling policy is defined in [Contributing](contributing).
 - Prefer default configs and standard tool commands over custom wrappers.
 - Use Turborepo (`turbo.json`) as the orchestration layer for monorepo tasks.
 - Root `package.json` scripts must orchestrate via `turbo run ...`.
+- Repository workflow commands must be executed via root script entrypoints (`pnpm run <task>`); direct `pnpm turbo run ...` and direct `pnpm -C <package>` workflow execution are not allowed.
+- Manual orchestration scripts/commands are forbidden; if a new workflow command is introduced, it must be integrated as a Turbo task.
+- Repository workflow tasks must be declared in `turbo.json` under `tasks`.
 - Root scripts must not hardcode `--filter`; callers may pass filters when needed.
 - Shared automation must live in dedicated workspace packages (for example `tools/*`) and run via Turbo tasks.
 - Package README files under `packages/*/README.md` are generated artifacts sourced from `website/docs/packages/*.md`.

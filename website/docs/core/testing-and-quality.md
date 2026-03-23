@@ -94,13 +94,28 @@ They must communicate behavior clearly enough that readers understand the implem
 - Use semantic test names with this pattern: `it('should <do> when <happen>', ...)`.
 - Prefer behavior-first phrasing over implementation details where possible.
 
+### Example domain consistency
+
+- When feasible, use the Todo domain as the default use case in tests (`Todo`, `TodoScope`, `readTodos`, `updateTodo`, ...).
+- Apply this to new tests and when updating existing tests so test language stays aligned with repository docs and examples.
+
+### Default delivery flow
+
+- Use `DX -> TDD -> implementation` as the default sequence.
+- Step 1 (`DX`): agree the target API/usage shape before writing tests or implementation.
+- Step 2 (`TDD`): encode the full agreed DX as tests first.
+- Step 3 (`implementation`): change implementation only until all tests are green.
+- After each step, provide a concise summary of current alignment vs agreed DX and explicitly confirm whether to proceed or adjust.
+
 ### Structure
 
 - Use one top-level `describe('<api>()')` block per tested source file.
 - Inside it, use `describe('happy')` and `describe('sad')` to separate success and failure behavior.
 - Use `beforeAll`, `beforeEach`, `afterEach`, and `afterAll` consistently for setup and cleanup.
+- Keep per-group test data small and centralized: initialize shared group data in `beforeEach` or reusable test utilities where feasible.
 - Before writing new tests, check existing test files for similar setup and behaviors.
 - If setup is repeated (for example `entity/source/action/stream` construction), move it into `beforeEach` or reusable helpers in `testing/` utilities.
+- If multiple tests validate the same behavior with different input data, consolidate them into one parameterized `it.each` test when feasible.
 - Prefer extending existing test utilities over adding near-duplicate setup code in each test file.
 - Keep reusable test helpers under `testing/utils/` with one utility per file and a local `testing/utils/index.ts` barrel export.
 

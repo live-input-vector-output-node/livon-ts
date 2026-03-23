@@ -38,8 +38,32 @@
       ]
     },
     {
+      "id": "no-as-type-assertions",
+      "statement": "Do not use TypeScript `as` type assertions in repository code; design the type contracts (generics, overloads, discriminated unions, type guards) so casts are not required.",
+      "humanSources": [
+        "website/docs/core/coding-style-guide.md",
+        "website/docs/ai/root-gate.md"
+      ],
+      "agentSources": [
+        "PROMPT.md",
+        "AGENTS.md"
+      ]
+    },
+    {
       "id": "test-setup-deduplication",
       "statement": "Before adding new tests, inspect existing tests for similar setup and extract shared setup into beforeEach blocks or reusable test utilities to avoid duplicated entity/source/action/stream scaffolding.",
+      "humanSources": [
+        "website/docs/core/testing-and-quality.md",
+        "website/docs/ai/root-gate.md"
+      ],
+      "agentSources": [
+        "PROMPT.md",
+        "AGENTS.md"
+      ]
+    },
+    {
+      "id": "test-structure-and-parametrization",
+      "statement": "Tests must be grouped with describe blocks; shared group test data must be initialized through beforeEach or reusable test utilities when feasible; and tests that validate the same behavior with different data should be consolidated with it.each.",
       "humanSources": [
         "website/docs/core/testing-and-quality.md",
         "website/docs/ai/root-gate.md"
@@ -92,7 +116,7 @@
     },
     {
       "id": "root-turbo-orchestration",
-      "statement": "Root package scripts must orchestrate through turbo run.",
+      "statement": "Repository workflow orchestration is Turborepo-only with no exceptions: workflows must be invoked through root scripts (`pnpm run <task>`); direct `pnpm turbo run ...` and manual orchestration scripts/commands are forbidden; workflow tasks must be declared in `turbo.json`; package scripts stay atomic and non-orchestrating.",
       "humanSources": [
         "website/docs/core/governance.md",
         "website/docs/core/contributing.md",
@@ -178,6 +202,42 @@
         "AGENTS.md",
         "tools/policies/check.ts",
         "tools/policies/src/checks/check-doc-related-library-links.ts"
+      ]
+    },
+    {
+      "id": "docs-example-domain-todo",
+      "statement": "Repository examples should use the Todo domain as the default use case to keep docs and API examples consistent across packages.",
+      "humanSources": [
+        "website/docs/core/coding-style-guide.md",
+        "website/docs/ai/root-gate.md"
+      ],
+      "agentSources": [
+        "PROMPT.md",
+        "AGENTS.md"
+      ]
+    },
+    {
+      "id": "tests-example-domain-todo",
+      "statement": "Repository tests should use the Todo domain as the default use case when feasible so tests and docs stay aligned in language and intent.",
+      "humanSources": [
+        "website/docs/core/testing-and-quality.md",
+        "website/docs/ai/root-gate.md"
+      ],
+      "agentSources": [
+        "PROMPT.md",
+        "AGENTS.md"
+      ]
+    },
+    {
+      "id": "dx-tdd-implementation-flow",
+      "statement": "Default delivery flow is DX -> TDD -> implementation: agree API/DX first, cover the full agreed DX in tests second, then implement until all tests are green.",
+      "humanSources": [
+        "website/docs/core/testing-and-quality.md",
+        "website/docs/ai/root-gate.md"
+      ],
+      "agentSources": [
+        "PROMPT.md",
+        "AGENTS.md"
       ]
     },
     {

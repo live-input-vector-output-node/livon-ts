@@ -90,6 +90,20 @@
       ],
       "outputs": []
     },
+    "test:unit": {
+      "dependsOn": [
+        "build",
+        "^build"
+      ],
+      "outputs": []
+    },
+    "test:integration": {
+      "dependsOn": [
+        "build",
+        "^build"
+      ],
+      "outputs": []
+    },
     "ci": {
       "dependsOn": [
         "qg"
@@ -123,6 +137,25 @@
       "outputs": []
     },
     "gen": {
+      "outputs": []
+    },
+    "gen:client": {
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": []
+    },
+    "gen:client:deploy": {
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": []
+    },
+    "bench": {
+      "dependsOn": [
+        "build",
+        "^build"
+      ],
       "outputs": []
     },
     "release:check": {
