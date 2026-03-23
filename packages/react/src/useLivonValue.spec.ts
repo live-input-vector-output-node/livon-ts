@@ -26,11 +26,11 @@ describe('useLivonValue()', () => {
     const nextName = randomString({ prefix: 'next-user-name' });
 
     const readUser = createReadUserSource({
-      run: async ({ upsertOne }) => {
-        upsertOne({
+      run: async () => {
+        return {
           id: nextId,
           name: nextName,
-        });
+        };
       },
     });
 
@@ -52,11 +52,11 @@ describe('useLivonValue()', () => {
     const nextName = randomString({ prefix: 'next-user-name' });
 
     const readUser = createReadUserSource({
-      run: async ({ upsertOne }) => {
-        upsertOne({
+      run: async () => {
+        return {
           id: nextId,
           name: nextName,
-        });
+        };
       },
     });
 
@@ -80,15 +80,15 @@ describe('useLivonValue()', () => {
     const nextName = randomString({ prefix: 'next-user-name' });
 
     const readUser = createReadUserSource({
-      run: async ({ upsertOne }) => {
+      run: async () => {
         await new Promise<void>((resolve) => {
           releaseRun = resolve;
         });
 
-        upsertOne({
+        return {
           id: nextId,
           name: nextName,
-        });
+        };
       },
     });
 

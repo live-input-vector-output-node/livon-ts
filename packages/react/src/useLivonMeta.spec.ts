@@ -22,9 +22,9 @@ describe('useLivonMeta()', () => {
 
   const createSourceWithMeta = (nextMeta: MessageMeta) => {
     return createReadUserSource({
-      run: async ({ setMeta, upsertOne }) => {
+      run: async ({ setMeta }) => {
         setMeta(nextMeta);
-        upsertOne(createRandomUser());
+        return createRandomUser();
       },
     });
   };

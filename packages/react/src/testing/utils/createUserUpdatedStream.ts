@@ -9,12 +9,8 @@ import type {
   UserUpdatedStream,
 } from './types.js';
 
-const defaultUserUpdatedRun: UserUpdatedRun = async ({ payload, upsertOne }) => {
-  if (payload) {
-    upsertOne(payload);
-  }
-
-  return () => undefined;
+const defaultUserUpdatedRun: UserUpdatedRun = async ({ payload }) => {
+  return payload ?? null;
 };
 
 export const createUserUpdatedStream = (
@@ -23,7 +19,7 @@ export const createUserUpdatedStream = (
   const entityStore = input.entity ?? createUserEntity();
   const run = input.run ?? defaultUserUpdatedRun;
 
-  return stream<UserSlug, User, User, User | null>({
+  return stream<UserSlug, User, User, User | null, User | null>({
     entity: entityStore,
     run,
   });

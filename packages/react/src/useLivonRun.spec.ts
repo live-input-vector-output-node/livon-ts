@@ -18,8 +18,8 @@ describe('useLivonRun()', () => {
   });
 
   it('should invoke source run when returned function is executed', async () => {
-    const runMock = vi.fn(async ({ upsertOne }) => {
-      upsertOne(createRandomUser());
+    const runMock = vi.fn(async () => {
+      return createRandomUser();
     });
 
     const readUser = createReadUserSource({
@@ -37,8 +37,8 @@ describe('useLivonRun()', () => {
   });
 
   it('should invoke action run when returned function is executed', async () => {
-    const runMock = vi.fn(async ({ payload, upsertOne }) => {
-      upsertOne({ id: payload.id, name: payload.name });
+    const runMock = vi.fn(async ({ payload }) => {
+      return { id: payload.id, name: payload.name };
     });
 
     const createUser = createCreateUserAction({

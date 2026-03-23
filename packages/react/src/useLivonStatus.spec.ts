@@ -26,12 +26,12 @@ describe('useLivonStatus()', () => {
 
   it('should return success when run resolves', async () => {
     const readUser = createReadUserSource({
-      run: async ({ upsertOne }) => {
+      run: async () => {
         await Promise.resolve();
-        upsertOne(createRandomUser({
+        return createRandomUser({
           idPrefix: 'resolved-id',
           namePrefix: 'resolved-name',
-        }));
+        });
       },
     });
 

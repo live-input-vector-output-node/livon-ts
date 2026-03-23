@@ -9,8 +9,8 @@ import type {
   UserSlug,
 } from './types.js';
 
-const defaultCreateUserRun: CreateUserRun = async ({ payload, upsertOne }) => {
-  upsertOne(payload);
+const defaultCreateUserRun: CreateUserRun = async ({ payload }) => {
+  return payload;
 };
 
 export const createCreateUserAction = (
@@ -19,7 +19,7 @@ export const createCreateUserAction = (
   const entityStore = input.entity ?? createUserEntity();
   const run = input.run ?? defaultCreateUserRun;
 
-  return action<UserSlug, User, User, User | null>({
+  return action<UserSlug, User, User, User | null, User | null>({
     entity: entityStore,
     run,
   });

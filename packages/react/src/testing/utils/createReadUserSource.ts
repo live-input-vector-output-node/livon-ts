@@ -10,8 +10,8 @@ import type {
   UserSlug,
 } from './types.js';
 
-const defaultReadUserRun: ReadUserRun = async ({ upsertOne }) => {
-  upsertOne(createRandomUser());
+const defaultReadUserRun: ReadUserRun = async () => {
+  return createRandomUser();
 };
 
 export const createReadUserSource = (
@@ -20,7 +20,7 @@ export const createReadUserSource = (
   const entityStore = input.entity ?? createUserEntity();
   const run = input.run ?? defaultReadUserRun;
 
-  return source<UserSlug, undefined, User, User | null>({
+  return source<UserSlug, undefined, User, User | null, User | null>({
     entity: entityStore,
     run,
   });
