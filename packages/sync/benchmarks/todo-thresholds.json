@@ -30,7 +30,7 @@
     "minHz": 350000
   },
   "todo transform set access after 100_000 seed": {
-    "maxP99Ms": 3,
+    "maxP99Ms": 1.8962,
     "maxMeanMs": 0.35,
     "minHz": 2500
   },
