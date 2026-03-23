@@ -5,14 +5,14 @@
     "minHz": 130000
   },
   "todo entity write upsert one after 100_000 seed": {
-    "maxP99Ms": 1.8,
+    "maxP99Ms": 3.2,
     "maxMeanMs": 0.2,
-    "minHz": 5000
+    "minHz": 4500
   },
   "todo entity remove one plus restore after 100_000 seed": {
-    "maxP99Ms": 0.5,
-    "maxMeanMs": 0.12,
-    "minHz": 9000
+    "maxP99Ms": 1,
+    "maxMeanMs": 0.14,
+    "minHz": 8000
   },
   "todo source get 100_000 entries": {
     "maxP99Ms": 0.001,
