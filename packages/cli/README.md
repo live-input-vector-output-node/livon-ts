@@ -42,7 +42,7 @@ livon \
 - use `--js` when you only need `esm + cjs` and want to skip declaration files
 
 With `--out src/generated/api.ts`, compiled files are written to `src/generated/dist`.
-By default, `livon` keeps the generated manifest out of the source tree and only writes source files. If you need directory-import compatibility for a deploy or packaging step, add `--emit-package-json`; that writes `src/generated/package.json` on demand so imports such as `import { api } from './generated'` resolve to the matching build output without keeping the manifest tracked in git.
+`livon` also writes `src/generated/package.json` with conditional exports, so `import { api } from './generated'` resolves to the matching build output.
 
 ## Linked process lifecycle
 
@@ -69,7 +69,6 @@ livon --endpoint ws://127.0.0.1:3002/ws --out src/generated/api.ts -- --some-com
 - `--esm` (`boolean`): build only ESM output (`dist/index.js`).
 - `--cjs` (`boolean`): build only CJS output (`dist/index.cjs`).
 - `--js` (`boolean`): builds only `esm + cjs` (skips `.d.ts` output).
-- `--emit-package-json` (`boolean`): writes `src/generated/package.json` during deploy/package generation when directory imports need manifest-based resolution.
 - `--no-event` (`boolean`): disables event wrapping behavior for transports expecting plain request mode.
 - `--` (delimiter): separates livon flags from linked command arguments.
 
