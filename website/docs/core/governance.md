@@ -68,5 +68,5 @@ Tooling policy is defined in [Contributing](contributing).
 - Package README files under `packages/*/README.md` are generated artifacts sourced from `website/docs/packages/*.md`.
 - README sync is executed via `tools/readmes` (`gen:readmes`, `check:readmes`) and is part of CI/publish enforcement.
 - Lint warning budgets are centralized in `configs/quality/lint-warning-budgets.json` and enforced through package `lint` scripts + `check:policies`.
-- Before every push, run `pnpm qg` (full repository gates: `check:readmes`, `check:policies`, `lint`, `typecheck`, `test`, `build`).
+- Before every push, run `pnpm qg` (full repository gates: `check:readmes`, `check:policies`, `lint`, `typecheck`, `test`, `bench:gate`, `build`).
 - For local development speed, `pnpm qg:changed` runs the same gate graph for affected scope only.

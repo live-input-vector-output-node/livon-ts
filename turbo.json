@@ -117,6 +117,7 @@
         "lint",
         "typecheck",
         "test",
+        "bench:gate",
         "build"
       ],
       "outputs": []
@@ -152,6 +153,13 @@
       "outputs": []
     },
     "bench": {
+      "dependsOn": [
+        "build",
+        "^build"
+      ],
+      "outputs": []
+    },
+    "bench:gate": {
       "dependsOn": [
         "build",
         "^build"

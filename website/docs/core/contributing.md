@@ -73,7 +73,7 @@ pnpm qg
 ```
 
 `qg` runs the full repository gate set via Turbo:
-`check:readmes`, `check:policies`, `lint`, `typecheck`, `test`, `build`.
+`check:readmes`, `check:policies`, `lint`, `typecheck`, `test`, `bench:gate`, `build`.
 `check:policies` also enforces the linked related-library chip format in docs and overviews.
 
 For fast local loops, run only affected scope with the same gate graph:
