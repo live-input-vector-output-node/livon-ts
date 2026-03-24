@@ -5,7 +5,9 @@
 
 [![npm](https://img.shields.io/npm/v/%40livon%2Fclient)](https://www.npmjs.com/package/@livon/client)
 [![dependencies](https://img.shields.io/librariesio/release/npm/%40livon%2Fclient?label=dependencies)](https://libraries.io/npm/%40livon%2Fclient)
-[![code quality](https://img.shields.io/github/actions/workflow/status/live-input-vector-output-node/livon-ts/code-quality.yml?branch=main&label=code%20quality)](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/code-quality.yml)
+[![npm publish](https://img.shields.io/github/actions/workflow/status/live-input-vector-output-node/livon-ts/publish.yml?branch=main&label=npm%20publish)](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/publish.yml)
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/12249/badge)](https://www.bestpractices.dev/projects/12249)
+[![Snyk security](https://snyk.io/test/npm/@livon/client/badge.svg)](https://snyk.io/test/npm/@livon/client)
 [![package size](https://img.shields.io/npm/unpacked-size/%40livon%2Fclient?label=package%20size)](https://www.npmjs.com/package/@livon/client)
 [![license](https://img.shields.io/npm/l/%40livon%2Fclient)](https://www.npmjs.com/package/@livon/client)
 
