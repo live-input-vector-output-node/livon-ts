@@ -1,4 +1,4 @@
-export { stream } from './stream/index.js';
+export { stream } from './stream.js';
 export type {
   Stream,
   StreamCleanup,
@@ -6,4 +6,4 @@ export type {
   StreamRunContext,
   StreamRunResult,
   StreamUnit,
-} from './stream/index.js';
+} from './types.js';

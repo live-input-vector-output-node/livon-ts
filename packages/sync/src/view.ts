@@ -156,22 +156,26 @@ const applySnapshot = <
   next: NextSnapshotInput<RResult>,
 ): boolean => {
   const currentSnapshot = internal.snapshot;
-  const nextSnapshot = createUnitSnapshot({
-    value: getSnapshotValue(currentSnapshot, next),
-    status: getSnapshotStatus(currentSnapshot, next),
-    meta: getSnapshotMeta(currentSnapshot, next),
-    context: getSnapshotContext(currentSnapshot, next),
-  });
+  const nextValue = getSnapshotValue(currentSnapshot, next);
+  const nextStatus = getSnapshotStatus(currentSnapshot, next);
+  const nextMeta = getSnapshotMeta(currentSnapshot, next);
+  const nextContext = getSnapshotContext(currentSnapshot, next);
 
   if (
-    Object.is(nextSnapshot.value, currentSnapshot.value)
-    && nextSnapshot.status === currentSnapshot.status
-    && Object.is(nextSnapshot.meta, currentSnapshot.meta)
-    && Object.is(nextSnapshot.context, currentSnapshot.context)
+    Object.is(nextValue, currentSnapshot.value)
+    && nextStatus === currentSnapshot.status
+    && Object.is(nextMeta, currentSnapshot.meta)
+    && Object.is(nextContext, currentSnapshot.context)
   ) {
     return false;
   }
 
+  const nextSnapshot = createUnitSnapshot({
+    value: nextValue,
+    status: nextStatus,
+    meta: nextMeta,
+    context: nextContext,
+  });
   internal.snapshot = nextSnapshot;
   notifyEffectListeners(internal.listeners, internal.snapshot);
   return true;

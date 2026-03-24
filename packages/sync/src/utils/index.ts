@@ -1,6 +1,13 @@
 export { serializeKey } from './serializeKey.js';
 export { decodeBase64, encodeBase64 } from './base64.js';
 export { createCacheWriteQueue } from './cacheWriteQueue.js';
+export { createDependencyCache } from './dependencyCache.js';
+export {
+  clearEntityMembership,
+  setManyEntityMembership,
+  setOneEntityMembership,
+} from './entityMembership.js';
+export { getModeValue, isEntityArray, isEntityValue } from './entityMode.js';
 export { cloneValue } from './cloneValue.js';
 export { resolveInput } from './resolveInput.js';
 export { resolveValue } from './resolveValue.js';
@@ -20,3 +27,12 @@ export type {
   UnitStatus,
   ValueUpdater,
 } from './types.js';
+export type {
+  CreateDependencyCacheConfig,
+  DependencyCache,
+  DependencyCacheClearPrimaryInput,
+  DependencyCacheDeleteInput,
+  DependencyCacheGetOrCreateInput,
+} from './dependencyCache.js';
+export type { EntityMembershipState } from './entityMembership.js';
+export type { ModeValueState, ReadById } from './entityMode.js';
