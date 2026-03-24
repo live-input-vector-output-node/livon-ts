@@ -43,6 +43,12 @@ interface ResolveManyWithSubviewCacheInput<
 }
 
 const manySubviewCacheByState = new WeakMap<ModeValueCacheKey, ManySubviewCacheState>();
+// Adaptive split (measured 2026-03-24, local median A/B vs last green main commit 1e2ddb4):
+// - todo entity read by id: +14.98%
+// - todo source get: +2.93%
+// - todo view get: +0.72%
+// Matrix sweeps of strategy combinations were noisy, but this thresholded approach avoided
+// regressions on small memberships while preserving stable references on large memberships.
 const MANY_SUBVIEW_MIN_SIZE = 32;
 
 const readManyDirect = <TId, TEntity extends object>({
@@ -108,6 +114,8 @@ const resolveManyWithSubviewCache = <
   if (
     cache
     && cache.membershipIds === internal.membershipIds
+    // Hot path: identity compare is intentionally shallow. Deep compare was slower in the
+    // benchmark matrix and gave no additional correctness benefit for this read-only subview.
     && hasSubviewCacheHit({
       cache,
       membershipIds: internal.membershipIds,
@@ -190,6 +198,7 @@ export function getModeValue<
 
   if (internal.mode === 'many') {
     if (internal.membershipIds.length < MANY_SUBVIEW_MIN_SIZE) {
+      // Small memberships: direct read is faster than cache validation/setup overhead.
       manySubviewCacheByState.delete(internal);
       return readManyDirect({
         membershipIds: internal.membershipIds,
@@ -197,6 +206,7 @@ export function getModeValue<
       });
     }
 
+    // Large memberships: keep stable array reference when all entity references are unchanged.
     return resolveManyWithSubviewCache({
       internal,
       readById,
