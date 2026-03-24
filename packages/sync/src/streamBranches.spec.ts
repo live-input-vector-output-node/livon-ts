@@ -200,13 +200,15 @@ describe('stream() branches', () => {
 
     it('should not expose refetch in run context', async () => {
       let hasRefetch = true;
-      let hasEntity = true;
+      let hasEntity = false;
+      let hasUpsertOne = false;
 
       onUserUpdated = stream<UserSlug, User, User, User | null, User>({
         entity: usersEntity,
         run: async (context) => {
           hasRefetch = Object.prototype.hasOwnProperty.call(context, 'refetch');
           hasEntity = Object.prototype.hasOwnProperty.call(context, 'entity');
+          hasUpsertOne = typeof context.upsertOne === 'function';
           return context.payload;
         },
       });
@@ -218,7 +220,8 @@ describe('stream() branches', () => {
       await Promise.resolve();
 
       expect(hasRefetch).toBe(false);
-      expect(hasEntity).toBe(true);
+      expect(hasEntity).toBe(false);
+      expect(hasUpsertOne).toBe(true);
     });
 
     it('should read current value when run calls getValue', async () => {

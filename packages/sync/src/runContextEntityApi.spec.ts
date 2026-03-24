@@ -28,7 +28,7 @@ interface ContextShape {
 
 describe('run context entity api', () => {
   describe('sad', () => {
-    it('should expose only context.entity split mutation api in source run context', async () => {
+    it('should expose only top-level split mutation api in source run context', async () => {
       const todosEntity = entity<Todo>({
         idOf: (todo) => todo.id,
       });
@@ -56,18 +56,18 @@ describe('run context entity api', () => {
       await readTodo({ listId: randomString({ prefix: 'list-id' }) }).run();
 
       expect(contextShape).toEqual({
-        hasTopLevelUpsertOne: false,
-        hasTopLevelUpsertMany: false,
-        hasTopLevelRemoveOne: false,
-        hasTopLevelRemoveMany: false,
-        hasEntityUpsertOne: true,
-        hasEntityUpsertMany: true,
-        hasEntityRemoveOne: true,
-        hasEntityRemoveMany: true,
+        hasTopLevelUpsertOne: true,
+        hasTopLevelUpsertMany: true,
+        hasTopLevelRemoveOne: true,
+        hasTopLevelRemoveMany: true,
+        hasEntityUpsertOne: false,
+        hasEntityUpsertMany: false,
+        hasEntityRemoveOne: false,
+        hasEntityRemoveMany: false,
       });
     });
 
-    it('should expose only context.entity split mutation api in action run context', async () => {
+    it('should expose only top-level split mutation api in action run context', async () => {
       const todosEntity = entity<Todo>({
         idOf: (todo) => todo.id,
       });
@@ -98,18 +98,18 @@ describe('run context entity api', () => {
       });
 
       expect(contextShape).toEqual({
-        hasTopLevelUpsertOne: false,
-        hasTopLevelUpsertMany: false,
-        hasTopLevelRemoveOne: false,
-        hasTopLevelRemoveMany: false,
-        hasEntityUpsertOne: true,
-        hasEntityUpsertMany: true,
-        hasEntityRemoveOne: true,
-        hasEntityRemoveMany: true,
+        hasTopLevelUpsertOne: true,
+        hasTopLevelUpsertMany: true,
+        hasTopLevelRemoveOne: true,
+        hasTopLevelRemoveMany: true,
+        hasEntityUpsertOne: false,
+        hasEntityUpsertMany: false,
+        hasEntityRemoveOne: false,
+        hasEntityRemoveMany: false,
       });
     });
 
-    it('should expose only context.entity split mutation api in stream run context', async () => {
+    it('should expose only top-level split mutation api in stream run context', async () => {
       const todosEntity = entity<Todo>({
         idOf: (todo) => todo.id,
       });
@@ -144,14 +144,14 @@ describe('run context entity api', () => {
       await Promise.resolve();
 
       expect(contextShape).toEqual({
-        hasTopLevelUpsertOne: false,
-        hasTopLevelUpsertMany: false,
-        hasTopLevelRemoveOne: false,
-        hasTopLevelRemoveMany: false,
-        hasEntityUpsertOne: true,
-        hasEntityUpsertMany: true,
-        hasEntityRemoveOne: true,
-        hasEntityRemoveMany: true,
+        hasTopLevelUpsertOne: true,
+        hasTopLevelUpsertMany: true,
+        hasTopLevelRemoveOne: true,
+        hasTopLevelRemoveMany: true,
+        hasEntityUpsertOne: false,
+        hasEntityUpsertMany: false,
+        hasEntityRemoveOne: false,
+        hasEntityRemoveMany: false,
       });
     });
   });

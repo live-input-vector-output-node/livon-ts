@@ -1,4 +1,4 @@
-export { action } from './action/index.js';
+export { action } from './action.js';
 export type {
   Action,
   ActionCleanup,
@@ -6,4 +6,4 @@ export type {
   ActionRunContext,
   ActionRunResult,
   ActionUnit,
-} from './action/index.js';
+} from './types.js';

@@ -1,0 +1,12 @@
+
+> livon-monorepo@0.29.0-rc.2 bench:gate /Users/cspeck/dev/new_livon
+> turbo run bench:gate --output-logs=errors-only "--filter=./packages/sync"
+
+• Packages in scope: @livon/sync
+• Running bench:gate in 1 packages
+• Remote caching disabled
+
+ Tasks:    3 successful, 3 total
+Cached:    0 cached, 3 total
+  Time:    24.699s 
+

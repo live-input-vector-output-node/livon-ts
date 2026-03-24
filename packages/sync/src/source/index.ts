@@ -1,4 +1,4 @@
-export { source } from './source/index.js';
+export { source } from './source.js';
 export type {
   Source,
   SourceCleanup,
@@ -9,4 +9,4 @@ export type {
   SourceRunResult,
   SourceUnit,
   SourceUnitByKeyMap,
-} from './source/index.js';
+} from './types.js';
