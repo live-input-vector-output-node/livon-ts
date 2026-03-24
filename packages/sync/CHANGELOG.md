@@ -1,5 +1,12 @@
 # @livon/sync
 
+## 0.29.0-rc.3
+
+### Patch Changes
+
+- Improve `entityMode` many-read performance by using an adaptive subview strategy:
+  small memberships keep the direct fast path, while large memberships reuse stable references when entity entries are unchanged.
+
 ## 0.29.0-rc.1
 
 ## 0.28.0-rc.4

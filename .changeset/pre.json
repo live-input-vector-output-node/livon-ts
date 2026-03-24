@@ -32,6 +32,7 @@
     "coverage-badges-and-reporting",
     "fixed-badge-grid",
     "fresh-ravens-kick",
+    "perf-sync-entitymode-cache",
     "release-0-29-0-rc-1"
   ]
 }
