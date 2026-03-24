@@ -39,6 +39,17 @@ export const setOneEntityMembership = <
   }: SetOneEntityMembershipInput<TEntity, TId>,
 ): void => {
   const id = entity.idOf(value);
+  const currentMembershipIds = state.membershipIds;
+  const currentFirstMembershipId = currentMembershipIds[0];
+  const isUnchanged = state.hasEntityValue
+    && state.mode === 'one'
+    && currentMembershipIds.length === 1
+    && currentFirstMembershipId === id;
+
+  if (isUnchanged) {
+    return;
+  }
+
   const membershipIds: readonly TId[] = [id];
 
   state.mode = 'one';
@@ -61,7 +72,16 @@ export const setManyEntityMembership = <
     values,
   }: SetManyEntityMembershipInput<TEntity, TId>,
 ): void => {
+  const currentMembershipIds = state.membershipIds;
   const membershipIds: readonly TId[] = values.map((entry) => entity.idOf(entry));
+  const isUnchanged = state.hasEntityValue
+    && state.mode === 'many'
+    && currentMembershipIds.length === membershipIds.length
+    && currentMembershipIds.every((id, index) => id === membershipIds[index]);
+
+  if (isUnchanged) {
+    return;
+  }
 
   state.mode = 'many';
   state.hasEntityValue = true;

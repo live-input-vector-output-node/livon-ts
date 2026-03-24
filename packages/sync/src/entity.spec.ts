@@ -79,6 +79,76 @@ describe('entity()', () => {
       });
     });
 
+    it('should keep current instance on replace upsert when next object is shallow-equivalent', () => {
+      const userId = randomString({ prefix: 'user-id' });
+      const usersEntity = entity<User>({
+        idOf: (value) => value.id,
+      });
+      let notifyCount = 0;
+
+      usersEntity.registerUnit({
+        key: 'users-unit',
+        onChange: () => {
+          notifyCount += 1;
+        },
+      });
+      usersEntity.setUnitMembership({
+        key: 'users-unit',
+        ids: [userId],
+      });
+
+      const first = usersEntity.upsertOne({
+        id: userId,
+        name: 'Ada',
+      });
+      const second = usersEntity.upsertOne({
+        id: userId,
+        name: 'Ada',
+      });
+
+      expect(second).toBe(first);
+      expect(usersEntity.getById(userId)).toBe(first);
+      expect(notifyCount).toBe(1);
+    });
+
+    it('should keep current instance on merge upsert when merged shape is unchanged', () => {
+      const userId = randomString({ prefix: 'user-id' });
+      const usersEntity = entity<User>({
+        idOf: (value) => value.id,
+      });
+      let notifyCount = 0;
+
+      usersEntity.registerUnit({
+        key: 'users-merge-unit',
+        onChange: () => {
+          notifyCount += 1;
+        },
+      });
+      usersEntity.setUnitMembership({
+        key: 'users-merge-unit',
+        ids: [userId],
+      });
+
+      const first = usersEntity.upsertOne({
+        id: userId,
+        name: 'Grace',
+        status: 'active',
+      });
+      const second = usersEntity.upsertOne({
+        id: userId,
+        name: 'Grace',
+      }, { merge: true });
+      const third = usersEntity.upsertOne({
+        id: userId,
+        status: 'active',
+      }, { merge: true });
+
+      expect(second).toBe(first);
+      expect(third).toBe(first);
+      expect(usersEntity.getById(userId)).toBe(first);
+      expect(notifyCount).toBe(1);
+    });
+
     it('should remove a record when removeOne is called with one id', () => {
       const userId = randomString({ prefix: 'user-id' });
       const userName = randomString({ prefix: 'user-name' });
