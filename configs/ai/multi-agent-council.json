@@ -27,6 +27,11 @@
       "skillFile": ".github/skills/performance-specialist/SKILL.md"
     },
     {
+      "id": "clean-code-pathfinder",
+      "name": "Clean Code Pathfinder",
+      "skillFile": ".github/skills/clean-code-pathfinder/SKILL.md"
+    },
+    {
       "id": "test-quality-specialist",
       "name": "Test Quality Specialist",
       "skillFile": ".github/skills/test-quality-specialist/SKILL.md"
@@ -51,7 +56,8 @@
       "ownerRoleId": "system-architect",
       "consultedRoleIds": [
         "backend-architect",
-        "frontend-architect"
+        "frontend-architect",
+        "clean-code-pathfinder"
       ],
       "mustCompleteBefore": [
         "implementation-plan"
@@ -88,7 +94,8 @@
         "system-architect",
         "backend-architect",
         "frontend-architect",
-        "performance-specialist"
+        "performance-specialist",
+        "clean-code-pathfinder"
       ],
       "mustCompleteBefore": [
         "final-council-decision"
@@ -103,6 +110,7 @@
         "backend-architect",
         "frontend-architect",
         "performance-specialist",
+        "clean-code-pathfinder",
         "test-quality-specialist"
       ]
     }
