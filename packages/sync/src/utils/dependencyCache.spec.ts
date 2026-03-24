@@ -240,5 +240,27 @@ describe('createDependencyCache()', () => {
       expect(first).not.toBe(second);
       expect(build).toHaveBeenCalledTimes(2);
     });
+
+    it('should treat cached undefined values as cache hits', () => {
+      const cache = createDependencyCache<undefined>();
+      const build = vi.fn(() => {
+        return undefined;
+      });
+
+      const first = cache.getOrCreate({
+        primaryDependencies: ['scope-a'],
+        secondaryDependencies: ['payload-a'],
+        build,
+      });
+      const second = cache.getOrCreate({
+        primaryDependencies: ['scope-a'],
+        secondaryDependencies: ['payload-a'],
+        build,
+      });
+
+      expect(first).toBeUndefined();
+      expect(second).toBeUndefined();
+      expect(build).toHaveBeenCalledTimes(1);
+    });
   });
 });
