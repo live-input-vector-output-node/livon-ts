@@ -6,6 +6,7 @@ sidebar_position: 8
 [![npm](https://img.shields.io/npm/v/%40livon%2Fcli)](https://www.npmjs.com/package/@livon/cli)
 [![dependencies](https://img.shields.io/librariesio/release/npm/%40livon%2Fcli?label=dependencies)](https://libraries.io/npm/%40livon%2Fcli)
 [![code quality](https://img.shields.io/github/actions/workflow/status/live-input-vector-output-node/livon-ts/code-quality.yml?branch=main&label=code%20quality)](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/code-quality.yml)
+[![Snyk security](https://snyk.io/test/npm/@livon/cli/badge.svg)](https://snyk.io/test/npm/@livon/cli)
 [![package size](https://img.shields.io/npm/unpacked-size/%40livon%2Fcli?label=package%20size)](https://www.npmjs.com/package/@livon/cli)
 [![license](https://img.shields.io/npm/l/%40livon%2Fcli)](https://www.npmjs.com/package/@livon/cli)
 

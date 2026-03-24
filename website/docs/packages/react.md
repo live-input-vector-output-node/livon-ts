@@ -6,6 +6,7 @@ sidebar_position: 9
 [![npm](https://img.shields.io/npm/v/%40livon%2Freact)](https://www.npmjs.com/package/@livon/react)
 [![dependencies](https://img.shields.io/librariesio/release/npm/%40livon%2Freact?label=dependencies)](https://libraries.io/npm/%40livon%2Freact)
 [![code quality](https://img.shields.io/github/actions/workflow/status/live-input-vector-output-node/livon-ts/code-quality.yml?branch=main&label=code%20quality)](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/code-quality.yml)
+[![Snyk security](https://snyk.io/test/npm/@livon/react/badge.svg)](https://snyk.io/test/npm/@livon/react)
 [![package size](https://img.shields.io/npm/unpacked-size/%40livon%2Freact?label=package%20size)](https://www.npmjs.com/package/@livon/react)
 [![license](https://img.shields.io/npm/l/%40livon%2Freact)](https://www.npmjs.com/package/@livon/react)
 
