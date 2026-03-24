@@ -1,6 +1,6 @@
 {
   "name": "@livon/sync",
-  "version": "0.29.0-rc.1",
+  "version": "0.29.0-rc.2",
   "private": false,
   "type": "module",
   "description": "Entity-centric sync layer for LIVON sources, actions, and streams.",
@@ -49,6 +49,48 @@
       "development": "./src/index.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
+    },
+    "./action": {
+      "types": "./dist/action.d.ts",
+      "development": "./src/action.ts",
+      "import": "./dist/action.js",
+      "require": "./dist/action.cjs"
+    },
+    "./entity": {
+      "types": "./dist/entity.d.ts",
+      "development": "./src/entity.ts",
+      "import": "./dist/entity.js",
+      "require": "./dist/entity.cjs"
+    },
+    "./source": {
+      "types": "./dist/source.d.ts",
+      "development": "./src/source.ts",
+      "import": "./dist/source.js",
+      "require": "./dist/source.cjs"
+    },
+    "./stream": {
+      "types": "./dist/stream.d.ts",
+      "development": "./src/stream.ts",
+      "import": "./dist/stream.js",
+      "require": "./dist/stream.cjs"
+    },
+    "./view": {
+      "types": "./dist/view.d.ts",
+      "development": "./src/view.ts",
+      "import": "./dist/view.js",
+      "require": "./dist/view.cjs"
+    },
+    "./transform": {
+      "types": "./dist/transform.d.ts",
+      "development": "./src/transform.ts",
+      "import": "./dist/transform.js",
+      "require": "./dist/transform.cjs"
+    },
+    "./tracking": {
+      "types": "./dist/tracking/index.d.ts",
+      "development": "./src/tracking/index.ts",
+      "import": "./dist/tracking/index.js",
+      "require": "./dist/tracking/index.cjs"
     }
   },
   "scripts": {

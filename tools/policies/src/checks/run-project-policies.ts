@@ -8,6 +8,7 @@ import { collectProjects, readJson } from '../shared/fs-utils.ts';
 import type { PackageJsonLike, PolicyCheckResult, PolicyContext } from '../shared/types.ts';
 import { checkEslint } from './project/check-eslint.ts';
 import { checkForbiddenManualValidationHelpers } from './project/check-forbidden-manual-validation-helpers.ts';
+import { checkPackageExports } from './project/check-package-exports.ts';
 import { checkPackageMeta } from './project/check-package-meta.ts';
 import { checkRequiredScripts } from './project/check-required-scripts.ts';
 import { checkTsconfig } from './project/check-tsconfig.ts';
@@ -26,6 +27,7 @@ const runProjectChecks = async (
   }
 
   errors.push(...checkPackageMeta(pkgJson, projectPath, REQUIRED_PACKAGE_FIELDS));
+  errors.push(...(await checkPackageExports(pkgJson, projectPath)));
   errors.push(...checkRequiredScripts(pkgJson, requiredScripts, projectPath));
   errors.push(...(await checkTsconfig(projectPath)));
   errors.push(...(await checkEslint(projectPath)));

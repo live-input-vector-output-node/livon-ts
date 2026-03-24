@@ -1,6 +1,6 @@
 {
   "name": "@livon/schema",
-  "version": "0.29.0-rc.1",
+  "version": "0.29.0-rc.2",
   "private": false,
   "type": "module",
   "description": "Schema builders, validators, and API definitions for LIVON.",
@@ -49,6 +49,150 @@
       "development": "./src/index.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
+    },
+    "./SchemaValidationError": {
+      "types": "./dist/SchemaValidationError.d.ts",
+      "development": "./src/SchemaValidationError.ts",
+      "import": "./dist/SchemaValidationError.js",
+      "require": "./dist/SchemaValidationError.cjs"
+    },
+    "./schemaFactory": {
+      "types": "./dist/schemaFactory.d.ts",
+      "development": "./src/schemaFactory.ts",
+      "import": "./dist/schemaFactory.js",
+      "require": "./dist/schemaFactory.cjs"
+    },
+    "./typeGuards": {
+      "types": "./dist/typeGuards.d.ts",
+      "development": "./src/typeGuards.ts",
+      "import": "./dist/typeGuards.js",
+      "require": "./dist/typeGuards.cjs"
+    },
+    "./string": {
+      "types": "./dist/string.d.ts",
+      "development": "./src/string.ts",
+      "import": "./dist/string.js",
+      "require": "./dist/string.cjs"
+    },
+    "./number": {
+      "types": "./dist/number.d.ts",
+      "development": "./src/number.ts",
+      "import": "./dist/number.js",
+      "require": "./dist/number.cjs"
+    },
+    "./boolean": {
+      "types": "./dist/boolean.d.ts",
+      "development": "./src/boolean.ts",
+      "import": "./dist/boolean.js",
+      "require": "./dist/boolean.cjs"
+    },
+    "./date": {
+      "types": "./dist/date.d.ts",
+      "development": "./src/date.ts",
+      "import": "./dist/date.js",
+      "require": "./dist/date.cjs"
+    },
+    "./enumeration": {
+      "types": "./dist/enumeration.d.ts",
+      "development": "./src/enumeration.ts",
+      "import": "./dist/enumeration.js",
+      "require": "./dist/enumeration.cjs"
+    },
+    "./array": {
+      "types": "./dist/array.d.ts",
+      "development": "./src/array.ts",
+      "import": "./dist/array.js",
+      "require": "./dist/array.cjs"
+    },
+    "./object": {
+      "types": "./dist/object.d.ts",
+      "development": "./src/object.ts",
+      "import": "./dist/object.js",
+      "require": "./dist/object.cjs"
+    },
+    "./union": {
+      "types": "./dist/union.d.ts",
+      "development": "./src/union.ts",
+      "import": "./dist/union.js",
+      "require": "./dist/union.cjs"
+    },
+    "./or": {
+      "types": "./dist/or.d.ts",
+      "development": "./src/or.ts",
+      "import": "./dist/or.js",
+      "require": "./dist/or.cjs"
+    },
+    "./tuple": {
+      "types": "./dist/tuple.d.ts",
+      "development": "./src/tuple.ts",
+      "import": "./dist/tuple.js",
+      "require": "./dist/tuple.cjs"
+    },
+    "./literal": {
+      "types": "./dist/literal.d.ts",
+      "development": "./src/literal.ts",
+      "import": "./dist/literal.js",
+      "require": "./dist/literal.cjs"
+    },
+    "./binary": {
+      "types": "./dist/binary.d.ts",
+      "development": "./src/binary.ts",
+      "import": "./dist/binary.js",
+      "require": "./dist/binary.cjs"
+    },
+    "./api": {
+      "types": "./dist/api.d.ts",
+      "development": "./src/api.ts",
+      "import": "./dist/api.js",
+      "require": "./dist/api.cjs"
+    },
+    "./operation": {
+      "types": "./dist/operation.d.ts",
+      "development": "./src/operation.ts",
+      "import": "./dist/operation.js",
+      "require": "./dist/operation.cjs"
+    },
+    "./before": {
+      "types": "./dist/before.d.ts",
+      "development": "./src/before.ts",
+      "import": "./dist/before.js",
+      "require": "./dist/before.cjs"
+    },
+    "./after": {
+      "types": "./dist/after.d.ts",
+      "development": "./src/after.ts",
+      "import": "./dist/after.js",
+      "require": "./dist/after.cjs"
+    },
+    "./and": {
+      "types": "./dist/and.d.ts",
+      "development": "./src/and.ts",
+      "import": "./dist/and.js",
+      "require": "./dist/and.cjs"
+    },
+    "./context": {
+      "types": "./dist/context.d.ts",
+      "development": "./src/context.ts",
+      "import": "./dist/context.js",
+      "require": "./dist/context.cjs"
+    },
+    "./schemaModule": {
+      "types": "./dist/schemaModule.d.ts",
+      "development": "./src/schemaModule.ts",
+      "import": "./dist/schemaModule.js",
+      "require": "./dist/schemaModule.cjs"
+    },
+    "./doc": {
+      "types": "./dist/doc.d.ts",
+      "development": "./src/doc.ts",
+      "import": "./dist/doc.js",
+      "require": "./dist/doc.cjs"
+    },
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "development": "./src/types.ts",
+      "import": "./dist/types.js",
+      "require": "./dist/types.cjs"
     }
   },
   "scripts": {
