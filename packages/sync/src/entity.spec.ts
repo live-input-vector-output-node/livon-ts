@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { entity } from './entity.js';
+import { defaultRuntimeQueue } from './runtimeQueue/index.js';
 import { randomString } from './testing/randomData.js';
 
 interface Project {
@@ -179,6 +180,75 @@ describe('entity()', () => {
 
       expect(usersEntity.getById(firstUserId)).toBeUndefined();
       expect(usersEntity.getById(secondUserId)).toBeUndefined();
+    });
+
+    it('should batch large upsertMany notifications through microtask queue', () => {
+      defaultRuntimeQueue.flush('state');
+      const usersEntity = entity<User>({
+        idOf: (value) => value.id,
+      });
+      const ids = Array.from({ length: 40 }, (_unused, index) => {
+        return `user-${index}`;
+      });
+      let notifyCount = 0;
+
+      usersEntity.registerUnit({
+        key: 'batched-upsert-many-unit',
+        onChange: () => {
+          notifyCount += 1;
+        },
+      });
+      usersEntity.setUnitMembership({
+        key: 'batched-upsert-many-unit',
+        ids,
+      });
+
+      usersEntity.upsertMany(ids.map((id) => {
+        return {
+          id,
+          name: `Name ${id}`,
+        };
+      }));
+
+      expect(notifyCount).toBe(0);
+      defaultRuntimeQueue.flush('state');
+      expect(notifyCount).toBe(1);
+    });
+
+    it('should batch large removeMany notifications through microtask queue', () => {
+      defaultRuntimeQueue.flush('state');
+      const usersEntity = entity<User>({
+        idOf: (value) => value.id,
+      });
+      const ids = Array.from({ length: 40 }, (_unused, index) => {
+        return `remove-user-${index}`;
+      });
+      let notifyCount = 0;
+
+      usersEntity.upsertMany(ids.map((id) => {
+        return {
+          id,
+          name: `Name ${id}`,
+        };
+      }));
+      defaultRuntimeQueue.flush('state');
+
+      usersEntity.registerUnit({
+        key: 'batched-remove-many-unit',
+        onChange: () => {
+          notifyCount += 1;
+        },
+      });
+      usersEntity.setUnitMembership({
+        key: 'batched-remove-many-unit',
+        ids,
+      });
+
+      usersEntity.removeMany(ids);
+
+      expect(notifyCount).toBe(0);
+      defaultRuntimeQueue.flush('state');
+      expect(notifyCount).toBe(1);
     });
   });
 });

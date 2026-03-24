@@ -149,6 +149,7 @@ interface EntityUnitKeyInput<TId extends EntityId> {
 }
 
 let nextEntityQueueId = 0;
+const NOTIFY_BATCH_THRESHOLD = 32;
 
 export const entity = <
   TInput extends object,
@@ -352,17 +353,32 @@ export const entity = <
     });
   };
 
-  const queueUnitsById = (id: TId): void => {
-    const unitKeys = unitKeysById.get(id);
-    if (!unitKeys) {
+  const queueUnitsByKeys = (keys: Set<string>): void => {
+    if (keys.size === 0) {
       return;
     }
 
-    Array.from(unitKeys).forEach((key) => {
+    keys.forEach((key) => {
       dirtyUnitKeys.add(key);
     });
 
     scheduleDirtyUnitsFlush();
+  };
+
+  const queueUnitsByIds = (ids: Set<TId>): void => {
+    const keys = new Set<string>();
+    ids.forEach((id) => {
+      const unitKeys = unitKeysById.get(id);
+      if (!unitKeys) {
+        return;
+      }
+
+      unitKeys.forEach((key) => {
+        keys.add(key);
+      });
+    });
+
+    queueUnitsByKeys(keys);
   };
 
   const upsertOne = (input: TInput, options?: UpsertOptions): TInput => {
@@ -411,14 +427,13 @@ export const entity = <
       mergedValues.push(mergedInput);
     });
 
-    changedIds.forEach((id) => {
-      if (hasDuplicates) {
-        queueUnitsById(id);
-        return;
-      }
-
-      notifyUnitsById(id);
-    });
+    if (hasDuplicates || changedIds.size >= NOTIFY_BATCH_THRESHOLD) {
+      queueUnitsByIds(changedIds);
+    } else {
+      changedIds.forEach((id) => {
+        notifyUnitsById(id);
+      });
+    }
 
     return mergedValues;
   };
@@ -453,9 +468,45 @@ export const entity = <
   };
 
   const removeMany = (ids: readonly TId[]): readonly TId[] => {
-    return ids.filter((id) => {
-      return removeOne(id);
+    const removedIds: TId[] = [];
+    const affectedKeys = new Set<string>();
+
+    ids.forEach((id) => {
+      const existed = entitiesById.delete(id);
+      draftsById.delete(id);
+      if (!existed) {
+        return;
+      }
+
+      removedIds.push(id);
+      const unitKeys = unitKeysById.get(id);
+      if (!unitKeys) {
+        return;
+      }
+
+      unitKeys.forEach((key) => {
+        affectedKeys.add(key);
+        const unitState = unitStateByKey.get(key);
+        if (!unitState) {
+          return;
+        }
+
+        unitState.membershipIds.delete(id);
+      });
+
+      unitKeysById.delete(id);
     });
+
+    if (affectedKeys.size >= NOTIFY_BATCH_THRESHOLD || removedIds.length >= NOTIFY_BATCH_THRESHOLD) {
+      queueUnitsByKeys(affectedKeys);
+    } else {
+      affectedKeys.forEach((key) => {
+        const unitState = unitStateByKey.get(key);
+        unitState?.onChange();
+      });
+    }
+
+    return removedIds;
   };
 
   return {
