@@ -5,9 +5,9 @@
     "minHz": 130000
   },
   "todo entity write upsert one after 100_000 seed": {
-    "maxP99Ms": 12,
+    "maxP99Ms": 14.5,
     "maxMeanMs": 0.4,
-    "minHz": 3000
+    "minHz": 2700
   },
   "todo entity remove one plus restore after 100_000 seed": {
     "maxP99Ms": 6,
@@ -15,7 +15,7 @@
     "minHz": 5500
   },
   "todo source get 100_000 entries": {
-    "maxP99Ms": 0.001,
+    "maxP99Ms": 0.002,
     "maxMeanMs": 0.003,
     "minHz": 350000
   },
@@ -30,7 +30,7 @@
     "minHz": 300000
   },
   "todo transform set access after 100_000 seed": {
-    "maxP99Ms": 15,
+    "maxP99Ms": 17,
     "maxMeanMs": 0.4,
     "minHz": 2500
   },

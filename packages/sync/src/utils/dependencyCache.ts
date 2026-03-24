@@ -28,6 +28,10 @@ export interface DependencyCache<TInstance> {
   clear: () => void;
 }
 
+interface DependencyCacheEntry<TInstance> {
+  instance: TInstance;
+}
+
 const resolvePrimaryKey = (dependencies: readonly unknown[]): string => {
   return serializeKey(dependencies);
 };
@@ -43,7 +47,8 @@ const resolveSecondaryKey = (dependencies?: readonly unknown[]): string => {
 export const createDependencyCache = <TInstance>({
   limit,
 }: CreateDependencyCacheConfig = {}): DependencyCache<TInstance> => {
-  const entriesByPrimaryKey = new Map<string, Map<string, TInstance>>();
+  const entriesByPrimaryKey = new Map<string, Map<string, DependencyCacheEntry<TInstance>>>();
+  const isLimitEnabled = limit !== undefined && limit >= 0;
 
   const getOrCreate = ({
     primaryDependencies,
@@ -52,28 +57,45 @@ export const createDependencyCache = <TInstance>({
   }: DependencyCacheGetOrCreateInput<TInstance>): TInstance => {
     const primaryKey = resolvePrimaryKey(primaryDependencies);
     const secondaryKey = resolveSecondaryKey(secondaryDependencies);
-    const entriesBySecondaryKey = entriesByPrimaryKey.get(primaryKey) ?? new Map<string, TInstance>();
+    const entriesBySecondaryKey = entriesByPrimaryKey.get(primaryKey)
+      ?? new Map<string, DependencyCacheEntry<TInstance>>();
 
-    const existingEntry = entriesBySecondaryKey.get(secondaryKey);
-    if (existingEntry !== undefined) {
+    if (entriesBySecondaryKey.has(secondaryKey)) {
+      const existingEntry = entriesBySecondaryKey.get(secondaryKey);
+      if (!existingEntry) {
+        const nextEntry = {
+          instance: build(),
+        };
+        entriesBySecondaryKey.set(secondaryKey, nextEntry);
+        entriesByPrimaryKey.set(primaryKey, entriesBySecondaryKey);
+        return nextEntry.instance;
+      }
+
       entriesBySecondaryKey.delete(secondaryKey);
       entriesBySecondaryKey.set(secondaryKey, existingEntry);
       entriesByPrimaryKey.set(primaryKey, entriesBySecondaryKey);
-      return existingEntry;
+      return existingEntry.instance;
     }
 
-    const nextEntry = build();
+    const nextEntry = {
+      instance: build(),
+    };
     entriesBySecondaryKey.set(secondaryKey, nextEntry);
 
-    if (limit !== undefined && limit >= 0 && entriesBySecondaryKey.size > limit) {
+    if (isLimitEnabled && entriesBySecondaryKey.size > limit) {
       const oldestSecondaryKey = entriesBySecondaryKey.keys().next().value;
       if (oldestSecondaryKey !== undefined) {
         entriesBySecondaryKey.delete(oldestSecondaryKey);
       }
     }
 
+    if (entriesBySecondaryKey.size === 0) {
+      entriesByPrimaryKey.delete(primaryKey);
+      return nextEntry.instance;
+    }
+
     entriesByPrimaryKey.set(primaryKey, entriesBySecondaryKey);
-    return nextEntry;
+    return nextEntry.instance;
   };
 
   const removeEntry = ({
