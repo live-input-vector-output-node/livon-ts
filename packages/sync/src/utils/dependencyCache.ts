@@ -28,11 +28,11 @@ export interface DependencyCache<TInstance> {
   clear: () => void;
 }
 
-const toPrimaryKey = (dependencies: readonly unknown[]): string => {
+const resolvePrimaryKey = (dependencies: readonly unknown[]): string => {
   return serializeKey(dependencies);
 };
 
-const toSecondaryKey = (dependencies?: readonly unknown[]): string => {
+const resolveSecondaryKey = (dependencies?: readonly unknown[]): string => {
   if (!dependencies) {
     return DEFAULT_SECONDARY_KEY;
   }
@@ -50,8 +50,8 @@ export const createDependencyCache = <TInstance>({
     secondaryDependencies,
     build,
   }: DependencyCacheGetOrCreateInput<TInstance>): TInstance => {
-    const primaryKey = toPrimaryKey(primaryDependencies);
-    const secondaryKey = toSecondaryKey(secondaryDependencies);
+    const primaryKey = resolvePrimaryKey(primaryDependencies);
+    const secondaryKey = resolveSecondaryKey(secondaryDependencies);
     const entriesBySecondaryKey = entriesByPrimaryKey.get(primaryKey) ?? new Map<string, TInstance>();
 
     const existingEntry = entriesBySecondaryKey.get(secondaryKey);
@@ -80,8 +80,8 @@ export const createDependencyCache = <TInstance>({
     primaryDependencies,
     secondaryDependencies,
   }: DependencyCacheDeleteInput): boolean => {
-    const primaryKey = toPrimaryKey(primaryDependencies);
-    const secondaryKey = toSecondaryKey(secondaryDependencies);
+    const primaryKey = resolvePrimaryKey(primaryDependencies);
+    const secondaryKey = resolveSecondaryKey(secondaryDependencies);
     const entriesBySecondaryKey = entriesByPrimaryKey.get(primaryKey);
     if (!entriesBySecondaryKey) {
       return false;
@@ -98,7 +98,7 @@ export const createDependencyCache = <TInstance>({
   const clearPrimary = ({
     primaryDependencies,
   }: DependencyCacheClearPrimaryInput): void => {
-    const primaryKey = toPrimaryKey(primaryDependencies);
+    const primaryKey = resolvePrimaryKey(primaryDependencies);
     entriesByPrimaryKey.delete(primaryKey);
   };
 
