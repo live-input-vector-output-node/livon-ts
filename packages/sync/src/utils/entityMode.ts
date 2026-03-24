@@ -29,15 +29,42 @@ export const isEntityArray = <TEntity extends object>(
   return Array.isArray(value) && value.every((entry) => isEntityValue<TEntity>(entry));
 };
 
-export const getModeValue = <
+export function getModeValue<
+  TId,
+  TEntity extends object,
+>(
+  internal: ModeValueState<TId, readonly TEntity[]> & {
+    mode: 'many';
+    hasEntityValue: true;
+  },
+  readById: ReadById<TId, TEntity>,
+): readonly TEntity[];
+export function getModeValue<
+  TId,
+  TEntity extends object,
+>(
+  internal: ModeValueState<TId, TEntity | null> & {
+    mode: 'one';
+    hasEntityValue: true;
+  },
+  readById: ReadById<TId, TEntity>,
+): TEntity | null;
+export function getModeValue<
   TId,
   TEntity extends object,
   RResult,
-  TInternal extends ModeValueState<TId, RResult>,
 >(
-  internal: TInternal,
+  internal: ModeValueState<TId, RResult>,
   readById: ReadById<TId, TEntity>,
-): RResult => {
+): RResult;
+export function getModeValue<
+  TId,
+  TEntity extends object,
+  RResult,
+>(
+  internal: ModeValueState<TId, RResult>,
+  readById: ReadById<TId, TEntity>,
+): RResult | readonly TEntity[] | TEntity | null {
   if (!internal.hasEntityValue) {
     return internal.state.value;
   }
@@ -47,15 +74,15 @@ export const getModeValue = <
       .map((id) => readById(id))
       .filter((entry): entry is TEntity => entry !== undefined);
 
-    return manyValue as RResult;
+    return manyValue;
   }
 
   if (internal.mode === 'one') {
     const firstId = internal.membershipIds[0];
     const oneValue = firstId ? readById(firstId) ?? null : null;
 
-    return oneValue as RResult;
+    return oneValue;
   }
 
   return internal.state.value;
-};
+}
