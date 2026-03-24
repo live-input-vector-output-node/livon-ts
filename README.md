@@ -18,11 +18,25 @@
   </a>
 </p>
 <p align="center" class="livon-badge-strip">
+  <a href="https://scorecard.dev/viewer/?uri=github.com/live-input-vector-output-node/livon-ts">
+    <img src="https://api.scorecard.dev/projects/github.com/live-input-vector-output-node/livon-ts/badge" alt="OpenSSF Scorecard" />
+  </a>
+  <a href="https://libraries.io/github/live-input-vector-output-node/livon-ts">
+    <img src="https://img.shields.io/librariesio/github/live-input-vector-output-node/livon-ts?label=repo%20dependencies" alt="Libraries.io Repository Dependencies" />
+  </a>
+  <a href="https://www.bestpractices.dev/projects/new?url=https://github.com/live-input-vector-output-node/livon-ts">
+    <img src="https://img.shields.io/badge/OpenSSF%20Best%20Practices-enroll-lightgrey" alt="OpenSSF Best Practices Enrollment" />
+  </a>
+</p>
+<p align="center" class="livon-badge-strip">
   <a href="https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/code-quality.yml">
     <img src="https://img.shields.io/github/actions/workflow/status/live-input-vector-output-node/livon-ts/code-quality.yml?branch=main&label=code%20quality" alt="Code Quality" />
   </a>
   <a href="https://coveralls.io/github/live-input-vector-output-node/livon-ts?branch=main">
     <img src="https://coveralls.io/repos/github/live-input-vector-output-node/livon-ts/badge.svg?branch=main" alt="Coveralls Coverage" />
+  </a>
+  <a href="https://snyk.io/test/github/live-input-vector-output-node/livon-ts">
+    <img src="https://snyk.io/test/github/live-input-vector-output-node/livon-ts/badge.svg" alt="Snyk Security" />
   </a>
   <a href="./LICENSE.md">
     <img src="https://img.shields.io/badge/license-MIT-green" alt="License" />
@@ -65,7 +79,7 @@ LIVON (Live Input Vector Output Node) is a TypeScript framework for building API
   <div class="livon-badge-grid">
     <article class="livon-badge-card">
       <h4 class="livon-badge-card-title"><code>@livon/client</code></h4>
-      <div class="livon-badge-row"><a href="https://www.npmjs.com/package/@livon/client"><img class="livon-badge-image" src="https://img.shields.io/npm/v/%40livon%2Fclient" alt="@livon/client npm version" /></a> <a href="https://libraries.io/npm/%40livon%2Fclient"><img class="livon-badge-image" src="https://img.shields.io/librariesio/release/npm/%40livon%2Fclient?label=dependencies" alt="@livon/client dependencies" /></a> <a href="https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/code-quality.yml"><img class="livon-badge-image" src="https://img.shields.io/github/actions/workflow/status/live-input-vector-output-node/livon-ts/code-quality.yml?branch=main&label=code%20quality" alt="@livon/client code quality" /></a></div>
+      <div class="livon-badge-row"><a href="https://www.npmjs.com/package/@livon/client"><img class="livon-badge-image" src="https://img.shields.io/npm/v/%40livon%2Fclient" alt="@livon/client npm version" /></a> <a href="https://libraries.io/npm/%40livon%2Fclient"><img class="livon-badge-image" src="https://img.shields.io/librariesio/release/npm/%40livon%2Fclient?label=dependencies" alt="@livon/client dependencies" /></a> <a href="https://libraries.io/npm/%40livon%2Fclient/sourcerank"><img class="livon-badge-image" src="https://img.shields.io/librariesio/sourcerank/npm/%40livon%2Fclient?label=sourcerank" alt="@livon/client source rank" /></a> <a href="https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/code-quality.yml"><img class="livon-badge-image" src="https://img.shields.io/github/actions/workflow/status/live-input-vector-output-node/livon-ts/code-quality.yml?branch=main&label=code%20quality" alt="@livon/client code quality" /></a></div>
       <div class="livon-badge-row livon-badge-row--secondary"><a href="https://www.npmjs.com/package/@livon/client"><img class="livon-badge-image" src="https://img.shields.io/npm/unpacked-size/%40livon%2Fclient?label=package%20size" alt="@livon/client package size" /></a> <a href="https://www.npmjs.com/package/@livon/client"><img class="livon-badge-image" src="https://img.shields.io/npm/l/%40livon%2Fclient" alt="@livon/client license" /></a></div>
       <div class="livon-tech-meta">
         <span class="livon-tech-label">Related libraries</span>
