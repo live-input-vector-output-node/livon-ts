@@ -47,12 +47,10 @@ export interface SourceRunContext<
   scope: TInput;
   payload: TPayload;
   setMeta: (meta: unknown) => void;
-  entity: {
-    upsertOne: (input: TEntity, options?: UpsertOptions) => TEntity;
-    upsertMany: (input: readonly TEntity[], options?: UpsertOptions) => readonly TEntity[];
-    removeOne: (id: TEntityId) => boolean;
-    removeMany: (ids: readonly TEntityId[]) => readonly TEntityId[];
-  };
+  upsertOne: (input: TEntity, options?: UpsertOptions) => TEntity;
+  upsertMany: (input: readonly TEntity[], options?: UpsertOptions) => readonly TEntity[];
+  removeOne: (id: TEntityId) => boolean;
+  removeMany: (ids: readonly TEntityId[]) => readonly TEntityId[];
   getValue: () => RResult;
 }
 
@@ -904,13 +902,6 @@ export const source = <
           return removedIds;
         };
 
-        const runEntity = {
-          upsertOne,
-          upsertMany,
-          removeOne,
-          removeMany,
-        };
-
         const runContextBase = {
           scope: internal.scope,
           payload: internal.payload,
@@ -930,7 +921,10 @@ export const source = <
             internal.state.meta = nextMeta;
             notifyUnit(internal);
           },
-          entity: runEntity,
+          upsertOne,
+          upsertMany,
+          removeOne,
+          removeMany,
           getValue: () => {
             return internal.state.value;
           },

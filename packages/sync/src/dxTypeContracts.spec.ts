@@ -72,10 +72,28 @@ type SourceRunHasLegacyUpsertMany = 'upsertMany' extends keyof SourceRunContext<
 >
   ? true
   : false;
+type SourceRunHasLegacyRemoveOne = 'removeOne' extends keyof SourceRunContext<
+  TodoScope,
+  UpdateTodoPayload,
+  Todo,
+  Todo | null
+>
+  ? true
+  : false;
+type SourceRunHasLegacyRemoveMany = 'removeMany' extends keyof SourceRunContext<
+  TodoScope,
+  UpdateTodoPayload,
+  Todo,
+  Todo | null
+>
+  ? true
+  : false;
 
-type _sourceRunHasEntityApi = AssertTrue<SourceRunHasEntityApi>;
-type _sourceRunHasNoLegacyUpsertOne = AssertFalse<SourceRunHasLegacyUpsertOne>;
-type _sourceRunHasNoLegacyUpsertMany = AssertFalse<SourceRunHasLegacyUpsertMany>;
+type _sourceRunHasNoEntityApi = AssertFalse<SourceRunHasEntityApi>;
+type _sourceRunHasLegacyUpsertOne = AssertTrue<SourceRunHasLegacyUpsertOne>;
+type _sourceRunHasLegacyUpsertMany = AssertTrue<SourceRunHasLegacyUpsertMany>;
+type _sourceRunHasLegacyRemoveOne = AssertTrue<SourceRunHasLegacyRemoveOne>;
+type _sourceRunHasLegacyRemoveMany = AssertTrue<SourceRunHasLegacyRemoveMany>;
 
 type ActionRunHasEntityApi = 'entity' extends keyof ActionRunContext<
   TodoScope,
@@ -93,8 +111,8 @@ type ActionRunHasLegacyUpsertOne = 'upsertOne' extends keyof ActionRunContext<
 >
   ? true
   : false;
-type _actionRunHasEntityApi = AssertTrue<ActionRunHasEntityApi>;
-type _actionRunHasNoLegacyUpsertOne = AssertFalse<ActionRunHasLegacyUpsertOne>;
+type _actionRunHasNoEntityApi = AssertFalse<ActionRunHasEntityApi>;
+type _actionRunHasLegacyUpsertOne = AssertTrue<ActionRunHasLegacyUpsertOne>;
 
 type StreamRunHasEntityApi = 'entity' extends keyof StreamRunContext<
   TodoScope,
@@ -112,8 +130,8 @@ type StreamRunHasLegacyUpsertOne = 'upsertOne' extends keyof StreamRunContext<
 >
   ? true
   : false;
-type _streamRunHasEntityApi = AssertTrue<StreamRunHasEntityApi>;
-type _streamRunHasNoLegacyUpsertOne = AssertFalse<StreamRunHasLegacyUpsertOne>;
+type _streamRunHasNoEntityApi = AssertFalse<StreamRunHasEntityApi>;
+type _streamRunHasLegacyUpsertOne = AssertTrue<StreamRunHasLegacyUpsertOne>;
 
 const todosEntity = entity<Todo>({
   idOf: (value) => value.id,

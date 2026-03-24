@@ -20,6 +20,7 @@ interface ContextShape {
   hasTopLevelUpsertMany: boolean;
   hasTopLevelRemoveOne: boolean;
   hasTopLevelRemoveMany: boolean;
+  hasEntityObject: boolean;
   hasEntityUpsertOne: boolean;
   hasEntityUpsertMany: boolean;
   hasEntityRemoveOne: boolean;
@@ -28,7 +29,7 @@ interface ContextShape {
 
 describe('run context entity api', () => {
   describe('sad', () => {
-    it('should expose only context.entity split mutation api in source run context', async () => {
+    it('should expose only flat split mutation api in source run context', async () => {
       const todosEntity = entity<Todo>({
         idOf: (todo) => todo.id,
       });
@@ -45,6 +46,7 @@ describe('run context entity api', () => {
             hasTopLevelUpsertMany: typeof rawContext.upsertMany === 'function',
             hasTopLevelRemoveOne: typeof rawContext.removeOne === 'function',
             hasTopLevelRemoveMany: typeof rawContext.removeMany === 'function',
+            hasEntityObject: typeof entityApi === 'object' && entityApi !== null,
             hasEntityUpsertOne: typeof entityApi?.upsertOne === 'function',
             hasEntityUpsertMany: typeof entityApi?.upsertMany === 'function',
             hasEntityRemoveOne: typeof entityApi?.removeOne === 'function',
@@ -56,18 +58,19 @@ describe('run context entity api', () => {
       await readTodo({ listId: randomString({ prefix: 'list-id' }) }).run();
 
       expect(contextShape).toEqual({
-        hasTopLevelUpsertOne: false,
-        hasTopLevelUpsertMany: false,
-        hasTopLevelRemoveOne: false,
-        hasTopLevelRemoveMany: false,
-        hasEntityUpsertOne: true,
-        hasEntityUpsertMany: true,
-        hasEntityRemoveOne: true,
-        hasEntityRemoveMany: true,
+        hasTopLevelUpsertOne: true,
+        hasTopLevelUpsertMany: true,
+        hasTopLevelRemoveOne: true,
+        hasTopLevelRemoveMany: true,
+        hasEntityObject: false,
+        hasEntityUpsertOne: false,
+        hasEntityUpsertMany: false,
+        hasEntityRemoveOne: false,
+        hasEntityRemoveMany: false,
       });
     });
 
-    it('should expose only context.entity split mutation api in action run context', async () => {
+    it('should expose only flat split mutation api in action run context', async () => {
       const todosEntity = entity<Todo>({
         idOf: (todo) => todo.id,
       });
@@ -84,6 +87,7 @@ describe('run context entity api', () => {
             hasTopLevelUpsertMany: typeof rawContext.upsertMany === 'function',
             hasTopLevelRemoveOne: typeof rawContext.removeOne === 'function',
             hasTopLevelRemoveMany: typeof rawContext.removeMany === 'function',
+            hasEntityObject: typeof entityApi === 'object' && entityApi !== null,
             hasEntityUpsertOne: typeof entityApi?.upsertOne === 'function',
             hasEntityUpsertMany: typeof entityApi?.upsertMany === 'function',
             hasEntityRemoveOne: typeof entityApi?.removeOne === 'function',
@@ -98,18 +102,19 @@ describe('run context entity api', () => {
       });
 
       expect(contextShape).toEqual({
-        hasTopLevelUpsertOne: false,
-        hasTopLevelUpsertMany: false,
-        hasTopLevelRemoveOne: false,
-        hasTopLevelRemoveMany: false,
-        hasEntityUpsertOne: true,
-        hasEntityUpsertMany: true,
-        hasEntityRemoveOne: true,
-        hasEntityRemoveMany: true,
+        hasTopLevelUpsertOne: true,
+        hasTopLevelUpsertMany: true,
+        hasTopLevelRemoveOne: true,
+        hasTopLevelRemoveMany: true,
+        hasEntityObject: false,
+        hasEntityUpsertOne: false,
+        hasEntityUpsertMany: false,
+        hasEntityRemoveOne: false,
+        hasEntityRemoveMany: false,
       });
     });
 
-    it('should expose only context.entity split mutation api in stream run context', async () => {
+    it('should expose only flat split mutation api in stream run context', async () => {
       const todosEntity = entity<Todo>({
         idOf: (todo) => todo.id,
       });
@@ -126,6 +131,7 @@ describe('run context entity api', () => {
             hasTopLevelUpsertMany: typeof rawContext.upsertMany === 'function',
             hasTopLevelRemoveOne: typeof rawContext.removeOne === 'function',
             hasTopLevelRemoveMany: typeof rawContext.removeMany === 'function',
+            hasEntityObject: typeof entityApi === 'object' && entityApi !== null,
             hasEntityUpsertOne: typeof entityApi?.upsertOne === 'function',
             hasEntityUpsertMany: typeof entityApi?.upsertMany === 'function',
             hasEntityRemoveOne: typeof entityApi?.removeOne === 'function',
@@ -144,14 +150,15 @@ describe('run context entity api', () => {
       await Promise.resolve();
 
       expect(contextShape).toEqual({
-        hasTopLevelUpsertOne: false,
-        hasTopLevelUpsertMany: false,
-        hasTopLevelRemoveOne: false,
-        hasTopLevelRemoveMany: false,
-        hasEntityUpsertOne: true,
-        hasEntityUpsertMany: true,
-        hasEntityRemoveOne: true,
-        hasEntityRemoveMany: true,
+        hasTopLevelUpsertOne: true,
+        hasTopLevelUpsertMany: true,
+        hasTopLevelRemoveOne: true,
+        hasTopLevelRemoveMany: true,
+        hasEntityObject: false,
+        hasEntityUpsertOne: false,
+        hasEntityUpsertMany: false,
+        hasEntityRemoveOne: false,
+        hasEntityRemoveMany: false,
       });
     });
   });

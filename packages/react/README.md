@@ -96,24 +96,24 @@ const todoEntity = entity<Todo>({
 const readTodos = source<TodoScope, ReadTodosPayload, Todo, readonly Todo[]>({
   entity: todoEntity,
   defaultValue: [],
-  run: async ({ scope, payload, entity }) => {
+  run: async ({ scope, payload, upsertMany }) => {
     const todos = await api.readTodos({
       listId: scope.listId,
       query: payload.query,
     });
-    entity.upsertMany(todos, { merge: true });
+    upsertMany(todos, { merge: true });
   },
 });
 
 const updateTodo = action<TodoScope, UpdateTodoPayload, Todo, Todo | null>({
   entity: todoEntity,
-  run: async ({ scope, payload, entity }) => {
+  run: async ({ scope, payload, upsertOne }) => {
     const updated = await api.updateTodo({
       id: payload.id,
       listId: scope.listId,
       title: payload.title,
     });
-    entity.upsertOne(updated, { merge: true });
+    upsertOne(updated, { merge: true });
   },
 });
 

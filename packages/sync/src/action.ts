@@ -26,12 +26,10 @@ export interface ActionRunContext<
   scope: TInput;
   payload: TPayload;
   setMeta: (meta: unknown) => void;
-  entity: {
-    upsertOne: (input: TEntity, options?: UpsertOptions) => TEntity;
-    upsertMany: (input: readonly TEntity[], options?: UpsertOptions) => readonly TEntity[];
-    removeOne: (id: TEntityId) => boolean;
-    removeMany: (ids: readonly TEntityId[]) => readonly TEntityId[];
-  };
+  upsertOne: (input: TEntity, options?: UpsertOptions) => TEntity;
+  upsertMany: (input: readonly TEntity[], options?: UpsertOptions) => readonly TEntity[];
+  removeOne: (id: TEntityId) => boolean;
+  removeMany: (ids: readonly TEntityId[]) => readonly TEntityId[];
   getValue: () => RResult;
 }
 
@@ -347,13 +345,6 @@ export const action = <
           return removedIds;
         };
 
-        const runEntity = {
-          upsertOne,
-          upsertMany,
-          removeOne,
-          removeMany,
-        };
-
         const applyRunValue = (nextValue: RResult | void): void => {
           if (!isLatestRun()) {
             return;
@@ -401,7 +392,10 @@ export const action = <
             internal.state.meta = nextMeta;
             notifyUnit(internal);
           },
-          entity: runEntity,
+          upsertOne,
+          upsertMany,
+          removeOne,
+          removeMany,
           getValue: () => {
             internal.state.value = getModeValue(internal, entity);
             return internal.state.value;
