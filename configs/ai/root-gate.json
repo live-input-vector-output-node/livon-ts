@@ -50,6 +50,30 @@
       ]
     },
     {
+      "id": "stable-reference-rebuild-policy",
+      "statement": "Keep object and array references stable by default: rebuild only when relevant values change, compare before building in hot paths, and use explicit invalidation or bounded limits for caches.",
+      "humanSources": [
+        "website/docs/ai/root-gate.md"
+      ],
+      "agentSources": [
+        "PROMPT.md",
+        "AGENTS.md"
+      ]
+    },
+    {
+      "id": "pathfinder-clean-code-refactoring",
+      "statement": "Apply the Pathfinder rule on every implementation change: when friction, duplication, mixed concerns, or semantic boundary issues are discovered in touched scope, refactor them immediately so the code becomes cleaner with each change. When files become too large or semantically mixed, split them by semantic slices/domains (for example builder, helper, utils, context, API surface) and expose each split through local barrel files instead of growing one monolithic file.",
+      "humanSources": [
+        "website/docs/core/coding-style-guide.md",
+        "website/docs/ai/root-gate.md"
+      ],
+      "agentSources": [
+        "PROMPT.md",
+        "AGENTS.md",
+        ".github/skills/clean-code-pathfinder/SKILL.md"
+      ]
+    },
+    {
       "id": "test-setup-deduplication",
       "statement": "Before adding new tests, inspect existing tests for similar setup and extract shared setup into beforeEach blocks or reusable test utilities to avoid duplicated entity/source/action/stream scaffolding.",
       "humanSources": [
@@ -79,6 +103,56 @@
       "humanSources": [
         "website/docs/core/coding-style-guide.md",
         "website/docs/core/testing-and-quality.md",
+        "website/docs/ai/root-gate.md"
+      ],
+      "agentSources": [
+        "PROMPT.md",
+        "AGENTS.md"
+      ]
+    },
+    {
+      "id": "reuse-existing-utils-first",
+      "statement": "Before implementing new logic, first check existing utilities/modules for reusable equivalents, including across package boundaries. If similar logic exists in another package, prefer consolidating it into @livon/utils and introducing that package dependency where needed. When two or more candidate implementations exist, prefer the most performant and cleanest implementation, or merge them into one shared configurable solution that combines the best traits.",
+      "humanSources": [
+        "website/docs/core/coding-style-guide.md",
+        "website/docs/ai/root-gate.md"
+      ],
+      "agentSources": [
+        "PROMPT.md",
+        "AGENTS.md",
+        ".github/skills/clean-code-pathfinder/SKILL.md"
+      ]
+    },
+    {
+      "id": "no-wrapper-passthrough-helpers",
+      "statement": "Wrapper passthrough helpers are forbidden by default: if a helper only forwards to another function without adding behavior or domain constraints, call the shared utility directly.",
+      "humanSources": [
+        "website/docs/core/coding-style-guide.md",
+        "website/docs/ai/root-gate.md"
+      ],
+      "agentSources": [
+        "PROMPT.md",
+        "AGENTS.md"
+      ]
+    },
+    {
+      "id": "refactor-existing-rule-violations-when-feasible",
+      "statement": "If existing code in touched scope is found to violate active repository rules, refactor it in the same change when feasible and safe, without unnecessary scope expansion.",
+      "humanSources": [
+        "website/docs/core/coding-style-guide.md",
+        "website/docs/ai/root-gate.md"
+      ],
+      "agentSources": [
+        "PROMPT.md",
+        "AGENTS.md",
+        ".github/skills/clean-code-pathfinder/SKILL.md"
+      ]
+    },
+    {
+      "id": "scope-discipline-minimal-expansion",
+      "statement": "Enforce strict scope discipline: keep edits within requested/touched scope plus direct correctness/build/test/policy dependencies; expand scope only when explicitly required.",
+      "humanSources": [
+        "website/docs/core/governance.md",
         "website/docs/ai/root-gate.md"
       ],
       "agentSources": [

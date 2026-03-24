@@ -47,6 +47,12 @@ Rule highlights:
 - Scope-specific deviations are centralized in `/docs/ai/specializations`.
 - Repository workflow orchestration is Turborepo-only with no exceptions: workflows are invoked via root scripts (`pnpm run <task>`), never via direct `pnpm turbo run ...` or manual orchestration scripts/commands; workflow tasks are declared in `turbo.json`; package scripts remain atomic and non-orchestrating.
 - Avoid TypeScript `as` assertions in repository code; design type contracts so casts are not required.
+- Keep object and array references stable by default: rebuild only when relevant values change, compare before rebuilding in hot paths, and use explicit invalidation or bounded limits for caches.
+- Apply the Pathfinder clean-code rule on every implementation change: if friction, duplication, mixed concerns, or semantic boundary issues are discovered in touched scope, refactor immediately; split oversized or semantically mixed files by semantic slices/domains (builder/helper/utils/context/API surface) and expose them through local barrel files.
+- Before implementing new logic, first check what already exists and can be reused (including across package boundaries); if similar logic exists in another package, prefer consolidating it into `@livon/utils` and add the dependency if needed. When multiple solutions exist, choose the most performant and cleanest one, or merge them into one shared solution that combines the best tradeoffs.
+- Wrapper passthrough helpers are forbidden by default: if a helper only forwards to another function without adding behavior or domain constraints, call the shared utility directly.
+- If existing code is discovered in touched scope that violates active repository rules, refactor it in the same change when feasible without unsafe scope expansion.
+- Enforce strict scope discipline: keep edits inside requested/touched scope and direct correctness dependencies; expand scope only when required for correctness, build, tests, or policy compliance.
 - Repository docs/examples use the Todo domain as the default use case so examples stay consistent across packages.
 - Repository tests should use the Todo domain as the default use case when feasible so test language stays aligned with docs.
 - Default delivery flow is `DX -> TDD -> implementation`: agree API/DX first, cover the full agreed DX with tests second, then iterate implementation until all tests are green.

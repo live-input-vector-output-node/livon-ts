@@ -17,8 +17,9 @@ Use role-specialized agents that advise each other with a fixed decision flow:
 2. System architecture defines boundaries and contracts.
 3. Backend and frontend architecture refine implementation plans.
 4. Performance specialist validates latency, throughput, and cost budgets.
-5. Test quality specialist validates contract clarity, setup deduplication, and gate readiness.
-6. Council orchestrator resolves conflicts and emits one final decision.
+5. Clean Code Pathfinder validates semantic boundaries, responsibility splits, and in-scope refactoring opportunities.
+6. Test quality specialist validates contract clarity, setup deduplication, and gate readiness.
+7. Council orchestrator resolves conflicts and emits one final decision.
 
 ## Roles
 
@@ -27,6 +28,7 @@ Use role-specialized agents that advise each other with a fixed decision flow:
 - `backend-architect`
 - `frontend-architect`
 - `performance-specialist`
+- `clean-code-pathfinder`
 - `test-quality-specialist`
 - `multi-agent-council` (orchestrator)
 
