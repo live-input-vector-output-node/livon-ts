@@ -1,4 +1,4 @@
-import { serializeKey } from './serializeKey.js';
+import { createSerializedKeyCache } from './serializedKeyCache.js';
 
 const DEFAULT_SECONDARY_KEY = '__default__';
 
@@ -32,23 +32,26 @@ interface DependencyCacheEntry<TInstance> {
   instance: TInstance;
 }
 
-const resolvePrimaryKey = (dependencies: readonly unknown[]): string => {
-  return serializeKey(dependencies);
-};
-
-const resolveSecondaryKey = (dependencies?: readonly unknown[]): string => {
-  if (!dependencies) {
-    return DEFAULT_SECONDARY_KEY;
-  }
-
-  return serializeKey(dependencies);
-};
-
 export const createDependencyCache = <TInstance>({
   limit,
 }: CreateDependencyCacheConfig = {}): DependencyCache<TInstance> => {
   const entriesByPrimaryKey = new Map<string, Map<string, DependencyCacheEntry<TInstance>>>();
+  const keyCache = createSerializedKeyCache({
+    mode: 'dependency',
+  });
   const isLimitEnabled = limit !== undefined && limit >= 0;
+
+  const resolvePrimaryKey = (dependencies: readonly unknown[]): string => {
+    return keyCache.getOrCreateKey(dependencies);
+  };
+
+  const resolveSecondaryKey = (dependencies?: readonly unknown[]): string => {
+    if (!dependencies) {
+      return DEFAULT_SECONDARY_KEY;
+    }
+
+    return keyCache.getOrCreateKey(dependencies);
+  };
 
   const getOrCreate = ({
     primaryDependencies,
@@ -126,6 +129,7 @@ export const createDependencyCache = <TInstance>({
 
   const clear = (): void => {
     entriesByPrimaryKey.clear();
+    keyCache.clear();
   };
 
   return {

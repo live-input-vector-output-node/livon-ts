@@ -66,17 +66,70 @@ export interface Entity<
   removeMany: (ids: readonly TId[]) => readonly TId[];
 }
 
-const mergeEntity = <TInput extends object>(
-  input: MergeEntityInput<TInput>,
-): TInput => {
-  const { current, next, shouldMerge } = input;
+interface MergeEntityInput<TInput extends object> {
+  current: TInput | undefined;
+  next: TInput;
+  shouldMerge: boolean;
+}
 
+interface IsEquivalentEntityInput<TInput extends object> {
+  current: TInput;
+  next: TInput;
+}
+
+const isEquivalentReplace = <TInput extends object>({
+  current,
+  next,
+}: IsEquivalentEntityInput<TInput>): boolean => {
+  const currentEntries = Object.entries(current);
+  const nextEntries = Object.entries(next);
+  if (currentEntries.length !== nextEntries.length) {
+    return false;
+  }
+
+  const currentValuesByKey = new Map<string, unknown>(currentEntries);
+  return nextEntries.every(([key, nextValue]) => {
+    if (!currentValuesByKey.has(key)) {
+      return false;
+    }
+
+    return Object.is(currentValuesByKey.get(key), nextValue);
+  });
+};
+
+const isEquivalentMerge = <TInput extends object>({
+  current,
+  next,
+}: IsEquivalentEntityInput<TInput>): boolean => {
+  const currentValuesByKey = new Map<string, unknown>(Object.entries(current));
+  return Object.entries(next).every(([key, nextValue]) => {
+    if (!currentValuesByKey.has(key)) {
+      return false;
+    }
+
+    return Object.is(currentValuesByKey.get(key), nextValue);
+  });
+};
+
+const mergeEntity = <TInput extends object>({
+  current,
+  next,
+  shouldMerge,
+}: MergeEntityInput<TInput>): TInput => {
   if (!current) {
     return next;
   }
 
   if (!shouldMerge) {
+    if (isEquivalentReplace({ current, next })) {
+      return current;
+    }
+
     return next;
+  }
+
+  if (isEquivalentMerge({ current, next })) {
+    return current;
   }
 
   return {
@@ -84,12 +137,6 @@ const mergeEntity = <TInput extends object>(
     ...next,
   };
 };
-
-interface MergeEntityInput<TInput extends object> {
-  current: TInput | undefined;
-  next: TInput;
-  shouldMerge: boolean;
-}
 
 interface EntityUnitState<TId extends EntityId> {
   onChange: () => void;
@@ -99,11 +146,6 @@ interface EntityUnitState<TId extends EntityId> {
 interface EntityUnitKeyInput<TId extends EntityId> {
   id: TId;
   key: string;
-}
-
-interface UpdatedEntityEntry<TInput extends object, TId extends EntityId> {
-  id: TId;
-  value: TInput;
 }
 
 let nextEntityQueueId = 0;
@@ -204,16 +246,55 @@ export const entity = <
       return;
     }
 
+    const currentMembershipIds = unitState.membershipIds;
+    if (ids.length === 1) {
+      const [nextSingleMembershipId] = ids;
+      if (nextSingleMembershipId === undefined) {
+        return;
+      }
+
+      if (currentMembershipIds.size === 1) {
+        const currentSingleMembershipId = currentMembershipIds.values().next().value;
+        if (currentSingleMembershipId === nextSingleMembershipId) {
+          return;
+        }
+
+        if (currentSingleMembershipId !== undefined) {
+          removeUnitKeyFromId({ id: currentSingleMembershipId, key });
+        }
+
+        currentMembershipIds.clear();
+        currentMembershipIds.add(nextSingleMembershipId);
+        addUnitKeyToId({ id: nextSingleMembershipId, key });
+        return;
+      }
+
+      currentMembershipIds.forEach((id) => {
+        removeUnitKeyFromId({ id, key });
+      });
+      currentMembershipIds.clear();
+      currentMembershipIds.add(nextSingleMembershipId);
+      addUnitKeyToId({ id: nextSingleMembershipId, key });
+      return;
+    }
+
+    if (currentMembershipIds.size === ids.length) {
+      const hasDifferentId = ids.some((id) => !currentMembershipIds.has(id));
+      if (!hasDifferentId) {
+        return;
+      }
+    }
+
     const nextMembershipIds = new Set<TId>(ids);
 
-    unitState.membershipIds.forEach((id) => {
+    currentMembershipIds.forEach((id) => {
       if (!nextMembershipIds.has(id)) {
         removeUnitKeyFromId({ id, key });
       }
     });
 
     nextMembershipIds.forEach((id) => {
-      if (!unitState.membershipIds.has(id)) {
+      if (!currentMembershipIds.has(id)) {
         addUnitKeyToId({ id, key });
       }
     });
@@ -286,11 +367,16 @@ export const entity = <
 
   const upsertOne = (input: TInput, options?: UpsertOptions): TInput => {
     const id = idOf(input);
+    const currentEntity = entitiesById.get(id);
     const mergedInput = mergeEntity({
-      current: entitiesById.get(id),
+      current: currentEntity,
       next: input,
       shouldMerge: Boolean(options?.merge),
     });
+
+    if (Object.is(currentEntity, mergedInput)) {
+      return mergedInput;
+    }
 
     entitiesById.set(id, mergedInput);
     notifyUnitsById(id);
@@ -299,35 +385,33 @@ export const entity = <
   };
 
   const upsertMany = (input: readonly TInput[], options?: UpsertOptions): readonly TInput[] => {
-    const updatedEntries: readonly UpdatedEntityEntry<TInput, TId>[] = input.map((entry) => {
+    const changedIds = new Set<TId>();
+    let hasDuplicates = false;
+    const mergedValues: TInput[] = [];
+
+    input.forEach((entry) => {
       const id = idOf(entry);
+      const currentEntity = entitiesById.get(id);
       const mergedInput = mergeEntity({
-        current: entitiesById.get(id),
+        current: currentEntity,
         next: entry,
         shouldMerge: Boolean(options?.merge),
       });
 
-      entitiesById.set(id, mergedInput);
-
-      return {
-        id,
-        value: mergedInput,
-      };
-    });
-
-    const uniqueIds = new Set<TId>();
-    let hasDuplicates = false;
-
-    updatedEntries.forEach(({ id }) => {
-      if (uniqueIds.has(id)) {
-        hasDuplicates = true;
-        return;
+      const changed = !Object.is(currentEntity, mergedInput);
+      if (changed) {
+        entitiesById.set(id, mergedInput);
+        const changedIdCountBefore = changedIds.size;
+        changedIds.add(id);
+        if (changedIds.size === changedIdCountBefore) {
+          hasDuplicates = true;
+        }
       }
 
-      uniqueIds.add(id);
+      mergedValues.push(mergedInput);
     });
 
-    Array.from(uniqueIds).forEach((id) => {
+    changedIds.forEach((id) => {
       if (hasDuplicates) {
         queueUnitsById(id);
         return;
@@ -336,7 +420,7 @@ export const entity = <
       notifyUnitsById(id);
     });
 
-    return updatedEntries.map(({ value }) => value);
+    return mergedValues;
   };
 
   const removeOne = (id: TId): boolean => {

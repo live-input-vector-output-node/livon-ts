@@ -1,7 +1,7 @@
 import { type EntityId, type UpsertOptions } from '../entity.js';
 import {
   clearEntityMembership,
-  createDependencyCache,
+  createSerializedKeyCache,
   createUnitSnapshot,
   getModeValue,
   isEntityArray,
@@ -11,7 +11,6 @@ import {
   resolveValue,
   setManyEntityMembership,
   setOneEntityMembership,
-  serializeKey,
   type EffectListener,
   type InputUpdater,
 } from '../utils/index.js';
@@ -49,12 +48,10 @@ export const action = <
 ): Action<TInput, TPayload, RResult, UUpdate> => {
   const unitsByKey: ActionUnitByKeyMap<TInput, TPayload, TEntityId, RResult, UUpdate> =
     new Map<string, ActionUnitInternal<TInput, TPayload, TEntityId, RResult, UUpdate>>();
-  const runContextCache = createDependencyCache<
-    ActionRunContextEntry<TInput, TPayload, TEntity, RResult, TEntityId>
-  >({
-    limit: RUN_CONTEXT_CACHE_LIMIT,
-  });
   const readEntityValueById = entity.getById;
+  const unitKeyCache = createSerializedKeyCache({
+    mode: 'scoped-unit',
+  });
 
   const notifyUnit = (
     internal: ActionUnitInternal<TInput, TPayload, TEntityId, RResult, UUpdate>,
@@ -73,7 +70,7 @@ export const action = <
   };
 
   const actionFactory: Action<TInput, TPayload, RResult, UUpdate> = (scope) => {
-    const key = serializeKey(scope);
+    const key = unitKeyCache.getOrCreateKey(scope);
     const existingUnit = unitsByKey.get(key);
 
     if (existingUnit) {
@@ -106,6 +103,23 @@ export const action = <
       destroyed: false,
       unit: {} as ActionUnit<TPayload, RResult, UUpdate>,
     };
+    const runContextEntriesByPrimitivePayload = new Map<
+      unknown,
+      ActionRunContextEntry<TInput, TPayload, TEntity, RResult, TEntityId>
+    >();
+    const runContextPrimitivePayloadOrder = new Set<unknown>();
+    let latestObjectPayload: object | null = null;
+    let latestObjectRunContextEntry:
+      | ActionRunContextEntry<TInput, TPayload, TEntity, RResult, TEntityId>
+      | null = null;
+    let previousObjectPayload: object | null = null;
+    let previousObjectRunContextEntry:
+      | ActionRunContextEntry<TInput, TPayload, TEntity, RResult, TEntityId>
+      | null = null;
+    const payloadKeyCache = createSerializedKeyCache({
+      mode: 'payload-hot-path',
+      limit: RUN_CONTEXT_CACHE_LIMIT,
+    });
 
       const unregisterFromEntity = entity.registerUnit({
         key: internal.key,
@@ -129,9 +143,17 @@ export const action = <
         invokeActionCleanup(internal.cleanup);
         internal.cleanup = null;
         internal.destroyed = true;
-        runContextCache.clearPrimary({
-          primaryDependencies: [internal.key],
-        });
+        runContextEntriesByPrimitivePayload.clear();
+        runContextPrimitivePayloadOrder.clear();
+        latestObjectPayload = null;
+        latestObjectRunContextEntry = null;
+        previousObjectPayload = null;
+        previousObjectRunContextEntry = null;
+        payloadKeyCache.clear();
+        singleInFlightPromise = null;
+        hasSingleInFlightPayload = false;
+        singleInFlightPayload = undefined;
+        singleInFlightPayloadKey = null;
 
         unregisterFromEntity();
         internal.listeners.clear();
@@ -225,34 +247,116 @@ export const action = <
           context: runContextBase,
         };
       };
+      const getOrCreateRunContextEntry = (
+        payload: TPayload,
+      ): ActionRunContextEntry<TInput, TPayload, TEntity, RResult, TEntityId> => {
+        if (payload !== null && typeof payload === 'object') {
+          if (latestObjectPayload !== null && Object.is(latestObjectPayload, payload)) {
+            if (!latestObjectRunContextEntry) {
+              const createdRunContextEntry = createRunContextEntry(payload);
+              latestObjectRunContextEntry = createdRunContextEntry;
+              return createdRunContextEntry;
+            }
+
+            return latestObjectRunContextEntry;
+          }
+
+          if (previousObjectPayload !== null && Object.is(previousObjectPayload, payload)) {
+            if (!previousObjectRunContextEntry) {
+              const createdRunContextEntry = createRunContextEntry(payload);
+              previousObjectRunContextEntry = createdRunContextEntry;
+            }
+
+            const promotedObjectPayload = previousObjectPayload;
+            const promotedRunContextEntry = previousObjectRunContextEntry;
+            previousObjectPayload = latestObjectPayload;
+            previousObjectRunContextEntry = latestObjectRunContextEntry;
+            latestObjectPayload = promotedObjectPayload;
+            latestObjectRunContextEntry = promotedRunContextEntry;
+
+            return promotedRunContextEntry;
+          }
+
+          const createdRunContextEntry = createRunContextEntry(payload);
+          previousObjectPayload = latestObjectPayload;
+          previousObjectRunContextEntry = latestObjectRunContextEntry;
+          latestObjectPayload = payload;
+          latestObjectRunContextEntry = createdRunContextEntry;
+          return createdRunContextEntry;
+        }
+
+        const existingRunContextEntry = runContextEntriesByPrimitivePayload.get(payload);
+        if (existingRunContextEntry) {
+          runContextPrimitivePayloadOrder.delete(payload);
+          runContextPrimitivePayloadOrder.add(payload);
+          return existingRunContextEntry;
+        }
+
+        const createdRunContextEntry = createRunContextEntry(payload);
+        runContextEntriesByPrimitivePayload.set(payload, createdRunContextEntry);
+        runContextPrimitivePayloadOrder.add(payload);
+
+        if (runContextEntriesByPrimitivePayload.size > RUN_CONTEXT_CACHE_LIMIT) {
+          const oldestPayload = runContextPrimitivePayloadOrder.values().next().value;
+          if (oldestPayload !== undefined) {
+            runContextPrimitivePayloadOrder.delete(oldestPayload);
+            runContextEntriesByPrimitivePayload.delete(oldestPayload);
+          }
+        }
+
+        return createdRunContextEntry;
+      };
+
+      let singleInFlightPromise: Promise<RResult> | null = null;
+      let hasSingleInFlightPayload = false;
+      let singleInFlightPayload: TPayload | undefined;
+      let singleInFlightPayloadKey: string | null = null;
 
       const executeRun = (
-      payloadInput?: TPayload | InputUpdater<TPayload>,
-    ): Promise<RResult> => {
+        payloadInput?: TPayload | InputUpdater<TPayload>,
+      ): Promise<RResult> => {
         if (internal.destroyed) {
           return Promise.resolve(internal.state.value);
         }
 
-      internal.payload = resolveInput(internal.payload, payloadInput);
-      const payloadKey = serializeKey(internal.payload);
-      const inFlightForPayload = internal.inFlightByPayload.get(payloadKey);
-      if (inFlightForPayload) {
-        return inFlightForPayload;
-      }
+        internal.payload = resolveInput(internal.payload, payloadInput);
+        let payloadKey: string | null = null;
+        if (singleInFlightPromise) {
+          if (hasSingleInFlightPayload && Object.is(singleInFlightPayload, internal.payload)) {
+            return singleInFlightPromise;
+          }
+
+          payloadKey = payloadKeyCache.getOrCreateKey(internal.payload);
+          if (singleInFlightPayloadKey === null && hasSingleInFlightPayload) {
+            singleInFlightPayloadKey = payloadKeyCache.getOrCreateKey(singleInFlightPayload);
+          }
+
+          if (singleInFlightPayloadKey === payloadKey) {
+            return singleInFlightPromise;
+          }
+        }
+
+        if (internal.inFlightByPayload.size > 0) {
+          payloadKey ??= payloadKeyCache.getOrCreateKey(internal.payload);
+          const inFlightForPayload = internal.inFlightByPayload.get(payloadKey);
+          if (inFlightForPayload) {
+            return inFlightForPayload;
+          }
+        }
 
         internal.stopped = false;
-      internal.runSequence += 1;
-      internal.latestRunSequence = internal.runSequence;
-      const runSequence = internal.runSequence;
-      const isLatestRun = () => {
-        return internal.latestRunSequence === runSequence && !internal.destroyed;
-      };
+        internal.runSequence += 1;
+        internal.latestRunSequence = internal.runSequence;
+        const runSequence = internal.runSequence;
+        const isLatestRun = () => {
+          return internal.latestRunSequence === runSequence && !internal.destroyed;
+        };
 
-      if (isLatestRun()) {
-        internal.state.status = 'loading';
-        internal.state.context = null;
-        notifyUnit(internal);
-      }
+        if (isLatestRun()) {
+          internal.state.status = 'loading';
+          internal.state.context = null;
+          notifyUnit(internal);
+        }
 
         const applyRunValue = (nextValue: RResult | void): void => {
           if (!isLatestRun()) {
@@ -282,15 +386,14 @@ export const action = <
           internal.state.value = nextValue;
         };
 
-        const runContextEntry = runContextCache.getOrCreate({
-          primaryDependencies: [internal.key],
-          secondaryDependencies: [payloadKey],
-          build: () => {
-            return createRunContextEntry(internal.payload);
-          },
-        });
+        const runContextEntry = getOrCreateRunContextEntry(internal.payload);
         runContextEntry.gate.isLatestRun = isLatestRun;
         runContextEntry.context.payload = internal.payload;
+
+        const usesSingleInFlight = singleInFlightPromise === null && internal.inFlightByPayload.size === 0;
+        const trackedPayloadKey = usesSingleInFlight
+          ? null
+          : (payloadKey ?? payloadKeyCache.getOrCreateKey(internal.payload));
 
         const runPromise: Promise<RResult> = Promise.resolve(run(runContextEntry.context))
           .then((result) => {
@@ -331,10 +434,31 @@ export const action = <
             throw error;
           })
           .finally(() => {
-            internal.inFlightByPayload.delete(payloadKey);
+            if (usesSingleInFlight) {
+              if (singleInFlightPromise === runPromise) {
+                singleInFlightPromise = null;
+                hasSingleInFlightPayload = false;
+                singleInFlightPayload = undefined;
+                singleInFlightPayloadKey = null;
+              }
+              return;
+            }
+
+            if (trackedPayloadKey !== null) {
+              internal.inFlightByPayload.delete(trackedPayloadKey);
+            }
           });
 
-        internal.inFlightByPayload.set(payloadKey, runPromise);
+        if (usesSingleInFlight) {
+          singleInFlightPromise = runPromise;
+          hasSingleInFlightPayload = true;
+          singleInFlightPayload = internal.payload;
+          singleInFlightPayloadKey = null;
+        } else {
+          if (trackedPayloadKey !== null) {
+            internal.inFlightByPayload.set(trackedPayloadKey, runPromise);
+          }
+        }
 
         return runPromise;
       };

@@ -1,7 +1,7 @@
 import {
+  createSerializedKeyCache,
   createUnitSnapshot,
   notifyEffectListeners,
-  serializeKey,
   type EffectListener,
   type UnitSnapshot,
 } from './utils/index.js';
@@ -572,9 +572,12 @@ export const view = <
   destroyDelay = DEFAULT_DESTROY_DELAY,
 }: ViewConfig<TInput, RResult>): View<TInput, RResult> => {
   const unitsByKey = new Map<string, ViewUnitInternal<TInput, RResult>>();
+  const unitKeyCache = createSerializedKeyCache({
+    mode: 'scoped-unit',
+  });
 
   const viewFactory: View<TInput, RResult> = (scope) => {
-    const key = serializeKey(scope);
+    const key = unitKeyCache.getOrCreateKey(scope);
     const existing = unitsByKey.get(key);
     if (existing) {
       return existing.unit;

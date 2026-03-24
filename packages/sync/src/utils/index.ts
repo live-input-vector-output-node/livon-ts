@@ -9,6 +9,7 @@ export {
 } from './entityMembership.js';
 export { getModeValue, isEntityArray, isEntityValue } from './entityMode.js';
 export { cloneValue } from './cloneValue.js';
+export { createSerializedKeyCache } from './serializedKeyCache.js';
 export { resolveInput } from './resolveInput.js';
 export { resolveValue } from './resolveValue.js';
 export { scheduleAsync } from './scheduleAsync.js';
@@ -19,6 +20,11 @@ export {
 export { createUnitSnapshot } from './createUnitSnapshot.js';
 export { notifyEffectListeners } from './notifyEffectListeners.js';
 
+export type {
+  CreateSerializedKeyCacheConfig,
+  SerializedKeyCache,
+  SerializedKeyCacheMode,
+} from './serializedKeyCache.js';
 export type {
   CreateUnitSnapshotInput,
   EffectListener,

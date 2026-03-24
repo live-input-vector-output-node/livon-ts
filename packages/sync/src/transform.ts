@@ -1,7 +1,7 @@
 import {
+  createSerializedKeyCache,
   createUnitSnapshot,
   notifyEffectListeners,
-  serializeKey,
   type EffectListener,
   type UnitSnapshot,
 } from './utils/index.js';
@@ -681,9 +681,12 @@ export const transform = <
   destroyDelay = DEFAULT_DESTROY_DELAY,
 }: TransformConfig<TInput, TPayload, RResult>): Transform<TInput, TPayload, RResult> => {
   const unitsByKey = new Map<string, TransformUnitInternal<TInput, TPayload, RResult>>();
+  const unitKeyCache = createSerializedKeyCache({
+    mode: 'scoped-unit',
+  });
 
   const transformFactory: Transform<TInput, TPayload, RResult> = (scope) => {
-    const key = serializeKey(scope);
+    const key = unitKeyCache.getOrCreateKey(scope);
     const existing = unitsByKey.get(key);
     if (existing) {
       return existing.unit;

@@ -1,7 +1,7 @@
 import { type EntityId, type UpsertOptions } from '../entity.js';
 import {
   clearEntityMembership,
-  createDependencyCache,
+  createSerializedKeyCache,
   createUnitSnapshot,
   getModeValue,
   isEntityArray,
@@ -11,7 +11,6 @@ import {
   resolveValue,
   setManyEntityMembership,
   setOneEntityMembership,
-  serializeKey,
   type EffectListener,
   type InputUpdater,
 } from '../utils/index.js';
@@ -53,12 +52,10 @@ export const stream = <
 ): Stream<TInput, TPayload, RResult, UUpdate> => {
   const unitsByKey: StreamUnitByKeyMap<TInput, TPayload, TEntityId, RResult, UUpdate> =
     new Map<string, StreamUnitInternal<TInput, TPayload, TEntityId, RResult, UUpdate>>();
-  const runContextCache = createDependencyCache<
-    StreamRunContextEntry<TInput, TPayload, TEntity, RResult, TEntityId>
-  >({
-    limit: RUN_CONTEXT_CACHE_LIMIT,
-  });
   const readEntityValueById = entity.getById;
+  const unitKeyCache = createSerializedKeyCache({
+    mode: 'scoped-unit',
+  });
 
   const notifyUnit = (
     internal: StreamUnitInternal<TInput, TPayload, TEntityId, RResult, UUpdate>,
@@ -77,7 +74,7 @@ export const stream = <
   };
 
   const streamFactory: Stream<TInput, TPayload, RResult, UUpdate> = (scope) => {
-    const key = serializeKey(scope);
+    const key = unitKeyCache.getOrCreateKey(scope);
     const existingUnit = unitsByKey.get(key);
 
     if (existingUnit) {
@@ -107,6 +104,19 @@ export const stream = <
       destroyed: false,
       unit: {} as StreamUnit<TPayload, RResult, UUpdate>,
     };
+    const runContextEntriesByPrimitivePayload = new Map<
+      unknown,
+      StreamRunContextEntry<TInput, TPayload, TEntity, RResult, TEntityId>
+    >();
+    const runContextPrimitivePayloadOrder = new Set<unknown>();
+    let latestObjectPayload: object | null = null;
+    let latestObjectRunContextEntry:
+      | StreamRunContextEntry<TInput, TPayload, TEntity, RResult, TEntityId>
+      | null = null;
+    let previousObjectPayload: object | null = null;
+    let previousObjectRunContextEntry:
+      | StreamRunContextEntry<TInput, TPayload, TEntity, RResult, TEntityId>
+      | null = null;
       const createRunContextEntry = (
         payload: TPayload,
       ): StreamRunContextEntry<TInput, TPayload, TEntity, RResult, TEntityId> => {
@@ -170,6 +180,65 @@ export const stream = <
           context: runContextBase,
         };
       };
+      const getOrCreateRunContextEntry = (
+        payload: TPayload,
+      ): StreamRunContextEntry<TInput, TPayload, TEntity, RResult, TEntityId> => {
+        if (payload !== null && typeof payload === 'object') {
+          if (latestObjectPayload !== null && Object.is(latestObjectPayload, payload)) {
+            if (!latestObjectRunContextEntry) {
+              const createdRunContextEntry = createRunContextEntry(payload);
+              latestObjectRunContextEntry = createdRunContextEntry;
+              return createdRunContextEntry;
+            }
+
+            return latestObjectRunContextEntry;
+          }
+
+          if (previousObjectPayload !== null && Object.is(previousObjectPayload, payload)) {
+            if (!previousObjectRunContextEntry) {
+              const createdRunContextEntry = createRunContextEntry(payload);
+              previousObjectRunContextEntry = createdRunContextEntry;
+            }
+
+            const promotedObjectPayload = previousObjectPayload;
+            const promotedRunContextEntry = previousObjectRunContextEntry;
+            previousObjectPayload = latestObjectPayload;
+            previousObjectRunContextEntry = latestObjectRunContextEntry;
+            latestObjectPayload = promotedObjectPayload;
+            latestObjectRunContextEntry = promotedRunContextEntry;
+
+            return promotedRunContextEntry;
+          }
+
+          const createdRunContextEntry = createRunContextEntry(payload);
+          previousObjectPayload = latestObjectPayload;
+          previousObjectRunContextEntry = latestObjectRunContextEntry;
+          latestObjectPayload = payload;
+          latestObjectRunContextEntry = createdRunContextEntry;
+          return createdRunContextEntry;
+        }
+
+        const existingRunContextEntry = runContextEntriesByPrimitivePayload.get(payload);
+        if (existingRunContextEntry) {
+          runContextPrimitivePayloadOrder.delete(payload);
+          runContextPrimitivePayloadOrder.add(payload);
+          return existingRunContextEntry;
+        }
+
+        const createdRunContextEntry = createRunContextEntry(payload);
+        runContextEntriesByPrimitivePayload.set(payload, createdRunContextEntry);
+        runContextPrimitivePayloadOrder.add(payload);
+
+        if (runContextEntriesByPrimitivePayload.size > RUN_CONTEXT_CACHE_LIMIT) {
+          const oldestPayload = runContextPrimitivePayloadOrder.values().next().value;
+          if (oldestPayload !== undefined) {
+            runContextPrimitivePayloadOrder.delete(oldestPayload);
+            runContextEntriesByPrimitivePayload.delete(oldestPayload);
+          }
+        }
+
+        return createdRunContextEntry;
+      };
 
       const unregisterFromEntity = entity.registerUnit({
         key: internal.key,
@@ -188,9 +257,12 @@ export const stream = <
         }
 
         internal.destroyed = true;
-        runContextCache.clearPrimary({
-          primaryDependencies: [internal.key],
-        });
+        runContextEntriesByPrimitivePayload.clear();
+        runContextPrimitivePayloadOrder.clear();
+        latestObjectPayload = null;
+        latestObjectRunContextEntry = null;
+        previousObjectPayload = null;
+        previousObjectRunContextEntry = null;
         unregisterFromEntity();
         stop();
         internal.listeners.clear();
@@ -234,14 +306,7 @@ export const stream = <
           internal.state.value = nextValue;
         };
 
-        const payloadKey = serializeKey(eventPayload);
-        const runContextEntry = runContextCache.getOrCreate({
-          primaryDependencies: [internal.key],
-          secondaryDependencies: [payloadKey],
-          build: () => {
-            return createRunContextEntry(eventPayload);
-          },
-        });
+        const runContextEntry = getOrCreateRunContextEntry(eventPayload);
         runContextEntry.context.payload = eventPayload;
 
         return Promise.resolve(run(runContextEntry.context))

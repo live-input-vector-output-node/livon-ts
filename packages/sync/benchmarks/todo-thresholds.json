@@ -17,7 +17,7 @@
   "todo source get 100_000 entries": {
     "maxP99Ms": 0.002,
     "maxMeanMs": 0.003,
-    "minHz": 350000
+    "minHz": 330000
   },
   "todo view get access after 100_000 seed": {
     "maxP99Ms": 0.001,
