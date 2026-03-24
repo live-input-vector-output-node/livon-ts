@@ -1,6 +1,6 @@
 {
   "name": "@livon/runtime",
-  "version": "0.29.0-rc.1",
+  "version": "0.29.0-rc.2",
   "private": false,
   "type": "module",
   "description": "Deterministic event pipeline runtime for LIVON.",
@@ -49,6 +49,18 @@
       "development": "./src/index.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
+    },
+    "./runtime": {
+      "types": "./dist/runtime.d.ts",
+      "development": "./src/runtime.ts",
+      "import": "./dist/runtime.js",
+      "require": "./dist/runtime.cjs"
+    },
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "development": "./src/types.ts",
+      "import": "./dist/types.js",
+      "require": "./dist/types.cjs"
     }
   },
   "scripts": {

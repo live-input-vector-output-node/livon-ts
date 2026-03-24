@@ -87,6 +87,18 @@
       ]
     },
     {
+      "id": "package-exports-entry-contract",
+      "statement": "Every public API entrypoint must be declared in package.json exports with types (.d.ts), import (.js), and require (.cjs) mappings to dist for both root and deep import paths.",
+      "humanSources": [
+        "website/docs/ai/root-gate.md"
+      ],
+      "agentSources": [
+        "PROMPT.md",
+        "AGENTS.md",
+        "tools/policies/src/checks/project/check-package-exports.ts"
+      ]
+    },
+    {
       "id": "core-framework-separation",
       "statement": "When changing framework adapters, evaluate first whether logic is framework-agnostic; shared runtime/state/sync behavior must be implemented in @livon/sync core, while framework packages keep only adapter integration code.",
       "humanSources": [
