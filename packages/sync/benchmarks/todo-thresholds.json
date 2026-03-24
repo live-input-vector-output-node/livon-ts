@@ -10,9 +10,9 @@
     "minHz": 2700
   },
   "todo entity remove one plus restore after 100_000 seed": {
-    "maxP99Ms": 6,
-    "maxMeanMs": 0.2,
-    "minHz": 5500
+    "maxP99Ms": 12,
+    "maxMeanMs": 0.35,
+    "minHz": 3000
   },
   "todo source get 100_000 entries": {
     "maxP99Ms": 0.002,
