@@ -131,8 +131,19 @@ jobs:
       - name: Run monorepo CI
         run: pnpm run ci
 
+      - name: Detect automation token
+        id: automation-token
+        env:
+          LIVON_AUTOMATION_TOKEN: ${{ secrets.LIVON_AUTOMATION_TOKEN }}
+        run: |
+          if [ -n "$LIVON_AUTOMATION_TOKEN" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Create PR for generated README and size badge updates
-        if: ${{ secrets.LIVON_AUTOMATION_TOKEN != '' }}
+        if: ${{ steps.automation-token.outputs.available == 'true' }}
         uses: peter-evans/create-pull-request@v8.1.0
         with:
           token: ${{ secrets.LIVON_AUTOMATION_TOKEN }}
@@ -150,7 +161,7 @@ jobs:
             - `.github/badges/size-*.json` (generated package size badges)
 
       - name: Skip generated-artifacts PR (no automation token configured)
-        if: ${{ secrets.LIVON_AUTOMATION_TOKEN == '' }}
+        if: ${{ steps.automation-token.outputs.available != 'true' }}
         run: |
           echo "Skipping generated-artifacts PR creation."
           echo "Set LIVON_AUTOMATION_TOKEN to enable automated PR sync."
