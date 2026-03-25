@@ -300,6 +300,13 @@ export const source = <
             upsertOneOperation: 'runContext.set() object',
             upsertManyOperation: 'runContext.set() array',
           });
+
+          if (!gate.isLatestRun()) {
+            return;
+          }
+
+          notifyUnit(internal);
+          syncCacheRecord();
         },
         reset: () => {
           if (!gate.isLatestRun()) {
