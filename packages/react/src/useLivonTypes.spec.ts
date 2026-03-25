@@ -49,6 +49,46 @@ const createReadUsersSource = (userEntity: ReturnType<typeof createUserEntity>) 
   });
 };
 
+const createTypedMetaUnits = () => {
+  const userEntity = createUserEntity();
+  const readUsers = source<UserSlug, undefined, readonly User[], UserMeta>({
+    entity: userEntity,
+    run: async ({ setMeta }) => {
+      setMeta({
+        severity: 'info',
+        text: 'source-meta',
+      });
+      return [];
+    },
+  });
+  const createUser = action<UserSlug, User, User | null, UserMeta>({
+    entity: userEntity,
+    run: async ({ payload, setMeta }) => {
+      setMeta({
+        severity: 'info',
+        text: 'action-meta',
+      });
+      return payload;
+    },
+  });
+  const onUserUpdated = stream<UserSlug, User, User | null, UserMeta>({
+    entity: userEntity,
+    run: async ({ payload, setMeta }) => {
+      setMeta({
+        severity: 'info',
+        text: 'stream-meta',
+      });
+      return payload;
+    },
+  });
+
+  return {
+    sourceUnit: readUsers({ templateId: 'typed-meta-source' }),
+    actionUnit: createUser({ templateId: 'typed-meta-action' }),
+    streamUnit: onUserUpdated({ templateId: 'typed-meta-stream' }),
+  };
+};
+
 describe('hook type inference', () => {
   it('should infer source value and run types when source unit is passed to hooks', () => {
     const userEntity = createUserEntity();
@@ -122,64 +162,19 @@ describe('hook type inference', () => {
     expectTypeOf(resolveMeta).toEqualTypeOf<(currentUnit: typeof unit) => unknown>();
   });
 
-  it('should preserve explicit meta types across atomic and grouped hooks', () => {
-    const userEntity = createUserEntity();
-    const readUsers = source<UserSlug, undefined, readonly User[], UserMeta>({
-      entity: userEntity,
-      run: async ({ setMeta }) => {
-        setMeta({
-          severity: 'info',
-          text: 'source-meta',
-        });
-        return [];
-      },
-    });
-    const createUser = action<UserSlug, User, User | null, UserMeta>({
-      entity: userEntity,
-      run: async ({ payload, setMeta }) => {
-        setMeta({
-          severity: 'info',
-          text: 'action-meta',
-        });
-        return payload;
-      },
-    });
-    const onUserUpdated = stream<UserSlug, User, User | null, UserMeta>({
-      entity: userEntity,
-      run: async ({ payload, setMeta }) => {
-        setMeta({
-          severity: 'info',
-          text: 'stream-meta',
-        });
-        return payload;
-      },
-    });
-
-    const sourceUnit = readUsers({ templateId: 'typed-meta-source' });
-    const actionUnit = createUser({ templateId: 'typed-meta-action' });
-    const streamUnit = onUserUpdated({ templateId: 'typed-meta-stream' });
+  it('should preserve explicit source meta type in useLivonMeta', () => {
+    const { sourceUnit } = createTypedMetaUnits();
     const resolveSourceMeta = (currentUnit: typeof sourceUnit) => useLivonMeta(currentUnit);
-    const resolveSourceState = (currentUnit: typeof sourceUnit) => useLivonState(currentUnit);
-    const resolveActionMeta = (currentUnit: typeof actionUnit) => useLivonMeta(currentUnit);
-    const resolveActionState = (currentUnit: typeof actionUnit) => useLivonState(currentUnit);
-    const resolveStreamMeta = (currentUnit: typeof streamUnit) => useLivonMeta(currentUnit);
-    const resolveStreamState = (currentUnit: typeof streamUnit) => useLivonState(currentUnit);
-    const resolveSourceGroupedState = (currentUnit: typeof sourceUnit) => useLivonSourceState(currentUnit);
-    const resolveActionGroupedState = (currentUnit: typeof actionUnit) => useLivonActionState(currentUnit);
-    const resolveStreamGroupedState = (currentUnit: typeof streamUnit) => useLivonStreamState(currentUnit);
-    type TypedSourceState = ReturnType<typeof resolveSourceGroupedState>;
-    type TypedActionState = ReturnType<typeof resolveActionGroupedState>;
-    type TypedStreamState = ReturnType<typeof resolveStreamGroupedState>;
-
-    void actionUnit;
-    void resolveSourceGroupedState;
-    void resolveActionGroupedState;
-    void resolveStreamGroupedState;
-    void streamUnit;
 
     expectTypeOf(resolveSourceMeta).toEqualTypeOf<
       (currentUnit: typeof sourceUnit) => UserMeta | null
     >();
+  });
+
+  it('should preserve explicit source meta type in useLivonState', () => {
+    const { sourceUnit } = createTypedMetaUnits();
+    const resolveSourceState = (currentUnit: typeof sourceUnit) => useLivonState(currentUnit);
+
     expectTypeOf(resolveSourceState).toEqualTypeOf<
       (currentUnit: typeof sourceUnit) => {
         value: readonly User[];
@@ -187,9 +182,21 @@ describe('hook type inference', () => {
         meta: UserMeta | null;
       }
     >();
+  });
+
+  it('should preserve explicit action meta type in useLivonMeta', () => {
+    const { actionUnit } = createTypedMetaUnits();
+    const resolveActionMeta = (currentUnit: typeof actionUnit) => useLivonMeta(currentUnit);
+
     expectTypeOf(resolveActionMeta).toEqualTypeOf<
       (currentUnit: typeof actionUnit) => UserMeta | null
     >();
+  });
+
+  it('should preserve explicit action meta type in useLivonState', () => {
+    const { actionUnit } = createTypedMetaUnits();
+    const resolveActionState = (currentUnit: typeof actionUnit) => useLivonState(currentUnit);
+
     expectTypeOf(resolveActionState).toEqualTypeOf<
       (currentUnit: typeof actionUnit) => {
         value: User | null;
@@ -197,9 +204,21 @@ describe('hook type inference', () => {
         meta: UserMeta | null;
       }
     >();
+  });
+
+  it('should preserve explicit stream meta type in useLivonMeta', () => {
+    const { streamUnit } = createTypedMetaUnits();
+    const resolveStreamMeta = (currentUnit: typeof streamUnit) => useLivonMeta(currentUnit);
+
     expectTypeOf(resolveStreamMeta).toEqualTypeOf<
       (currentUnit: typeof streamUnit) => UserMeta | null
     >();
+  });
+
+  it('should preserve explicit stream meta type in useLivonState', () => {
+    const { streamUnit } = createTypedMetaUnits();
+    const resolveStreamState = (currentUnit: typeof streamUnit) => useLivonState(currentUnit);
+
     expectTypeOf(resolveStreamState).toEqualTypeOf<
       (currentUnit: typeof streamUnit) => {
         value: User | null;
@@ -207,8 +226,38 @@ describe('hook type inference', () => {
         meta: UserMeta | null;
       }
     >();
+  });
+
+  it('should preserve explicit source meta type in useLivonSourceState', () => {
+    const { sourceUnit } = createTypedMetaUnits();
+    const resolveSourceGroupedState = (currentUnit: typeof sourceUnit) => useLivonSourceState(currentUnit);
+    type TypedSourceState = ReturnType<typeof resolveSourceGroupedState>;
+
+    void sourceUnit;
+    void resolveSourceGroupedState;
+
     expectTypeOf<TypedSourceState['meta']>().toEqualTypeOf<UserMeta | null>();
+  });
+
+  it('should preserve explicit action meta type in useLivonActionState', () => {
+    const { actionUnit } = createTypedMetaUnits();
+    const resolveActionGroupedState = (currentUnit: typeof actionUnit) => useLivonActionState(currentUnit);
+    type TypedActionState = ReturnType<typeof resolveActionGroupedState>;
+
+    void actionUnit;
+    void resolveActionGroupedState;
+
     expectTypeOf<TypedActionState['meta']>().toEqualTypeOf<UserMeta | null>();
+  });
+
+  it('should preserve explicit stream meta type in useLivonStreamState', () => {
+    const { streamUnit } = createTypedMetaUnits();
+    const resolveStreamGroupedState = (currentUnit: typeof streamUnit) => useLivonStreamState(currentUnit);
+    type TypedStreamState = ReturnType<typeof resolveStreamGroupedState>;
+
+    void streamUnit;
+    void resolveStreamGroupedState;
+
     expectTypeOf<TypedStreamState['meta']>().toEqualTypeOf<UserMeta | null>();
   });
 
