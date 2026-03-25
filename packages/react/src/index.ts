@@ -13,6 +13,7 @@ export type {
   LivonActionStateOf,
   LivonDraftOf,
   LivonMetaOf,
+  LivonResetOf,
   LivonRunOf,
   LivonSourceStateOf,
   LivonSnapshotOf,

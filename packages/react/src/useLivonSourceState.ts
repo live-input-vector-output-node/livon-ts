@@ -31,6 +31,10 @@ const useLivonSourceStateInternal: UseLivonSourceState = <
   const stop = useLivonStop(unit);
   const [setDraft, cleanDraft] = useLivonDraft(unit);
 
+  const reset = useCallback(() => {
+    unit.reset();
+  }, [unit]);
+
   const refetch = useCallback((payloadInput?: TPayload | ((input: TPayload) => TPayload)) => {
     return unit.refetch(payloadInput);
   }, [unit]);
@@ -44,6 +48,7 @@ const useLivonSourceStateInternal: UseLivonSourceState = <
     run,
     refetch,
     force,
+    reset,
     stop,
     draft: {
       set: setDraft,

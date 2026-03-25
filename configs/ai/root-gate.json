@@ -121,6 +121,18 @@
       ]
     },
     {
+      "id": "static-helpers-at-module-root",
+      "statement": "When behavior does not depend on instance-local mutable state, implement helpers as module-root pure functions (input -> output) and move static maps/objects/tables to module scope so they are initialized once instead of rebuilt per instance.",
+      "humanSources": [
+        "website/docs/core/coding-style-guide.md",
+        "website/docs/ai/root-gate.md"
+      ],
+      "agentSources": [
+        "PROMPT.md",
+        "AGENTS.md"
+      ]
+    },
+    {
       "id": "pathfinder-clean-code-refactoring",
       "statement": "Apply the Pathfinder rule on every implementation change: when friction, duplication, mixed concerns, or semantic boundary issues are discovered in touched scope, refactor them immediately so the code becomes cleaner with each change. When files become too large or semantically mixed, split them by semantic slices/domains (for example builder, helper, utils, context, API surface) and expose each split through local barrel files instead of growing one monolithic file.",
       "humanSources": [

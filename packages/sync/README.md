@@ -287,7 +287,7 @@ Adaptive strategy helpers exported at package root:
   - `run(payload?)`
   - `force(payload?)`
   - `refetch(payload?)`
-  - `reset()`
+  - `reset()` (restores initial value/status/meta/context and clears stored payload)
   - `get`
   - `draft.set(...)`, `draft.clean()`
   - `effect`, `stop`, `destroy`

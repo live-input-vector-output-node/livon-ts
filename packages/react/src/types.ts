@@ -60,6 +60,11 @@ export type LivonStopOf<TUnit> =
     ? () => TResult
     : never;
 
+export type LivonResetOf<TUnit> =
+  TUnit extends { reset: () => infer TResult }
+    ? () => TResult
+    : never;
+
 export type LivonDraftOf<TUnit> =
   TUnit extends {
     draft: {
@@ -87,6 +92,7 @@ export type LivonSourceStateOf<TUnit> = LivonStateOf<TUnit> & {
   run: LivonRunOf<TUnit>;
   refetch: LivonRefetchOf<TUnit>;
   force: LivonForceOf<TUnit>;
+  reset: LivonResetOf<TUnit>;
   stop: LivonStopOf<TUnit>;
   draft: {
     set: LivonDraftOf<TUnit>[0];

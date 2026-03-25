@@ -1,5 +1,12 @@
 # @livon/client-ws-transport
 
+## 0.29.0-rc.5
+
+### Patch Changes
+
+- @livon/client@0.29.0-rc.5
+- @livon/runtime@0.29.0-rc.5
+
 ## 0.29.0-rc.4
 
 ### Patch Changes

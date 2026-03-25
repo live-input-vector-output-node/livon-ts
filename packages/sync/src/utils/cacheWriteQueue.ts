@@ -31,8 +31,13 @@ export interface CreateCacheWriteQueueInput {
   queueKey?: string;
 }
 
+interface ReadOrCreateSharedCacheWriteQueueInput {
+  storage: CacheStorage;
+}
+
 const DEFAULT_BATCH_SIZE = 50;
 let nextCacheWriteQueueId = 0;
+const sharedCacheWriteQueueByStorage = new WeakMap<CacheStorage, CacheWriteQueue>();
 
 export const createCacheWriteQueue = ({
   storage,
@@ -115,4 +120,17 @@ export const createCacheWriteQueue = ({
     enqueueRemove,
     flush,
   };
+};
+
+export const readOrCreateSharedCacheWriteQueue = ({
+  storage,
+}: ReadOrCreateSharedCacheWriteQueueInput): CacheWriteQueue => {
+  const existingQueue = sharedCacheWriteQueueByStorage.get(storage);
+  if (existingQueue) {
+    return existingQueue;
+  }
+
+  const nextQueue = createCacheWriteQueue({ storage });
+  sharedCacheWriteQueueByStorage.set(storage, nextQueue);
+  return nextQueue;
 };

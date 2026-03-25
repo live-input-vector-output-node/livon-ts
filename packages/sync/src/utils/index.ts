@@ -1,6 +1,6 @@
 export { serializeKey } from './serializeKey.js';
 export { decodeBase64, encodeBase64 } from './base64.js';
-export { createCacheWriteQueue } from './cacheWriteQueue.js';
+export { createCacheWriteQueue, readOrCreateSharedCacheWriteQueue } from './cacheWriteQueue.js';
 export { applyEntityRunResult } from './applyEntityRunResult.js';
 export { createDependencyCache } from './dependencyCache.js';
 export { isUnitLoadingStatus, isUnitSettledStatus, isUnitStatus } from './unitStatus.js';
