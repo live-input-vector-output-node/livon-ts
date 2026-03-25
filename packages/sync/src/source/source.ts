@@ -201,6 +201,7 @@ export const source = <
     }
 
     const initialValue = (defaultValue ?? null) as RResult;
+    const initialPayload = undefined as TPayload;
     const initialMode: 'one' | 'many' = Array.isArray(initialValue) ? 'many' : 'one';
 
     const internal: SourceUnitInternal<TInput, TPayload, TEntityId, RResult, UUpdate> = {
@@ -208,7 +209,7 @@ export const source = <
       ttl,
       destroyDelay,
       scope,
-      payload: undefined as TPayload,
+      payload: initialPayload,
       state: {
         value: initialValue,
         status: 'idle',
@@ -604,7 +605,10 @@ export const source = <
       const previousMembershipIds = internal.membershipIds;
       stopInternal();
       clearInFlightTracking();
+      runContextEntryCache.clear();
+      payloadKeyCache.clear();
       activePayloadCacheKey = null;
+      internal.payload = initialPayload;
 
       if (draft === 'scoped') {
         previousMembershipIds.forEach((id) => {

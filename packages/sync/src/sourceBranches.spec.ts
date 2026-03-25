@@ -242,6 +242,29 @@ describe('source() branches', () => {
       expect(hasResetMethod).toBe(true);
       expect(userStore.get()).toBeNull();
     });
+
+    it('should clear stored payload when source unit is reset', async () => {
+      const capturedPayloads: (SearchPayload | undefined)[] = [];
+
+      const readWithOptionalPayload = source<UserSlug, SearchPayload | undefined, User, User | null>({
+        entity: usersEntity,
+        run: async ({ payload }) => {
+          capturedPayloads.push(payload);
+          return null;
+        },
+      });
+
+      const userStore = readWithOptionalPayload({ slugId });
+
+      await userStore.run({ search: searchValue });
+      userStore.reset();
+      await userStore.run();
+
+      expect(capturedPayloads).toEqual([
+        { search: searchValue },
+        undefined,
+      ]);
+    });
   });
 
   describe('sad', () => {
