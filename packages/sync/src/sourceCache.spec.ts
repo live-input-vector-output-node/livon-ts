@@ -1,8 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { entity } from './entity.js';
+import { resolveCacheKey, serializeSourceCacheRecord } from './source/helpers.js';
 import { source } from './source.js';
 import { randomNumber, randomString } from './testing/randomData.js';
+import { serializeKey, type UnitStatus } from './utils/index.js';
 
 interface User {
   id: string;
@@ -48,7 +50,24 @@ interface CreateSpyMemoryStorage {
   (): SpyMemoryStorage;
 }
 
-type UnitStatus = 'idle' | 'loading' | 'success' | 'error';
+interface SeedSourceCacheInput<TEntity extends object> {
+  storage: MemoryStorage;
+  scope: UserSlug;
+  payload?: unknown;
+  mode: 'one' | 'many';
+  entities: readonly TEntity[];
+  writtenAt: number;
+  sourceCacheKey?: string;
+  entityCacheKey?: string;
+}
+
+interface BuildSourceCacheRecordKeyInput {
+  scope: UserSlug;
+  payload?: unknown;
+  mode: 'one' | 'many';
+  sourceCacheKey?: string;
+  entityCacheKey?: string;
+}
 
 const createMemoryStorage: CreateMemoryStorage = () => {
   const values = new Map<string, string>();
@@ -84,6 +103,61 @@ const createSpyMemoryStorage: CreateSpyMemoryStorage = () => {
     setItemSpy,
     removeItemSpy,
   };
+};
+
+const buildSourceCacheRecordKey = ({
+  scope,
+  payload,
+  mode,
+  sourceCacheKey,
+  entityCacheKey,
+}: BuildSourceCacheRecordKeyInput): string => {
+  const sourceKey = serializeKey({
+    mode,
+  });
+  const cachePrefix = resolveCacheKey({
+    sourceCache: sourceCacheKey
+      ? {
+        key: sourceCacheKey,
+      }
+      : undefined,
+    entityCache: entityCacheKey
+      ? {
+        key: entityCacheKey,
+      }
+      : undefined,
+    sourceKey,
+  });
+  const unitKey = serializeKey(scope);
+  const payloadKey = serializeKey(payload);
+
+  return `${cachePrefix}:${unitKey}:${payloadKey}`;
+};
+
+const seedSourceCache = <TEntity extends object>({
+  storage,
+  scope,
+  payload,
+  mode,
+  entities,
+  writtenAt,
+  sourceCacheKey,
+  entityCacheKey,
+}: SeedSourceCacheInput<TEntity>): void => {
+  const sourceCacheRecordKey = buildSourceCacheRecordKey({
+    scope,
+    payload,
+    mode,
+    sourceCacheKey,
+    entityCacheKey,
+  });
+  const cacheRecord = serializeSourceCacheRecord({
+    mode,
+    entities,
+    writtenAt,
+  });
+
+  storage.setItem(sourceCacheRecordKey, cacheRecord);
 };
 
 describe('source cache', () => {
@@ -166,6 +240,99 @@ describe('source cache', () => {
       expect(storage.setItemSpy).toHaveBeenCalledTimes(1);
     });
 
+    it('should evict least recently used cache record when lru max entries is reached', async () => {
+      const slugId = randomNumber();
+      const cacheKey = randomString({ prefix: 'cache-key' });
+      const storage = createMemoryStorage();
+
+      const payloadOne = { query: randomString({ prefix: 'query-one' }) };
+      const payloadTwo = { query: randomString({ prefix: 'query-two' }) };
+      const payloadThree = { query: randomString({ prefix: 'query-three' }) };
+
+      const usersEntity = entity<User>({
+        idOf: (value) => value.id,
+      });
+      const readUser = source<UserSlug, { query: string }, User, User | null>({
+        entity: usersEntity,
+        cache: {
+          key: cacheKey,
+          storage,
+          ttl: 'infinity',
+          lruMaxEntries: 2,
+        },
+        run: async ({ payload }) => {
+          return {
+            id: payload.query,
+            name: payload.query,
+          };
+        },
+      });
+
+      const unit = readUser({ slugId });
+
+      await unit.run(payloadOne);
+      await Promise.resolve();
+      await unit.run(payloadTwo);
+      await Promise.resolve();
+      await unit.run(payloadThree);
+      await Promise.resolve();
+
+      const cacheKeyOne = buildSourceCacheRecordKey({
+        scope: { slugId },
+        payload: payloadOne,
+        mode: 'one',
+        sourceCacheKey: cacheKey,
+      });
+      const cacheKeyTwo = buildSourceCacheRecordKey({
+        scope: { slugId },
+        payload: payloadTwo,
+        mode: 'one',
+        sourceCacheKey: cacheKey,
+      });
+      const cacheKeyThree = buildSourceCacheRecordKey({
+        scope: { slugId },
+        payload: payloadThree,
+        mode: 'one',
+        sourceCacheKey: cacheKey,
+      });
+
+      expect(storage.getItem(cacheKeyOne)).toBeNull();
+      expect(storage.getItem(cacheKeyTwo)).not.toBeNull();
+      expect(storage.getItem(cacheKeyThree)).not.toBeNull();
+    });
+
+    it('should remove cache record when value leaves entity mode', async () => {
+      const slugId = randomNumber();
+      const cacheKey = randomString({ prefix: 'cache-key' });
+      const userId = randomString({ prefix: 'user-id' });
+      const userName = randomString({ prefix: 'user-name' });
+      const storage = createSpyMemoryStorage();
+
+      const usersEntity = entity<User>({
+        idOf: (value) => value.id,
+      });
+      const readUser = source<UserSlug, User | string, User, User | string | null>({
+        entity: usersEntity,
+        cache: {
+          key: cacheKey,
+          storage,
+          ttl: 100,
+        },
+        run: async ({ payload }) => {
+          return payload;
+        },
+      });
+      const unit = readUser({ slugId });
+
+      await unit.run({ id: userId, name: userName });
+      await Promise.resolve();
+      await unit.run(randomString({ prefix: 'non-entity-value' }));
+      await Promise.resolve();
+
+      expect(storage.setItemSpy).toHaveBeenCalledTimes(1);
+      expect(storage.removeItemSpy).toHaveBeenCalledTimes(1);
+    });
+
     it('should rehydrate value from storage before run when cache ttl is infinity', async () => {
       const slugId = randomNumber();
       const cacheKey = randomString({ prefix: 'cache-key' });
@@ -177,20 +344,14 @@ describe('source cache', () => {
         return user;
       });
 
-      const firstEntity = entity<User>({
-        idOf: (value) => value.id,
+      seedSourceCache({
+        storage,
+        scope: { slugId },
+        mode: 'one',
+        entities: [user],
+        writtenAt: Date.now(),
+        sourceCacheKey: cacheKey,
       });
-      const firstReadUser = source<UserSlug, undefined, User, User | null>({
-        entity: firstEntity,
-        cache: {
-          key: cacheKey,
-          storage,
-          ttl: 'infinity',
-        },
-        run: runMock,
-      });
-      await firstReadUser({ slugId }).run();
-      vi.runAllTimers();
 
       const secondEntity = entity<User>({
         idOf: (value) => value.id,
@@ -208,7 +369,68 @@ describe('source cache', () => {
       const secondUnit = secondReadUser({ slugId });
 
       expect(secondUnit.get()).toEqual(user);
+      expect(runMock).toHaveBeenCalledTimes(0);
+    });
+
+    it('should hydrate by scope and payload before background sync run', async () => {
+      const slugId = randomNumber();
+      const cacheKey = randomString({ prefix: 'cache-key' });
+      const payload = {
+        query: randomString({ prefix: 'query' }),
+      };
+      const cachedUser = {
+        id: randomString({ prefix: 'cached-user-id' }),
+        name: randomString({ prefix: 'cached-user-name' }),
+      };
+      const freshUser = {
+        id: cachedUser.id,
+        name: randomString({ prefix: 'fresh-user-name' }),
+      };
+      const storage = createMemoryStorage();
+      const runMock = vi.fn(async () => {
+        return freshUser;
+      });
+
+      seedSourceCache({
+        storage,
+        scope: { slugId },
+        payload,
+        mode: 'one',
+        entities: [cachedUser],
+        writtenAt: Date.now(),
+        sourceCacheKey: cacheKey,
+      });
+
+      const usersEntity = entity<User>({
+        idOf: (value) => value.id,
+      });
+      const readUser = source<UserSlug, { query: string }, User, User | null>({
+        entity: usersEntity,
+        cache: {
+          key: cacheKey,
+          storage,
+          ttl: 'infinity',
+        },
+        run: runMock,
+      });
+
+      const unit = readUser({ slugId });
+      const statuses: UnitStatus[] = [];
+      unit.effect((snapshot) => {
+        statuses.push(snapshot.status);
+      });
+
+      const runPromise = unit.run(payload);
+
+      expect(unit.get()).toEqual(cachedUser);
+      await runPromise;
+
       expect(runMock).toHaveBeenCalledTimes(1);
+      expect(unit.get()).toEqual(freshUser);
+      expect(statuses).toContain('rehydrated');
+      expect(statuses).toContain('refreshing');
+      expect(statuses).toContain('success');
+      expect(statuses).not.toContain('loading');
     });
 
     it('should rehydrate structured entity values from cache without losing their types', async () => {
@@ -232,23 +454,14 @@ describe('source cache', () => {
         },
       };
 
-      const firstEntity = entity<StructuredUser>({
-        idOf: (entry) => entry.id,
+      seedSourceCache({
+        storage,
+        scope: { slugId },
+        mode: 'one',
+        entities: [value],
+        writtenAt: Date.now(),
+        sourceCacheKey: cacheKey,
       });
-      const firstReadValue = source<UserSlug, undefined, StructuredUser, StructuredUser | null, StructuredUser>({
-        entity: firstEntity,
-        cache: {
-          key: cacheKey,
-          storage,
-          ttl: 'infinity',
-        },
-        run: async () => {
-          return value;
-        },
-      });
-
-      await firstReadValue({ slugId }).run();
-      await vi.runAllTimersAsync();
 
       const secondEntity = entity<StructuredUser>({
         idOf: (entry) => entry.id,
@@ -296,20 +509,14 @@ describe('source cache', () => {
         return user;
       });
 
-      const firstEntity = entity<User>({
-        idOf: (value) => value.id,
+      seedSourceCache({
+        storage,
+        scope: { slugId },
+        mode: 'one',
+        entities: [user],
+        writtenAt: Date.now(),
+        sourceCacheKey: cacheKey,
       });
-      const firstReadUser = source<UserSlug, undefined, User, User | null>({
-        entity: firstEntity,
-        cache: {
-          key: cacheKey,
-          storage,
-          ttl: 'infinity',
-        },
-        run: runMock,
-      });
-      await firstReadUser({ slugId }).run();
-      vi.runAllTimers();
 
       const secondEntity = entity<User>({
         idOf: (value) => value.id,
@@ -332,7 +539,8 @@ describe('source cache', () => {
       await secondUnit.run();
 
       expect(statuses).not.toContain('loading');
-      expect(runMock).toHaveBeenCalledTimes(2);
+      expect(statuses).toContain('refreshing');
+      expect(runMock).toHaveBeenCalledTimes(1);
     });
 
     it('should ignore stale cache when ttl is exceeded', async () => {
@@ -346,19 +554,14 @@ describe('source cache', () => {
         return user;
       });
 
-      const firstEntity = entity<User>({
-        idOf: (value) => value.id,
+      seedSourceCache({
+        storage,
+        scope: { slugId },
+        mode: 'one',
+        entities: [user],
+        writtenAt: Date.now(),
+        sourceCacheKey: cacheKey,
       });
-      const firstReadUser = source<UserSlug, undefined, User, User | null>({
-        entity: firstEntity,
-        cache: {
-          key: cacheKey,
-          storage,
-          ttl: 1_000,
-        },
-        run: runMock,
-      });
-      await firstReadUser({ slugId }).run();
       vi.advanceTimersByTime(1_001);
 
       const secondEntity = entity<User>({
@@ -377,7 +580,52 @@ describe('source cache', () => {
       const secondUnit = secondReadUser({ slugId });
 
       expect(secondUnit.get()).toBeNull();
-      expect(runMock).toHaveBeenCalledTimes(1);
+      expect(runMock).toHaveBeenCalledTimes(0);
+    });
+
+    it('should remove stale cache record asynchronously as fire and forget', async () => {
+      const slugId = randomNumber();
+      const cacheKey = randomString({ prefix: 'cache-key' });
+      const userId = randomString({ prefix: 'user-id' });
+      const userName = randomString({ prefix: 'user-name' });
+      const user = { id: userId, name: userName };
+      const storage = createSpyMemoryStorage();
+      const runMock = vi.fn(async () => {
+        return user;
+      });
+
+      seedSourceCache({
+        storage,
+        scope: { slugId },
+        mode: 'one',
+        entities: [user],
+        writtenAt: Date.now(),
+        sourceCacheKey: cacheKey,
+      });
+      vi.advanceTimersByTime(1_001);
+
+      const secondEntity = entity<User>({
+        idOf: (value) => value.id,
+      });
+      const secondReadUser = source<UserSlug, undefined, User, User | null>({
+        entity: secondEntity,
+        cache: {
+          key: cacheKey,
+          storage,
+          ttl: 1_000,
+        },
+        run: runMock,
+      });
+
+      const secondUnit = secondReadUser({ slugId });
+
+      expect(secondUnit.get()).toBeNull();
+      expect(storage.removeItemSpy).toHaveBeenCalledTimes(0);
+
+      await Promise.resolve();
+
+      expect(storage.removeItemSpy).toHaveBeenCalledTimes(1);
+      expect(runMock).toHaveBeenCalledTimes(0);
     });
 
     it('should fallback to entity cache ttl when source cache ttl is omitted', async () => {
@@ -391,19 +639,14 @@ describe('source cache', () => {
         return user;
       });
 
-      const firstEntity = entity<User>({
-        idOf: (value) => value.id,
-        cache: {
-          key: cacheKey,
-          storage,
-          ttl: 1_000,
-        },
+      seedSourceCache({
+        storage,
+        scope: { slugId },
+        mode: 'one',
+        entities: [user],
+        writtenAt: Date.now(),
+        entityCacheKey: cacheKey,
       });
-      const firstReadUser = source<UserSlug, undefined, User, User | null>({
-        entity: firstEntity,
-        run: runMock,
-      });
-      await firstReadUser({ slugId }).run();
       vi.advanceTimersByTime(999);
 
       const secondEntity = entity<User>({
@@ -420,7 +663,7 @@ describe('source cache', () => {
       });
 
       expect(secondReadUser({ slugId }).get()).toEqual(user);
-      expect(runMock).toHaveBeenCalledTimes(1);
+      expect(runMock).toHaveBeenCalledTimes(0);
     });
 
     it('should use source cache ttl over entity cache ttl when both are provided', async () => {
@@ -434,22 +677,14 @@ describe('source cache', () => {
         return user;
       });
 
-      const firstEntity = entity<User>({
-        idOf: (value) => value.id,
-        cache: {
-          key: cacheKey,
-          storage,
-          ttl: 'infinity',
-        },
+      seedSourceCache({
+        storage,
+        scope: { slugId },
+        mode: 'one',
+        entities: [user],
+        writtenAt: Date.now(),
+        entityCacheKey: cacheKey,
       });
-      const firstReadUser = source<UserSlug, undefined, User, User | null>({
-        entity: firstEntity,
-        cache: {
-          ttl: 1_000,
-        },
-        run: runMock,
-      });
-      await firstReadUser({ slugId }).run();
       vi.advanceTimersByTime(1_001);
 
       const secondEntity = entity<User>({
@@ -469,7 +704,7 @@ describe('source cache', () => {
       });
 
       expect(secondReadUser({ slugId }).get()).toBeNull();
-      expect(runMock).toHaveBeenCalledTimes(1);
+      expect(runMock).toHaveBeenCalledTimes(0);
     });
   });
 });

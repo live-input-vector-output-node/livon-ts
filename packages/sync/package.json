@@ -103,7 +103,10 @@
     "test:unit": "vitest run -c vitest.unit.config.ts",
     "test:integration": "true",
     "bench": "vitest bench -c vitest.bench.config.ts",
+    "bench:visual:matrix": "node ./scripts/run-bench-visual-matrix.mjs",
     "bench:matrix": "node ./scripts/run-bench-strategy-matrix.mjs",
+    "bench:matrix:lru-set": "node ./scripts/run-bench-strategy-matrix.mjs",
+    "bench:matrix:adaptive": "node ./scripts/run-bench-adaptive-matrix.mjs",
     "bench:gate": "node ./scripts/run-bench-gate.mjs"
   },
   "dependencies": {

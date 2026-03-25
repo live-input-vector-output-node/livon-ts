@@ -1,0 +1,110 @@
+{
+  "version": 1,
+  "generatedAt": "2026-03-25T10:52:42.911Z",
+  "profiles": {
+    "cache-off-lru-off": {
+      "readOne": {
+        "batch": true,
+        "subview": false
+      },
+      "readMany": {
+        "batch": true,
+        "subview": false
+      },
+      "updateOne": {
+        "batch": false,
+        "subview": false
+      },
+      "updateMany": {
+        "batch": true,
+        "subview": false
+      },
+      "setOne": {
+        "batch": false,
+        "subview": false
+      },
+      "setMany": {
+        "batch": false,
+        "subview": false
+      }
+    },
+    "cache-off-lru-on": {
+      "readOne": {
+        "batch": false,
+        "subview": true
+      },
+      "readMany": {
+        "batch": false,
+        "subview": true
+      },
+      "updateOne": {
+        "batch": true,
+        "subview": false
+      },
+      "updateMany": {
+        "batch": false,
+        "subview": false
+      },
+      "setOne": {
+        "batch": false,
+        "subview": false
+      },
+      "setMany": {
+        "batch": false,
+        "subview": false
+      }
+    },
+    "cache-on-lru-off": {
+      "readOne": {
+        "batch": false,
+        "subview": false
+      },
+      "readMany": {
+        "batch": true,
+        "subview": true
+      },
+      "updateOne": {
+        "batch": false,
+        "subview": true
+      },
+      "updateMany": {
+        "batch": true,
+        "subview": true
+      },
+      "setOne": {
+        "batch": true,
+        "subview": true
+      },
+      "setMany": {
+        "batch": true,
+        "subview": true
+      }
+    },
+    "cache-on-lru-on": {
+      "readOne": {
+        "batch": false,
+        "subview": false
+      },
+      "readMany": {
+        "batch": false,
+        "subview": false
+      },
+      "updateOne": {
+        "batch": false,
+        "subview": false
+      },
+      "updateMany": {
+        "batch": true,
+        "subview": false
+      },
+      "setOne": {
+        "batch": false,
+        "subview": true
+      },
+      "setMany": {
+        "batch": false,
+        "subview": true
+      }
+    }
+  }
+}

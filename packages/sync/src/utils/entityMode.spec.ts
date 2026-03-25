@@ -1,11 +1,38 @@
 import { describe, expect, it } from 'vitest';
 
-import { getModeValue } from './entityMode.js';
+import { getModeValue, type ModeValueState } from './entityMode.js';
 
 interface Todo {
   id: string;
   title: string;
 }
+
+type TodoManyInternal = ModeValueState<string, readonly Todo[]> & {
+  mode: 'many';
+  hasEntityValue: true;
+};
+
+interface CreateTodoManyInternalInput {
+  membershipIds: readonly string[];
+  subview?: boolean;
+}
+
+const createTodoManyInternal = ({
+  membershipIds,
+  subview,
+}: CreateTodoManyInternalInput): TodoManyInternal => {
+  return {
+    mode: 'many',
+    hasEntityValue: true,
+    membershipIds,
+    readWrite: subview === undefined ? undefined : {
+      subview,
+    },
+    state: {
+      value: [],
+    },
+  };
+};
 
 describe('getModeValue()', () => {
   describe('happy', () => {
@@ -18,21 +45,9 @@ describe('getModeValue()', () => {
           return [id, { id, title: `Todo ${id}` }];
         }),
       );
-      const internal: {
-        mode: 'many';
-        hasEntityValue: true;
-        membershipIds: readonly string[];
-        state: {
-          value: readonly Todo[];
-        };
-      } = {
-        mode: 'many',
-        hasEntityValue: true,
+      const internal = createTodoManyInternal({
         membershipIds,
-        state: {
-          value: [],
-        },
-      };
+      });
 
       const first = getModeValue(internal, (id) => {
         return todosById.get(id);
@@ -58,21 +73,9 @@ describe('getModeValue()', () => {
         id: membershipIds[5] ?? 'todo-5',
         title: 'Changed todo',
       };
-      const internal: {
-        mode: 'many';
-        hasEntityValue: true;
-        membershipIds: readonly string[];
-        state: {
-          value: readonly Todo[];
-        };
-      } = {
-        mode: 'many',
-        hasEntityValue: true,
+      const internal = createTodoManyInternal({
         membershipIds,
-        state: {
-          value: [],
-        },
-      };
+      });
 
       const first = getModeValue(internal, (id) => {
         return todosById.get(id);
@@ -93,21 +96,9 @@ describe('getModeValue()', () => {
         ['todo-1', { id: 'todo-1', title: 'Todo 1' }],
         ['todo-2', { id: 'todo-2', title: 'Todo 2' }],
       ]);
-      const internal: {
-        mode: 'many';
-        hasEntityValue: true;
-        membershipIds: readonly string[];
-        state: {
-          value: readonly Todo[];
-        };
-      } = {
-        mode: 'many',
-        hasEntityValue: true,
+      const internal = createTodoManyInternal({
         membershipIds,
-        state: {
-          value: [],
-        },
-      };
+      });
 
       const first = getModeValue(internal, (id) => {
         return todosById.get(id);
@@ -130,27 +121,10 @@ describe('getModeValue()', () => {
           return [id, { id, title: `Todo ${id}` }];
         }),
       );
-      const internal: {
-        mode: 'many';
-        hasEntityValue: true;
-        membershipIds: readonly string[];
-        readWrite: {
-          subview: false;
-        };
-        state: {
-          value: readonly Todo[];
-        };
-      } = {
-        mode: 'many',
-        hasEntityValue: true,
+      const internal = createTodoManyInternal({
         membershipIds,
-        readWrite: {
-          subview: false,
-        },
-        state: {
-          value: [],
-        },
-      };
+        subview: false,
+      });
 
       const first = getModeValue(internal, (id) => {
         return todosById.get(id);

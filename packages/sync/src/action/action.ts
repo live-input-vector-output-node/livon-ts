@@ -1,16 +1,14 @@
-import { type EntityId, type UpsertOptions } from '../entity.js';
+import { type EntityId } from '../entity.js';
 import {
-  clearEntityMembership,
+  applyEntityRunResult,
+  createEntityRunContextMethods,
+  createRunContextEntryCache,
   createSerializedKeyCache,
   createUnitSnapshot,
   getModeValue,
-  isEntityArray,
-  isEntityValue,
   notifyEffectListeners,
   resolveInput,
   resolveValue,
-  setManyEntityMembership,
-  setOneEntityMembership,
   type EffectListener,
   type InputUpdater,
 } from '../utils/index.js';
@@ -86,6 +84,7 @@ export const action = <
       scope,
       payload: undefined as TPayload,
       mode: initialMode,
+      modeLocked: false,
       hasEntityValue: false,
       membershipIds: [],
       readWrite: {
@@ -106,19 +105,6 @@ export const action = <
       destroyed: false,
       unit: {} as ActionUnit<TPayload, RResult, UUpdate>,
     };
-    const runContextEntriesByPrimitivePayload = new Map<
-      unknown,
-      ActionRunContextEntry<TInput, TPayload, TEntity, RResult, TEntityId>
-    >();
-    const runContextPrimitivePayloadOrder = new Set<unknown>();
-    let latestObjectPayload: object | null = null;
-    let latestObjectRunContextEntry:
-      | ActionRunContextEntry<TInput, TPayload, TEntity, RResult, TEntityId>
-      | null = null;
-    let previousObjectPayload: object | null = null;
-    let previousObjectRunContextEntry:
-      | ActionRunContextEntry<TInput, TPayload, TEntity, RResult, TEntityId>
-      | null = null;
     const payloadKeyCache = createSerializedKeyCache({
       mode: 'payload-hot-path',
       limit: RUN_CONTEXT_CACHE_LIMIT,
@@ -146,12 +132,7 @@ export const action = <
         invokeActionCleanup(internal.cleanup);
         internal.cleanup = null;
         internal.destroyed = true;
-        runContextEntriesByPrimitivePayload.clear();
-        runContextPrimitivePayloadOrder.clear();
-        latestObjectPayload = null;
-        latestObjectRunContextEntry = null;
-        previousObjectPayload = null;
-        previousObjectRunContextEntry = null;
+        runContextEntryCache.clear();
         payloadKeyCache.clear();
         singleInFlightPromise = null;
         hasSingleInFlightPayload = false;
@@ -169,47 +150,20 @@ export const action = <
         const gate: ActionRunGate = {
           isLatestRun: () => false,
         };
-        const upsertOne = (input: TEntity, options?: UpsertOptions): TEntity => {
-          if (!gate.isLatestRun()) {
-            return input;
-          }
-
-          const updated = entity.upsertOne(input, options);
-          setOneEntityMembership(internal, { entity, value: updated });
-          internal.state.value = getModeValue(internal, readEntityValueById);
-          return updated;
-        };
-        const upsertMany = (
-          input: readonly TEntity[],
-          options?: UpsertOptions,
-        ): readonly TEntity[] => {
-          if (!gate.isLatestRun()) {
-            return input;
-          }
-
-          const updated = entity.upsertMany(input, options);
-          setManyEntityMembership(internal, { entity, values: updated });
-          internal.state.value = getModeValue(internal, readEntityValueById);
-          return updated;
-        };
-        const removeOne = (id: TEntityId): boolean => {
-          if (!gate.isLatestRun()) {
-            return false;
-          }
-
-          const removed = entity.removeOne(id);
-          internal.state.value = getModeValue(internal, readEntityValueById);
-          return removed;
-        };
-        const removeMany = (ids: readonly TEntityId[]): readonly TEntityId[] => {
-          if (!gate.isLatestRun()) {
-            return [];
-          }
-
-          const removedIds = entity.removeMany(ids);
-          internal.state.value = getModeValue(internal, readEntityValueById);
-          return removedIds;
-        };
+        const runContextMethods = createEntityRunContextMethods<
+          TEntity,
+          RResult,
+          TEntityId
+        >({
+          entity,
+          state: internal,
+          isActive: () => gate.isLatestRun(),
+          refreshValue: () => {
+            internal.state.value = getModeValue(internal, readEntityValueById);
+          },
+          readValue: () => internal.state.value,
+          refreshOnGet: true,
+        });
         const runContextBase: ActionRunContext<
           TInput,
           TPayload,
@@ -235,14 +189,7 @@ export const action = <
             internal.state.meta = nextMeta;
             notifyUnit(internal);
           },
-          upsertOne,
-          upsertMany,
-          removeOne,
-          removeMany,
-          getValue: () => {
-            internal.state.value = getModeValue(internal, readEntityValueById);
-            return internal.state.value;
-          },
+          ...runContextMethods,
         };
 
         return {
@@ -250,65 +197,13 @@ export const action = <
           context: runContextBase,
         };
       };
-      const getOrCreateRunContextEntry = (
-        payload: TPayload,
-      ): ActionRunContextEntry<TInput, TPayload, TEntity, RResult, TEntityId> => {
-        if (payload !== null && typeof payload === 'object') {
-          if (latestObjectPayload !== null && Object.is(latestObjectPayload, payload)) {
-            if (!latestObjectRunContextEntry) {
-              const createdRunContextEntry = createRunContextEntry(payload);
-              latestObjectRunContextEntry = createdRunContextEntry;
-              return createdRunContextEntry;
-            }
-
-            return latestObjectRunContextEntry;
-          }
-
-          if (previousObjectPayload !== null && Object.is(previousObjectPayload, payload)) {
-            if (!previousObjectRunContextEntry) {
-              const createdRunContextEntry = createRunContextEntry(payload);
-              previousObjectRunContextEntry = createdRunContextEntry;
-            }
-
-            const promotedObjectPayload = previousObjectPayload;
-            const promotedRunContextEntry = previousObjectRunContextEntry;
-            previousObjectPayload = latestObjectPayload;
-            previousObjectRunContextEntry = latestObjectRunContextEntry;
-            latestObjectPayload = promotedObjectPayload;
-            latestObjectRunContextEntry = promotedRunContextEntry;
-
-            return promotedRunContextEntry;
-          }
-
-          const createdRunContextEntry = createRunContextEntry(payload);
-          previousObjectPayload = latestObjectPayload;
-          previousObjectRunContextEntry = latestObjectRunContextEntry;
-          latestObjectPayload = payload;
-          latestObjectRunContextEntry = createdRunContextEntry;
-          return createdRunContextEntry;
-        }
-
-        const existingRunContextEntry = runContextEntriesByPrimitivePayload.get(payload);
-        if (existingRunContextEntry) {
-          runContextPrimitivePayloadOrder.delete(payload);
-          runContextPrimitivePayloadOrder.add(payload);
-          return existingRunContextEntry;
-        }
-
-        const createdRunContextEntry = createRunContextEntry(payload);
-        runContextEntriesByPrimitivePayload.set(payload, createdRunContextEntry);
-        runContextPrimitivePayloadOrder.add(payload);
-
-        if (runContextEntriesByPrimitivePayload.size > RUN_CONTEXT_CACHE_LIMIT) {
-          const oldestPayload = runContextPrimitivePayloadOrder.values().next().value;
-          if (oldestPayload !== undefined) {
-            runContextPrimitivePayloadOrder.delete(oldestPayload);
-            runContextEntriesByPrimitivePayload.delete(oldestPayload);
-          }
-        }
-
-        return createdRunContextEntry;
-      };
+      const runContextEntryCache = createRunContextEntryCache<
+        TPayload,
+        ActionRunContextEntry<TInput, TPayload, TEntity, RResult, TEntityId>
+      >({
+        createEntry: createRunContextEntry,
+        limit: RUN_CONTEXT_CACHE_LIMIT,
+      });
 
       let singleInFlightPromise: Promise<RResult> | null = null;
       let hasSingleInFlightPayload = false;
@@ -366,30 +261,20 @@ export const action = <
             return;
           }
 
-          if (nextValue === undefined) {
-            internal.state.value = getModeValue(internal, readEntityValueById);
-            return;
-          }
-
-          if (isEntityArray<TEntity>(nextValue)) {
-            const upsertedEntities = entity.upsertMany(nextValue);
-            setManyEntityMembership(internal, { entity, values: upsertedEntities });
-            internal.state.value = getModeValue(internal, readEntityValueById);
-            return;
-          }
-
-          if (isEntityValue<TEntity>(nextValue)) {
-            const upsertedEntity = entity.upsertOne(nextValue);
-            setOneEntityMembership(internal, { entity, value: upsertedEntity });
-            internal.state.value = getModeValue(internal, readEntityValueById);
-            return;
-          }
-
-          clearEntityMembership(internal, { clearUnitMembership: entity.clearUnitMembership });
-          internal.state.value = nextValue;
+          applyEntityRunResult({
+            entity,
+            state: internal,
+            nextValue,
+            refreshValueFromMembership: () => {
+              internal.state.value = getModeValue(internal, readEntityValueById);
+            },
+            setRawValue: (value) => {
+              internal.state.value = value;
+            },
+          });
         };
 
-        const runContextEntry = getOrCreateRunContextEntry(internal.payload);
+        const runContextEntry = runContextEntryCache.getOrCreate(internal.payload);
         runContextEntry.gate.isLatestRun = isLatestRun;
         runContextEntry.context.payload = internal.payload;
 

@@ -9,6 +9,7 @@ import {
 } from '../utils/index.js';
 import type {
   IsCacheRecordExpiredInput,
+  ResolveCacheLruMaxEntriesInput,
   ResolveCacheKeyInput,
   ResolveCacheStorageInput,
   ResolveCacheTtlInput,
@@ -24,6 +25,7 @@ export {
 } from '../utils/entityMode.js';
 
 const DEFAULT_CACHE_TTL: CacheTtl = 0;
+const DEFAULT_CACHE_LRU_MAX_ENTRIES = 0;
 const DEFAULT_CACHE_KEY_PREFIX = 'livon-sync-source';
 const SOURCE_CACHE_MSGPACK_PREFIX = 'm1:';
 const SOURCE_CACHE_STRUCTURED_PREFIX = 's1:';
@@ -119,6 +121,31 @@ export const resolveCacheStorage = ({
   }
 
   return globalStorage;
+};
+
+export const resolveCacheLruMaxEntries = ({
+  sourceCache,
+  entityCache,
+}: ResolveCacheLruMaxEntriesInput): number => {
+  if (sourceCache && sourceCache.lruMaxEntries !== undefined) {
+    const sourceLruMaxEntries = sourceCache.lruMaxEntries;
+    if (Number.isFinite(sourceLruMaxEntries) && sourceLruMaxEntries > 0) {
+      return Math.floor(sourceLruMaxEntries);
+    }
+
+    return DEFAULT_CACHE_LRU_MAX_ENTRIES;
+  }
+
+  if (entityCache && entityCache.lruMaxEntries !== undefined) {
+    const entityLruMaxEntries = entityCache.lruMaxEntries;
+    if (Number.isFinite(entityLruMaxEntries) && entityLruMaxEntries > 0) {
+      return Math.floor(entityLruMaxEntries);
+    }
+
+    return DEFAULT_CACHE_LRU_MAX_ENTRIES;
+  }
+
+  return DEFAULT_CACHE_LRU_MAX_ENTRIES;
 };
 
 export const resolveCacheKey = ({

@@ -21,6 +21,7 @@ describe('entity membership helpers', () => {
     const state: EntityMembershipState<string> = {
       key: 'todo-unit-one',
       mode: 'one',
+      modeLocked: false,
       hasEntityValue: false,
       membershipIds: [],
     };
@@ -50,6 +51,7 @@ describe('entity membership helpers', () => {
     const state: EntityMembershipState<string> = {
       key: 'todo-unit-many',
       mode: 'many',
+      modeLocked: false,
       hasEntityValue: false,
       membershipIds: [],
     };
@@ -91,6 +93,7 @@ describe('entity membership helpers', () => {
     const state: EntityMembershipState<string> = {
       key: 'todo-unit-many-order',
       mode: 'many',
+      modeLocked: false,
       hasEntityValue: false,
       membershipIds: [],
     };
@@ -126,5 +129,50 @@ describe('entity membership helpers', () => {
 
     expect(state.membershipIds).not.toBe(firstMembershipIds);
     expect(state.membershipIds).toEqual(['todo-2', 'todo-1']);
+  });
+
+  it('should lock mode with first entity write even when initial default mode differs', () => {
+    const state: EntityMembershipState<string> = {
+      key: 'todo-unit-first-write-lock',
+      mode: 'many',
+      modeLocked: false,
+      hasEntityValue: false,
+      membershipIds: [],
+    };
+
+    setOneEntityMembership(state, {
+      entity: todosEntity,
+      value: {
+        id: 'todo-1',
+        title: 'Todo One',
+      },
+      operation: 'runContext.upsertOne()',
+    });
+
+    expect(state.mode).toBe('one');
+    expect(state.modeLocked).toBe(true);
+  });
+
+  it('should throw semantic error when a locked mode is switched', () => {
+    const state: EntityMembershipState<string> = {
+      key: 'todo-unit-locked-mode',
+      mode: 'one',
+      modeLocked: true,
+      hasEntityValue: true,
+      membershipIds: ['todo-1'],
+    };
+
+    expect(() => {
+      setManyEntityMembership(state, {
+        entity: todosEntity,
+        values: [
+          {
+            id: 'todo-1',
+            title: 'Todo One',
+          },
+        ],
+        operation: 'runContext.upsertMany()',
+      });
+    }).toThrow("Entity mode is locked for scope unit 'todo-unit-locked-mode' as 'one'. Cannot switch to 'many' via runContext.upsertMany().");
   });
 });

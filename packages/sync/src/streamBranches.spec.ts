@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { entity, type Entity } from './entity.js';
 import { stream, type Stream } from './stream.js';
 import { randomNumber, randomString } from './testing/randomData.js';
+import { type UnitStatus } from './utils/index.js';
 
 interface User {
   id: string;
@@ -18,7 +19,6 @@ interface MessageMeta {
   text: string;
 }
 
-type UnitStatus = 'idle' | 'loading' | 'success' | 'error';
 type UsersEntity = Entity<User>;
 type UserUpdatedStream = Stream<UserSlug, User, User | null, User>;
 
@@ -277,6 +277,51 @@ describe('stream() branches', () => {
   });
 
   describe('sad', () => {
+    it('should expose semantic error context when run switches a locked scope mode from one to many', async () => {
+      const statuses: UnitStatus[] = [];
+      const contexts: unknown[] = [];
+      const secondUserId = randomString({ prefix: 'second-user-id' });
+      const secondUserName = randomString({ prefix: 'second-user-name' });
+
+      const onUsersUpdated = stream<
+        UserSlug,
+        User | readonly User[],
+        User,
+        User | readonly User[] | null
+      >({
+        entity: usersEntity,
+        run: async ({ payload }) => {
+          return payload;
+        },
+      });
+
+      const streamStore = onUsersUpdated({ slugId });
+      streamStore.effect((snapshot) => {
+        statuses.push(snapshot.status);
+        contexts.push(snapshot.context);
+      });
+
+      streamStore.start({ id: eventUserId, name: eventUserName });
+      await Promise.resolve();
+      streamStore.stop();
+
+      streamStore.start([
+        { id: eventUserId, name: eventUserName },
+        { id: secondUserId, name: secondUserName },
+      ]);
+      await Promise.resolve();
+      await Promise.resolve();
+
+      expect(statuses).toContain('error');
+
+      const latestContext = contexts.at(-1);
+      if (!(latestContext instanceof Error)) {
+        throw new Error('expected latest stream context to be an error');
+      }
+
+      expect(latestContext.message).toContain("Cannot switch to 'many' via run() result array.");
+    });
+
     it('should set error status when run rejects', async () => {
       const statuses: UnitStatus[] = [];
       const errorMessage = randomString({ prefix: 'run-error' });

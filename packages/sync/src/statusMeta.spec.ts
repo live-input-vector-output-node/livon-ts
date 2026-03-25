@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { entity } from './entity.js';
 import { source } from './source.js';
 import { randomString } from './testing/randomData.js';
+import { type UnitStatus } from './utils/index.js';
 
 interface User {
   id: string;
@@ -17,8 +18,6 @@ interface MessageMeta {
   severity: string;
   text: string;
 }
-
-type UnitStatus = 'idle' | 'loading' | 'success' | 'error';
 
 describe('status and meta transitions', () => {
   describe('happy', () => {

@@ -1,8 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { entity } from './entity.js';
 import { defaultRuntimeQueue } from './runtimeQueue/index.js';
 import { randomString } from './testing/randomData.js';
+import { resolveAdaptiveReadWriteByCache } from './utils/adaptiveReadWrite.js';
 
 interface Project {
   id: string;
@@ -63,6 +64,78 @@ describe('entity()', () => {
       expect(usersEntity.readWrite).toEqual({
         batch: false,
         subview: false,
+      });
+    });
+
+    it('should resolve adaptive readWrite strategy when adaptive mode is enabled', () => {
+      const expected = resolveAdaptiveReadWriteByCache({
+        cacheEnabled: true,
+        lruEnabled: true,
+        operation: 'readMany',
+        fallback: {
+          batch: true,
+          subview: true,
+        },
+      });
+      const usersEntity = entity<User>({
+        idOf: (value) => value.id,
+        cache: {
+          key: 'adaptive-cache',
+          ttl: 'infinity',
+          lruMaxEntries: 256,
+          storage: {
+            getItem: () => null,
+            setItem: () => {
+              return;
+            },
+            removeItem: () => {
+              return;
+            },
+          },
+        },
+        readWrite: {
+          adaptive: true,
+        },
+      });
+
+      expect(usersEntity.readWrite).toEqual(expected);
+    });
+
+    it('should keep explicit readWrite flags over adaptive recommendations', () => {
+      const expected = resolveAdaptiveReadWriteByCache({
+        cacheEnabled: true,
+        lruEnabled: true,
+        operation: 'readMany',
+        fallback: {
+          batch: true,
+          subview: true,
+        },
+      });
+      const usersEntity = entity<User>({
+        idOf: (value) => value.id,
+        cache: {
+          key: 'adaptive-cache',
+          ttl: 'infinity',
+          lruMaxEntries: 256,
+          storage: {
+            getItem: () => null,
+            setItem: () => {
+              return;
+            },
+            removeItem: () => {
+              return;
+            },
+          },
+        },
+        readWrite: {
+          adaptive: true,
+          batch: false,
+        },
+      });
+
+      expect(usersEntity.readWrite).toEqual({
+        batch: false,
+        subview: expected.subview,
       });
     });
 
@@ -206,6 +279,141 @@ describe('entity()', () => {
 
       expect(usersEntity.getById(firstUserId)).toBeUndefined();
       expect(usersEntity.getById(secondUserId)).toBeUndefined();
+    });
+
+    it('should immediately remove orphaned entities when no ttl is configured', () => {
+      const userId = randomString({ prefix: 'user-id' });
+      const usersEntity = entity<User>({
+        idOf: (value) => value.id,
+      });
+
+      usersEntity.registerUnit({
+        key: 'orphan-unit',
+        onChange: () => {
+          return;
+        },
+      });
+      usersEntity.setUnitMembership({
+        key: 'orphan-unit',
+        ids: [userId],
+      });
+
+      usersEntity.upsertOne({ id: userId, name: 'Ada' });
+      expect(usersEntity.getById(userId)).toEqual({ id: userId, name: 'Ada' });
+
+      usersEntity.setUnitMembership({
+        key: 'orphan-unit',
+        ids: [],
+      });
+
+      expect(usersEntity.getById(userId)).toBeUndefined();
+    });
+
+    it('should keep entities while at least one unit still references the same id', () => {
+      const userId = randomString({ prefix: 'shared-user-id' });
+      const usersEntity = entity<User>({
+        idOf: (value) => value.id,
+      });
+
+      usersEntity.registerUnit({
+        key: 'first-unit',
+        onChange: () => {
+          return;
+        },
+      });
+      usersEntity.registerUnit({
+        key: 'second-unit',
+        onChange: () => {
+          return;
+        },
+      });
+      usersEntity.setUnitMembership({
+        key: 'first-unit',
+        ids: [userId],
+      });
+      usersEntity.setUnitMembership({
+        key: 'second-unit',
+        ids: [userId],
+      });
+      usersEntity.upsertOne({ id: userId, name: 'Grace' });
+
+      usersEntity.setUnitMembership({
+        key: 'first-unit',
+        ids: [],
+      });
+      expect(usersEntity.getById(userId)).toEqual({ id: userId, name: 'Grace' });
+
+      usersEntity.setUnitMembership({
+        key: 'second-unit',
+        ids: [],
+      });
+      expect(usersEntity.getById(userId)).toBeUndefined();
+    });
+
+    it('should remove orphaned entities only after configured ttl', () => {
+      vi.useFakeTimers();
+
+      try {
+        const userId = randomString({ prefix: 'ttl-user-id' });
+        const usersEntity = entity<User>({
+          idOf: (value) => value.id,
+          ttl: 100,
+        });
+
+        usersEntity.registerUnit({
+          key: 'ttl-unit',
+          onChange: () => {
+            return;
+          },
+        });
+        usersEntity.setUnitMembership({
+          key: 'ttl-unit',
+          ids: [userId],
+        });
+        usersEntity.upsertOne({ id: userId, name: 'Linus' });
+
+        usersEntity.setUnitMembership({
+          key: 'ttl-unit',
+          ids: [],
+        });
+
+        vi.advanceTimersByTime(99);
+        expect(usersEntity.getById(userId)).toEqual({ id: userId, name: 'Linus' });
+
+        vi.advanceTimersByTime(1);
+        expect(usersEntity.getById(userId)).toBeUndefined();
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('should keep orphaned entities when cache ttl is infinity', () => {
+      const userId = randomString({ prefix: 'infinite-cache-user-id' });
+      const usersEntity = entity<User>({
+        idOf: (value) => value.id,
+        cache: {
+          ttl: 'infinity',
+        },
+      });
+
+      usersEntity.registerUnit({
+        key: 'cache-unit',
+        onChange: () => {
+          return;
+        },
+      });
+      usersEntity.setUnitMembership({
+        key: 'cache-unit',
+        ids: [userId],
+      });
+      usersEntity.upsertOne({ id: userId, name: 'Taylor' });
+
+      usersEntity.setUnitMembership({
+        key: 'cache-unit',
+        ids: [],
+      });
+
+      expect(usersEntity.getById(userId)).toEqual({ id: userId, name: 'Taylor' });
     });
 
     it('should batch large upsertMany notifications through microtask queue', () => {
