@@ -1,5 +1,11 @@
 # @livon/cli
 
+## 0.29.0-rc.5
+
+### Patch Changes
+
+- @livon/client@0.29.0-rc.5
+
 ## 0.29.0-rc.4
 
 ### Patch Changes

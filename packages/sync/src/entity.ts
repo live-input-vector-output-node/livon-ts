@@ -207,6 +207,133 @@ const resolveOrphanRetentionTtl = ({
   return 0;
 };
 
+interface ResolveEntityOperationReadWriteStrategyInput {
+  adaptiveReadWriteEnabled: boolean;
+  readWriteConfig: EntityReadWriteConfig;
+  hasExplicitBatchReadWrite: boolean;
+  hasExplicitSubviewReadWrite: boolean;
+  readWrite?: EntityReadWriteInput;
+  cacheEnabled: boolean;
+  lruEnabled: boolean;
+  operation: AdaptiveReadWriteOperation;
+}
+
+type EntityReadWriteStrategies = Record<AdaptiveReadWriteOperation, EntityReadWriteConfig>;
+
+const resolveEntityOperationReadWriteStrategy = ({
+  adaptiveReadWriteEnabled,
+  readWriteConfig,
+  hasExplicitBatchReadWrite,
+  hasExplicitSubviewReadWrite,
+  readWrite,
+  cacheEnabled,
+  lruEnabled,
+  operation,
+}: ResolveEntityOperationReadWriteStrategyInput): EntityReadWriteConfig => {
+  if (!adaptiveReadWriteEnabled) {
+    return readWriteConfig;
+  }
+
+  const recommendedStrategy = resolveAdaptiveReadWriteByCache({
+    cacheEnabled,
+    lruEnabled,
+    operation,
+    fallback: readWriteConfig,
+  });
+
+  return {
+    batch: hasExplicitBatchReadWrite
+      ? (readWrite?.batch ?? recommendedStrategy.batch)
+      : recommendedStrategy.batch,
+    subview: hasExplicitSubviewReadWrite
+      ? (readWrite?.subview ?? recommendedStrategy.subview)
+      : recommendedStrategy.subview,
+  };
+};
+
+interface CreateEntityReadWriteStrategiesInput {
+  readWriteConfig: EntityReadWriteConfig;
+  readWrite?: EntityReadWriteInput;
+  cache?: CacheConfig;
+}
+
+const createEntityReadWriteStrategies = ({
+  readWriteConfig,
+  readWrite,
+  cache,
+}: CreateEntityReadWriteStrategiesInput): EntityReadWriteStrategies => {
+  const adaptiveReadWriteEnabled = readWrite?.adaptive ?? false;
+  const hasExplicitBatchReadWrite = readWrite?.batch !== undefined;
+  const hasExplicitSubviewReadWrite = readWrite?.subview !== undefined;
+  const cacheEnabled = Boolean(cache);
+  const lruEnabled = typeof cache?.lruMaxEntries === 'number'
+    && Number.isFinite(cache.lruMaxEntries)
+    && cache.lruMaxEntries > 0;
+
+  return {
+    readOne: resolveEntityOperationReadWriteStrategy({
+      adaptiveReadWriteEnabled,
+      readWriteConfig,
+      hasExplicitBatchReadWrite,
+      hasExplicitSubviewReadWrite,
+      readWrite,
+      cacheEnabled,
+      lruEnabled,
+      operation: 'readOne',
+    }),
+    readMany: resolveEntityOperationReadWriteStrategy({
+      adaptiveReadWriteEnabled,
+      readWriteConfig,
+      hasExplicitBatchReadWrite,
+      hasExplicitSubviewReadWrite,
+      readWrite,
+      cacheEnabled,
+      lruEnabled,
+      operation: 'readMany',
+    }),
+    updateOne: resolveEntityOperationReadWriteStrategy({
+      adaptiveReadWriteEnabled,
+      readWriteConfig,
+      hasExplicitBatchReadWrite,
+      hasExplicitSubviewReadWrite,
+      readWrite,
+      cacheEnabled,
+      lruEnabled,
+      operation: 'updateOne',
+    }),
+    updateMany: resolveEntityOperationReadWriteStrategy({
+      adaptiveReadWriteEnabled,
+      readWriteConfig,
+      hasExplicitBatchReadWrite,
+      hasExplicitSubviewReadWrite,
+      readWrite,
+      cacheEnabled,
+      lruEnabled,
+      operation: 'updateMany',
+    }),
+    setOne: resolveEntityOperationReadWriteStrategy({
+      adaptiveReadWriteEnabled,
+      readWriteConfig,
+      hasExplicitBatchReadWrite,
+      hasExplicitSubviewReadWrite,
+      readWrite,
+      cacheEnabled,
+      lruEnabled,
+      operation: 'setOne',
+    }),
+    setMany: resolveEntityOperationReadWriteStrategy({
+      adaptiveReadWriteEnabled,
+      readWriteConfig,
+      hasExplicitBatchReadWrite,
+      hasExplicitSubviewReadWrite,
+      readWrite,
+      cacheEnabled,
+      lruEnabled,
+      operation: 'setMany',
+    }),
+  };
+};
+
 export const entity = <
   TInput extends object,
   TId extends EntityId = string,
@@ -224,48 +351,17 @@ export const entity = <
   const unitKeysById = new Map<TId, Set<string>>();
   const dirtyUnitKeys = new Set<string>();
   const orphanExpiresAtById = new Map<TId, number>();
-  const orphanTimeoutById = new Map<TId, unknown>();
+  let orphanSweepTimeout: unknown | null = null;
+  let orphanNextSweepAt: number | null = null;
   nextEntityQueueId += 1;
   const dirtyUnitsQueueKey = `entity-dirty:${nextEntityQueueId}`;
   const readWriteConfig = resolveEntityReadWriteConfig(readWrite);
-  const adaptiveReadWriteEnabled = readWrite?.adaptive ?? false;
-  const hasExplicitBatchReadWrite = readWrite?.batch !== undefined;
-  const hasExplicitSubviewReadWrite = readWrite?.subview !== undefined;
-  const cacheEnabled = Boolean(cache);
-  const lruEnabled = typeof cache?.lruMaxEntries === 'number'
-    && Number.isFinite(cache.lruMaxEntries)
-    && cache.lruMaxEntries > 0;
-  const readWriteStrategyByOperation = new Map<AdaptiveReadWriteOperation, EntityReadWriteConfig>();
-  const resolveReadWriteStrategy = (
-    operation: AdaptiveReadWriteOperation,
-  ): EntityReadWriteConfig => {
-    if (!adaptiveReadWriteEnabled) {
-      return readWriteConfig;
-    }
-
-    const existingStrategy = readWriteStrategyByOperation.get(operation);
-    if (existingStrategy) {
-      return existingStrategy;
-    }
-
-    const recommendedStrategy = resolveAdaptiveReadWriteByCache({
-      cacheEnabled,
-      lruEnabled,
-      operation,
-      fallback: readWriteConfig,
-    });
-    const resolvedStrategy: EntityReadWriteConfig = {
-      batch: hasExplicitBatchReadWrite
-        ? (readWrite?.batch ?? recommendedStrategy.batch)
-        : recommendedStrategy.batch,
-      subview: hasExplicitSubviewReadWrite
-        ? (readWrite?.subview ?? recommendedStrategy.subview)
-        : recommendedStrategy.subview,
-    };
-    readWriteStrategyByOperation.set(operation, resolvedStrategy);
-    return resolvedStrategy;
-  };
-  const defaultReadWriteStrategy = resolveReadWriteStrategy('readMany');
+  const readWriteStrategies = createEntityReadWriteStrategies({
+    readWriteConfig,
+    readWrite,
+    cache,
+  });
+  const defaultReadWriteStrategy = readWriteStrategies.readMany;
   const timeoutRuntime = resolveTimeoutRuntime();
   const orphanRetentionTtl = resolveOrphanRetentionTtl({
     cache,
@@ -277,13 +373,67 @@ export const entity = <
     return Boolean(keys && keys.size > 0);
   };
 
-  const clearOrphanCleanupSchedule = (id: TId): void => {
-    orphanExpiresAtById.delete(id);
-    const timeoutHandle = orphanTimeoutById.get(id);
-    if (timeoutHandle !== undefined && timeoutRuntime) {
-      timeoutRuntime.clearTimeout(timeoutHandle);
+  const clearActiveOrphanSweepTimeout = (): void => {
+    if (orphanSweepTimeout !== null && timeoutRuntime) {
+      timeoutRuntime.clearTimeout(orphanSweepTimeout);
     }
-    orphanTimeoutById.delete(id);
+
+    orphanSweepTimeout = null;
+    orphanNextSweepAt = null;
+  };
+
+  const resolveNextOrphanSweepAt = (): number | null => {
+    let nextSweepAt: number | null = null;
+    orphanExpiresAtById.forEach((expiresAt) => {
+      if (nextSweepAt === null || expiresAt < nextSweepAt) {
+        nextSweepAt = expiresAt;
+      }
+    });
+
+    return nextSweepAt;
+  };
+
+  const scheduleOrphanSweepAt = (nextSweepAt: number): void => {
+    if (!timeoutRuntime) {
+      return;
+    }
+
+    if (
+      orphanSweepTimeout !== null
+      && orphanNextSweepAt !== null
+      && orphanNextSweepAt <= nextSweepAt
+    ) {
+      return;
+    }
+
+    clearActiveOrphanSweepTimeout();
+    orphanNextSweepAt = nextSweepAt;
+    const delay = Math.max(0, nextSweepAt - Date.now());
+    orphanSweepTimeout = timeoutRuntime.setTimeout(() => {
+      orphanSweepTimeout = null;
+      orphanNextSweepAt = null;
+      sweepExpiredOrphans();
+    }, delay);
+  };
+
+  const syncOrphanSweepTimeoutByScan = (): void => {
+    const nextSweepAt = resolveNextOrphanSweepAt();
+    if (nextSweepAt === null) {
+      clearActiveOrphanSweepTimeout();
+      return;
+    }
+
+    scheduleOrphanSweepAt(nextSweepAt);
+  };
+
+  const clearOrphanCleanupSchedule = (id: TId): number | undefined => {
+    const expiresAt = orphanExpiresAtById.get(id);
+    if (expiresAt === undefined) {
+      return undefined;
+    }
+
+    orphanExpiresAtById.delete(id);
+    return expiresAt;
   };
 
   const removeOrphanEntityById = (id: TId): void => {
@@ -299,50 +449,59 @@ export const entity = <
 
   const sweepExpiredOrphans = (): void => {
     if (orphanExpiresAtById.size === 0) {
+      clearActiveOrphanSweepTimeout();
       return;
     }
 
     const now = Date.now();
+    let hasExpired = false;
     orphanExpiresAtById.forEach((expiresAt, id) => {
       if (expiresAt > now) {
         return;
       }
 
+      hasExpired = true;
       removeOrphanEntityById(id);
     });
+
+    if (hasExpired) {
+      syncOrphanSweepTimeoutByScan();
+      return;
+    }
+
+    if (orphanSweepTimeout === null) {
+      syncOrphanSweepTimeoutByScan();
+    }
   };
 
   const scheduleOrphanCleanup = (id: TId): void => {
     if (hasEntitySubscribers(id)) {
-      clearOrphanCleanupSchedule(id);
+      const removedExpiresAt = clearOrphanCleanupSchedule(id);
+      if (removedExpiresAt !== undefined && removedExpiresAt === orphanNextSweepAt) {
+        syncOrphanSweepTimeoutByScan();
+      }
       return;
     }
 
     if (orphanRetentionTtl === 'infinity') {
-      clearOrphanCleanupSchedule(id);
+      const removedExpiresAt = clearOrphanCleanupSchedule(id);
+      if (removedExpiresAt !== undefined && removedExpiresAt === orphanNextSweepAt) {
+        syncOrphanSweepTimeoutByScan();
+      }
       return;
     }
 
     if (orphanRetentionTtl > 0) {
       const expiresAt = Date.now() + orphanRetentionTtl;
       orphanExpiresAtById.set(id, expiresAt);
-      if (timeoutRuntime) {
-        const previousTimeout = orphanTimeoutById.get(id);
-        if (previousTimeout !== undefined) {
-          timeoutRuntime.clearTimeout(previousTimeout);
-        }
-
-        const nextTimeout = timeoutRuntime.setTimeout(() => {
-          orphanTimeoutById.delete(id);
-          removeOrphanEntityById(id);
-        }, orphanRetentionTtl);
-
-        orphanTimeoutById.set(id, nextTimeout);
-      }
+      scheduleOrphanSweepAt(expiresAt);
       return;
     }
 
     removeOrphanEntityById(id);
+    if (orphanSweepTimeout !== null) {
+      syncOrphanSweepTimeoutByScan();
+    }
   };
 
   const getById = (id: TId): TInput | undefined => {
@@ -378,7 +537,10 @@ export const entity = <
     key,
   }: EntityUnitKeyInput<TId>): void => {
     sweepExpiredOrphans();
-    clearOrphanCleanupSchedule(id);
+    const removedExpiresAt = clearOrphanCleanupSchedule(id);
+    if (removedExpiresAt !== undefined && removedExpiresAt === orphanNextSweepAt) {
+      syncOrphanSweepTimeoutByScan();
+    }
 
     const existingKeys = unitKeysById.get(id);
     if (existingKeys) {
@@ -502,7 +664,7 @@ export const entity = <
       return;
     }
 
-    Array.from(unitKeys).forEach((key) => {
+    unitKeys.forEach((key) => {
       const unitState = unitStateByKey.get(key);
       unitState?.onChange();
     });
@@ -563,6 +725,10 @@ export const entity = <
   };
 
   const queueUnitsByIds = (ids: Set<TId>): void => {
+    if (unitKeysById.size === 0) {
+      return;
+    }
+
     const keys = new Set<string>();
     ids.forEach((id) => {
       const unitKeys = unitKeysById.get(id);
@@ -576,6 +742,15 @@ export const entity = <
     });
 
     queueUnitsByKeys(keys);
+  };
+
+  const queueUnitsById = (id: TId): void => {
+    const unitKeys = unitKeysById.get(id);
+    if (!unitKeys || unitKeys.size === 0) {
+      return;
+    }
+
+    queueUnitsByKeys(unitKeys);
   };
 
   const upsertOne = (input: TInput, options?: UpsertOptions): TInput => {
@@ -594,14 +769,14 @@ export const entity = <
 
     entitiesById.set(id, mergedInput);
     runEntityWriteStrategy({
-      strategy: resolveReadWriteStrategy('updateOne'),
+      strategy: readWriteStrategies.updateOne,
       changedIdCount: 1,
       batchThreshold: NOTIFY_BATCH_THRESHOLD,
       runImmediate: () => {
         notifyUnitsById(id);
       },
       runBatched: () => {
-        queueUnitsByIds(new Set<TId>([id]));
+        queueUnitsById(id);
       },
     });
 
@@ -637,7 +812,7 @@ export const entity = <
     });
 
     runEntityWriteStrategy({
-      strategy: resolveReadWriteStrategy('updateMany'),
+      strategy: readWriteStrategies.updateMany,
       changedIdCount: changedIds.size,
       hasDuplicates,
       batchThreshold: NOTIFY_BATCH_THRESHOLD,
@@ -656,17 +831,20 @@ export const entity = <
 
   const removeOne = (id: TId): boolean => {
     sweepExpiredOrphans();
-    clearOrphanCleanupSchedule(id);
+    const removedExpiresAt = clearOrphanCleanupSchedule(id);
     const existed = entitiesById.delete(id);
     draftsById.delete(id);
+    if (removedExpiresAt !== undefined && removedExpiresAt === orphanNextSweepAt) {
+      syncOrphanSweepTimeoutByScan();
+    }
 
     if (!existed) {
       return false;
     }
 
-    const affectedKeys = Array.from(unitKeysById.get(id) ?? []);
+    const affectedKeySnapshot = new Set<string>(unitKeysById.get(id) ?? []);
 
-    affectedKeys.forEach((key) => {
+    affectedKeySnapshot.forEach((key) => {
       const unitState = unitStateByKey.get(key);
       if (!unitState) {
         return;
@@ -678,17 +856,17 @@ export const entity = <
     unitKeysById.delete(id);
 
     runEntityWriteStrategy({
-      strategy: resolveReadWriteStrategy('updateOne'),
+      strategy: readWriteStrategies.updateOne,
       changedIdCount: 1,
-      affectedKeyCount: affectedKeys.length,
+      affectedKeyCount: affectedKeySnapshot.size,
       batchThreshold: NOTIFY_BATCH_THRESHOLD,
       runImmediate: () => {
-        affectedKeys.forEach((key) => {
+        affectedKeySnapshot.forEach((key) => {
           notifyUnitByKey(key);
         });
       },
       runBatched: () => {
-        queueUnitsByKeys(new Set<string>(affectedKeys));
+        queueUnitsByKeys(affectedKeySnapshot);
       },
     });
 
@@ -699,9 +877,13 @@ export const entity = <
     sweepExpiredOrphans();
     const removedIds: TId[] = [];
     const affectedKeys = new Set<string>();
+    let removedNextScheduledOrphan = false;
 
     ids.forEach((id) => {
-      clearOrphanCleanupSchedule(id);
+      const removedExpiresAt = clearOrphanCleanupSchedule(id);
+      if (removedExpiresAt !== undefined && removedExpiresAt === orphanNextSweepAt) {
+        removedNextScheduledOrphan = true;
+      }
       const existed = entitiesById.delete(id);
       draftsById.delete(id);
       if (!existed) {
@@ -727,8 +909,12 @@ export const entity = <
       unitKeysById.delete(id);
     });
 
+    if (removedNextScheduledOrphan) {
+      syncOrphanSweepTimeoutByScan();
+    }
+
     runEntityWriteStrategy({
-      strategy: resolveReadWriteStrategy('updateMany'),
+      strategy: readWriteStrategies.updateMany,
       changedIdCount: removedIds.length,
       affectedKeyCount: affectedKeys.size,
       batchThreshold: NOTIFY_BATCH_THRESHOLD,

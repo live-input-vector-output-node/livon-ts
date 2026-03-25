@@ -59,7 +59,7 @@ import {
 ```
 
 - `useLivonState(unit)` -> `{ value, status, meta }`
-- `useLivonSourceState(sourceUnit)` -> `{ value, status, meta, run, refetch, force, stop, draft }`
+- `useLivonSourceState(sourceUnit)` -> `{ value, status, meta, run, refetch, force, reset, stop, draft }`
 - `useLivonActionState(actionUnit)` -> `{ value, status, meta, run, stop }`
 - `useLivonStreamState(streamUnit)` -> `{ value, status, meta, start, stop }`
 
@@ -232,6 +232,7 @@ const {
   run: loadTodoList,
   refetch: reloadTodoList,
   force: forceReloadTodoList,
+  reset: resetTodoList,
   stop: abortTodoListLoad,
   draft: todoDraft,
 } = useLivonSourceState(readTodos({ listId: 'list-1' }));
@@ -242,6 +243,7 @@ void reloadTodoList();
 void forceReloadTodoList({ query: 'urgent' });
 setTodoDraft((previousTodos) => previousTodos);
 cleanTodoDraft();
+resetTodoList();
 abortTodoListLoad();
 ```
 
@@ -288,6 +290,7 @@ export const TodoListScreen = ({ listId }: { listId: string }) => {
     status: todoListStatus,
     meta: todoListMeta,
     run: loadTodoList,
+    reset: resetTodoList,
     stop: abortTodoListLoad,
     draft: todoDraft,
   } = useLivonSourceState(readTodos({ listId }));
@@ -350,6 +353,7 @@ export const TodoListScreen = ({ listId }: { listId: string }) => {
     onRenameFirstTodo,
     onDraftFirstTodo,
     onCleanDraft: clearTodoDraft,
+    onResetTodoList: resetTodoList,
   };
 };
 ```

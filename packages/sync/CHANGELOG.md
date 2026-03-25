@@ -1,5 +1,11 @@
 # @livon/sync
 
+## 0.29.0-rc.5
+
+### Patch Changes
+
+- Improve sync hot paths by stabilizing scheduler/cache allocation patterns and reducing timer churn via centralized plan scheduling.
+
 ## 0.29.0-rc.4
 
 ### Patch Changes

@@ -4,7 +4,7 @@ import {
   clearEntityMembership,
   createEntityRunContextMethods,
   createRunContextEntryCache,
-  createCacheWriteQueue,
+  readOrCreateSharedCacheWriteQueue,
   createSerializedKeyCache,
   cloneValue,
   createUnitSnapshot,
@@ -94,7 +94,7 @@ export const source = <
     entityCache: entity.cache,
   });
   const cacheWriteQueue = cacheStorage
-    ? createCacheWriteQueue({ storage: cacheStorage })
+    ? readOrCreateSharedCacheWriteQueue({ storage: cacheStorage })
     : undefined;
   const cacheKeyPrefix = resolveCacheKey({
     sourceCache: cache,

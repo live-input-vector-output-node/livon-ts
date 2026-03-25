@@ -168,6 +168,7 @@ describe('hook type inference', () => {
     expectTypeOf<SourceState['force']>().toEqualTypeOf<
       (payloadInput?: undefined | UpdateUndefined) => Promise<readonly User[]>
     >();
+    expectTypeOf<SourceState['reset']>().toEqualTypeOf<() => void>();
     expectTypeOf<SourceState['stop']>().toEqualTypeOf<() => void>();
     expectTypeOf<SourceState['draft']['set']>().toEqualTypeOf<
       (input: readonly User[] | ((value: readonly User[]) => readonly User[])) => void
