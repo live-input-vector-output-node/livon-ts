@@ -24,7 +24,7 @@
     "bench": "turbo run bench --output-logs=errors-only",
     "bench:gate": "turbo run bench:gate --output-logs=errors-only",
     "bench:matrix:adaptive": "turbo run bench:matrix:adaptive --output-logs=errors-only",
-    "bench:matrix:lru-set:sync": "turbo run bench:matrix:lru-set --filter=@livon/sync --output-logs=errors-only",
+    "bench:matrix:lru-set": "turbo run bench:matrix:lru-set --output-logs=errors-only",
     "bench:ui": "turbo run bench -- --ui",
     "test": "turbo run test --output-logs=errors-only",
     "lint": "turbo run lint --output-logs=errors-only",
@@ -53,5 +53,5 @@
     "turbo": "latest",
     "typescript": "latest"
   },
-  "version": "0.29.0-rc.3"
+  "version": "0.29.0-rc.4"
 }

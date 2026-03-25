@@ -215,6 +215,7 @@ todoListUnit.draft.set((previousTodos) => {
   });
 });
 todoListUnit.draft.clean();
+todoListUnit.reset(); // restore source unit state to its initial value/status/meta/context
 
 const todoCountSnapshot = todoCountViewUnit.get();
 await todoTitleTransformUnit.set({
@@ -286,6 +287,7 @@ Adaptive strategy helpers exported at package root:
   - `run(payload?)`
   - `force(payload?)`
   - `refetch(payload?)`
+  - `reset()`
   - `get`
   - `draft.set(...)`, `draft.clean()`
   - `effect`, `stop`, `destroy`
@@ -331,7 +333,11 @@ Adaptive strategy helpers exported at package root:
 - `payload`
 - `setMeta`
 - `getValue`
-- `entity.upsertOne`, `entity.upsertMany`, `entity.removeOne`, `entity.removeMany`
+- `upsertOne`, `upsertMany`, `removeOne`, `removeMany`
+
+Additional source-only run-context API:
+
+- `reset()` restores source state to initial value/status/meta/context and clears current unit membership.
 
 `run` may return a cleanup function for run-based units (`source`, `action`, `stream`).
 That cleanup executes on `stop()`/`destroy()`.

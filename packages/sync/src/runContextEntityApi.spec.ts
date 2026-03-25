@@ -20,10 +20,12 @@ interface ContextShape {
   hasTopLevelUpsertMany: boolean;
   hasTopLevelRemoveOne: boolean;
   hasTopLevelRemoveMany: boolean;
+  hasTopLevelReset: boolean;
   hasEntityUpsertOne: boolean;
   hasEntityUpsertMany: boolean;
   hasEntityRemoveOne: boolean;
   hasEntityRemoveMany: boolean;
+  hasEntityReset: boolean;
 }
 
 interface ContextReferenceShape {
@@ -35,6 +37,7 @@ interface ContextReferenceShape {
   upsertMany: unknown;
   removeOne: unknown;
   removeMany: unknown;
+  reset?: unknown;
 }
 
 describe('run context entity api', () => {
@@ -65,6 +68,7 @@ describe('run context entity api', () => {
             upsertMany: context.upsertMany,
             removeOne: context.removeOne,
             removeMany: context.removeMany,
+            reset: context.reset,
           });
 
           return context.payload;
@@ -95,6 +99,7 @@ describe('run context entity api', () => {
       expect(first.upsertMany).toBe(second.upsertMany);
       expect(first.removeOne).toBe(second.removeOne);
       expect(first.removeMany).toBe(second.removeMany);
+      expect(first.reset).toBe(second.reset);
 
       expect(first.context).not.toBe(third.context);
       expect(first.scope).toBe(third.scope);
@@ -104,6 +109,7 @@ describe('run context entity api', () => {
       expect(first.upsertMany).not.toBe(third.upsertMany);
       expect(first.removeOne).not.toBe(third.removeOne);
       expect(first.removeMany).not.toBe(third.removeMany);
+      expect(first.reset).not.toBe(third.reset);
 
       expect(first.context).toBe(fourth.context);
       expect(first.scope).toBe(fourth.scope);
@@ -113,6 +119,7 @@ describe('run context entity api', () => {
       expect(first.upsertMany).toBe(fourth.upsertMany);
       expect(first.removeOne).toBe(fourth.removeOne);
       expect(first.removeMany).toBe(fourth.removeMany);
+      expect(first.reset).toBe(fourth.reset);
     });
 
     it('should keep action run-context instance and top-level mutation methods stable for same scope and payload', async () => {
@@ -299,10 +306,12 @@ describe('run context entity api', () => {
             hasTopLevelUpsertMany: typeof rawContext.upsertMany === 'function',
             hasTopLevelRemoveOne: typeof rawContext.removeOne === 'function',
             hasTopLevelRemoveMany: typeof rawContext.removeMany === 'function',
+            hasTopLevelReset: typeof rawContext.reset === 'function',
             hasEntityUpsertOne: typeof entityApi?.upsertOne === 'function',
             hasEntityUpsertMany: typeof entityApi?.upsertMany === 'function',
             hasEntityRemoveOne: typeof entityApi?.removeOne === 'function',
             hasEntityRemoveMany: typeof entityApi?.removeMany === 'function',
+            hasEntityReset: typeof entityApi?.reset === 'function',
           };
         },
       });
@@ -314,10 +323,12 @@ describe('run context entity api', () => {
         hasTopLevelUpsertMany: true,
         hasTopLevelRemoveOne: true,
         hasTopLevelRemoveMany: true,
+        hasTopLevelReset: true,
         hasEntityUpsertOne: false,
         hasEntityUpsertMany: false,
         hasEntityRemoveOne: false,
         hasEntityRemoveMany: false,
+        hasEntityReset: false,
       });
     });
 
@@ -338,10 +349,12 @@ describe('run context entity api', () => {
             hasTopLevelUpsertMany: typeof rawContext.upsertMany === 'function',
             hasTopLevelRemoveOne: typeof rawContext.removeOne === 'function',
             hasTopLevelRemoveMany: typeof rawContext.removeMany === 'function',
+            hasTopLevelReset: typeof rawContext.reset === 'function',
             hasEntityUpsertOne: typeof entityApi?.upsertOne === 'function',
             hasEntityUpsertMany: typeof entityApi?.upsertMany === 'function',
             hasEntityRemoveOne: typeof entityApi?.removeOne === 'function',
             hasEntityRemoveMany: typeof entityApi?.removeMany === 'function',
+            hasEntityReset: typeof entityApi?.reset === 'function',
           };
         },
       });
@@ -356,10 +369,12 @@ describe('run context entity api', () => {
         hasTopLevelUpsertMany: true,
         hasTopLevelRemoveOne: true,
         hasTopLevelRemoveMany: true,
+        hasTopLevelReset: false,
         hasEntityUpsertOne: false,
         hasEntityUpsertMany: false,
         hasEntityRemoveOne: false,
         hasEntityRemoveMany: false,
+        hasEntityReset: false,
       });
     });
 
@@ -380,10 +395,12 @@ describe('run context entity api', () => {
             hasTopLevelUpsertMany: typeof rawContext.upsertMany === 'function',
             hasTopLevelRemoveOne: typeof rawContext.removeOne === 'function',
             hasTopLevelRemoveMany: typeof rawContext.removeMany === 'function',
+            hasTopLevelReset: typeof rawContext.reset === 'function',
             hasEntityUpsertOne: typeof entityApi?.upsertOne === 'function',
             hasEntityUpsertMany: typeof entityApi?.upsertMany === 'function',
             hasEntityRemoveOne: typeof entityApi?.removeOne === 'function',
             hasEntityRemoveMany: typeof entityApi?.removeMany === 'function',
+            hasEntityReset: typeof entityApi?.reset === 'function',
           };
         },
       });
@@ -402,10 +419,12 @@ describe('run context entity api', () => {
         hasTopLevelUpsertMany: true,
         hasTopLevelRemoveOne: true,
         hasTopLevelRemoveMany: true,
+        hasTopLevelReset: false,
         hasEntityUpsertOne: false,
         hasEntityUpsertMany: false,
         hasEntityRemoveOne: false,
         hasEntityRemoveMany: false,
+        hasEntityReset: false,
       });
     });
   });

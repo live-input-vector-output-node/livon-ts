@@ -123,7 +123,7 @@ const resolveMatrix = (): AdaptiveReadWriteMatrix | null => {
 
 const adaptiveReadWriteMatrixValue = resolveMatrix();
 
-const toEntityReadWriteConfig = (
+const createEntityReadWriteConfig = (
   value: AdaptiveReadWriteMatrixEntry,
 ): EntityReadWriteConfig => {
   return {
@@ -167,7 +167,7 @@ export const resolveAdaptiveReadWriteConfig = ({
     return fallback;
   }
 
-  return toEntityReadWriteConfig(operationValue);
+  return createEntityReadWriteConfig(operationValue);
 };
 
 export const resolveAdaptiveReadWriteByCache = ({
