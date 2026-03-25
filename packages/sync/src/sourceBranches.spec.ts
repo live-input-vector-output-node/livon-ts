@@ -20,6 +20,18 @@ interface SearchPayload {
 type UserEntity = Entity<User>;
 type ReadUserSource = Source<UserSlug, SearchPayload, User | null, User>;
 
+const hasStringCacheState = (context: unknown): context is { readonly cacheState: string } => {
+  if (typeof context !== 'object' || context === null) {
+    return false;
+  }
+
+  if (!Object.prototype.hasOwnProperty.call(context, 'cacheState')) {
+    return false;
+  }
+
+  return typeof Reflect.get(context, 'cacheState') === 'string';
+};
+
 describe('source() branches', () => {
   let usersEntity: UserEntity;
   let readUser: ReadUserSource;
@@ -185,7 +197,7 @@ describe('source() branches', () => {
         snapshotsAfterReset.push({
           status: snapshot.status,
           meta: snapshot.meta,
-          cacheState: snapshot.context.cacheState,
+          cacheState: hasStringCacheState(snapshot.context) ? snapshot.context.cacheState : 'disabled',
         });
       });
 
