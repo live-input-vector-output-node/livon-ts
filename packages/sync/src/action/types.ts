@@ -2,6 +2,7 @@ import { type Entity, type EntityId, type UpsertOptions } from '../entity.js';
 import {
   type EffectListener,
   type InputUpdater,
+  type ModeValueReadWriteInput,
   type ValueUpdater,
 } from '../utils/index.js';
 
@@ -89,6 +90,7 @@ export interface ActionUnitInternal<
   mode: 'one' | 'many';
   hasEntityValue: boolean;
   membershipIds: readonly TEntityId[];
+  readWrite: ModeValueReadWriteInput;
   state: ActionUnitState<RResult>;
   listeners: Set<EffectListener<RResult>>;
   inFlightByPayload: Map<string, Promise<RResult>>;

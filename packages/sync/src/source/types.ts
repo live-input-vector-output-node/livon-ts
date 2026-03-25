@@ -9,6 +9,7 @@ import {
 import {
   type EffectListener,
   type InputUpdater,
+  type ModeValueReadWriteInput,
   type ValueUpdater,
 } from '../utils/index.js';
 
@@ -116,6 +117,7 @@ export interface SourceUnitInternal<
   mode: 'one' | 'many';
   hasEntityValue: boolean;
   membershipIds: readonly TEntityId[];
+  readWrite: ModeValueReadWriteInput;
   listeners: Set<EffectListener<RResult>>;
   inFlightByPayload: Map<string, Promise<RResult>>;
   runSequence: number;

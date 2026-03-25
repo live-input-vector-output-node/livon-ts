@@ -120,5 +120,48 @@ describe('getModeValue()', () => {
       expect(second).not.toBe(first);
       expect(second).toEqual(first);
     });
+
+    it('should return a fresh many-value when subview strategy is disabled', () => {
+      const membershipIds = Array.from({ length: 40 }, (_unused, index) => {
+        return `todo-${index}`;
+      });
+      const todosById = new Map<string, Todo>(
+        membershipIds.map((id) => {
+          return [id, { id, title: `Todo ${id}` }];
+        }),
+      );
+      const internal: {
+        mode: 'many';
+        hasEntityValue: true;
+        membershipIds: readonly string[];
+        readWrite: {
+          subview: false;
+        };
+        state: {
+          value: readonly Todo[];
+        };
+      } = {
+        mode: 'many',
+        hasEntityValue: true,
+        membershipIds,
+        readWrite: {
+          subview: false,
+        },
+        state: {
+          value: [],
+        },
+      };
+
+      const first = getModeValue(internal, (id) => {
+        return todosById.get(id);
+      });
+      internal.state.value = first;
+      const second = getModeValue(internal, (id) => {
+        return todosById.get(id);
+      });
+
+      expect(second).not.toBe(first);
+      expect(second).toEqual(first);
+    });
   });
 });
