@@ -168,6 +168,9 @@ describe('hook type inference', () => {
     type TypedStreamState = ReturnType<typeof resolveStreamGroupedState>;
 
     void actionUnit;
+    void resolveSourceGroupedState;
+    void resolveActionGroupedState;
+    void resolveStreamGroupedState;
     void streamUnit;
 
     expectTypeOf(resolveSourceMeta).toEqualTypeOf<
