@@ -166,6 +166,39 @@ describe('source() branches', () => {
       expect(userStore.get()).toBeNull();
     });
 
+    it('should reset source status, meta, and context back to initial values', async () => {
+      const metaValue = { severity: 'info', text: randomString({ prefix: 'meta-text' }) };
+
+      const readWithMeta = source<UserSlug, SearchPayload, User, User | null>({
+        entity: usersEntity,
+        run: async ({ payload, setMeta }) => {
+          setMeta(metaValue);
+          return { id: payload.search, name: payload.search };
+        },
+      });
+
+      const userStore = readWithMeta({ slugId });
+      await userStore.run({ search: searchValue });
+
+      const snapshotsAfterReset: Array<{ status: string; meta: unknown; cacheState: string }> = [];
+      userStore.effect((snapshot) => {
+        snapshotsAfterReset.push({
+          status: snapshot.status,
+          meta: snapshot.meta,
+          cacheState: snapshot.context.cacheState,
+        });
+      });
+
+      userStore.reset();
+
+      expect(snapshotsAfterReset).toHaveLength(1);
+      expect(snapshotsAfterReset[0]).toEqual({
+        status: 'idle',
+        meta: null,
+        cacheState: 'disabled',
+      });
+    });
+
     it('should unlock source mode after reset so the next run can set a different mode', async () => {
       const firstUserId = randomString({ prefix: 'first-user-id' });
       const firstUserName = randomString({ prefix: 'first-user-name' });

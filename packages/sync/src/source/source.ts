@@ -659,278 +659,278 @@ export const source = <
       isForce: boolean,
       payloadInput?: TPayload | InputUpdater<TPayload>,
     ): Promise<RResult> => {
-        if (internal.destroyed) {
-          return Promise.resolve(internal.state.value);
+      if (internal.destroyed) {
+        return Promise.resolve(internal.state.value);
+      }
+
+      const hasPayloadInput = payloadInput !== undefined;
+      const nextPayload = resolveInput(internal.payload, payloadInput);
+      if (hasPayloadInput) {
+        internal.payload = nextPayload;
+      }
+      let payloadKey: string | null = null;
+      if (singleInFlightPromise) {
+        if (hasSingleInFlightPayload && Object.is(singleInFlightPayload, internal.payload)) {
+          return singleInFlightPromise;
         }
 
-        const hasPayloadInput = payloadInput !== undefined;
-        const nextPayload = resolveInput(internal.payload, payloadInput);
-        if (hasPayloadInput) {
-          internal.payload = nextPayload;
+        payloadKey = payloadKeyCache.getOrCreateKey(internal.payload);
+        if (singleInFlightPayloadKey === null && hasSingleInFlightPayload) {
+          singleInFlightPayloadKey = payloadKeyCache.getOrCreateKey(singleInFlightPayload);
         }
-        let payloadKey: string | null = null;
-        if (singleInFlightPromise) {
-          if (hasSingleInFlightPayload && Object.is(singleInFlightPayload, internal.payload)) {
-            return singleInFlightPromise;
+
+        if (singleInFlightPayloadKey === payloadKey) {
+          return singleInFlightPromise;
+        }
+      }
+
+      if (internal.inFlightByPayload.size > 0) {
+        payloadKey ??= payloadKeyCache.getOrCreateKey(internal.payload);
+        const inFlightForPayload = internal.inFlightByPayload.get(payloadKey);
+        if (inFlightForPayload) {
+          return inFlightForPayload;
+        }
+      }
+
+      internal.stopped = false;
+      internal.runSequence += 1;
+      internal.latestRunSequence = internal.runSequence;
+      const runSequence = internal.runSequence;
+      const isLatestRun = () => {
+        return internal.latestRunSequence === runSequence && !internal.destroyed;
+      };
+
+      const didHydrateFromPayloadCache = hydrateFromPayloadCache(internal.payload);
+      if (didHydrateFromPayloadCache && isLatestRun()) {
+        notifyUnit(internal);
+      }
+
+      if (!isForce && !hasPayloadInput && shouldUseCache(internal)) {
+        return Promise.resolve(internal.state.value);
+      }
+
+      const shouldUseRefreshingStatus = internal.state.status === 'rehydrated'
+        || internal.state.status === 'success';
+      if (isLatestRun()) {
+        internal.state.status = shouldUseRefreshingStatus ? 'refreshing' : 'loading';
+        setContext({
+          error: null,
+        });
+        notifyUnit(internal);
+      }
+
+      const applyRunValue = (nextValue: RResult | void): void => {
+        if (!isLatestRun()) {
+          return;
+        }
+
+        applyEntityRunResult({
+          entity,
+          state: internal,
+          nextValue,
+          refreshValueFromMembership: () => {
+            internal.state.value = getModeValue(internal, readEntityValueById);
+          },
+          setRawValue: (value) => {
+            internal.state.value = value;
+          },
+        });
+      };
+
+      const runContextEntry = runContextEntryCache.getOrCreate(internal.payload);
+      runContextEntry.gate.isLatestRun = isLatestRun;
+      runContextEntry.context.payload = internal.payload;
+
+      const usesSingleInFlight = singleInFlightPromise === null && internal.inFlightByPayload.size === 0;
+      const trackedPayloadKey = usesSingleInFlight
+        ? null
+        : (payloadKey ?? payloadKeyCache.getOrCreateKey(internal.payload));
+
+      const runPromise: Promise<RResult> = Promise.resolve(run(runContextEntry.context))
+        .then((result) => {
+          if (!isLatestRun() && isSourceCleanup(result)) {
+            invokeSourceCleanup(result);
+            return internal.state.value;
           }
 
-          payloadKey = payloadKeyCache.getOrCreateKey(internal.payload);
-          if (singleInFlightPayloadKey === null && hasSingleInFlightPayload) {
-            singleInFlightPayloadKey = payloadKeyCache.getOrCreateKey(singleInFlightPayload);
+          if (!isLatestRun()) {
+            return internal.state.value;
           }
 
-          if (singleInFlightPayloadKey === payloadKey) {
-            return singleInFlightPromise;
+          if (isSourceCleanup(result)) {
+            if (internal.destroyed || internal.stopped) {
+              invokeSourceCleanup(result);
+            } else {
+              invokeSourceCleanup(internal.cleanup);
+              internal.cleanup = result;
+            }
+
+            internal.state.value = getModeValue(internal, readEntityValueById);
+          } else {
+            applyRunValue(result);
           }
-        }
 
-        if (internal.inFlightByPayload.size > 0) {
-          payloadKey ??= payloadKeyCache.getOrCreateKey(internal.payload);
-          const inFlightForPayload = internal.inFlightByPayload.get(payloadKey);
-          if (inFlightForPayload) {
-            return inFlightForPayload;
-          }
-        }
-
-        internal.stopped = false;
-        internal.runSequence += 1;
-        internal.latestRunSequence = internal.runSequence;
-        const runSequence = internal.runSequence;
-        const isLatestRun = () => {
-          return internal.latestRunSequence === runSequence && !internal.destroyed;
-        };
-
-        const didHydrateFromPayloadCache = hydrateFromPayloadCache(internal.payload);
-        if (didHydrateFromPayloadCache && isLatestRun()) {
-          notifyUnit(internal);
-        }
-
-        if (!isForce && !hasPayloadInput && shouldUseCache(internal)) {
-          return Promise.resolve(internal.state.value);
-        }
-
-        const shouldUseRefreshingStatus = internal.state.status === 'rehydrated'
-          || internal.state.status === 'success';
-        if (isLatestRun()) {
-          internal.state.status = shouldUseRefreshingStatus ? 'refreshing' : 'loading';
+          internal.lastRunAt = Date.now();
+          internal.state.status = 'success';
           setContext({
             error: null,
           });
           notifyUnit(internal);
-        }
+          syncCacheRecord();
 
-        const applyRunValue = (nextValue: RResult | void): void => {
-          if (!isLatestRun()) {
-            return;
-          }
-
-          applyEntityRunResult({
-            entity,
-            state: internal,
-            nextValue,
-            refreshValueFromMembership: () => {
-              internal.state.value = getModeValue(internal, readEntityValueById);
-            },
-            setRawValue: (value) => {
-              internal.state.value = value;
-            },
-          });
-        };
-
-        const runContextEntry = runContextEntryCache.getOrCreate(internal.payload);
-        runContextEntry.gate.isLatestRun = isLatestRun;
-        runContextEntry.context.payload = internal.payload;
-
-        const usesSingleInFlight = singleInFlightPromise === null && internal.inFlightByPayload.size === 0;
-        const trackedPayloadKey = usesSingleInFlight
-          ? null
-          : (payloadKey ?? payloadKeyCache.getOrCreateKey(internal.payload));
-
-        const runPromise: Promise<RResult> = Promise.resolve(run(runContextEntry.context))
-          .then((result) => {
-            if (!isLatestRun() && isSourceCleanup(result)) {
-              invokeSourceCleanup(result);
-              return internal.state.value;
-            }
-
-            if (!isLatestRun()) {
-              return internal.state.value;
-            }
-
-            if (isSourceCleanup(result)) {
-              if (internal.destroyed || internal.stopped) {
-                invokeSourceCleanup(result);
-              } else {
-                invokeSourceCleanup(internal.cleanup);
-                internal.cleanup = result;
-              }
-
-              internal.state.value = getModeValue(internal, readEntityValueById);
-            } else {
-              applyRunValue(result);
-            }
-
-            internal.lastRunAt = Date.now();
-            internal.state.status = 'success';
+          return internal.state.value;
+        })
+        .catch((error: unknown) => {
+          if (isLatestRun()) {
+            internal.state.status = 'error';
             setContext({
-              error: null,
+              error,
             });
             notifyUnit(internal);
-            syncCacheRecord();
+          }
 
-            return internal.state.value;
-          })
-          .catch((error: unknown) => {
-            if (isLatestRun()) {
-              internal.state.status = 'error';
-              setContext({
-                error,
-              });
-              notifyUnit(internal);
+          throw error;
+        })
+        .finally(() => {
+          if (usesSingleInFlight) {
+            if (singleInFlightPromise === runPromise) {
+              singleInFlightPromise = null;
+              hasSingleInFlightPayload = false;
+              singleInFlightPayload = undefined;
+              singleInFlightPayloadKey = null;
             }
+            return;
+          }
 
-            throw error;
-          })
-          .finally(() => {
-            if (usesSingleInFlight) {
-              if (singleInFlightPromise === runPromise) {
-                singleInFlightPromise = null;
-                hasSingleInFlightPayload = false;
-                singleInFlightPayload = undefined;
-                singleInFlightPayloadKey = null;
-              }
-              return;
-            }
-
-            if (trackedPayloadKey !== null) {
-              internal.inFlightByPayload.delete(trackedPayloadKey);
-            }
-          });
-
-        if (usesSingleInFlight) {
-          singleInFlightPromise = runPromise;
-          hasSingleInFlightPayload = true;
-          singleInFlightPayload = internal.payload;
-          singleInFlightPayloadKey = null;
-        } else {
           if (trackedPayloadKey !== null) {
-            internal.inFlightByPayload.set(trackedPayloadKey, runPromise);
+            internal.inFlightByPayload.delete(trackedPayloadKey);
           }
+        });
+
+      if (usesSingleInFlight) {
+        singleInFlightPromise = runPromise;
+        hasSingleInFlightPayload = true;
+        singleInFlightPayload = internal.payload;
+        singleInFlightPayloadKey = null;
+      } else {
+        if (trackedPayloadKey !== null) {
+          internal.inFlightByPayload.set(trackedPayloadKey, runPromise);
         }
+      }
 
-        return runPromise;
-      };
+      return runPromise;
+    };
 
-      const unit = ((payloadInput?: TPayload | InputUpdater<TPayload>) => {
-        internal.payload = resolveInput(internal.payload, payloadInput);
-        return unit;
-      }) as SourceUnit<TInput, TPayload, RResult, UUpdate>;
+    const unit = ((payloadInput?: TPayload | InputUpdater<TPayload>) => {
+      internal.payload = resolveInput(internal.payload, payloadInput);
+      return unit;
+    }) as SourceUnit<TInput, TPayload, RResult, UUpdate>;
 
-      unit.ttl = ttl;
-      unit.cacheTtl = cacheTtl;
-      unit.destroyDelay = destroyDelay;
-      unit.run = (payloadInput) => executeRun(false, payloadInput);
-      unit.get = () => {
-        return internal.state.value;
-      };
-      unit.draft = {
-        set: (input: UUpdate | ValueUpdater<RResult, UUpdate>) => {
-          if (internal.destroyed || draft === 'off') {
-            return;
-          }
-
-          const previousValue: RResult = getModeValue(internal, readEntityValueById);
-          const draftSeed: RResult = cloneValue(previousValue);
-          const nextUpdate = resolveValue(draftSeed, input);
-
-          if (Object.is(nextUpdate, previousValue)) {
-            return;
-          }
-
-          if (areDraftValuesEqual(previousValue, nextUpdate)) {
-            return;
-          }
-
-          if (internal.mode === 'one') {
-            const firstId = internal.membershipIds[0];
-            if (!firstId || !isEntityValue<TEntity>(nextUpdate)) {
-              return;
-            }
-
-            setDraftById(firstId, cloneValue(nextUpdate));
-            return;
-          }
-
-          if (internal.mode === 'many') {
-            if (!isEntityArray<TEntity>(nextUpdate)) {
-              return;
-            }
-
-            nextUpdate.forEach((entry) => {
-              const entryId = entity.idOf(entry);
-              setDraftById(entryId, cloneValue(entry));
-            });
-          }
-        },
-        clean: () => {
-          if (internal.destroyed || draft === 'off') {
-            return;
-          }
-
-          internal.membershipIds.forEach((id) => {
-            clearDraftById(id);
-          });
-        },
-      };
-      unit.effect = (listener) => {
-        if (internal.destroyed) {
-          return undefined;
-        }
-
-        internal.listeners.add(listener);
-
-        return () => {
-          internal.listeners.delete(listener);
-        };
-      };
-      unit.refetch = (payloadInput) => {
-        const nextPayload = resolveInput(internal.payload, payloadInput);
-        return sourceFactory(internal.scope).force(nextPayload);
-      };
-      unit.force = (payloadInput) => executeRun(true, payloadInput);
-      unit.reset = () => {
-        resetState();
-      };
-      unit.stop = () => {
-        if (internal.destroyed) {
+    unit.ttl = ttl;
+    unit.cacheTtl = cacheTtl;
+    unit.destroyDelay = destroyDelay;
+    unit.run = (payloadInput) => executeRun(false, payloadInput);
+    unit.get = () => {
+      return internal.state.value;
+    };
+    unit.draft = {
+      set: (input: UUpdate | ValueUpdater<RResult, UUpdate>) => {
+        if (internal.destroyed || draft === 'off') {
           return;
         }
 
-        stopInternal();
-      };
-      unit.destroy = () => {
-        destroyInternal();
-      };
+        const previousValue: RResult = getModeValue(internal, readEntityValueById);
+        const draftSeed: RResult = cloneValue(previousValue);
+        const nextUpdate = resolveValue(draftSeed, input);
 
-      Object.defineProperty(unit, 'getSnapshot', {
-        configurable: false,
-        enumerable: false,
-        writable: false,
-        value: () => {
-          return createUnitSnapshot({
-            value: internal.state.value,
-            status: internal.state.status,
-            meta: internal.state.meta,
-            context: internal.state.context,
+        if (Object.is(nextUpdate, previousValue)) {
+          return;
+        }
+
+        if (areDraftValuesEqual(previousValue, nextUpdate)) {
+          return;
+        }
+
+        if (internal.mode === 'one') {
+          const firstId = internal.membershipIds[0];
+          if (!firstId || !isEntityValue<TEntity>(nextUpdate)) {
+            return;
+          }
+
+          setDraftById(firstId, cloneValue(nextUpdate));
+          return;
+        }
+
+        if (internal.mode === 'many') {
+          if (!isEntityArray<TEntity>(nextUpdate)) {
+            return;
+          }
+
+          nextUpdate.forEach((entry) => {
+            const entryId = entity.idOf(entry);
+            setDraftById(entryId, cloneValue(entry));
           });
-        },
-      });
+        }
+      },
+      clean: () => {
+        if (internal.destroyed || draft === 'off') {
+          return;
+        }
 
-      internal.unit = unit;
-      unitsByKey.set(key, internal);
-
-      return unit;
+        internal.membershipIds.forEach((id) => {
+          clearDraftById(id);
+        });
+      },
     };
+    unit.effect = (listener) => {
+      if (internal.destroyed) {
+        return undefined;
+      }
+
+      internal.listeners.add(listener);
+
+      return () => {
+        internal.listeners.delete(listener);
+      };
+    };
+    unit.refetch = (payloadInput) => {
+      const nextPayload = resolveInput(internal.payload, payloadInput);
+      return sourceFactory(internal.scope).force(nextPayload);
+    };
+    unit.force = (payloadInput) => executeRun(true, payloadInput);
+    unit.reset = () => {
+      resetState();
+    };
+    unit.stop = () => {
+      if (internal.destroyed) {
+        return;
+      }
+
+      stopInternal();
+    };
+    unit.destroy = () => {
+      destroyInternal();
+    };
+
+    Object.defineProperty(unit, 'getSnapshot', {
+      configurable: false,
+      enumerable: false,
+      writable: false,
+      value: () => {
+        return createUnitSnapshot({
+          value: internal.state.value,
+          status: internal.state.status,
+          meta: internal.state.meta,
+          context: internal.state.context,
+        });
+      },
+    });
+
+    internal.unit = unit;
+    unitsByKey.set(key, internal);
+
+    return unit;
+  };
 
   return sourceFactory;
 };
