@@ -281,6 +281,26 @@ export const source = <
           internal.state.meta = nextMeta;
           notifyUnit(internal);
         },
+        set: (input: TData | ValueUpdater<TData, TData>) => {
+          if (!gate.isLatestRun()) {
+            return;
+          }
+
+          const nextValue = resolveValue(internal.state.value, input);
+          applyEntityRunResult({
+            entity,
+            state: internal,
+            nextValue,
+            refreshValueFromMembership: () => {
+              internal.state.value = getModeValue(internal, readEntityValueById);
+            },
+            setRawValue: (value) => {
+              internal.state.value = value;
+            },
+            upsertOneOperation: 'runContext.set() object',
+            upsertManyOperation: 'runContext.set() array',
+          });
+        },
         reset: () => {
           if (!gate.isLatestRun()) {
             return;
