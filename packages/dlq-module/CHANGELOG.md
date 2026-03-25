@@ -1,5 +1,11 @@
 # @livon/dlq-module
 
+## 0.29.0-rc.6
+
+### Patch Changes
+
+- @livon/runtime@0.29.0-rc.6
+
 ## 0.29.0-rc.5
 
 ### Patch Changes
