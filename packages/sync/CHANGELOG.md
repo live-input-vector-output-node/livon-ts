@@ -1,5 +1,11 @@
 # @livon/sync
 
+## 0.29.0-rc.8
+
+### Patch Changes
+
+- Notify source listeners immediately after `runContext.set(...)` updates state and membership, and sync source cache state in the same path.
+
 ## 0.29.0-rc.7
 
 ### Patch Changes
