@@ -160,6 +160,10 @@ describe('hook type inference', () => {
     const streamUnit = onUserUpdated({ templateId: 'typed-meta-stream' });
     const resolveSourceMeta = (currentUnit: typeof sourceUnit) => useLivonMeta(currentUnit);
     const resolveSourceState = (currentUnit: typeof sourceUnit) => useLivonState(currentUnit);
+    const resolveActionMeta = (currentUnit: typeof actionUnit) => useLivonMeta(currentUnit);
+    const resolveActionState = (currentUnit: typeof actionUnit) => useLivonState(currentUnit);
+    const resolveStreamMeta = (currentUnit: typeof streamUnit) => useLivonMeta(currentUnit);
+    const resolveStreamState = (currentUnit: typeof streamUnit) => useLivonState(currentUnit);
     const resolveSourceGroupedState = (currentUnit: typeof sourceUnit) => useLivonSourceState(currentUnit);
     const resolveActionGroupedState = (currentUnit: typeof actionUnit) => useLivonActionState(currentUnit);
     const resolveStreamGroupedState = (currentUnit: typeof streamUnit) => useLivonStreamState(currentUnit);
@@ -179,6 +183,26 @@ describe('hook type inference', () => {
     expectTypeOf(resolveSourceState).toEqualTypeOf<
       (currentUnit: typeof sourceUnit) => {
         value: readonly User[];
+        status: UnitStatus;
+        meta: UserMeta | null;
+      }
+    >();
+    expectTypeOf(resolveActionMeta).toEqualTypeOf<
+      (currentUnit: typeof actionUnit) => UserMeta | null
+    >();
+    expectTypeOf(resolveActionState).toEqualTypeOf<
+      (currentUnit: typeof actionUnit) => {
+        value: User | null;
+        status: UnitStatus;
+        meta: UserMeta | null;
+      }
+    >();
+    expectTypeOf(resolveStreamMeta).toEqualTypeOf<
+      (currentUnit: typeof streamUnit) => UserMeta | null
+    >();
+    expectTypeOf(resolveStreamState).toEqualTypeOf<
+      (currentUnit: typeof streamUnit) => {
+        value: User | null;
         status: UnitStatus;
         meta: UserMeta | null;
       }
