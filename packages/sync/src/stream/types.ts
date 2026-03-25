@@ -3,6 +3,7 @@ import {
   type EffectListener,
   type InputUpdater,
   type ModeValueReadWriteInput,
+  type UnitStatus,
   type ValueUpdater,
 } from '../utils/index.js';
 
@@ -75,7 +76,7 @@ export interface Stream<
 
 export interface StreamUnitState<RResult> {
   value: RResult;
-  status: 'idle' | 'loading' | 'success' | 'error';
+  status: UnitStatus;
   meta: unknown;
   context: unknown;
 }

@@ -3,6 +3,7 @@ import {
   type EffectListener,
   type InputUpdater,
   type ModeValueReadWriteInput,
+  type UnitStatus,
   type ValueUpdater,
 } from '../utils/index.js';
 
@@ -71,7 +72,7 @@ export interface Action<
 
 export interface ActionUnitState<RResult> {
   value: RResult;
-  status: 'idle' | 'loading' | 'success' | 'error';
+  status: UnitStatus;
   meta: unknown;
   context: unknown;
 }
