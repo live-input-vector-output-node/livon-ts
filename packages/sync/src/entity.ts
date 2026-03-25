@@ -303,7 +303,7 @@ export const entity = <
     }
 
     const now = Date.now();
-    Array.from(orphanExpiresAtById.entries()).forEach(([id, expiresAt]) => {
+    orphanExpiresAtById.forEach((expiresAt, id) => {
       if (expiresAt > now) {
         return;
       }
