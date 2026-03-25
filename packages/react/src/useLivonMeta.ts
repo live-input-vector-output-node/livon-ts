@@ -2,7 +2,6 @@ import type {
   ActionUnit,
   SourceUnit,
   StreamUnit,
-  TrackedUnit,
   UnitSnapshot,
 } from '@livon/sync';
 
@@ -37,23 +36,23 @@ type AnyActionUnit = ActionUnit<unknown, unknown, unknown>;
 type AnyStreamUnit = StreamUnit<unknown, unknown, unknown>;
 type AnyMetaUnit = AnySourceUnit | AnyActionUnit | AnyStreamUnit;
 
-const selectMeta = <TValue, TMeta>(
-  snapshot: UnitSnapshot<TValue, TMeta | null>,
-): TMeta | null => {
+interface SelectMeta {
+  <RResult, TMeta>(snapshot: UnitSnapshot<RResult, TMeta | null>): TMeta | null;
+}
+
+const selectMeta: SelectMeta = (snapshot) => {
   return snapshot.meta;
 };
 
-const useLivonMetaInternal: UseLivonMeta = <
-  TValue,
-  TMeta,
-  TUnit extends TrackedUnit<TValue, TMeta> & AnyMetaUnit,
->(
+const useLivonMetaInternal = <TUnit extends AnyMetaUnit>(
   unit: TUnit,
-): TMeta | null => {
-  return useLivonSelection({
+): LivonMetaOf<TUnit> => {
+  const meta = useLivonSelection({
     unit,
-    select: selectMeta<TValue, TMeta>,
+    select: selectMeta,
   });
+
+  return meta as LivonMetaOf<TUnit>;
 };
 
 export const useLivonMeta: UseLivonMeta = useLivonMetaInternal;
