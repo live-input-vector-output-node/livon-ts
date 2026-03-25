@@ -2,6 +2,7 @@ import type {
   ActionUnit,
   SourceUnit,
   StreamUnit,
+  TrackedUnit,
   UnitSnapshot,
 } from '@livon/sync';
 
@@ -13,43 +14,42 @@ export interface UseLivonMeta {
   TInput extends object | undefined,
   TPayload,
   RResult,
->(unit: SourceUnit<TInput, TPayload, RResult>): LivonMetaOf<
-    SourceUnit<TInput, TPayload, RResult>
+  TMeta,
+  >(unit: SourceUnit<TInput, TPayload, RResult, TMeta>): LivonMetaOf<
+    SourceUnit<TInput, TPayload, RResult, TMeta>
   >;
 
   <
   RResult,
   TPayload,
->(unit: ActionUnit<TPayload, RResult>): LivonMetaOf<ActionUnit<TPayload, RResult>>;
+  TMeta,
+  >(unit: ActionUnit<TPayload, RResult, TMeta>): LivonMetaOf<ActionUnit<TPayload, RResult, TMeta>>;
 
   <
   TPayload,
   RResult,
->(unit: StreamUnit<TPayload, RResult>): LivonMetaOf<StreamUnit<TPayload, RResult>>;
+  TMeta,
+  >(unit: StreamUnit<TPayload, RResult, TMeta>): LivonMetaOf<StreamUnit<TPayload, RResult, TMeta>>;
 }
 
-type AnySourceUnit = SourceUnit<object | undefined, unknown, unknown>;
-type AnyActionUnit = ActionUnit<unknown, unknown>;
-type AnyStreamUnit = StreamUnit<unknown, unknown>;
+type AnySourceUnit = SourceUnit<object | undefined, unknown, unknown, unknown>;
+type AnyActionUnit = ActionUnit<unknown, unknown, unknown>;
+type AnyStreamUnit = StreamUnit<unknown, unknown, unknown>;
 type AnyMetaUnit = AnySourceUnit | AnyActionUnit | AnyStreamUnit;
 
-interface SelectMeta {
-  <RResult>(snapshot: UnitSnapshot<RResult>): unknown;
-}
-
-const selectMeta: SelectMeta = (snapshot) => {
-  return snapshot.meta;
-};
-
-const useLivonMetaInternal = <TUnit extends AnyMetaUnit>(
+const useLivonMetaInternal: UseLivonMeta = <
+  TValue,
+  TMeta,
+  TUnit extends TrackedUnit<TValue, TMeta> & AnyMetaUnit,
+>(
   unit: TUnit,
-): LivonMetaOf<TUnit> => {
-  const meta = useLivonSelection({
+): TMeta | null => {
+  return useLivonSelection({
     unit,
-    select: selectMeta,
+    select: (snapshot: UnitSnapshot<TValue, TMeta | null>) => {
+      return snapshot.meta;
+    },
   });
-
-  return meta as LivonMetaOf<TUnit>;
 };
 
 export const useLivonMeta: UseLivonMeta = useLivonMetaInternal;
