@@ -13,7 +13,7 @@ export interface UseLivonMeta {
   TInput extends object | undefined,
   TPayload,
   RResult,
-  TMeta,
+  TMeta = unknown,
   >(unit: SourceUnit<TInput, TPayload, RResult, TMeta>): LivonMetaOf<
     SourceUnit<TInput, TPayload, RResult, TMeta>
   >;
@@ -21,13 +21,13 @@ export interface UseLivonMeta {
   <
   RResult,
   TPayload,
-  TMeta,
+  TMeta = unknown,
   >(unit: ActionUnit<TPayload, RResult, TMeta>): LivonMetaOf<ActionUnit<TPayload, RResult, TMeta>>;
 
   <
   TPayload,
   RResult,
-  TMeta,
+  TMeta = unknown,
   >(unit: StreamUnit<TPayload, RResult, TMeta>): LivonMetaOf<StreamUnit<TPayload, RResult, TMeta>>;
 }
 
