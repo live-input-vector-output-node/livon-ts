@@ -51,6 +51,10 @@ export type {
   ValueUpdater,
 } from './types.js';
 export type {
+  UnitDataEntity,
+  UnitDataUpdate,
+} from './unitDataTypes.js';
+export type {
   CreateDependencyCacheConfig,
   DependencyCache,
   DependencyCacheClearPrimaryInput,

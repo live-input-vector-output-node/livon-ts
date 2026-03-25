@@ -24,7 +24,7 @@ interface Deferred<TValue> {
 
 type UsersResult = readonly User[];
 type UsersEntity = Entity<User>;
-type ReadUsersSource = Source<TemplateSlug, SearchPayload, UsersResult, UsersResult>;
+type ReadUsersSource = Source<TemplateSlug, SearchPayload, UsersResult>;
 
 const deferred = <TValue>(): Deferred<TValue> => {
   let resolve: (value: TValue) => void = () => undefined;
@@ -58,7 +58,7 @@ describe('source memoization', () => {
       ttl: 30_000,
     });
 
-    readUsers = source<TemplateSlug, SearchPayload, User, UsersResult, UsersResult>({
+    readUsers = source<TemplateSlug, SearchPayload, UsersResult>({
       entity: usersEntity,
       run: runMock,
     });
@@ -97,7 +97,7 @@ describe('source memoization', () => {
         return blocker.promise;
       });
 
-      readUsers = source<TemplateSlug, SearchPayload, User, UsersResult, UsersResult>({
+      readUsers = source<TemplateSlug, SearchPayload, UsersResult>({
         entity: usersEntity,
         run: runMock,
       });

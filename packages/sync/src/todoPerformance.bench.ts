@@ -378,19 +378,19 @@ describe('todo performance benchmarks (new dx)', () => {
       readWrite: variant.readWrite,
     });
 
-    const readTodos = source<TodoScope, readonly Todo[] | undefined, Todo, readonly Todo[]>({
+    const readTodos = source<TodoScope, readonly Todo[] | undefined, readonly Todo[]>({
       entity: todosEntity,
       defaultValue: [],
       run: readTodosRun,
     });
 
-    const writeTodo = source<TodoScope, Todo, Todo, Todo | null>({
+    const writeTodo = source<TodoScope, Todo, Todo | null>({
       entity: todosEntity,
       run: async ({ payload }) => {
         return payload;
       },
     });
-    const writeTodosMany = source<TodoScope, readonly Todo[], Todo, readonly Todo[]>({
+    const writeTodosMany = source<TodoScope, readonly Todo[], readonly Todo[]>({
       entity: todosEntity,
       defaultValue: [],
       run: async ({ payload }) => {
@@ -398,7 +398,7 @@ describe('todo performance benchmarks (new dx)', () => {
       },
     });
 
-    const removeTodo = source<TodoScope, RemoveAndRestoreTodoPayload, Todo, Todo | null>({
+    const removeTodo = source<TodoScope, RemoveAndRestoreTodoPayload, Todo | null>({
       entity: todosEntity,
       run: async ({ payload }) => {
         return payload.restore;
@@ -594,7 +594,7 @@ describe('todo performance benchmarks (new dx)', () => {
         idOf: (todo) => todo.id,
         readWrite: variant.readWrite,
       });
-      const nextReadTodos = source<TodoScope, readonly Todo[] | undefined, Todo, readonly Todo[]>({
+      const nextReadTodos = source<TodoScope, readonly Todo[] | undefined, readonly Todo[]>({
         entity: nextEntity,
         defaultValue: [],
         cache: {

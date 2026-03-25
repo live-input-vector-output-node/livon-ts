@@ -48,36 +48,16 @@ type _entityHasUpsertMany = AssertTrue<EntityHasUpsertMany>;
 type _entityHasRemoveOne = AssertTrue<EntityHasRemoveOne>;
 type _entityHasRemoveMany = AssertTrue<EntityHasRemoveMany>;
 
-type SourceRunHasEntityApi = 'entity' extends keyof SourceRunContext<
-  TodoScope,
-  UpdateTodoPayload,
-  Todo,
-  Todo | null
->
+type SourceRunHasEntityApi = 'entity' extends keyof SourceRunContext<TodoScope, UpdateTodoPayload, Todo | null>
   ? true
   : false;
-type SourceRunHasLegacyUpsertOne = 'upsertOne' extends keyof SourceRunContext<
-  TodoScope,
-  UpdateTodoPayload,
-  Todo,
-  Todo | null
->
+type SourceRunHasLegacyUpsertOne = 'upsertOne' extends keyof SourceRunContext<TodoScope, UpdateTodoPayload, Todo | null>
   ? true
   : false;
-type SourceRunHasLegacyUpsertMany = 'upsertMany' extends keyof SourceRunContext<
-  TodoScope,
-  UpdateTodoPayload,
-  Todo,
-  Todo | null
->
+type SourceRunHasLegacyUpsertMany = 'upsertMany' extends keyof SourceRunContext<TodoScope, UpdateTodoPayload, Todo | null>
   ? true
   : false;
-type SourceRunHasReset = 'reset' extends keyof SourceRunContext<
-  TodoScope,
-  UpdateTodoPayload,
-  Todo,
-  Todo | null
->
+type SourceRunHasReset = 'reset' extends keyof SourceRunContext<TodoScope, UpdateTodoPayload, Todo | null>
   ? true
   : false;
 
@@ -86,39 +66,19 @@ type _sourceRunHasTopLevelUpsertOne = AssertTrue<SourceRunHasLegacyUpsertOne>;
 type _sourceRunHasTopLevelUpsertMany = AssertTrue<SourceRunHasLegacyUpsertMany>;
 type _sourceRunHasTopLevelReset = AssertTrue<SourceRunHasReset>;
 
-type ActionRunHasEntityApi = 'entity' extends keyof ActionRunContext<
-  TodoScope,
-  UpdateTodoPayload,
-  Todo,
-  Todo | null
->
+type ActionRunHasEntityApi = 'entity' extends keyof ActionRunContext<TodoScope, UpdateTodoPayload, Todo | null>
   ? true
   : false;
-type ActionRunHasLegacyUpsertOne = 'upsertOne' extends keyof ActionRunContext<
-  TodoScope,
-  UpdateTodoPayload,
-  Todo,
-  Todo | null
->
+type ActionRunHasLegacyUpsertOne = 'upsertOne' extends keyof ActionRunContext<TodoScope, UpdateTodoPayload, Todo | null>
   ? true
   : false;
 type _actionRunHasNoEntityApi = AssertFalse<ActionRunHasEntityApi>;
 type _actionRunHasTopLevelUpsertOne = AssertTrue<ActionRunHasLegacyUpsertOne>;
 
-type StreamRunHasEntityApi = 'entity' extends keyof StreamRunContext<
-  TodoScope,
-  UpdateTodoPayload,
-  Todo,
-  Todo | null
->
+type StreamRunHasEntityApi = 'entity' extends keyof StreamRunContext<TodoScope, UpdateTodoPayload, Todo | null>
   ? true
   : false;
-type StreamRunHasLegacyUpsertOne = 'upsertOne' extends keyof StreamRunContext<
-  TodoScope,
-  UpdateTodoPayload,
-  Todo,
-  Todo | null
->
+type StreamRunHasLegacyUpsertOne = 'upsertOne' extends keyof StreamRunContext<TodoScope, UpdateTodoPayload, Todo | null>
   ? true
   : false;
 type _streamRunHasNoEntityApi = AssertFalse<StreamRunHasEntityApi>;
@@ -128,7 +88,7 @@ const todosEntity = entity<Todo>({
   idOf: (value) => value.id,
 });
 
-const readTodos = source<TodoScope, undefined, Todo, readonly Todo[]>({
+const readTodos = source<TodoScope, undefined, readonly Todo[]>({
   entity: todosEntity,
   run: async () => undefined,
   defaultValue: [],
@@ -138,7 +98,7 @@ const readTodosUnit = readTodos({
   listId: 'type-check',
 });
 
-const updateTodo = action<TodoScope, UpdateTodoPayload, Todo, Todo | null>({
+const updateTodo = action<TodoScope, UpdateTodoPayload, Todo | null>({
   entity: todosEntity,
   run: async () => undefined,
 });
@@ -147,7 +107,7 @@ const updateTodoUnit = updateTodo({
   listId: 'type-check',
 });
 
-const onTodoChanged = stream<TodoScope, UpdateTodoPayload, Todo, Todo | null>({
+const onTodoChanged = stream<TodoScope, UpdateTodoPayload, Todo | null>({
   entity: todosEntity,
   run: async () => undefined,
 });
@@ -278,6 +238,7 @@ describe('dx type-level contracts', () => {
           title: 'legacy-title',
           completed: false,
         });
+
       };
 
       expect(typeof assertLegacyApisDoNotExist).toBe('function');

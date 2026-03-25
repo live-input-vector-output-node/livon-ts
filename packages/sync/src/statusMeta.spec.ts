@@ -30,7 +30,7 @@ describe('status and meta transitions', () => {
         idOf: (value) => value.id,
       });
 
-      const readUsers = source<TemplateSlug, undefined, User, readonly User[]>({
+      const readUsers = source<TemplateSlug, undefined, readonly User[]>({
         entity: usersEntity,
         run: async () => {
           await Promise.resolve();
@@ -60,7 +60,7 @@ describe('status and meta transitions', () => {
         idOf: (value) => value.id,
       });
 
-      const readUsers = source<TemplateSlug, undefined, User, readonly User[]>({
+      const readUsers = source<TemplateSlug, undefined, readonly User[]>({
         entity: usersEntity,
         run: async ({ setMeta }) => {
           setMeta({ severity: 'info', text: infoText });
@@ -88,7 +88,7 @@ describe('status and meta transitions', () => {
         idOf: (value) => value.id,
       });
 
-      const readUsers = source<TemplateSlug, undefined, User, readonly User[]>({
+      const readUsers = source<TemplateSlug, undefined, readonly User[]>({
         entity: usersEntity,
         run: async () => {
           throw new Error(errorMessage);
@@ -121,7 +121,7 @@ describe('status and meta transitions', () => {
         idOf: (value) => value.id,
       });
 
-      const readUsers = source<TemplateSlug, undefined, User, readonly User[]>({
+      const readUsers = source<TemplateSlug, undefined, readonly User[]>({
         entity: usersEntity,
         run: async ({ setMeta }) => {
           setMeta(warningMeta);

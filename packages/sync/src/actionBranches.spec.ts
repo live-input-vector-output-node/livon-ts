@@ -28,7 +28,7 @@ interface Release {
 }
 
 type UserEntity = Entity<User>;
-type CreateUserAction = Action<UserSlug, CreateUserPayload, User | null, User>;
+type CreateUserAction = Action<UserSlug, CreateUserPayload, User | null>;
 
 describe('action() branches', () => {
   let usersEntity: UserEntity;
@@ -52,7 +52,7 @@ describe('action() branches', () => {
       return { id: createdUserId, name: payload.name };
     });
 
-    createUser = action<UserSlug, CreateUserPayload, User, User | null, User>({
+    createUser = action<UserSlug, CreateUserPayload, User | null>({
       entity: usersEntity,
       run: runMock,
     });
@@ -75,7 +75,7 @@ describe('action() branches', () => {
         return { id: createdUserId, name: payload.name };
       });
 
-      createUser = action<UserSlug, CreateUserPayload, User, User | null, User>({
+      createUser = action<UserSlug, CreateUserPayload, User | null>({
         entity: usersEntity,
         run: runMock,
       });
@@ -96,7 +96,7 @@ describe('action() branches', () => {
         text: randomString({ prefix: 'meta-text' }),
       };
 
-      createUser = action<UserSlug, CreateUserPayload, User, User | null, User>({
+      createUser = action<UserSlug, CreateUserPayload, User | null>({
         entity: usersEntity,
         run: async ({ payload, setMeta }) => {
           setMeta(meta);
@@ -120,13 +120,7 @@ describe('action() branches', () => {
       const secondUserId = randomString({ prefix: 'second-user-id' });
       const secondUserName = randomString({ prefix: 'second-user-name' });
 
-      const createManyUsers = action<
-        UserSlug,
-        CreateUserPayload,
-        User,
-        readonly User[],
-        readonly User[]
-      >({
+      const createManyUsers = action<UserSlug, CreateUserPayload, readonly User[]>({
         entity: usersEntity,
         run: async ({ payload }) => {
           return [
@@ -150,13 +144,7 @@ describe('action() branches', () => {
       const thirdUserId = randomString({ prefix: 'third-user-id' });
       const thirdUserName = randomString({ prefix: 'third-user-name' });
 
-      const removeUsers = action<
-        UserSlug,
-        CreateUserPayload,
-        User,
-        readonly User[],
-        readonly User[]
-      >({
+      const removeUsers = action<UserSlug, CreateUserPayload, readonly User[]>({
         entity: usersEntity,
         run: async () => {
           return [{ id: thirdUserId, name: thirdUserName }];
@@ -173,7 +161,7 @@ describe('action() branches', () => {
     it('should read current value when run calls getValue', async () => {
       let valueFromRun: User | null = { id: randomString({ prefix: 'seed-id' }), name: randomString({ prefix: 'seed-name' }) };
 
-      createUser = action<UserSlug, CreateUserPayload, User, User | null, User>({
+      createUser = action<UserSlug, CreateUserPayload, User | null>({
         entity: usersEntity,
         run: async ({ getValue, payload }) => {
           valueFromRun = getValue();
@@ -194,7 +182,7 @@ describe('action() branches', () => {
         name: randomString({ prefix: 'returned-name' }),
       };
 
-      createUser = action<UserSlug, CreateUserPayload, User, User | null, User>({
+      createUser = action<UserSlug, CreateUserPayload, User | null>({
         entity: usersEntity,
         run: async () => {
           return returnedUser;
@@ -223,7 +211,7 @@ describe('action() branches', () => {
     it('should throw semantic error when runContext switches a locked scope mode from one to many', async () => {
       let writesMany = false;
 
-      const createUserWithModeSwitch = action<UserSlug, CreateUserPayload, User, User | null, User>({
+      const createUserWithModeSwitch = action<UserSlug, CreateUserPayload, User | null>({
         entity: usersEntity,
         run: async ({ payload, upsertMany, upsertOne }) => {
           if (!writesMany) {
@@ -266,7 +254,7 @@ describe('action() branches', () => {
       const errorMessage = randomString({ prefix: 'action-error' });
       const statuses: UnitStatus[] = [];
 
-      createUser = action<UserSlug, CreateUserPayload, User, User | null, User>({
+      createUser = action<UserSlug, CreateUserPayload, User | null>({
         entity: usersEntity,
         run: async () => {
           throw new Error(errorMessage);
@@ -307,7 +295,7 @@ describe('action() branches', () => {
       const cleanup = vi.fn();
       let release: Release | undefined;
 
-      createUser = action<UserSlug, CreateUserPayload, User, User | null, User>({
+      createUser = action<UserSlug, CreateUserPayload, User | null>({
         entity: usersEntity,
         run: async () => {
           await new Promise<void>((resolve) => {
@@ -334,7 +322,7 @@ describe('action() branches', () => {
     it('should call cleanup immediately when cleanup resolves after destroy', async () => {
       const cleanup = vi.fn();
 
-      createUser = action<UserSlug, CreateUserPayload, User, User | null, User>({
+      createUser = action<UserSlug, CreateUserPayload, User | null>({
         entity: usersEntity,
         run: async () => {
           await Promise.resolve();

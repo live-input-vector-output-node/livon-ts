@@ -1,6 +1,6 @@
 import { Packr } from 'msgpackr';
 
-import { type CacheStorage, type CacheTtl, type EntityId } from '../entity.js';
+import { type CacheStorage, type CacheTtl } from '../entity.js';
 import {
   decodeBase64,
   deserializeStructuredValue,
@@ -207,11 +207,10 @@ export const readSourceCacheRecord = <TEntity extends object>(
 export const shouldUseCache = <
   TInput extends object | undefined,
   TPayload,
-  TEntityId extends EntityId,
-  RResult,
-  UUpdate extends RResult,
+  TData,
+  TMeta,
 >(
-  internal: SourceUnitInternal<TInput, TPayload, TEntityId, RResult, UUpdate>,
+  internal: SourceUnitInternal<TInput, TPayload, TData, TMeta>,
 ): boolean => {
   if (internal.ttl <= 0) {
     return false;

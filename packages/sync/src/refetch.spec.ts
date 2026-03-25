@@ -19,7 +19,7 @@ interface TodoQueryPayload {
 
 type TodosResult = readonly Todo[];
 type TodosEntity = Entity<Todo>;
-type ReadTodosSource = Source<TodoScope, TodoQueryPayload, TodosResult, TodosResult>;
+type ReadTodosSource = Source<TodoScope, TodoQueryPayload, TodosResult>;
 
 describe('source.refetch()', () => {
   let runMock = vi.fn();
@@ -41,7 +41,7 @@ describe('source.refetch()', () => {
       ttl: 30_000,
     });
 
-    readTodos = source<TodoScope, TodoQueryPayload, Todo, TodosResult, TodosResult>({
+    readTodos = source<TodoScope, TodoQueryPayload, TodosResult>({
       entity: todosEntity,
       run: runMock,
     });

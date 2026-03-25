@@ -20,7 +20,7 @@ export const createReadUserSource = (
   const entityStore = input.entity ?? createUserEntity();
   const run = input.run ?? defaultReadUserRun;
 
-  return source<UserSlug, undefined, User, User | null, User | null>({
+  return source<UserSlug, undefined, User | null>({
     entity: entityStore,
     run,
   });

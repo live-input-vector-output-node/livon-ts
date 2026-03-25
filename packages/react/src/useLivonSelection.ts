@@ -9,9 +9,10 @@ import { useCallback, useSyncExternalStore } from 'react';
 export interface UseLivonSelectionInput<
   RResult,
   TValue,
+  TMeta = unknown,
 > {
-  unit: TrackedUnit<RResult>;
-  select: SnapshotSelector<RResult, TValue>;
+  unit: TrackedUnit<RResult, TMeta>;
+  select: SnapshotSelector<RResult, TValue, TMeta>;
 }
 
 interface StoreChangeListener {
@@ -21,11 +22,15 @@ interface StoreChangeListener {
 interface SnapshotSelector<
   RResult,
   TValue,
+  TMeta = unknown,
 > {
-  (snapshot: UnitSnapshot<RResult>): TValue;
+  (snapshot: UnitSnapshot<RResult, TMeta | null>): TValue;
 }
 
-const subscribeToUnit = <RResult>(unit: TrackedUnit<RResult>, onStoreChange: StoreChangeListener) =>
+const subscribeToUnit = <RResult, TMeta>(
+  unit: TrackedUnit<RResult, TMeta>,
+  onStoreChange: StoreChangeListener,
+) =>
   subscribeTrackedUnit({
     unit,
     onStoreChange,
@@ -34,8 +39,9 @@ const subscribeToUnit = <RResult>(unit: TrackedUnit<RResult>, onStoreChange: Sto
 export const useLivonSelection = <
   RResult,
   TValue,
+  TMeta = unknown,
 >(
-  input: UseLivonSelectionInput<RResult, TValue>,
+  input: UseLivonSelectionInput<RResult, TValue, TMeta>,
 ): TValue => {
   const { unit, select } = input;
 

@@ -64,19 +64,19 @@ export interface Entity<
   draft?: DraftMode;
   cache?: CacheConfig;
   readWrite: EntityReadWriteConfig;
-  idOf: (input: TInput) => TId;
+  idOf(input: TInput): TId;
   entitiesById: EntityByIdMap<TInput, TId>;
-  getDraftById: (id: TId) => TInput | undefined;
-  setDraftById: (id: TId, input: TInput) => TInput;
-  clearDraftById: (id: TId) => boolean;
-  getById: (id: TId) => TInput | undefined;
-  registerUnit: (input: RegisterEntityUnitInput) => () => void;
-  setUnitMembership: (input: SetEntityUnitMembershipInput<TId>) => void;
-  clearUnitMembership: (key: string) => void;
-  upsertOne: (input: TInput, options?: UpsertOptions) => TInput;
-  upsertMany: (input: readonly TInput[], options?: UpsertOptions) => readonly TInput[];
-  removeOne: (id: TId) => boolean;
-  removeMany: (ids: readonly TId[]) => readonly TId[];
+  getDraftById(id: TId): TInput | undefined;
+  setDraftById(id: TId, input: TInput): TInput;
+  clearDraftById(id: TId): boolean;
+  getById(id: TId): TInput | undefined;
+  registerUnit(input: RegisterEntityUnitInput): () => void;
+  setUnitMembership(input: SetEntityUnitMembershipInput<TId>): void;
+  clearUnitMembership(key: string): void;
+  upsertOne(input: TInput, options?: UpsertOptions): TInput;
+  upsertMany(input: readonly TInput[], options?: UpsertOptions): readonly TInput[];
+  removeOne(id: TId): boolean;
+  removeMany(ids: readonly TId[]): readonly TId[];
 }
 
 interface MergeEntityInput<TInput extends object> {

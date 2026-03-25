@@ -19,7 +19,7 @@ describe('setter identity', () => {
       const todosEntity = entity<Todo>({
         idOf: (todo) => todo.id,
       });
-      const readTodo = source<TodoScope, Todo, Todo, Todo | null>({
+      const readTodo = source<TodoScope, Todo, Todo | null>({
         entity: todosEntity,
         run: async ({ payload }) => {
           return payload;

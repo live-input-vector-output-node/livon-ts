@@ -24,7 +24,7 @@ interface Deferred<TValue> {
 
 type UsersResult = readonly User[];
 type UsersEntity = Entity<User>;
-type ReadUsersSource = Source<UserSlug, SearchPayload, UsersResult, UsersResult>;
+type ReadUsersSource = Source<UserSlug, SearchPayload, UsersResult>;
 
 const deferred = <TValue>(): Deferred<TValue> => {
   let resolve: (value: TValue) => void = () => undefined;
@@ -69,7 +69,7 @@ describe('source() race handling', () => {
       ttl: 30_000,
     });
 
-    readUsers = source<UserSlug, SearchPayload, User, UsersResult, UsersResult>({
+    readUsers = source<UserSlug, SearchPayload, UsersResult>({
       entity: usersEntity,
       run: async ({ payload }) => {
         return searchApi(payload);

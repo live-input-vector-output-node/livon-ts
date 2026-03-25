@@ -33,7 +33,7 @@ describe('cleanup lifecycle', () => {
       const cleanup = vi.fn();
       let release: Release | undefined;
 
-      const readUsers = source<TemplateSlug, undefined, User, readonly User[]>({
+      const readUsers = source<TemplateSlug, undefined, readonly User[]>({
         entity: usersEntity,
         run: async () => {
           await new Promise<void>((resolve) => {
@@ -63,7 +63,7 @@ describe('cleanup lifecycle', () => {
       const cleanup = vi.fn();
       let release: Release | undefined;
 
-      const readUsers = source<TemplateSlug, undefined, User, readonly User[]>({
+      const readUsers = source<TemplateSlug, undefined, readonly User[]>({
         entity: usersEntity,
         run: async () => {
           await new Promise<void>((resolve) => {
@@ -94,7 +94,7 @@ describe('cleanup lifecycle', () => {
       const cleanup = vi.fn();
       let release: Release | undefined;
 
-      const createUser = action<TemplateSlug, CreateUserPayload, User, User>({
+      const createUser = action<TemplateSlug, CreateUserPayload, User>({
         entity: usersEntity,
         run: async () => {
           await new Promise<void>((resolve) => {
@@ -125,7 +125,7 @@ describe('cleanup lifecycle', () => {
       const cleanup = vi.fn();
       let release: Release | undefined;
 
-      const createUser = action<TemplateSlug, CreateUserPayload, User, User>({
+      const createUser = action<TemplateSlug, CreateUserPayload, User>({
         entity: usersEntity,
         run: async () => {
           await new Promise<void>((resolve) => {
@@ -154,7 +154,7 @@ describe('cleanup lifecycle', () => {
       });
       const cleanup = vi.fn();
 
-      const onUserUpdated = stream<TemplateSlug, User, User, User | null>({
+      const onUserUpdated = stream<TemplateSlug, User, User | null>({
         entity: usersEntity,
         run: async () => {
           return () => {

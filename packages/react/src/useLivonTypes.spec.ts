@@ -36,7 +36,7 @@ const createUserEntity = () => {
 };
 
 const createReadUsersSource = (userEntity: ReturnType<typeof createUserEntity>) => {
-  return source<UserSlug, undefined, User, readonly User[]>({
+  return source<UserSlug, undefined, readonly User[]>({
     entity: userEntity,
     run: async () => {
       return [];
@@ -66,7 +66,7 @@ describe('hook type inference', () => {
   it('should infer action value and run types when action unit is passed to hooks', () => {
     const userEntity = createUserEntity();
 
-    const createUser = action<UserSlug, User, User, User | null, User>({
+    const createUser = action<UserSlug, User, User | null>({
       entity: userEntity,
       run: async ({ payload }) => {
         return payload;
@@ -90,7 +90,7 @@ describe('hook type inference', () => {
   it('should infer stream run and stop types when stream unit is passed to hooks', () => {
     const userEntity = createUserEntity();
 
-    const onUserUpdated = stream<UserSlug, User, User, User | null>({
+    const onUserUpdated = stream<UserSlug, User, User | null>({
       entity: userEntity,
       run: async ({ payload }) => {
         return payload;
@@ -178,7 +178,7 @@ describe('hook type inference', () => {
 
   it('should infer grouped action state shape', () => {
     const userEntity = createUserEntity();
-    const createUser = action<UserSlug, User, User, User | null, User>({
+    const createUser = action<UserSlug, User, User | null>({
       entity: userEntity,
       run: async ({ payload }) => {
         return payload;
@@ -203,7 +203,7 @@ describe('hook type inference', () => {
 
   it('should infer grouped stream state shape', () => {
     const userEntity = createUserEntity();
-    const onUserUpdated = stream<UserSlug, User, User, User | null>({
+    const onUserUpdated = stream<UserSlug, User, User | null>({
       entity: userEntity,
       run: async ({ payload }) => {
         return payload;

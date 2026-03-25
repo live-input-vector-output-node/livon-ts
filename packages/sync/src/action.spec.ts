@@ -17,7 +17,7 @@ interface CreateUserPayload {
   name: string;
 }
 
-type CreateUserAction = Action<UserSlug, CreateUserPayload, User, User>;
+type CreateUserAction = Action<UserSlug, CreateUserPayload, User>;
 type UserEntity = Entity<User>;
 
 describe('action()', () => {
@@ -42,7 +42,7 @@ describe('action()', () => {
       ttl: 30_000,
     });
 
-    createUser = action<UserSlug, CreateUserPayload, User, User, User>({
+    createUser = action<UserSlug, CreateUserPayload, User>({
       entity: usersEntity,
       run: runMock,
     });

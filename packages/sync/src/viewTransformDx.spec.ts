@@ -25,7 +25,7 @@ interface UpdateTodoTitlePayload {
 describe('view() DX', () => {
   describe('happy', () => {
     it('should expose snapshot-style get and effect on view unit', () => {
-      const readTodos = source<TodoScope, undefined, Todo, readonly Todo[]>({
+      const readTodos = source<TodoScope, undefined, readonly Todo[]>({
         entity: entity<Todo>({
           idOf: (value) => value.id,
         }),
@@ -63,7 +63,7 @@ describe('view() DX', () => {
         idOf: (value) => value.id,
       });
 
-      const readTodos = source<TodoScope, undefined, Todo, readonly Todo[]>({
+      const readTodos = source<TodoScope, undefined, readonly Todo[]>({
         entity: todosEntity,
         run: async ({ scope }) => {
           return [
@@ -135,7 +135,7 @@ describe('transform() DX', () => {
         idOf: (value) => value.id,
       });
 
-      const readTodo = source<TodoScope, undefined, Todo, Todo | null>({
+      const readTodo = source<TodoScope, undefined, Todo | null>({
         entity: todosEntity,
         run: async ({ scope }) => {
           return {
@@ -154,7 +154,7 @@ describe('transform() DX', () => {
         };
       });
 
-      const updateTodo = action<TodoScope, UpdateTodoTitlePayload, Todo, Todo | null>({
+      const updateTodo = action<TodoScope, UpdateTodoTitlePayload, Todo | null>({
         entity: todosEntity,
         run: updateTodoRunMock,
       });

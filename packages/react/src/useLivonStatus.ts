@@ -14,27 +14,24 @@ export interface UseLivonStatus {
   TInput extends object | undefined,
   TPayload,
   RResult,
-  UUpdate extends RResult,
->(unit: SourceUnit<TInput, TPayload, RResult, UUpdate>): LivonStatusOf<
-    SourceUnit<TInput, TPayload, RResult, UUpdate>
+>(unit: SourceUnit<TInput, TPayload, RResult>): LivonStatusOf<
+    SourceUnit<TInput, TPayload, RResult>
   >;
 
   <
   RResult,
-  UUpdate extends RResult,
   TPayload,
->(unit: ActionUnit<TPayload, RResult, UUpdate>): LivonStatusOf<ActionUnit<TPayload, RResult, UUpdate>>;
+>(unit: ActionUnit<TPayload, RResult>): LivonStatusOf<ActionUnit<TPayload, RResult>>;
 
   <
   TPayload,
   RResult,
-  UUpdate extends RResult,
->(unit: StreamUnit<TPayload, RResult, UUpdate>): LivonStatusOf<StreamUnit<TPayload, RResult, UUpdate>>;
+>(unit: StreamUnit<TPayload, RResult>): LivonStatusOf<StreamUnit<TPayload, RResult>>;
 }
 
-type AnySourceUnit = SourceUnit<object | undefined, unknown, unknown, unknown>;
-type AnyActionUnit = ActionUnit<unknown, unknown, unknown>;
-type AnyStreamUnit = StreamUnit<unknown, unknown, unknown>;
+type AnySourceUnit = SourceUnit<object | undefined, unknown, unknown>;
+type AnyActionUnit = ActionUnit<unknown, unknown>;
+type AnyStreamUnit = StreamUnit<unknown, unknown>;
 type AnyStatusUnit = AnySourceUnit | AnyActionUnit | AnyStreamUnit;
 
 interface SelectStatus {

@@ -19,7 +19,7 @@ interface SearchPayload {
 
 type UsersResult = readonly User[];
 type UsersEntity = Entity<User>;
-type ReadUsersSource = Source<TemplateSlug, SearchPayload, UsersResult, UsersResult>;
+type ReadUsersSource = Source<TemplateSlug, SearchPayload, UsersResult>;
 
 describe('destroy lifecycle', () => {
   let usersEntity: UsersEntity;
@@ -38,7 +38,7 @@ describe('destroy lifecycle', () => {
       ttl: 30_000,
     });
 
-    readUsers = source<TemplateSlug, SearchPayload, User, UsersResult, UsersResult>({
+    readUsers = source<TemplateSlug, SearchPayload, UsersResult>({
       entity: usersEntity,
       onDestroy: onDestroyMock,
       run: async ({ payload }) => {

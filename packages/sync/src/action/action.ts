@@ -11,6 +11,8 @@ import {
   resolveValue,
   type EffectListener,
   type InputUpdater,
+  type UnitDataEntity,
+  type ValueUpdater,
 } from '../utils/index.js';
 import {
   invokeActionCleanup,
@@ -33,26 +35,24 @@ const RUN_CONTEXT_CACHE_LIMIT = 32;
 export const action = <
   TInput extends object | undefined,
   TPayload = unknown,
-  TEntity extends object = object,
-  RResult = unknown,
-  UUpdate extends RResult = RResult,
-  TEntityId extends EntityId = string,
+  TData = unknown,
+  TMeta = unknown,
 >({
   entity,
   destroyDelay = entity.destroyDelay ?? DEFAULT_DESTROY_DELAY,
   run,
   defaultValue,
-}: ActionConfig<TInput, TPayload, TEntity, RResult, TEntityId>,
-): Action<TInput, TPayload, RResult, UUpdate> => {
-  const unitsByKey: ActionUnitByKeyMap<TInput, TPayload, TEntityId, RResult, UUpdate> =
-    new Map<string, ActionUnitInternal<TInput, TPayload, TEntityId, RResult, UUpdate>>();
+}: ActionConfig<TInput, TPayload, TData, TMeta>,
+): Action<TInput, TPayload, TData, TMeta> => {
+  const unitsByKey: ActionUnitByKeyMap<TInput, TPayload, TData, TMeta> =
+    new Map<string, ActionUnitInternal<TInput, TPayload, TData, TMeta>>();
   const readEntityValueById = entity.getById;
   const unitKeyCache = createSerializedKeyCache({
     mode: 'scoped-unit',
   });
 
   const notifyUnit = (
-    internal: ActionUnitInternal<TInput, TPayload, TEntityId, RResult, UUpdate>,
+    internal: ActionUnitInternal<TInput, TPayload, TData, TMeta>,
   ): void => {
     internal.state.value = getModeValue(internal, readEntityValueById);
 
@@ -67,7 +67,7 @@ export const action = <
     );
   };
 
-  const actionFactory: Action<TInput, TPayload, RResult, UUpdate> = (scope) => {
+  const actionFactory: Action<TInput, TPayload, TData, TMeta> = (scope) => {
     const key = unitKeyCache.getOrCreateKey(scope);
     const existingUnit = unitsByKey.get(key);
 
@@ -75,10 +75,10 @@ export const action = <
       return existingUnit.unit;
     }
 
-    const initialValue = (defaultValue ?? null) as RResult;
+    const initialValue = (defaultValue ?? null) as TData;
     const initialMode: 'one' | 'many' = Array.isArray(initialValue) ? 'many' : 'one';
 
-    const internal: ActionUnitInternal<TInput, TPayload, TEntityId, RResult, UUpdate> = {
+    const internal: ActionUnitInternal<TInput, TPayload, TData, TMeta> = {
       key,
       destroyDelay,
       scope,
@@ -96,14 +96,14 @@ export const action = <
         meta: null,
         context: null,
       },
-      listeners: new Set<EffectListener<RResult>>(),
-      inFlightByPayload: new Map<string, Promise<RResult>>(),
+      listeners: new Set<EffectListener<TData, TMeta | null>>(),
+      inFlightByPayload: new Map<string, Promise<TData>>(),
       cleanup: null,
       runSequence: 0,
       latestRunSequence: 0,
       stopped: false,
       destroyed: false,
-      unit: {} as ActionUnit<TPayload, RResult, UUpdate>,
+      unit: {} as ActionUnit<TPayload, TData, TMeta>,
     };
     const payloadKeyCache = createSerializedKeyCache({
       mode: 'payload-hot-path',
@@ -146,14 +146,14 @@ export const action = <
 
       const createRunContextEntry = (
         payload: TPayload,
-      ): ActionRunContextEntry<TInput, TPayload, TEntity, RResult, TEntityId> => {
+      ): ActionRunContextEntry<TInput, TPayload, TData, TMeta> => {
         const gate: ActionRunGate = {
           isLatestRun: () => false,
         };
         const runContextMethods = createEntityRunContextMethods<
-          TEntity,
-          RResult,
-          TEntityId
+          UnitDataEntity<TData>,
+          TData,
+          EntityId
         >({
           entity,
           state: internal,
@@ -167,13 +167,12 @@ export const action = <
         const runContextBase: ActionRunContext<
           TInput,
           TPayload,
-          TEntity,
-          RResult,
-          TEntityId
+          TData,
+          TMeta
         > = {
           scope: internal.scope,
           payload,
-          setMeta: (metaInput: unknown) => {
+          setMeta: (metaInput: TMeta | null | ValueUpdater<TMeta | null, TMeta | null>) => {
             if (!gate.isLatestRun()) {
               return;
             }
@@ -199,20 +198,20 @@ export const action = <
       };
       const runContextEntryCache = createRunContextEntryCache<
         TPayload,
-        ActionRunContextEntry<TInput, TPayload, TEntity, RResult, TEntityId>
+        ActionRunContextEntry<TInput, TPayload, TData, TMeta>
       >({
         createEntry: createRunContextEntry,
         limit: RUN_CONTEXT_CACHE_LIMIT,
       });
 
-      let singleInFlightPromise: Promise<RResult> | null = null;
+      let singleInFlightPromise: Promise<TData> | null = null;
       let hasSingleInFlightPayload = false;
       let singleInFlightPayload: TPayload | undefined;
       let singleInFlightPayloadKey: string | null = null;
 
       const executeRun = (
         payloadInput?: TPayload | InputUpdater<TPayload>,
-      ): Promise<RResult> => {
+      ): Promise<TData> => {
         if (internal.destroyed) {
           return Promise.resolve(internal.state.value);
         }
@@ -256,7 +255,7 @@ export const action = <
           notifyUnit(internal);
         }
 
-        const applyRunValue = (nextValue: RResult | void): void => {
+        const applyRunValue = (nextValue: TData | void): void => {
           if (!isLatestRun()) {
             return;
           }
@@ -283,7 +282,7 @@ export const action = <
           ? null
           : (payloadKey ?? payloadKeyCache.getOrCreateKey(internal.payload));
 
-        const runPromise: Promise<RResult> = Promise.resolve(run(runContextEntry.context))
+        const runPromise: Promise<TData> = Promise.resolve(run(runContextEntry.context))
           .then((result) => {
             if (!isLatestRun() && isActionCleanup(result)) {
               invokeActionCleanup(result);
@@ -354,7 +353,7 @@ export const action = <
     const unit = ((payloadInput?: TPayload | InputUpdater<TPayload>) => {
       internal.payload = resolveInput(internal.payload, payloadInput);
       return unit;
-    }) as ActionUnit<TPayload, RResult, UUpdate>;
+    }) as ActionUnit<TPayload, TData, TMeta>;
 
     unit.destroyDelay = destroyDelay;
     unit.run = (payloadInput) => executeRun(payloadInput);

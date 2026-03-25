@@ -3,6 +3,7 @@ import {
   type EffectListener,
   type InputUpdater,
   type ModeValueReadWriteInput,
+  type UnitDataEntity,
   type UnitStatus,
   type ValueUpdater,
 } from '../utils/index.js';
@@ -11,52 +12,53 @@ export interface ActionCleanup {
   (): void;
 }
 
-export type ActionRunResult<RResult> = RResult | ActionCleanup | void;
+export type ActionRunResult<TData> = TData | ActionCleanup | void;
 
 export interface ActionRunContext<
   TInput,
   TPayload,
-  TEntity extends object,
-  RResult,
-  TEntityId extends EntityId = string,
+  TData,
+  TMeta = unknown,
 > {
   scope: TInput;
   payload: TPayload;
-  setMeta: (meta: unknown) => void;
-  upsertOne: (input: TEntity, options?: UpsertOptions) => TEntity;
-  upsertMany: (input: readonly TEntity[], options?: UpsertOptions) => readonly TEntity[];
-  removeOne: (id: TEntityId) => boolean;
-  removeMany: (ids: readonly TEntityId[]) => readonly TEntityId[];
-  getValue: () => RResult;
+  setMeta: (meta: TMeta | null | ValueUpdater<TMeta | null, TMeta | null>) => void;
+  upsertOne: (input: UnitDataEntity<TData>, options?: UpsertOptions) => UnitDataEntity<TData>;
+  upsertMany: (
+    input: readonly UnitDataEntity<TData>[],
+    options?: UpsertOptions,
+  ) => readonly UnitDataEntity<TData>[];
+  removeOne: (id: EntityId) => boolean;
+  removeMany: (ids: readonly EntityId[]) => readonly EntityId[];
+  getValue: () => TData;
 }
 
 export interface ActionConfig<
   TInput extends object | undefined,
   TPayload,
-  TEntity extends object,
-  RResult,
-  TEntityId extends EntityId = string,
+  TData,
+  TMeta = unknown,
 > {
-  entity: Entity<TEntity, TEntityId>;
+  entity: Entity<UnitDataEntity<TData>, EntityId>;
   destroyDelay?: number;
   run: (
-    context: ActionRunContext<TInput, TPayload, TEntity, RResult, TEntityId>,
-  ) => Promise<ActionRunResult<RResult>> | ActionRunResult<RResult>;
-  defaultValue?: RResult;
+    context: ActionRunContext<TInput, TPayload, TData, TMeta>,
+  ) => Promise<ActionRunResult<TData>> | ActionRunResult<TData>;
+  defaultValue?: TData;
 }
 
 export interface ActionUnit<
   TPayload,
-  RResult,
-  UUpdate extends RResult,
+  TData,
+  TMeta = unknown,
 > {
   (
     payloadInput?: TPayload | InputUpdater<TPayload>,
-  ): ActionUnit<TPayload, RResult, UUpdate>;
+  ): ActionUnit<TPayload, TData, TMeta>;
   destroyDelay: number;
-  run: (payloadInput?: TPayload | InputUpdater<TPayload>) => Promise<RResult>;
-  get: () => RResult;
-  effect: (listener: EffectListener<RResult>) => (() => void) | void;
+  run: (payloadInput?: TPayload | InputUpdater<TPayload>) => Promise<TData>;
+  get: () => TData;
+  effect: (listener: EffectListener<TData, TMeta | null>) => (() => void) | void;
   stop: () => void;
   destroy: () => void;
 }
@@ -64,25 +66,24 @@ export interface ActionUnit<
 export interface Action<
   TInput extends object | undefined = object | undefined,
   TPayload = unknown,
-  RResult = unknown,
-  UUpdate extends RResult = RResult,
+  TData = unknown,
+  TMeta = unknown,
 > {
-  (scope: TInput): ActionUnit<TPayload, RResult, UUpdate>;
+  (scope: TInput): ActionUnit<TPayload, TData, TMeta>;
 }
 
-export interface ActionUnitState<RResult> {
-  value: RResult;
+export interface ActionUnitState<TData, TMeta = unknown> {
+  value: TData;
   status: UnitStatus;
-  meta: unknown;
+  meta: TMeta | null;
   context: unknown;
 }
 
 export interface ActionUnitInternal<
   TInput extends object | undefined,
   TPayload,
-  TEntityId extends EntityId,
-  RResult,
-  UUpdate extends RResult,
+  TData,
+  TMeta = unknown,
 > {
   key: string;
   destroyDelay: number;
@@ -91,26 +92,25 @@ export interface ActionUnitInternal<
   mode: 'one' | 'many';
   modeLocked: boolean;
   hasEntityValue: boolean;
-  membershipIds: readonly TEntityId[];
+  membershipIds: readonly EntityId[];
   readWrite: ModeValueReadWriteInput;
-  state: ActionUnitState<RResult>;
-  listeners: Set<EffectListener<RResult>>;
-  inFlightByPayload: Map<string, Promise<RResult>>;
+  state: ActionUnitState<TData, TMeta>;
+  listeners: Set<EffectListener<TData, TMeta | null>>;
+  inFlightByPayload: Map<string, Promise<TData>>;
   cleanup: ActionCleanup | null;
   runSequence: number;
   latestRunSequence: number;
   stopped: boolean;
   destroyed: boolean;
-  unit: ActionUnit<TPayload, RResult, UUpdate>;
+  unit: ActionUnit<TPayload, TData, TMeta>;
 }
 
 export type ActionUnitByKeyMap<
   TInput extends object | undefined,
   TPayload,
-  TEntityId extends EntityId,
-  RResult,
-  UUpdate extends RResult,
-> = Map<string, ActionUnitInternal<TInput, TPayload, TEntityId, RResult, UUpdate>>;
+  TData,
+  TMeta = unknown,
+> = Map<string, ActionUnitInternal<TInput, TPayload, TData, TMeta>>;
 
 export interface ActionRunGate {
   isLatestRun: () => boolean;
@@ -119,12 +119,11 @@ export interface ActionRunGate {
 export interface ActionRunContextEntry<
   TInput,
   TPayload,
-  TEntity extends object,
-  RResult,
-  TEntityId extends EntityId,
+  TData,
+  TMeta = unknown,
 > {
   gate: ActionRunGate;
-  context: ActionRunContext<TInput, TPayload, TEntity, RResult, TEntityId>;
+  context: ActionRunContext<TInput, TPayload, TData, TMeta>;
 }
 
-export type ActionMetaUpdater = ValueUpdater<unknown, unknown>;
+export type ActionMetaUpdater<TMeta = unknown> = ValueUpdater<TMeta | null, TMeta | null>;

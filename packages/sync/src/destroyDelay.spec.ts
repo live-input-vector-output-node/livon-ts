@@ -37,7 +37,7 @@ describe('destroyDelay config', () => {
         destroyDelay: 800,
       });
 
-      const readUser = source<UserSlug, undefined, User, User | null>({
+      const readUser = source<UserSlug, undefined, User | null>({
         entity: usersEntity,
         destroyDelay: 400,
         run: async () => undefined,
@@ -54,7 +54,7 @@ describe('destroyDelay config', () => {
         destroyDelay: 800,
       });
 
-      const readUser = source<UserSlug, undefined, User, User | null>({
+      const readUser = source<UserSlug, undefined, User | null>({
         entity: usersEntity,
         run: async () => undefined,
       });
@@ -69,7 +69,7 @@ describe('destroyDelay config', () => {
         idOf: (value) => value.id,
       });
 
-      const readUser = source<UserSlug, undefined, User, User | null>({
+      const readUser = source<UserSlug, undefined, User | null>({
         entity: usersEntity,
         run: async () => undefined,
       });
@@ -84,7 +84,7 @@ describe('destroyDelay config', () => {
         idOf: (value) => value.id,
       });
 
-      const createUser = action<UserSlug, UserPayload, User, User | null>({
+      const createUser = action<UserSlug, UserPayload, User | null>({
         entity: usersEntity,
         destroyDelay: 300,
         run: async ({ payload }) => {
@@ -102,7 +102,7 @@ describe('destroyDelay config', () => {
         idOf: (value) => value.id,
       });
 
-      const onUserUpdated = stream<UserSlug, UserPayload, User, User | null>({
+      const onUserUpdated = stream<UserSlug, UserPayload, User | null>({
         entity: usersEntity,
         destroyDelay: 500,
         run: async ({ payload }) => {
