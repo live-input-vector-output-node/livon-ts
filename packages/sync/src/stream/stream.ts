@@ -11,6 +11,8 @@ import {
   resolveValue,
   type EffectListener,
   type InputUpdater,
+  type UnitDataEntity,
+  type ValueUpdater,
 } from '../utils/index.js';
 import {
   isStreamCleanup,
@@ -31,32 +33,24 @@ const RUN_CONTEXT_CACHE_LIMIT = 32;
 export const stream = <
   TInput extends object | undefined,
   TPayload = unknown,
-  TEntity extends object = object,
-  RResult = unknown,
-  UUpdate extends RResult = RResult,
-  TEntityId extends EntityId = string,
+  TData = unknown,
+  TMeta = unknown,
 >({
   entity,
   destroyDelay = entity.destroyDelay ?? DEFAULT_DESTROY_DELAY,
   run,
   defaultValue,
-}: StreamConfig<
-  TInput,
-  TPayload,
-  TEntity,
-  RResult,
-  TEntityId
->,
-): Stream<TInput, TPayload, RResult, UUpdate> => {
-  const unitsByKey: StreamUnitByKeyMap<TInput, TPayload, TEntityId, RResult, UUpdate> =
-    new Map<string, StreamUnitInternal<TInput, TPayload, TEntityId, RResult, UUpdate>>();
+}: StreamConfig<TInput, TPayload, TData, TMeta>,
+): Stream<TInput, TPayload, TData, TMeta> => {
+  const unitsByKey: StreamUnitByKeyMap<TInput, TPayload, TData, TMeta> =
+    new Map<string, StreamUnitInternal<TInput, TPayload, TData, TMeta>>();
   const readEntityValueById = entity.getById;
   const unitKeyCache = createSerializedKeyCache({
     mode: 'scoped-unit',
   });
 
   const notifyUnit = (
-    internal: StreamUnitInternal<TInput, TPayload, TEntityId, RResult, UUpdate>,
+    internal: StreamUnitInternal<TInput, TPayload, TData, TMeta>,
   ): void => {
     internal.state.value = getModeValue(internal, readEntityValueById);
 
@@ -71,7 +65,7 @@ export const stream = <
     );
   };
 
-  const streamFactory: Stream<TInput, TPayload, RResult, UUpdate> = (scope) => {
+  const streamFactory: Stream<TInput, TPayload, TData, TMeta> = (scope) => {
     const key = unitKeyCache.getOrCreateKey(scope);
     const existingUnit = unitsByKey.get(key);
 
@@ -79,10 +73,10 @@ export const stream = <
       return existingUnit.unit;
     }
 
-    const initialValue = (defaultValue ?? null) as RResult;
+    const initialValue = (defaultValue ?? null) as TData;
     const initialMode: 'one' | 'many' = Array.isArray(initialValue) ? 'many' : 'one';
 
-    const internal: StreamUnitInternal<TInput, TPayload, TEntityId, RResult, UUpdate> = {
+    const internal: StreamUnitInternal<TInput, TPayload, TData, TMeta> = {
       key,
       destroyDelay,
       scope,
@@ -100,19 +94,19 @@ export const stream = <
         meta: null,
         context: null,
       },
-      listeners: new Set<EffectListener<RResult>>(),
+      listeners: new Set<EffectListener<TData, TMeta | null>>(),
       stopCallback: null,
       started: false,
       destroyed: false,
-      unit: {} as StreamUnit<TPayload, RResult, UUpdate>,
+      unit: {} as StreamUnit<TPayload, TData, TMeta>,
     };
     const createRunContextEntry = (
       payload: TPayload,
-    ): StreamRunContextEntry<TInput, TPayload, TEntity, RResult, TEntityId> => {
+    ): StreamRunContextEntry<TInput, TPayload, TData, TMeta> => {
       const runContextMethods = createEntityRunContextMethods<
-        TEntity,
-        RResult,
-        TEntityId
+        UnitDataEntity<TData>,
+        TData,
+        EntityId
       >({
         entity,
         state: internal,
@@ -126,13 +120,12 @@ export const stream = <
       const runContextBase: StreamRunContext<
         TInput,
         TPayload,
-        TEntity,
-        RResult,
-        TEntityId
+        TData,
+        TMeta
       > = {
         scope: internal.scope,
         payload,
-        setMeta: (metaInput: unknown) => {
+        setMeta: (metaInput: TMeta | null | ValueUpdater<TMeta | null, TMeta | null>) => {
           const nextMeta = resolveValue(
             internal.state.meta,
             metaInput,
@@ -153,7 +146,7 @@ export const stream = <
     };
     const runContextEntryCache = createRunContextEntryCache<
       TPayload,
-      StreamRunContextEntry<TInput, TPayload, TEntity, RResult, TEntityId>
+      StreamRunContextEntry<TInput, TPayload, TData, TMeta>
     >({
       createEntry: createRunContextEntry,
       limit: RUN_CONTEXT_CACHE_LIMIT,
@@ -183,7 +176,7 @@ export const stream = <
         unitsByKey.delete(internal.key);
       };
 
-      const runWithPayload = (eventPayload: TPayload): Promise<RResult> => {
+      const runWithPayload = (eventPayload: TPayload): Promise<TData> => {
         if (internal.destroyed) {
           return Promise.resolve(internal.state.value);
         }
@@ -192,7 +185,7 @@ export const stream = <
         internal.state.context = null;
         notifyUnit(internal);
 
-        const applyRunValue = (nextValue: RResult | void): void => {
+        const applyRunValue = (nextValue: TData | void): void => {
           if (internal.destroyed) {
             return;
           }
@@ -274,7 +267,7 @@ export const stream = <
     const unit = ((payloadInput?: TPayload | InputUpdater<TPayload>) => {
       internal.payload = resolveInput(internal.payload, payloadInput);
       return unit;
-    }) as StreamUnit<TPayload, RResult, UUpdate>;
+    }) as StreamUnit<TPayload, TData, TMeta>;
 
     unit.destroyDelay = destroyDelay;
     unit.start = start;

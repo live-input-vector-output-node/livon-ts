@@ -8,9 +8,8 @@ export interface UseLivonDraft {
   TInput extends object | undefined,
   TPayload,
   RResult,
-  UUpdate extends RResult,
->(unit: SourceUnit<TInput, TPayload, RResult, UUpdate>): LivonDraftOf<
-    SourceUnit<TInput, TPayload, RResult, UUpdate>
+>(unit: SourceUnit<TInput, TPayload, RResult>): LivonDraftOf<
+    SourceUnit<TInput, TPayload, RResult>
   >;
 }
 
@@ -18,10 +17,9 @@ const useLivonDraftInternal = <
   TInput extends object | undefined,
   TPayload,
   RResult,
-  UUpdate extends RResult,
 >(
-  unit: SourceUnit<TInput, TPayload, RResult, UUpdate>,
-): LivonDraftOf<SourceUnit<TInput, TPayload, RResult, UUpdate>> => {
+  unit: SourceUnit<TInput, TPayload, RResult>,
+): LivonDraftOf<SourceUnit<TInput, TPayload, RResult>> => {
   const setDraft = useCallback((input: Parameters<typeof unit.draft.set>[0]) => {
     unit.draft.set(input);
   }, [unit]);

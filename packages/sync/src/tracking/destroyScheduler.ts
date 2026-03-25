@@ -168,8 +168,11 @@ export const scheduleTrackedUnitDestroy = ({
   }
 };
 
-export const readTrackedUnitDestroyDelay = <RResult>(
-  unit: TrackedUnit<RResult>,
+export const readTrackedUnitDestroyDelay = <
+  RResult,
+  TMeta = unknown,
+>(
+  unit: TrackedUnit<RResult, TMeta>,
 ): number => {
   return normalizeDestroyDelay(unit.destroyDelay);
 };

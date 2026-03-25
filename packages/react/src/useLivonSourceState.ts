@@ -12,9 +12,8 @@ export interface UseLivonSourceState {
   TInput extends object | undefined,
   TPayload,
   RResult,
-  UUpdate extends RResult,
->(unit: SourceUnit<TInput, TPayload, RResult, UUpdate>): LivonSourceStateOf<
-    SourceUnit<TInput, TPayload, RResult, UUpdate>
+>(unit: SourceUnit<TInput, TPayload, RResult>): LivonSourceStateOf<
+    SourceUnit<TInput, TPayload, RResult>
   >;
 }
 
@@ -22,10 +21,9 @@ const useLivonSourceStateInternal: UseLivonSourceState = <
   TInput extends object | undefined,
   TPayload,
   RResult,
-  UUpdate extends RResult,
 >(
-  unit: SourceUnit<TInput, TPayload, RResult, UUpdate>,
-): LivonSourceStateOf<SourceUnit<TInput, TPayload, RResult, UUpdate>> => {
+  unit: SourceUnit<TInput, TPayload, RResult>,
+): LivonSourceStateOf<SourceUnit<TInput, TPayload, RResult>> => {
   const state = useLivonState(unit);
   const run = useLivonRun(unit);
   const stop = useLivonStop(unit);

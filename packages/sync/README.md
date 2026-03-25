@@ -64,7 +64,7 @@ const todoEntity = entity<Todo>({
   destroyDelay: 250,
 });
 
-const readTodos = source<TodoScope, ReadTodosPayload, Todo, readonly Todo[]>({
+const readTodos = source<TodoScope, ReadTodosPayload, readonly Todo[]>({
   entity: todoEntity,
   ttl: 60_000,
   defaultValue: [],
@@ -79,7 +79,7 @@ const readTodos = source<TodoScope, ReadTodosPayload, Todo, readonly Todo[]>({
   },
 });
 
-const updateTodo = action<TodoScope, UpdateTodoPayload, Todo, Todo | null>({
+const updateTodo = action<TodoScope, UpdateTodoPayload, Todo | null>({
   entity: todoEntity,
   run: async ({ scope, payload, entity }) => {
     const updated = await api.updateTodo({
@@ -92,7 +92,7 @@ const updateTodo = action<TodoScope, UpdateTodoPayload, Todo, Todo | null>({
   },
 });
 
-const onTodoEvents = stream<TodoScope, undefined, Todo, null>({
+const onTodoEvents = stream<TodoScope, undefined, null>({
   entity: todoEntity,
   run: async ({ scope }) => {
     return api.subscribeTodoEvents({
@@ -163,7 +163,7 @@ interface TodoSearchScope {
   query: string;
 }
 
-const readTodosByScope = source<TodoSearchScope, undefined, Todo, readonly Todo[]>({
+const readTodosByScope = source<TodoSearchScope, undefined, readonly Todo[]>({
   entity: todoEntity,
   defaultValue: [],
   run: async ({ scope, entity }) => {

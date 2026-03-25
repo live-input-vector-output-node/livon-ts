@@ -19,8 +19,8 @@ interface UsersByTemplateSlug {
 }
 
 type UsersEntity = Entity<User>;
-type ReadUserSource = Source<UserByIdSlug, undefined, User | null, User>;
-type ReadUsersSource = Source<UsersByTemplateSlug, undefined, readonly User[], readonly User[]>;
+type ReadUserSource = Source<UserByIdSlug, undefined, User | null>;
+type ReadUsersSource = Source<UsersByTemplateSlug, undefined, readonly User[]>;
 
 describe('entity membership sync across sources', () => {
   let usersEntity: UsersEntity;
@@ -68,14 +68,14 @@ describe('entity membership sync across sources', () => {
       ttl: 30_000,
     });
 
-    readUser = source<UserByIdSlug, undefined, User, User | null, User>({
+    readUser = source<UserByIdSlug, undefined, User | null>({
       entity: usersEntity,
       run: async ({ scope }) => {
         return readUserApi(scope);
       },
     });
 
-    readUsers = source<UsersByTemplateSlug, undefined, User, readonly User[], readonly User[]>({
+    readUsers = source<UsersByTemplateSlug, undefined, readonly User[]>({
       entity: usersEntity,
       run: async ({ scope }) => {
         return readUsersApi(scope);

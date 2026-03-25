@@ -3,6 +3,7 @@ import {
   type EffectListener,
   type InputUpdater,
   type ModeValueReadWriteInput,
+  type UnitDataEntity,
   type UnitStatus,
   type ValueUpdater,
 } from '../utils/index.js';
@@ -14,79 +15,73 @@ export interface StreamCleanup {
 export interface StreamRunContext<
   TInput,
   TPayload,
-  TEntity extends object,
-  RResult,
-  TEntityId extends EntityId = string,
+  TData,
+  TMeta = unknown,
 > {
   scope: TInput;
   payload: TPayload;
-  setMeta: (meta: unknown) => void;
-  upsertOne: (input: TEntity, options?: UpsertOptions) => TEntity;
-  upsertMany: (input: readonly TEntity[], options?: UpsertOptions) => readonly TEntity[];
-  removeOne: (id: TEntityId) => boolean;
-  removeMany: (ids: readonly TEntityId[]) => readonly TEntityId[];
-  getValue: () => RResult;
+  setMeta: (meta: TMeta | null | ValueUpdater<TMeta | null, TMeta | null>) => void;
+  upsertOne: (input: UnitDataEntity<TData>, options?: UpsertOptions) => UnitDataEntity<TData>;
+  upsertMany: (
+    input: readonly UnitDataEntity<TData>[],
+    options?: UpsertOptions,
+  ) => readonly UnitDataEntity<TData>[];
+  removeOne: (id: EntityId) => boolean;
+  removeMany: (ids: readonly EntityId[]) => readonly EntityId[];
+  getValue: () => TData;
 }
 
-export type StreamRunResult<RResult> = RResult | StreamCleanup | void;
+export type StreamRunResult<TData> = TData | StreamCleanup | void;
 
 export interface StreamConfig<
   TInput extends object | undefined,
   TPayload,
-  TEntity extends object,
-  RResult,
-  TEntityId extends EntityId = string,
+  TData,
+  TMeta = unknown,
 > {
-  entity: Entity<TEntity, TEntityId>;
+  entity: Entity<UnitDataEntity<TData>, EntityId>;
   destroyDelay?: number;
   run: (
-    context: StreamRunContext<
-      TInput,
-      TPayload,
-      TEntity,
-      RResult,
-      TEntityId
-    >,
-  ) => Promise<StreamRunResult<RResult>> | StreamRunResult<RResult>;
-  defaultValue?: RResult;
+    context: StreamRunContext<TInput, TPayload, TData, TMeta>,
+  ) => Promise<StreamRunResult<TData>> | StreamRunResult<TData>;
+  defaultValue?: TData;
 }
 
 export interface StreamUnit<
   TPayload,
-  RResult,
-  UUpdate extends RResult,
+  TData,
+  TMeta = unknown,
 > {
-  (payloadInput?: TPayload | InputUpdater<TPayload>): StreamUnit<TPayload, RResult, UUpdate>;
+  (payloadInput?: TPayload | InputUpdater<TPayload>): StreamUnit<TPayload, TData, TMeta>;
   destroyDelay: number;
   start: (payloadInput?: TPayload | InputUpdater<TPayload>) => void;
   stop: () => void;
-  get: () => RResult;
-  effect: (listener: EffectListener<RResult>) => (() => void) | void;
+  get: () => TData;
+  effect: (listener: EffectListener<TData, TMeta | null>) => (() => void) | void;
   destroy: () => void;
 }
 
 export interface Stream<
   TInput extends object | undefined = object | undefined,
   TPayload = unknown,
-  RResult = unknown,
-  UUpdate extends RResult = RResult,
+  TData = unknown,
+  TMeta = unknown,
 > {
-  (scope: TInput): StreamUnit<TPayload, RResult, UUpdate>;
+  (scope: TInput): StreamUnit<TPayload, TData, TMeta>;
 }
 
-export interface StreamUnitState<RResult> {
-  value: RResult;
+export interface StreamUnitState<TData, TMeta = unknown> {
+  value: TData;
   status: UnitStatus;
-  meta: unknown;
+  meta: TMeta | null;
   context: unknown;
 }
 
 export interface StreamUnitInternal<
   TInput extends object | undefined,
   TPayload,
-  TEntityId extends EntityId,
-  RResult,
-  UUpdate extends RResult,
+  TData,
+  TMeta = unknown,
 > {
   key: string;
   destroyDelay: number;
@@ -95,32 +90,30 @@ export interface StreamUnitInternal<
   mode: 'one' | 'many';
   modeLocked: boolean;
   hasEntityValue: boolean;
-  membershipIds: readonly TEntityId[];
+  membershipIds: readonly EntityId[];
   readWrite: ModeValueReadWriteInput;
-  state: StreamUnitState<RResult>;
-  listeners: Set<EffectListener<RResult>>;
+  state: StreamUnitState<TData, TMeta>;
+  listeners: Set<EffectListener<TData, TMeta | null>>;
   stopCallback: StreamCleanup | null;
   started: boolean;
   destroyed: boolean;
-  unit: StreamUnit<TPayload, RResult, UUpdate>;
+  unit: StreamUnit<TPayload, TData, TMeta>;
 }
 
 export type StreamUnitByKeyMap<
   TInput extends object | undefined,
   TPayload,
-  TEntityId extends EntityId,
-  RResult,
-  UUpdate extends RResult,
-> = Map<string, StreamUnitInternal<TInput, TPayload, TEntityId, RResult, UUpdate>>;
+  TData,
+  TMeta = unknown,
+> = Map<string, StreamUnitInternal<TInput, TPayload, TData, TMeta>>;
 
 export interface StreamRunContextEntry<
   TInput,
   TPayload,
-  TEntity extends object,
-  RResult,
-  TEntityId extends EntityId,
+  TData,
+  TMeta = unknown,
 > {
-  context: StreamRunContext<TInput, TPayload, TEntity, RResult, TEntityId>;
+  context: StreamRunContext<TInput, TPayload, TData, TMeta>;
 }
 
-export type StreamMetaUpdater = ValueUpdater<unknown, unknown>;
+export type StreamMetaUpdater<TMeta = unknown> = ValueUpdater<TMeta | null, TMeta | null>;

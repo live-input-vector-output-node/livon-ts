@@ -8,20 +8,29 @@ export interface ValueUpdater<RResult, UUpdate> {
 
 export type UnitStatus = 'idle' | 'rehydrated' | 'loading' | 'refreshing' | 'success' | 'error';
 
-export interface UnitSnapshot<RResult> {
+export interface UnitSnapshot<
+  RResult,
+  TMeta = unknown,
+> {
   value: RResult;
   status: UnitStatus;
-  meta: unknown;
+  meta: TMeta;
   context: unknown;
 }
 
-export interface CreateUnitSnapshotInput<RResult> {
+export interface CreateUnitSnapshotInput<
+  RResult,
+  TMeta = unknown,
+> {
   value: RResult;
   status: UnitStatus;
-  meta: unknown;
+  meta: TMeta;
   context: unknown;
 }
 
-export interface EffectListener<RResult> {
-  (snapshot: UnitSnapshot<RResult>): void;
+export interface EffectListener<
+  RResult,
+  TMeta = unknown,
+> {
+  (snapshot: UnitSnapshot<RResult, TMeta>): void;
 }

@@ -55,7 +55,7 @@ describe('view() detail behavior', () => {
       const todosEntity = entity<Todo>({
         idOf: (value) => value.id,
       });
-      const readTodo = source<TodoScope, TodoPayload, Todo, Todo | null>({
+      const readTodo = source<TodoScope, TodoPayload, Todo | null>({
         entity: todosEntity,
         run: async ({ scope, payload, setMeta }) => {
           setMeta(sourceMeta);
@@ -106,7 +106,7 @@ describe('view() detail behavior', () => {
       const todosEntity = entity<Todo>({
         idOf: (value) => value.id,
       });
-      const readTodoA = source<TodoScope, TodoPayload, Todo, Todo | null>({
+      const readTodoA = source<TodoScope, TodoPayload, Todo | null>({
         entity: todosEntity,
         run: async ({ scope, payload }) => {
           return {
@@ -116,7 +116,7 @@ describe('view() detail behavior', () => {
           };
         },
       });
-      const readTodoB = source<TodoScope, TodoPayload, Todo, Todo | null>({
+      const readTodoB = source<TodoScope, TodoPayload, Todo | null>({
         entity: todosEntity,
         run: async ({ scope, payload }) => {
           return {
@@ -169,7 +169,7 @@ describe('view() detail behavior', () => {
       const todosEntity = entity<Todo>({
         idOf: (value) => value.id,
       });
-      const readTodo = source<TodoScope, TodoPayload, Todo, Todo | null>({
+      const readTodo = source<TodoScope, TodoPayload, Todo | null>({
         entity: todosEntity,
         run: async ({ scope, payload }) => {
           return {
@@ -214,7 +214,7 @@ describe('view() detail behavior', () => {
       const todosEntity = entity<Todo>({
         idOf: (value) => value.id,
       });
-      const readTodo = source<TodoScope, TodoPayload, Todo, Todo | null>({
+      const readTodo = source<TodoScope, TodoPayload, Todo | null>({
         entity: todosEntity,
         run: async ({ scope, payload }) => {
           return {
@@ -269,7 +269,7 @@ describe('transform() detail behavior', () => {
       const todosEntity = entity<Todo>({
         idOf: (value) => value.id,
       });
-      const readTodo = source<TodoScope, TodoPayload, Todo, Todo | null>({
+      const readTodo = source<TodoScope, TodoPayload, Todo | null>({
         entity: todosEntity,
         run: async ({ scope, payload, setMeta }) => {
           setMeta(sourceMeta);
@@ -321,7 +321,7 @@ describe('transform() detail behavior', () => {
       const todosEntity = entity<Todo>({
         idOf: (value) => value.id,
       });
-      const readTodoA = source<TodoScope, TodoPayload, Todo, Todo | null>({
+      const readTodoA = source<TodoScope, TodoPayload, Todo | null>({
         entity: todosEntity,
         run: async ({ scope, payload }) => {
           return {
@@ -331,7 +331,7 @@ describe('transform() detail behavior', () => {
           };
         },
       });
-      const readTodoB = source<TodoScope, TodoPayload, Todo, Todo | null>({
+      const readTodoB = source<TodoScope, TodoPayload, Todo | null>({
         entity: todosEntity,
         run: async ({ scope, payload }) => {
           return {
@@ -385,7 +385,7 @@ describe('transform() detail behavior', () => {
       const todosEntity = entity<Todo>({
         idOf: (value) => value.id,
       });
-      const readTodo = source<TodoScope, TodoPayload, Todo, Todo | null>({
+      const readTodo = source<TodoScope, TodoPayload, Todo | null>({
         entity: todosEntity,
         run: async ({ scope, payload }) => {
           return {
@@ -430,7 +430,7 @@ describe('transform() detail behavior', () => {
       const todosEntity = entity<Todo>({
         idOf: (value) => value.id,
       });
-      const updateTodo = action<TodoScope, UpdateTodoPayload, Todo, Todo | null>({
+      const updateTodo = action<TodoScope, UpdateTodoPayload, Todo | null>({
         entity: todosEntity,
         run: async () => {
           throw new Error(errorMessage);
@@ -483,7 +483,7 @@ describe('transform() detail behavior', () => {
       const todosEntity = entity<Todo>({
         idOf: (value) => value.id,
       });
-      const readTodo = source<TodoScope, TodoPayload, Todo, Todo | null>({
+      const readTodo = source<TodoScope, TodoPayload, Todo | null>({
         entity: todosEntity,
         run: async ({ scope, payload }) => {
           return {

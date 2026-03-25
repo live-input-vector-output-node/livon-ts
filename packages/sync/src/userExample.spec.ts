@@ -19,9 +19,9 @@ interface TodoScope {
 
 type TodoEntity = Entity<Todo>;
 type TodosApi = ReturnType<typeof mockApi<Todo>>;
-type ReadTodoSource = Source<TodoScope, undefined, Todo | null, Todo>;
-type UpdateTodoAction = Action<TodoScope, Todo, Todo | null, Todo>;
-type TodoChangedStream = Stream<TodoScope, Todo, Todo | null, Todo>;
+type ReadTodoSource = Source<TodoScope, undefined, Todo | null>;
+type UpdateTodoAction = Action<TodoScope, Todo, Todo | null>;
+type TodoChangedStream = Stream<TodoScope, Todo, Todo | null>;
 
 interface TodoSubscriptionEvent {
   data?: Todo;
@@ -68,7 +68,7 @@ describe('user example flow', () => {
       ttl: 30_000,
     });
 
-    readTodo = source<TodoScope, undefined, Todo, Todo | null, Todo>({
+    readTodo = source<TodoScope, undefined, Todo | null>({
       entity: todoEntity,
       run: async ({ scope }) => {
         const todo = await todosApi.findOne(scope);
@@ -76,7 +76,7 @@ describe('user example flow', () => {
       },
     });
 
-    updateTodo = action<TodoScope, Todo, Todo, Todo | null, Todo>({
+    updateTodo = action<TodoScope, Todo, Todo | null>({
       entity: todoEntity,
       run: async ({ payload }) => {
         const updated = await todosApi.update({ id: payload.id }, payload);
@@ -109,7 +109,7 @@ describe('user example flow', () => {
       return subscription.unsubscribe;
     });
 
-    onTodoChanged = stream<TodoScope, Todo, Todo, Todo | null, Todo>({
+    onTodoChanged = stream<TodoScope, Todo, Todo | null>({
       entity: todoEntity,
       run: streamRunMock,
     });

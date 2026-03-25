@@ -18,7 +18,7 @@ interface SearchPayload {
 }
 
 type UserEntity = Entity<User>;
-type ReadUserSource = Source<UserSlug, SearchPayload, User | null, User>;
+type ReadUserSource = Source<UserSlug, SearchPayload, User | null>;
 
 const hasStringCacheState = (context: unknown): context is { readonly cacheState: string } => {
   if (typeof context !== 'object' || context === null) {
@@ -52,7 +52,7 @@ describe('source() branches', () => {
       return { id: payload.search, name: payload.search };
     });
 
-    readUser = source<UserSlug, SearchPayload, User, User | null, User>({
+    readUser = source<UserSlug, SearchPayload, User | null>({
       entity: usersEntity,
       run: runMock,
     });
@@ -65,7 +65,7 @@ describe('source() branches', () => {
         name: randomString({ prefix: 'seed-name' }),
       };
 
-      readUser = source<UserSlug, SearchPayload, User, User | null, User>({
+      readUser = source<UserSlug, SearchPayload, User | null>({
         entity: usersEntity,
         run: async ({ getValue, payload }) => {
           valueFromRun = getValue();
@@ -86,7 +86,7 @@ describe('source() branches', () => {
         name: randomString({ prefix: 'returned-name' }),
       };
 
-      readUser = source<UserSlug, SearchPayload, User, User | null, User>({
+      readUser = source<UserSlug, SearchPayload, User | null>({
         entity: usersEntity,
         run: async () => {
           return returnedUser;
@@ -114,7 +114,7 @@ describe('source() branches', () => {
       const thirdUserId = randomString({ prefix: 'third-user-id' });
       const thirdUserName = randomString({ prefix: 'third-user-name' });
 
-      const readUsers = source<UserSlug, SearchPayload, User, readonly User[], readonly User[]>({
+      const readUsers = source<UserSlug, SearchPayload, readonly User[]>({
         entity: usersEntity,
         run: async () => {
           return [{ id: thirdUserId, name: thirdUserName }];
@@ -138,7 +138,7 @@ describe('source() branches', () => {
         idOf: (value) => value.id,
       });
 
-      const readUsers = source<UserSlug, SearchPayload, User, readonly User[]>({
+      const readUsers = source<UserSlug, SearchPayload, readonly User[]>({
         entity: replaceUsersEntity,
         run: async () => {
           runCount += 1;
@@ -181,7 +181,7 @@ describe('source() branches', () => {
     it('should reset source status, meta, and context back to initial values', async () => {
       const metaValue = { severity: 'info', text: randomString({ prefix: 'meta-text' }) };
 
-      const readWithMeta = source<UserSlug, SearchPayload, User, User | null>({
+      const readWithMeta = source<UserSlug, SearchPayload, User | null>({
         entity: usersEntity,
         run: async ({ payload, setMeta }) => {
           setMeta(metaValue);
@@ -218,12 +218,7 @@ describe('source() branches', () => {
       const secondUserName = randomString({ prefix: 'second-user-name' });
       let useManyMode = false;
 
-      const readSwitchable = source<
-        UserSlug,
-        SearchPayload,
-        User,
-        User | readonly User[] | null
-      >({
+      const readSwitchable = source<UserSlug, SearchPayload, User | readonly User[] | null>({
         entity: usersEntity,
         run: async () => {
           if (!useManyMode) {
@@ -269,7 +264,7 @@ describe('source() branches', () => {
       const runCreatedUserId = randomString({ prefix: 'run-created-user-id' });
       let hasResetMethod = false;
 
-      const readWithReset = source<UserSlug, SearchPayload, User, User | null>({
+      const readWithReset = source<UserSlug, SearchPayload, User | null>({
         entity: usersEntity,
         run: async (context) => {
           hasResetMethod = typeof context.reset === 'function';
@@ -291,7 +286,7 @@ describe('source() branches', () => {
     it('should clear stored payload when source unit is reset', async () => {
       const capturedPayloads: (SearchPayload | undefined)[] = [];
 
-      const readWithOptionalPayload = source<UserSlug, SearchPayload | undefined, User, User | null>({
+      const readWithOptionalPayload = source<UserSlug, SearchPayload | undefined, User | null>({
         entity: usersEntity,
         run: async ({ payload }) => {
           capturedPayloads.push(payload);
@@ -319,12 +314,7 @@ describe('source() branches', () => {
       const secondUserName = randomString({ prefix: 'second-user-name' });
       let returnsMany = false;
 
-      const readUserWithModeSwitch = source<
-        UserSlug,
-        SearchPayload,
-        User,
-        User | readonly User[] | null
-      >({
+      const readUserWithModeSwitch = source<UserSlug, SearchPayload, User | readonly User[] | null>({
         entity: usersEntity,
         run: async ({ payload }) => {
           if (!returnsMany) {
@@ -369,7 +359,7 @@ describe('source() branches', () => {
     it('should call cleanup immediately when cleanup resolves after destroy', async () => {
       const cleanup = vi.fn();
 
-      readUser = source<UserSlug, SearchPayload, User, User | null, User>({
+      readUser = source<UserSlug, SearchPayload, User | null>({
         entity: usersEntity,
         run: async () => {
           await Promise.resolve();

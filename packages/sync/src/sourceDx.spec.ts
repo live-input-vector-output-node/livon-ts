@@ -25,7 +25,7 @@ describe('source() DX', () => {
         idOf: (value) => value.id,
       });
 
-      const readTodos = source<TodoScope, undefined, Todo, readonly Todo[]>({
+      const readTodos = source<TodoScope, undefined, readonly Todo[]>({
         entity: todosEntity,
         run: async () => {
           return [

@@ -40,7 +40,7 @@ describe('ttl rules', () => {
         ttl: 30_000,
       });
 
-      const readUsers = source<UserSlug, undefined, User, UsersResult, UsersResult>({
+      const readUsers = source<UserSlug, undefined, UsersResult>({
         entity: usersEntity,
         run: async () => {
           return readUsersApi();
@@ -69,7 +69,7 @@ describe('ttl rules', () => {
         ttl: 30_000,
       });
 
-      const readUsers = source<UserSlug, undefined, User, UsersResult, UsersResult>({
+      const readUsers = source<UserSlug, undefined, UsersResult>({
         entity: usersEntity,
         run: async () => {
           return readUsersApi();
@@ -98,7 +98,7 @@ describe('ttl rules', () => {
         ttl: 60_000,
       });
 
-      const readUsers = source<UserSlug, undefined, User, UsersResult, UsersResult>({
+      const readUsers = source<UserSlug, undefined, UsersResult>({
         entity: usersEntity,
         ttl: 10_000,
         run: async () => {
@@ -127,7 +127,7 @@ describe('ttl rules', () => {
         ttl: 60_000,
       });
 
-      const readUsers = source<UserSlug, undefined, User, UsersResult, UsersResult>({
+      const readUsers = source<UserSlug, undefined, UsersResult>({
         entity: usersEntity,
         ttl: 10_000,
         run: async () => {
@@ -161,7 +161,7 @@ describe('ttl rules', () => {
         ttl: 60_000,
       });
 
-      const readUsers = source<UserSlug, undefined, User, UsersResult, UsersResult>({
+      const readUsers = source<UserSlug, undefined, UsersResult>({
         entity: usersEntity,
         ttl: 10_000,
         run: async () => {
@@ -195,7 +195,7 @@ describe('ttl rules', () => {
         ttl: 60_000,
       });
 
-      const readUsers = source<UserSlug, undefined, User, UsersResult, UsersResult>({
+      const readUsers = source<UserSlug, undefined, UsersResult>({
         entity: usersEntity,
         ttl: 10_000,
         run: async () => {
@@ -226,7 +226,7 @@ describe('ttl rules', () => {
         ttl: 5_000,
       });
 
-      const readUsers = source<UserSlug, undefined, User, UsersResult, UsersResult>({
+      const readUsers = source<UserSlug, undefined, UsersResult>({
         entity: usersEntity,
         ttl: 30_000,
         run: async () => {
@@ -255,7 +255,7 @@ describe('ttl rules', () => {
         ttl: 5_000,
       });
 
-      const readUsers = source<UserSlug, undefined, User, UsersResult, UsersResult>({
+      const readUsers = source<UserSlug, undefined, UsersResult>({
         entity: usersEntity,
         ttl: 30_000,
         run: async () => {
@@ -285,7 +285,7 @@ describe('ttl rules', () => {
         ttl: 5_000,
       });
 
-      const readUsers = source<UserSlug, undefined, User, UsersResult, UsersResult>({
+      const readUsers = source<UserSlug, undefined, UsersResult>({
         entity: usersEntity,
         ttl: 30_000,
         run: async () => {

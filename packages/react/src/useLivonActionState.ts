@@ -8,18 +8,16 @@ import type { LivonActionStateOf } from './types.js';
 export interface UseLivonActionState {
   <
   RResult,
-  UUpdate extends RResult,
   TPayload,
->(unit: ActionUnit<TPayload, RResult, UUpdate>): LivonActionStateOf<ActionUnit<TPayload, RResult, UUpdate>>;
+>(unit: ActionUnit<TPayload, RResult>): LivonActionStateOf<ActionUnit<TPayload, RResult>>;
 }
 
 const useLivonActionStateInternal: UseLivonActionState = <
   RResult,
-  UUpdate extends RResult,
   TPayload,
 >(
-  unit: ActionUnit<TPayload, RResult, UUpdate>,
-): LivonActionStateOf<ActionUnit<TPayload, RResult, UUpdate>> => {
+  unit: ActionUnit<TPayload, RResult>,
+): LivonActionStateOf<ActionUnit<TPayload, RResult>> => {
   const state = useLivonState(unit);
   const run = useLivonRun(unit);
   const stop = useLivonStop(unit);

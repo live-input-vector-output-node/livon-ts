@@ -19,7 +19,7 @@ interface SearchPayload {
 
 type UsersResult = readonly User[];
 type UsersEntity = Entity<User>;
-type ReadUsersSource = Source<UserSlug, SearchPayload, UsersResult, UsersResult>;
+type ReadUsersSource = Source<UserSlug, SearchPayload, UsersResult>;
 
 describe('source()', () => {
   let runMock = vi.fn();
@@ -41,7 +41,7 @@ describe('source()', () => {
       ttl: 30_000,
     });
 
-    readUsers = source<UserSlug, SearchPayload, User, UsersResult, UsersResult>({
+    readUsers = source<UserSlug, SearchPayload, UsersResult>({
       entity: usersEntity,
       ttl: 60_000,
       run: runMock,

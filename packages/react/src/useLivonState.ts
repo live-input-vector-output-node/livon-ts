@@ -15,27 +15,24 @@ export interface UseLivonState {
   TInput extends object | undefined,
   TPayload,
   RResult,
-  UUpdate extends RResult,
->(unit: SourceUnit<TInput, TPayload, RResult, UUpdate>): LivonStateOf<
-    SourceUnit<TInput, TPayload, RResult, UUpdate>
+>(unit: SourceUnit<TInput, TPayload, RResult>): LivonStateOf<
+    SourceUnit<TInput, TPayload, RResult>
   >;
 
   <
   RResult,
-  UUpdate extends RResult,
   TPayload,
->(unit: ActionUnit<TPayload, RResult, UUpdate>): LivonStateOf<ActionUnit<TPayload, RResult, UUpdate>>;
+>(unit: ActionUnit<TPayload, RResult>): LivonStateOf<ActionUnit<TPayload, RResult>>;
 
   <
   TPayload,
   RResult,
-  UUpdate extends RResult,
->(unit: StreamUnit<TPayload, RResult, UUpdate>): LivonStateOf<StreamUnit<TPayload, RResult, UUpdate>>;
+>(unit: StreamUnit<TPayload, RResult>): LivonStateOf<StreamUnit<TPayload, RResult>>;
 }
 
-type AnySourceUnit = SourceUnit<object | undefined, unknown, unknown, unknown>;
-type AnyActionUnit = ActionUnit<unknown, unknown, unknown>;
-type AnyStreamUnit = StreamUnit<unknown, unknown, unknown>;
+type AnySourceUnit = SourceUnit<object | undefined, unknown, unknown>;
+type AnyActionUnit = ActionUnit<unknown, unknown>;
+type AnyStreamUnit = StreamUnit<unknown, unknown>;
 type AnyStateUnit = AnySourceUnit | AnyActionUnit | AnyStreamUnit;
 
 const useLivonStateInternal = <

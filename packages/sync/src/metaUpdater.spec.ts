@@ -47,7 +47,7 @@ describe('meta updater semantics', () => {
       };
       let latestMeta: unknown = null;
 
-      const readTodo = source<TodoScope, SourcePayload, Todo, Todo | null>({
+      const readTodo = source<TodoScope, SourcePayload, Todo | null>({
         entity: todosEntity,
         run: async ({ payload, setMeta }) => {
           if (payload.mode === 'seed') {
@@ -96,7 +96,7 @@ describe('meta updater semantics', () => {
       };
       let latestMeta: unknown = null;
 
-      const updateTodo = action<TodoScope, ActionPayload, Todo, Todo | null>({
+      const updateTodo = action<TodoScope, ActionPayload, Todo | null>({
         entity: todosEntity,
         run: async ({ payload, setMeta }) => {
           if (payload.mode === 'seed') {
@@ -145,7 +145,7 @@ describe('meta updater semantics', () => {
       };
       let latestMeta: unknown = null;
 
-      const todoChanged = stream<TodoScope, StreamPayload, Todo, Todo | null>({
+      const todoChanged = stream<TodoScope, StreamPayload, Todo | null>({
         entity: todosEntity,
         run: async ({ payload, setMeta }) => {
           if (payload.mode === 'seed') {

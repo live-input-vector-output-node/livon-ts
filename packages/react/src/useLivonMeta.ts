@@ -13,27 +13,24 @@ export interface UseLivonMeta {
   TInput extends object | undefined,
   TPayload,
   RResult,
-  UUpdate extends RResult,
->(unit: SourceUnit<TInput, TPayload, RResult, UUpdate>): LivonMetaOf<
-    SourceUnit<TInput, TPayload, RResult, UUpdate>
+>(unit: SourceUnit<TInput, TPayload, RResult>): LivonMetaOf<
+    SourceUnit<TInput, TPayload, RResult>
   >;
 
   <
   RResult,
-  UUpdate extends RResult,
   TPayload,
->(unit: ActionUnit<TPayload, RResult, UUpdate>): LivonMetaOf<ActionUnit<TPayload, RResult, UUpdate>>;
+>(unit: ActionUnit<TPayload, RResult>): LivonMetaOf<ActionUnit<TPayload, RResult>>;
 
   <
   TPayload,
   RResult,
-  UUpdate extends RResult,
->(unit: StreamUnit<TPayload, RResult, UUpdate>): LivonMetaOf<StreamUnit<TPayload, RResult, UUpdate>>;
+>(unit: StreamUnit<TPayload, RResult>): LivonMetaOf<StreamUnit<TPayload, RResult>>;
 }
 
-type AnySourceUnit = SourceUnit<object | undefined, unknown, unknown, unknown>;
-type AnyActionUnit = ActionUnit<unknown, unknown, unknown>;
-type AnyStreamUnit = StreamUnit<unknown, unknown, unknown>;
+type AnySourceUnit = SourceUnit<object | undefined, unknown, unknown>;
+type AnyActionUnit = ActionUnit<unknown, unknown>;
+type AnyStreamUnit = StreamUnit<unknown, unknown>;
 type AnyMetaUnit = AnySourceUnit | AnyActionUnit | AnyStreamUnit;
 
 interface SelectMeta {

@@ -20,7 +20,7 @@ interface MessageMeta {
 }
 
 type UsersEntity = Entity<User>;
-type UserUpdatedStream = Stream<UserSlug, User, User | null, User>;
+type UserUpdatedStream = Stream<UserSlug, User, User | null>;
 
 describe('stream() branches', () => {
   let usersEntity: UsersEntity;
@@ -48,7 +48,7 @@ describe('stream() branches', () => {
       };
     });
 
-    onUserUpdated = stream<UserSlug, User, User, User | null, User>({
+    onUserUpdated = stream<UserSlug, User, User | null>({
       entity: usersEntity,
       run: streamRunMock,
     });
@@ -112,7 +112,7 @@ describe('stream() branches', () => {
     it('should execute cleanup immediately when run resolves after stop', async () => {
       const lateCleanup = vi.fn();
 
-      onUserUpdated = stream<UserSlug, User, User, User | null, User>({
+      onUserUpdated = stream<UserSlug, User, User | null>({
         entity: usersEntity,
         run: async () => {
           await Promise.resolve();
@@ -140,7 +140,7 @@ describe('stream() branches', () => {
         name: randomString({ prefix: 'returned-name' }),
       };
 
-      onUserUpdated = stream<UserSlug, User, User, User | null, User>({
+      onUserUpdated = stream<UserSlug, User, User | null>({
         entity: usersEntity,
         run: async () => {
           return returnedUser;
@@ -157,7 +157,7 @@ describe('stream() branches', () => {
     });
 
     it('should return many-mode value when run resolves an entity array', async () => {
-      const onUsersUpdated = stream<UserSlug, readonly User[], User, readonly User[], readonly User[]>({
+      const onUsersUpdated = stream<UserSlug, readonly User[], readonly User[]>({
         entity: usersEntity,
         run: async ({ payload }) => {
           return payload;
@@ -184,7 +184,7 @@ describe('stream() branches', () => {
       const thirdUserName = randomString({ prefix: 'third-user-name' });
       const thirdUser: User = { id: thirdUserId, name: thirdUserName };
 
-      const onUsersUpdated = stream<UserSlug, readonly User[], User, readonly User[], readonly User[]>({
+      const onUsersUpdated = stream<UserSlug, readonly User[], readonly User[]>({
         entity: usersEntity,
         run: async () => {
           return [thirdUser];
@@ -203,7 +203,7 @@ describe('stream() branches', () => {
       let hasEntity = false;
       let hasUpsertOne = false;
 
-      onUserUpdated = stream<UserSlug, User, User, User | null, User>({
+      onUserUpdated = stream<UserSlug, User, User | null>({
         entity: usersEntity,
         run: async (context) => {
           hasRefetch = Object.prototype.hasOwnProperty.call(context, 'refetch');
@@ -230,7 +230,7 @@ describe('stream() branches', () => {
         name: randomString({ prefix: 'seed-name' }),
       };
 
-      onUserUpdated = stream<UserSlug, User, User, User | null, User>({
+      onUserUpdated = stream<UserSlug, User, User | null>({
         entity: usersEntity,
         run: async ({ getValue, payload }) => {
           valueFromRun = getValue();
@@ -254,7 +254,7 @@ describe('stream() branches', () => {
       };
       const metas: unknown[] = [];
 
-      onUserUpdated = stream<UserSlug, User, User, User | null, User>({
+      onUserUpdated = stream<UserSlug, User, User | null>({
         entity: usersEntity,
         run: async ({ setMeta, payload }) => {
           setMeta(meta);
@@ -283,12 +283,7 @@ describe('stream() branches', () => {
       const secondUserId = randomString({ prefix: 'second-user-id' });
       const secondUserName = randomString({ prefix: 'second-user-name' });
 
-      const onUsersUpdated = stream<
-        UserSlug,
-        User | readonly User[],
-        User,
-        User | readonly User[] | null
-      >({
+      const onUsersUpdated = stream<UserSlug, User | readonly User[], User | readonly User[] | null>({
         entity: usersEntity,
         run: async ({ payload }) => {
           return payload;
@@ -326,7 +321,7 @@ describe('stream() branches', () => {
       const statuses: UnitStatus[] = [];
       const errorMessage = randomString({ prefix: 'run-error' });
 
-      onUserUpdated = stream<UserSlug, User, User, User | null, User>({
+      onUserUpdated = stream<UserSlug, User, User | null>({
         entity: usersEntity,
         run: async () => {
           throw new Error(errorMessage);
@@ -398,7 +393,7 @@ describe('stream() branches', () => {
         text: randomString({ prefix: 'text' }),
       };
 
-      onUserUpdated = stream<UserSlug, User, User, User | null, User>({
+      onUserUpdated = stream<UserSlug, User, User | null>({
         entity: usersEntity,
         run: async () => {
           throw errorMeta;

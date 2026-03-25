@@ -56,7 +56,7 @@ describe('run context entity api', () => {
         title: randomString({ prefix: 'payload-b-title' }),
       };
 
-      const readTodo = source<TodoScope, Todo, Todo, Todo | null>({
+      const readTodo = source<TodoScope, Todo, Todo | null>({
         entity: todosEntity,
         run: async (context) => {
           capturedContexts.push({
@@ -136,7 +136,7 @@ describe('run context entity api', () => {
         title: randomString({ prefix: 'payload-b-title' }),
       };
 
-      const updateTodo = action<TodoScope, Todo, Todo, Todo | null>({
+      const updateTodo = action<TodoScope, Todo, Todo | null>({
         entity: todosEntity,
         run: async (context) => {
           capturedContexts.push({
@@ -212,7 +212,7 @@ describe('run context entity api', () => {
         title: randomString({ prefix: 'payload-b-title' }),
       };
 
-      const todoChanged = stream<TodoScope, Todo, Todo, Todo | null>({
+      const todoChanged = stream<TodoScope, Todo, Todo | null>({
         entity: todosEntity,
         run: async (context) => {
           capturedContexts.push({
@@ -295,7 +295,7 @@ describe('run context entity api', () => {
       });
       let contextShape: ContextShape | null = null;
 
-      const readTodo = source<TodoScope, undefined, Todo, Todo | null>({
+      const readTodo = source<TodoScope, undefined, Todo | null>({
         entity: todosEntity,
         run: async (context) => {
           const rawContext = context as unknown as Record<string, unknown>;
@@ -338,7 +338,7 @@ describe('run context entity api', () => {
       });
       let contextShape: ContextShape | null = null;
 
-      const updateTodo = action<TodoScope, Todo, Todo, Todo | null>({
+      const updateTodo = action<TodoScope, Todo, Todo | null>({
         entity: todosEntity,
         run: async (context) => {
           const rawContext = context as unknown as Record<string, unknown>;
@@ -384,7 +384,7 @@ describe('run context entity api', () => {
       });
       let contextShape: ContextShape | null = null;
 
-      const todoChanged = stream<TodoScope, Todo, Todo, Todo | null>({
+      const todoChanged = stream<TodoScope, Todo, Todo | null>({
         entity: todosEntity,
         run: async (context) => {
           const rawContext = context as unknown as Record<string, unknown>;

@@ -19,7 +19,7 @@ export const createCreateUserAction = (
   const entityStore = input.entity ?? createUserEntity();
   const run = input.run ?? defaultCreateUserRun;
 
-  return action<UserSlug, User, User, User | null, User | null>({
+  return action<UserSlug, User, User | null>({
     entity: entityStore,
     run,
   });

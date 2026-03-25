@@ -47,9 +47,9 @@ export interface CreateUserUpdatedStreamInput {
 }
 
 export type UserEntity = Entity<User>;
-export type ReadUserSource = Source<UserSlug, undefined, User | null, User | null>;
-export type CreateUserAction = Action<UserSlug, User, User | null, User | null>;
-export type UserUpdatedStream = Stream<UserSlug, User, User | null, User | null>;
-export type ReadUserRun = SourceConfig<UserSlug, undefined, User, User | null>['run'];
-export type CreateUserRun = ActionConfig<UserSlug, User, User, User | null>['run'];
-export type UserUpdatedRun = StreamConfig<UserSlug, User, User, User | null>['run'];
+export type ReadUserSource = Source<UserSlug, undefined, User | null>;
+export type CreateUserAction = Action<UserSlug, User, User | null>;
+export type UserUpdatedStream = Stream<UserSlug, User, User | null>;
+export type ReadUserRun = SourceConfig<UserSlug, undefined, User | null>['run'];
+export type CreateUserRun = ActionConfig<UserSlug, User, User | null>['run'];
+export type UserUpdatedRun = StreamConfig<UserSlug, User, User | null>['run'];

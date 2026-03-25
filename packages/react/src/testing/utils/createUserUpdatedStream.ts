@@ -19,7 +19,7 @@ export const createUserUpdatedStream = (
   const entityStore = input.entity ?? createUserEntity();
   const run = input.run ?? defaultUserUpdatedRun;
 
-  return stream<UserSlug, User, User, User | null, User | null>({
+  return stream<UserSlug, User, User | null>({
     entity: entityStore,
     run,
   });

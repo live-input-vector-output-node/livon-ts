@@ -40,10 +40,10 @@ interface DraftUnit<RResult, UUpdate extends RResult> {
 }
 
 type ProjectsEntity = Entity<Project>;
-type ReadProjectSource = Source<ProjectSlug, undefined, Project, Project>;
-type ReadProjectsSource = Source<ProjectSlug, undefined, readonly Project[], readonly Project[]>;
-type ReadProjectUnit = SourceUnit<ProjectSlug, undefined, Project, Project> & DraftUnit<Project, Project>;
-type ReadProjectsUnit = SourceUnit<ProjectSlug, undefined, readonly Project[], readonly Project[]> &
+type ReadProjectSource = Source<ProjectSlug, undefined, Project>;
+type ReadProjectsSource = Source<ProjectSlug, undefined, readonly Project[]>;
+type ReadProjectUnit = SourceUnit<ProjectSlug, undefined, Project> & DraftUnit<Project, Project>;
+type ReadProjectsUnit = SourceUnit<ProjectSlug, undefined, readonly Project[]> &
   DraftUnit<readonly Project[], readonly Project[]>;
 
 interface SetupSourcesInput {
@@ -93,7 +93,7 @@ describe('draftOverlay', () => {
   };
 
   const setupSources = ({ draft }: SetupSourcesInput): void => {
-    readProject = source<ProjectSlug, undefined, Project, Project, Project>({
+    readProject = source<ProjectSlug, undefined, Project>({
       entity: projectsEntity,
       ...(draft ? { draft } : {}),
       run: async ({ scope }) => {
@@ -101,7 +101,7 @@ describe('draftOverlay', () => {
       },
     });
 
-    readProjects = source<ProjectSlug, undefined, Project, readonly Project[], readonly Project[]>({
+    readProjects = source<ProjectSlug, undefined, readonly Project[]>({
       entity: projectsEntity,
       ...(draft ? { draft } : {}),
       run: async ({ scope }) => {

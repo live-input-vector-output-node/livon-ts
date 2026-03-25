@@ -54,7 +54,7 @@ describe('effect chain stability', () => {
       const todosEntity = entity<Todo>({
         idOf: (value) => value.id,
       });
-      const readTodo = source<TodoScope, SourcePayload, Todo, Todo | null>({
+      const readTodo = source<TodoScope, SourcePayload, Todo | null>({
         entity: todosEntity,
         run: async ({ scope, payload, setMeta }) => {
           if (payload.mode === 'seed') {
@@ -175,7 +175,7 @@ describe('effect chain stability', () => {
       const todosEntity = entity<Todo>({
         idOf: (value) => value.id,
       });
-      const readTodo = source<TodoScope, SourcePayload, Todo, Todo | null>({
+      const readTodo = source<TodoScope, SourcePayload, Todo | null>({
         entity: todosEntity,
         run: async ({ scope, payload, setMeta }) => {
           if (payload.mode === 'seed') {

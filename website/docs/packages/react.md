@@ -93,7 +93,7 @@ const todoEntity = entity<Todo>({
   draft: 'global',
 });
 
-const readTodos = source<TodoScope, ReadTodosPayload, Todo, readonly Todo[]>({
+const readTodos = source<TodoScope, ReadTodosPayload, readonly Todo[]>({
   entity: todoEntity,
   defaultValue: [],
   run: async ({ scope, payload, entity }) => {
@@ -105,7 +105,7 @@ const readTodos = source<TodoScope, ReadTodosPayload, Todo, readonly Todo[]>({
   },
 });
 
-const updateTodo = action<TodoScope, UpdateTodoPayload, Todo, Todo | null>({
+const updateTodo = action<TodoScope, UpdateTodoPayload, Todo | null>({
   entity: todoEntity,
   run: async ({ scope, payload, entity }) => {
     const updated = await api.updateTodo({
@@ -117,7 +117,7 @@ const updateTodo = action<TodoScope, UpdateTodoPayload, Todo, Todo | null>({
   },
 });
 
-const onTodoChanged = stream<TodoScope, undefined, Todo, null>({
+const onTodoChanged = stream<TodoScope, undefined, null>({
   entity: todoEntity,
   run: async ({ scope }) => {
     return api.subscribeTodoEvents({

@@ -181,7 +181,7 @@ describe('source cache', () => {
       const usersEntity = entity<User>({
         idOf: (value) => value.id,
       });
-      const readUser = source<UserSlug, User, User, User | null>({
+      const readUser = source<UserSlug, User, User | null>({
         entity: usersEntity,
         cache: {
           key: cacheKey,
@@ -214,7 +214,7 @@ describe('source cache', () => {
       const usersEntity = entity<User>({
         idOf: (value) => value.id,
       });
-      const readUser = source<UserSlug, User, User, User | null>({
+      const readUser = source<UserSlug, User, User | null>({
         entity: usersEntity,
         cache: {
           key: cacheKey,
@@ -252,7 +252,7 @@ describe('source cache', () => {
       const usersEntity = entity<User>({
         idOf: (value) => value.id,
       });
-      const readUser = source<UserSlug, { query: string }, User, User | null>({
+      const readUser = source<UserSlug, { query: string }, User | null>({
         entity: usersEntity,
         cache: {
           key: cacheKey,
@@ -311,7 +311,7 @@ describe('source cache', () => {
       const usersEntity = entity<User>({
         idOf: (value) => value.id,
       });
-      const readUser = source<UserSlug, User | string, User, User | string | null>({
+      const readUser = source<UserSlug, User | string, User | string | null>({
         entity: usersEntity,
         cache: {
           key: cacheKey,
@@ -356,7 +356,7 @@ describe('source cache', () => {
       const secondEntity = entity<User>({
         idOf: (value) => value.id,
       });
-      const secondReadUser = source<UserSlug, undefined, User, User | null>({
+      const secondReadUser = source<UserSlug, undefined, User | null>({
         entity: secondEntity,
         cache: {
           key: cacheKey,
@@ -404,7 +404,7 @@ describe('source cache', () => {
       const usersEntity = entity<User>({
         idOf: (value) => value.id,
       });
-      const readUser = source<UserSlug, { query: string }, User, User | null>({
+      const readUser = source<UserSlug, { query: string }, User | null>({
         entity: usersEntity,
         cache: {
           key: cacheKey,
@@ -466,7 +466,7 @@ describe('source cache', () => {
       const secondEntity = entity<StructuredUser>({
         idOf: (entry) => entry.id,
       });
-      const secondReadValue = source<UserSlug, undefined, StructuredUser, StructuredUser | null, StructuredUser>({
+      const secondReadValue = source<UserSlug, undefined, StructuredUser | null>({
         entity: secondEntity,
         cache: {
           key: cacheKey,
@@ -521,7 +521,7 @@ describe('source cache', () => {
       const secondEntity = entity<User>({
         idOf: (value) => value.id,
       });
-      const secondReadUser = source<UserSlug, undefined, User, User | null>({
+      const secondReadUser = source<UserSlug, undefined, User | null>({
         entity: secondEntity,
         cache: {
           key: cacheKey,
@@ -567,7 +567,7 @@ describe('source cache', () => {
       const secondEntity = entity<User>({
         idOf: (value) => value.id,
       });
-      const secondReadUser = source<UserSlug, undefined, User, User | null>({
+      const secondReadUser = source<UserSlug, undefined, User | null>({
         entity: secondEntity,
         cache: {
           key: cacheKey,
@@ -607,7 +607,7 @@ describe('source cache', () => {
       const secondEntity = entity<User>({
         idOf: (value) => value.id,
       });
-      const secondReadUser = source<UserSlug, undefined, User, User | null>({
+      const secondReadUser = source<UserSlug, undefined, User | null>({
         entity: secondEntity,
         cache: {
           key: cacheKey,
@@ -657,7 +657,7 @@ describe('source cache', () => {
           ttl: 1_000,
         },
       });
-      const secondReadUser = source<UserSlug, undefined, User, User | null>({
+      const secondReadUser = source<UserSlug, undefined, User | null>({
         entity: secondEntity,
         run: runMock,
       });
@@ -695,7 +695,7 @@ describe('source cache', () => {
           ttl: 'infinity',
         },
       });
-      const secondReadUser = source<UserSlug, undefined, User, User | null>({
+      const secondReadUser = source<UserSlug, undefined, User | null>({
         entity: secondEntity,
         cache: {
           ttl: 1_000,

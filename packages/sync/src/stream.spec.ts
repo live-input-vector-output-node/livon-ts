@@ -14,7 +14,7 @@ interface TodoScope {
 }
 
 type TodosEntity = Entity<Todo>;
-type TodoChangedStream = Stream<TodoScope, Todo, Todo | null, Todo>;
+type TodoChangedStream = Stream<TodoScope, Todo, Todo | null>;
 
 describe('stream()', () => {
   let todosEntity: TodosEntity;
@@ -42,7 +42,7 @@ describe('stream()', () => {
       };
     });
 
-    onTodoChanged = stream<TodoScope, Todo, Todo, Todo | null, Todo>({
+    onTodoChanged = stream<TodoScope, Todo, Todo | null>({
       entity: todosEntity,
       run: streamRunMock,
     });
@@ -127,7 +127,7 @@ describe('stream()', () => {
         expect(hasEntity).toBe(false);
       });
 
-      onTodoChanged = stream<TodoScope, Todo, Todo, Todo | null, Todo>({
+      onTodoChanged = stream<TodoScope, Todo, Todo | null>({
         entity: todosEntity,
         run: streamRunMock,
       });
