@@ -37,6 +37,7 @@
     "release-0-29-0-rc-6",
     "soft-rings-sort",
     "source-reset-api",
+    "source-run-context-set-immediate-notify",
     "source-run-context-set"
   ]
 }
