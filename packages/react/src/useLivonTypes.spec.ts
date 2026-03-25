@@ -29,6 +29,11 @@ interface UpdateUndefined {
   (input: undefined): undefined;
 }
 
+interface UserMeta {
+  severity: 'info' | 'error';
+  text: string;
+}
+
 const createUserEntity = () => {
   return entity<User>({
     idOf: (value) => value.id,
@@ -115,6 +120,69 @@ describe('hook type inference', () => {
       (currentUnit: typeof unit) => UnitStatus
     >();
     expectTypeOf(resolveMeta).toEqualTypeOf<(currentUnit: typeof unit) => unknown>();
+  });
+
+  it('should preserve explicit meta types across atomic and grouped hooks', () => {
+    const userEntity = createUserEntity();
+    const readUsers = source<UserSlug, undefined, readonly User[], UserMeta>({
+      entity: userEntity,
+      run: async ({ setMeta }) => {
+        setMeta({
+          severity: 'info',
+          text: 'source-meta',
+        });
+        return [];
+      },
+    });
+    const createUser = action<UserSlug, User, User | null, UserMeta>({
+      entity: userEntity,
+      run: async ({ payload, setMeta }) => {
+        setMeta({
+          severity: 'info',
+          text: 'action-meta',
+        });
+        return payload;
+      },
+    });
+    const onUserUpdated = stream<UserSlug, User, User | null, UserMeta>({
+      entity: userEntity,
+      run: async ({ payload, setMeta }) => {
+        setMeta({
+          severity: 'info',
+          text: 'stream-meta',
+        });
+        return payload;
+      },
+    });
+
+    const sourceUnit = readUsers({ templateId: 'typed-meta-source' });
+    const actionUnit = createUser({ templateId: 'typed-meta-action' });
+    const streamUnit = onUserUpdated({ templateId: 'typed-meta-stream' });
+    const resolveSourceMeta = (currentUnit: typeof sourceUnit) => useLivonMeta(currentUnit);
+    const resolveSourceState = (currentUnit: typeof sourceUnit) => useLivonState(currentUnit);
+    const resolveSourceGroupedState = (currentUnit: typeof sourceUnit) => useLivonSourceState(currentUnit);
+    const resolveActionGroupedState = (currentUnit: typeof actionUnit) => useLivonActionState(currentUnit);
+    const resolveStreamGroupedState = (currentUnit: typeof streamUnit) => useLivonStreamState(currentUnit);
+    type TypedSourceState = ReturnType<typeof resolveSourceGroupedState>;
+    type TypedActionState = ReturnType<typeof resolveActionGroupedState>;
+    type TypedStreamState = ReturnType<typeof resolveStreamGroupedState>;
+
+    void actionUnit;
+    void streamUnit;
+
+    expectTypeOf(resolveSourceMeta).toEqualTypeOf<
+      (currentUnit: typeof sourceUnit) => UserMeta | null
+    >();
+    expectTypeOf(resolveSourceState).toEqualTypeOf<
+      (currentUnit: typeof sourceUnit) => {
+        value: readonly User[];
+        status: UnitStatus;
+        meta: UserMeta | null;
+      }
+    >();
+    expectTypeOf<TypedSourceState['meta']>().toEqualTypeOf<UserMeta | null>();
+    expectTypeOf<TypedActionState['meta']>().toEqualTypeOf<UserMeta | null>();
+    expectTypeOf<TypedStreamState['meta']>().toEqualTypeOf<UserMeta | null>();
   });
 
   it('should infer draft tuple types when source unit is passed to useLivonDraft', () => {

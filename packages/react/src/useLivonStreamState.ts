@@ -9,15 +9,17 @@ export interface UseLivonStreamState {
   <
   TPayload,
   RResult,
->(unit: StreamUnit<TPayload, RResult>): LivonStreamStateOf<StreamUnit<TPayload, RResult>>;
+  TMeta,
+  >(unit: StreamUnit<TPayload, RResult, TMeta>): LivonStreamStateOf<StreamUnit<TPayload, RResult, TMeta>>;
 }
 
 const useLivonStreamStateInternal: UseLivonStreamState = <
   TPayload,
   RResult,
+  TMeta,
 >(
-  unit: StreamUnit<TPayload, RResult>,
-): LivonStreamStateOf<StreamUnit<TPayload, RResult>> => {
+  unit: StreamUnit<TPayload, RResult, TMeta>,
+): LivonStreamStateOf<StreamUnit<TPayload, RResult, TMeta>> => {
   const state = useLivonState(unit);
   const start = useLivonRun(unit);
   const stop = useLivonStop(unit);

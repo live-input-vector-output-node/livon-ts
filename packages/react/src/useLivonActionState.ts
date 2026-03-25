@@ -9,15 +9,17 @@ export interface UseLivonActionState {
   <
   RResult,
   TPayload,
->(unit: ActionUnit<TPayload, RResult>): LivonActionStateOf<ActionUnit<TPayload, RResult>>;
+  TMeta,
+  >(unit: ActionUnit<TPayload, RResult, TMeta>): LivonActionStateOf<ActionUnit<TPayload, RResult, TMeta>>;
 }
 
 const useLivonActionStateInternal: UseLivonActionState = <
   RResult,
   TPayload,
+  TMeta,
 >(
-  unit: ActionUnit<TPayload, RResult>,
-): LivonActionStateOf<ActionUnit<TPayload, RResult>> => {
+  unit: ActionUnit<TPayload, RResult, TMeta>,
+): LivonActionStateOf<ActionUnit<TPayload, RResult, TMeta>> => {
   const state = useLivonState(unit);
   const run = useLivonRun(unit);
   const stop = useLivonStop(unit);

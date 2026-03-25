@@ -1,5 +1,3 @@
-import type { TrackedUnit, UnitStatus } from '@livon/sync';
-
 export type LivonSnapshotOf<TUnit> =
   TUnit extends { effect: (listener: (snapshot: infer TSnapshot) => void) => (() => void) | void }
     ? TSnapshot
@@ -31,9 +29,9 @@ export interface LivonState<
 }
 
 export type LivonStateOf<TUnit> = LivonState<
-  TUnit extends TrackedUnit<infer TValue> ? TValue : never,
-  UnitStatus,
-  unknown
+  LivonValueOf<TUnit>,
+  LivonStatusOf<TUnit>,
+  LivonMetaOf<TUnit>
 >;
 
 type LivonRunFunction<TUnit> =
