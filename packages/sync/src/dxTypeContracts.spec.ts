@@ -72,10 +72,19 @@ type SourceRunHasLegacyUpsertMany = 'upsertMany' extends keyof SourceRunContext<
 >
   ? true
   : false;
+type SourceRunHasReset = 'reset' extends keyof SourceRunContext<
+  TodoScope,
+  UpdateTodoPayload,
+  Todo,
+  Todo | null
+>
+  ? true
+  : false;
 
 type _sourceRunHasNoEntityApi = AssertFalse<SourceRunHasEntityApi>;
 type _sourceRunHasTopLevelUpsertOne = AssertTrue<SourceRunHasLegacyUpsertOne>;
 type _sourceRunHasTopLevelUpsertMany = AssertTrue<SourceRunHasLegacyUpsertMany>;
+type _sourceRunHasTopLevelReset = AssertTrue<SourceRunHasReset>;
 
 type ActionRunHasEntityApi = 'entity' extends keyof ActionRunContext<
   TodoScope,
@@ -154,6 +163,7 @@ type SourceUnitHasDraft = 'draft' extends keyof typeof readTodosUnit ? true : fa
 type SourceUnitDraftApi = typeof readTodosUnit extends { draft: infer TDraft } ? TDraft : never;
 type SourceUnitHasDraftSet = SourceUnitDraftApi extends { set: unknown } ? true : false;
 type SourceUnitHasDraftClean = SourceUnitDraftApi extends { clean: unknown } ? true : false;
+type SourceUnitHasReset = 'reset' extends keyof typeof readTodosUnit ? true : false;
 
 type _sourceUnitHasNoSet = AssertFalse<SourceUnitHasSet>;
 type _sourceUnitHasNoSetDraft = AssertFalse<SourceUnitHasSetDraft>;
@@ -161,6 +171,7 @@ type _sourceUnitHasNoCleanDraft = AssertFalse<SourceUnitHasCleanDraft>;
 type _sourceUnitHasDraft = AssertTrue<SourceUnitHasDraft>;
 type _sourceUnitHasDraftSet = AssertTrue<SourceUnitHasDraftSet>;
 type _sourceUnitHasDraftClean = AssertTrue<SourceUnitHasDraftClean>;
+type _sourceUnitHasReset = AssertTrue<SourceUnitHasReset>;
 
 type ActionUnitHasSet = 'set' extends keyof typeof updateTodoUnit ? true : false;
 type StreamUnitHasSet = 'set' extends keyof typeof onTodoChangedUnit ? true : false;

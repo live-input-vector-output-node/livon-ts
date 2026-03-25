@@ -54,6 +54,15 @@ const DEFAULT_DRAFT_MODE: DraftMode = 'global';
 const RUN_CONTEXT_CACHE_LIMIT = 32;
 const SOURCE_CACHE_LRU_STORAGE_KEY_SUFFIX = '__lru__';
 
+const createInitialSourceContext = (
+  hasCacheStorage: boolean,
+): SourceContext => {
+  return {
+    cacheState: hasCacheStorage ? 'miss' : 'disabled',
+    error: null,
+  };
+};
+
 export const source = <
   TInput extends object | undefined,
   TPayload = unknown,
@@ -204,10 +213,7 @@ export const source = <
         value: initialValue,
         status: 'idle',
         meta: null,
-        context: {
-          cacheState: cacheStorage ? 'miss' : 'disabled',
-          error: null,
-        },
+        context: createInitialSourceContext(Boolean(cacheStorage)),
       },
       mode: initialMode,
       modeLocked: false,
@@ -274,6 +280,13 @@ export const source = <
 
           internal.state.meta = nextMeta;
           notifyUnit(internal);
+        },
+        reset: () => {
+          if (!gate.isLatestRun()) {
+            return;
+          }
+
+          resetState();
         },
         ...runContextMethods,
       };
@@ -562,24 +575,67 @@ export const source = <
 
     hydrateFromPayloadCache(internal.payload);
 
-    const destroyInternal = (): void => {
-      if (internal.destroyed) {
-        return;
-      }
+    let singleInFlightPromise: Promise<RResult> | null = null;
+    let hasSingleInFlightPayload = false;
+    let singleInFlightPayload: TPayload | undefined;
+    let singleInFlightPayloadKey: string | null = null;
 
+    const clearInFlightTracking = (): void => {
+      internal.inFlightByPayload.clear();
+      singleInFlightPromise = null;
+      hasSingleInFlightPayload = false;
+      singleInFlightPayload = undefined;
+      singleInFlightPayloadKey = null;
+    };
+
+    const stopInternal = (): void => {
       internal.runSequence += 1;
       internal.latestRunSequence = internal.runSequence;
       internal.stopped = true;
       invokeSourceCleanup(internal.cleanup);
       internal.cleanup = null;
+    };
+
+    const resetState = (): void => {
+      if (internal.destroyed) {
+        return;
+      }
+
+      const previousMembershipIds = internal.membershipIds;
+      stopInternal();
+      clearInFlightTracking();
+      activePayloadCacheKey = null;
+
+      if (draft === 'scoped') {
+        previousMembershipIds.forEach((id) => {
+          scopedDraftsById.delete(id);
+        });
+      }
+
+      clearEntityMembership(internal, { clearUnitMembership: entity.clearUnitMembership });
+      internal.mode = initialMode;
+      internal.modeLocked = false;
+      internal.lastRunAt = null;
+      internal.stopped = false;
+      internal.state.value = initialValue;
+      internal.state.status = 'idle';
+      internal.state.meta = null;
+      internal.state.context = createInitialSourceContext(Boolean(cacheStorage));
+      notifyUnit(internal);
+      syncCacheRecord();
+    };
+
+    const destroyInternal = (): void => {
+      if (internal.destroyed) {
+        return;
+      }
+
+      stopInternal();
       internal.destroyed = true;
       runContextEntryCache.clear();
       payloadKeyCache.clear();
       activePayloadCacheKey = null;
-      singleInFlightPromise = null;
-      hasSingleInFlightPayload = false;
-      singleInFlightPayload = undefined;
-      singleInFlightPayloadKey = null;
+      clearInFlightTracking();
 
       unregisterFromEntity();
       internal.listeners.clear();
@@ -594,15 +650,11 @@ export const source = <
 
       unitsByKey.delete(internal.key);
     };
-      let singleInFlightPromise: Promise<RResult> | null = null;
-      let hasSingleInFlightPayload = false;
-      let singleInFlightPayload: TPayload | undefined;
-      let singleInFlightPayloadKey: string | null = null;
 
-      const executeRun = (
-        isForce: boolean,
-        payloadInput?: TPayload | InputUpdater<TPayload>,
-      ): Promise<RResult> => {
+    const executeRun = (
+      isForce: boolean,
+      payloadInput?: TPayload | InputUpdater<TPayload>,
+    ): Promise<RResult> => {
         if (internal.destroyed) {
           return Promise.resolve(internal.state.value);
         }
@@ -842,16 +894,15 @@ export const source = <
         return sourceFactory(internal.scope).force(nextPayload);
       };
       unit.force = (payloadInput) => executeRun(true, payloadInput);
+      unit.reset = () => {
+        resetState();
+      };
       unit.stop = () => {
         if (internal.destroyed) {
           return;
         }
 
-        internal.runSequence += 1;
-        internal.latestRunSequence = internal.runSequence;
-        internal.stopped = true;
-        invokeSourceCleanup(internal.cleanup);
-        internal.cleanup = null;
+        stopInternal();
       };
       unit.destroy = () => {
         destroyInternal();
@@ -875,7 +926,7 @@ export const source = <
       unitsByKey.set(key, internal);
 
       return unit;
-  };
+    };
 
   return sourceFactory;
 };

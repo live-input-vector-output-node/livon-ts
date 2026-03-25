@@ -1,6 +1,6 @@
 {
   "name": "@livon/config",
-  "version": "0.29.0-rc.3",
+  "version": "0.29.0-rc.4",
   "private": false,
   "type": "module",
   "description": "Shared TypeScript, ESLint, Rsbuild, Rslib, Rspack, SWC, and Vitest config for LIVON.",

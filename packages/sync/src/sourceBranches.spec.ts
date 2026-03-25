@@ -154,6 +154,94 @@ describe('source() branches', () => {
       expect(usersStore.get()).toEqual([{ id: secondUserId, name: secondUserName }]);
       expect(replaceUsersEntity.getById(firstUserId)).toBeUndefined();
     });
+
+    it('should reset source state back to initial value', async () => {
+      const userStore = readUser({ slugId });
+
+      await userStore.run({ search: searchValue });
+      expect(userStore.get()).toEqual({ id: searchValue, name: searchValue });
+
+      userStore.reset();
+
+      expect(userStore.get()).toBeNull();
+    });
+
+    it('should unlock source mode after reset so the next run can set a different mode', async () => {
+      const firstUserId = randomString({ prefix: 'first-user-id' });
+      const firstUserName = randomString({ prefix: 'first-user-name' });
+      const secondUserId = randomString({ prefix: 'second-user-id' });
+      const secondUserName = randomString({ prefix: 'second-user-name' });
+      let useManyMode = false;
+
+      const readSwitchable = source<
+        UserSlug,
+        SearchPayload,
+        User,
+        User | readonly User[] | null
+      >({
+        entity: usersEntity,
+        run: async () => {
+          if (!useManyMode) {
+            return {
+              id: firstUserId,
+              name: firstUserName,
+            };
+          }
+
+          return [
+            {
+              id: firstUserId,
+              name: firstUserName,
+            },
+            {
+              id: secondUserId,
+              name: secondUserName,
+            },
+          ];
+        },
+      });
+
+      const userStore = readSwitchable({ slugId });
+      await userStore.run({ search: searchValue });
+
+      userStore.reset();
+      useManyMode = true;
+      await userStore.run({ search: searchValue });
+
+      expect(userStore.get()).toEqual([
+        {
+          id: firstUserId,
+          name: firstUserName,
+        },
+        {
+          id: secondUserId,
+          name: secondUserName,
+        },
+      ]);
+    });
+
+    it('should allow run context to call reset and restore initial state', async () => {
+      const runCreatedUserId = randomString({ prefix: 'run-created-user-id' });
+      let hasResetMethod = false;
+
+      const readWithReset = source<UserSlug, SearchPayload, User, User | null>({
+        entity: usersEntity,
+        run: async (context) => {
+          hasResetMethod = typeof context.reset === 'function';
+          context.upsertOne({
+            id: runCreatedUserId,
+            name: randomString({ prefix: 'run-created-user-name' }),
+          });
+          context.reset();
+        },
+      });
+
+      const userStore = readWithReset({ slugId });
+      await userStore.run({ search: searchValue });
+
+      expect(hasResetMethod).toBe(true);
+      expect(userStore.get()).toBeNull();
+    });
   });
 
   describe('sad', () => {

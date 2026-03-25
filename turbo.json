@@ -112,15 +112,15 @@
     },
     "qg": {
       "dependsOn": [
-        "qg:bench"
-      ],
-      "with": [
         "qg:parallel"
       ],
       "outputs": []
     },
     "qg:parallel": {
       "dependsOn": [
+        "qg:bench"
+      ],
+      "with": [
         "check:readmes",
         "check:policies",
         "lint",

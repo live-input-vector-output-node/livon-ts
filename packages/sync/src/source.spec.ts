@@ -128,6 +128,12 @@ describe('source()', () => {
       expect(typeof usersStore.stop).toBe('function');
     });
 
+    it('should expose reset function when source unit is created', () => {
+      const usersStore = readUsers({ slugId });
+
+      expect(typeof usersStore.reset).toBe('function');
+    });
+
     it('should expose destroy function when source unit is created', () => {
       const usersStore = readUsers({ slugId });
 

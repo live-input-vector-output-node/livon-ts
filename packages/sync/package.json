@@ -1,6 +1,6 @@
 {
   "name": "@livon/sync",
-  "version": "0.29.0-rc.3",
+  "version": "0.29.0-rc.4",
   "private": false,
   "type": "module",
   "description": "Entity-centric sync layer for LIVON sources, actions, and streams.",
@@ -91,6 +91,12 @@
       "development": "./src/tracking/index.ts",
       "import": "./dist/tracking/index.js",
       "require": "./dist/tracking/index.cjs"
+    },
+    "./utils/adaptiveReadWrite": {
+      "types": "./dist/utils/adaptiveReadWrite.d.ts",
+      "development": "./src/utils/adaptiveReadWrite.ts",
+      "import": "./dist/utils/adaptiveReadWrite.js",
+      "require": "./dist/utils/adaptiveReadWrite.cjs"
     }
   },
   "scripts": {

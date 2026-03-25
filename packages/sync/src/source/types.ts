@@ -39,6 +39,7 @@ export interface SourceRunContext<
   upsertMany: (input: readonly TEntity[], options?: UpsertOptions) => readonly TEntity[];
   removeOne: (id: TEntityId) => boolean;
   removeMany: (ids: readonly TEntityId[]) => readonly TEntityId[];
+  reset: () => void;
   getValue: () => RResult;
 }
 
@@ -82,6 +83,7 @@ export interface SourceUnit<
   effect: (listener: EffectListener<RResult>) => (() => void) | void;
   refetch: (payloadInput?: TPayload | InputUpdater<TPayload>) => Promise<RResult>;
   force: (payloadInput?: TPayload | InputUpdater<TPayload>) => Promise<RResult>;
+  reset: () => void;
   stop: () => void;
   destroy: () => void;
 }
