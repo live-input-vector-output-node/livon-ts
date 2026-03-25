@@ -21,6 +21,16 @@ export type {
   SetEntityUnitMembershipInput,
   UpsertOptions,
 } from './entity.js';
+export {
+  resolveAdaptiveReadWriteByCache,
+  resolveAdaptiveReadWriteConfig,
+  resolveAdaptiveReadWriteDefault,
+  resolveAdaptiveReadWriteProfileKey,
+} from './utils/adaptiveReadWrite.js';
+export type {
+  AdaptiveReadWriteOperation,
+  AdaptiveReadWriteProfileKey,
+} from './utils/adaptiveReadWrite.js';
 
 export { source } from './source.js';
 export type {

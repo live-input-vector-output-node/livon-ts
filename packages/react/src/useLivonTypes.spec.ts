@@ -1,4 +1,4 @@
-import { action, entity, source, stream } from '@livon/sync';
+import { action, entity, source, stream, type UnitStatus } from '@livon/sync';
 import { describe, expectTypeOf, it } from 'vitest';
 
 import { useLivonActionState } from './useLivonActionState.js';
@@ -112,7 +112,7 @@ describe('hook type inference', () => {
     const resolveMeta = (currentUnit: typeof unit) => useLivonMeta(currentUnit);
 
     expectTypeOf(resolveStatus).toEqualTypeOf<
-      (currentUnit: typeof unit) => 'idle' | 'loading' | 'success' | 'error'
+      (currentUnit: typeof unit) => UnitStatus
     >();
     expectTypeOf(resolveMeta).toEqualTypeOf<(currentUnit: typeof unit) => unknown>();
   });
@@ -140,7 +140,7 @@ describe('hook type inference', () => {
     expectTypeOf(resolveState).toEqualTypeOf<
       (currentUnit: typeof unit) => {
         value: readonly User[];
-        status: 'idle' | 'loading' | 'success' | 'error';
+        status: UnitStatus;
         meta: unknown;
       }
     >();
@@ -157,7 +157,7 @@ describe('hook type inference', () => {
     void resolveSourceState;
 
     expectTypeOf<SourceState['value']>().toEqualTypeOf<readonly User[]>();
-    expectTypeOf<SourceState['status']>().toEqualTypeOf<'idle' | 'loading' | 'success' | 'error'>();
+    expectTypeOf<SourceState['status']>().toEqualTypeOf<UnitStatus>();
     expectTypeOf<SourceState['meta']>().toEqualTypeOf<unknown>();
     expectTypeOf<SourceState['run']>().toEqualTypeOf<
       (payloadInput?: undefined | UpdateUndefined) => Promise<readonly User[]>
@@ -192,7 +192,7 @@ describe('hook type inference', () => {
     void resolveActionState;
 
     expectTypeOf<ActionState['value']>().toEqualTypeOf<User | null>();
-    expectTypeOf<ActionState['status']>().toEqualTypeOf<'idle' | 'loading' | 'success' | 'error'>();
+    expectTypeOf<ActionState['status']>().toEqualTypeOf<UnitStatus>();
     expectTypeOf<ActionState['meta']>().toEqualTypeOf<unknown>();
     expectTypeOf<ActionState['run']>().toEqualTypeOf<
       (payloadInput?: User | UpdateUser) => Promise<User | null>
@@ -217,7 +217,7 @@ describe('hook type inference', () => {
     void resolveStreamState;
 
     expectTypeOf<StreamState['value']>().toEqualTypeOf<User | null>();
-    expectTypeOf<StreamState['status']>().toEqualTypeOf<'idle' | 'loading' | 'success' | 'error'>();
+    expectTypeOf<StreamState['status']>().toEqualTypeOf<UnitStatus>();
     expectTypeOf<StreamState['meta']>().toEqualTypeOf<unknown>();
     expectTypeOf<StreamState['start']>().toEqualTypeOf<
       (payloadInput?: User | UpdateUser) => void

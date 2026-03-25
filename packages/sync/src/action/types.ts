@@ -88,6 +88,7 @@ export interface ActionUnitInternal<
   scope: TInput;
   payload: TPayload;
   mode: 'one' | 'many';
+  modeLocked: boolean;
   hasEntityValue: boolean;
   membershipIds: readonly TEntityId[];
   readWrite: ModeValueReadWriteInput;

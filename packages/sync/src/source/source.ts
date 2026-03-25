@@ -1,6 +1,9 @@
-import { type DraftMode, type EntityId, type UpsertOptions } from '../entity.js';
+import { type DraftMode, type EntityId } from '../entity.js';
 import {
+  applyEntityRunResult,
   clearEntityMembership,
+  createEntityRunContextMethods,
+  createRunContextEntryCache,
   createCacheWriteQueue,
   createSerializedKeyCache,
   cloneValue,
@@ -23,8 +26,10 @@ import {
   isCacheRecordExpired,
   isEntityArray,
   isEntityValue,
+  isRecordValue,
   isSourceCleanup,
   readSourceCacheRecord,
+  resolveCacheLruMaxEntries,
   resolveCacheKey,
   resolveCacheStorage,
   resolveCacheTtl,
@@ -34,7 +39,6 @@ import {
 import type {
   ReadEntityValueById,
   Source,
-  SourceCacheRecord,
   SourceConfig,
   SourceContext,
   SourceRunContext,
@@ -48,6 +52,7 @@ import type {
 const DEFAULT_DESTROY_DELAY = 250;
 const DEFAULT_DRAFT_MODE: DraftMode = 'global';
 const RUN_CONTEXT_CACHE_LIMIT = 32;
+const SOURCE_CACHE_LRU_STORAGE_KEY_SUFFIX = '__lru__';
 
 export const source = <
   TInput extends object | undefined,
@@ -68,6 +73,10 @@ export const source = <
 }: SourceConfig<TInput, TPayload, TEntity, RResult, TEntityId>,
 ): Source<TInput, TPayload, RResult, UUpdate> => {
   const cacheTtl = resolveCacheTtl({
+    sourceCache: cache,
+    entityCache: entity.cache,
+  });
+  const cacheLruMaxEntries = resolveCacheLruMaxEntries({
     sourceCache: cache,
     entityCache: entity.cache,
   });
@@ -196,13 +205,12 @@ export const source = <
         status: 'idle',
         meta: null,
         context: {
-          rehydrated: false,
-          refreshing: false,
           cacheState: cacheStorage ? 'miss' : 'disabled',
           error: null,
         },
       },
       mode: initialMode,
+      modeLocked: false,
       hasEntityValue: false,
       membershipIds: [],
       readWrite: {
@@ -219,330 +227,373 @@ export const source = <
       destroyHandled: false,
       unit: {} as SourceUnit<TInput, TPayload, RResult, UUpdate>,
     };
-    const runContextEntriesByPrimitivePayload = new Map<
-      unknown,
-      SourceRunContextEntry<TInput, TPayload, TEntity, RResult, TEntityId>
-    >();
-    const runContextPrimitivePayloadOrder = new Set<unknown>();
-    let latestObjectPayload: object | null = null;
-    let latestObjectRunContextEntry:
-      | SourceRunContextEntry<TInput, TPayload, TEntity, RResult, TEntityId>
-      | null = null;
-    let previousObjectPayload: object | null = null;
-    let previousObjectRunContextEntry:
-      | SourceRunContextEntry<TInput, TPayload, TEntity, RResult, TEntityId>
-      | null = null;
     const payloadKeyCache = createSerializedKeyCache({
       mode: 'payload-hot-path',
       limit: RUN_CONTEXT_CACHE_LIMIT,
     });
-      const createRunContextEntry = (
-        payload: TPayload,
-      ): SourceRunContextEntry<TInput, TPayload, TEntity, RResult, TEntityId> => {
-        const gate: SourceRunGate = {
-          isLatestRun: () => false,
-        };
-        const upsertOne = (input: TEntity, options?: UpsertOptions): TEntity => {
+    const createRunContextEntry = (
+      payload: TPayload,
+    ): SourceRunContextEntry<TInput, TPayload, TEntity, RResult, TEntityId> => {
+      const gate: SourceRunGate = {
+        isLatestRun: () => false,
+      };
+      const runContextMethods = createEntityRunContextMethods<
+        TEntity,
+        RResult,
+        TEntityId
+      >({
+        entity,
+        state: internal,
+        isActive: () => gate.isLatestRun(),
+        refreshValue: () => {
+          internal.state.value = getModeValue(internal, readEntityValueById);
+        },
+        readValue: () => internal.state.value,
+      });
+      const runContextBase: SourceRunContext<
+        TInput,
+        TPayload,
+        TEntity,
+        RResult,
+        TEntityId
+      > = {
+        scope: internal.scope,
+        payload,
+        setMeta: (metaInput: unknown) => {
           if (!gate.isLatestRun()) {
-            return input;
+            return;
           }
 
-          const updated = entity.upsertOne(input, options);
-          setOneEntityMembership(internal, { entity, value: updated });
-          internal.state.value = getModeValue(internal, readEntityValueById);
-          return updated;
-        };
-        const upsertMany = (
-          input: readonly TEntity[],
-          options?: UpsertOptions,
-        ): readonly TEntity[] => {
-          if (!gate.isLatestRun()) {
-            return input;
+          const nextMeta = resolveValue(
+            internal.state.meta,
+            metaInput,
+          );
+          if (Object.is(nextMeta, internal.state.meta)) {
+            return;
           }
 
-          const updated = entity.upsertMany(input, options);
-          setManyEntityMembership(internal, { entity, values: updated });
-          internal.state.value = getModeValue(internal, readEntityValueById);
-          return updated;
-        };
-        const removeOne = (id: TEntityId): boolean => {
-          if (!gate.isLatestRun()) {
-            return false;
-          }
-
-          const removed = entity.removeOne(id);
-          internal.state.value = getModeValue(internal, readEntityValueById);
-          return removed;
-        };
-        const removeMany = (ids: readonly TEntityId[]): readonly TEntityId[] => {
-          if (!gate.isLatestRun()) {
-            return [];
-          }
-
-          const removedIds = entity.removeMany(ids);
-          internal.state.value = getModeValue(internal, readEntityValueById);
-          return removedIds;
-        };
-        const runContextBase: SourceRunContext<
-          TInput,
-          TPayload,
-          TEntity,
-          RResult,
-          TEntityId
-        > = {
-          scope: internal.scope,
-          payload,
-          setMeta: (metaInput: unknown) => {
-            if (!gate.isLatestRun()) {
-              return;
-            }
-
-            const nextMeta = resolveValue(
-              internal.state.meta,
-              metaInput,
-            );
-            if (Object.is(nextMeta, internal.state.meta)) {
-              return;
-            }
-
-            internal.state.meta = nextMeta;
-            notifyUnit(internal);
-          },
-          upsertOne,
-          upsertMany,
-          removeOne,
-          removeMany,
-          getValue: () => {
-            return internal.state.value;
-          },
-        };
-
-        return {
-          gate,
-          context: runContextBase,
-        };
+          internal.state.meta = nextMeta;
+          notifyUnit(internal);
+        },
+        ...runContextMethods,
       };
 
-      const getOrCreateRunContextEntry = (
-        payload: TPayload,
-      ): SourceRunContextEntry<TInput, TPayload, TEntity, RResult, TEntityId> => {
-        if (payload !== null && typeof payload === 'object') {
-          if (latestObjectPayload !== null && Object.is(latestObjectPayload, payload)) {
-            if (!latestObjectRunContextEntry) {
-              const createdRunContextEntry = createRunContextEntry(payload);
-              latestObjectRunContextEntry = createdRunContextEntry;
-              return createdRunContextEntry;
-            }
-
-            return latestObjectRunContextEntry;
-          }
-
-          if (previousObjectPayload !== null && Object.is(previousObjectPayload, payload)) {
-            if (!previousObjectRunContextEntry) {
-              const createdRunContextEntry = createRunContextEntry(payload);
-              previousObjectRunContextEntry = createdRunContextEntry;
-            }
-
-            const promotedObjectPayload = previousObjectPayload;
-            const promotedRunContextEntry = previousObjectRunContextEntry;
-            previousObjectPayload = latestObjectPayload;
-            previousObjectRunContextEntry = latestObjectRunContextEntry;
-            latestObjectPayload = promotedObjectPayload;
-            latestObjectRunContextEntry = promotedRunContextEntry;
-
-            return promotedRunContextEntry;
-          }
-
-          const createdRunContextEntry = createRunContextEntry(payload);
-          previousObjectPayload = latestObjectPayload;
-          previousObjectRunContextEntry = latestObjectRunContextEntry;
-          latestObjectPayload = payload;
-          latestObjectRunContextEntry = createdRunContextEntry;
-          return createdRunContextEntry;
-        }
-
-        const existingRunContextEntry = runContextEntriesByPrimitivePayload.get(payload);
-        if (existingRunContextEntry) {
-          runContextPrimitivePayloadOrder.delete(payload);
-          runContextPrimitivePayloadOrder.add(payload);
-          return existingRunContextEntry;
-        }
-
-        const createdRunContextEntry = createRunContextEntry(payload);
-        runContextEntriesByPrimitivePayload.set(payload, createdRunContextEntry);
-        runContextPrimitivePayloadOrder.add(payload);
-
-        if (runContextEntriesByPrimitivePayload.size > RUN_CONTEXT_CACHE_LIMIT) {
-          const oldestPayload = runContextPrimitivePayloadOrder.values().next().value;
-          if (oldestPayload !== undefined) {
-            runContextPrimitivePayloadOrder.delete(oldestPayload);
-            runContextEntriesByPrimitivePayload.delete(oldestPayload);
-          }
-        }
-
-        return createdRunContextEntry;
+      return {
+        gate,
+        context: runContextBase,
       };
+    };
+    const runContextEntryCache = createRunContextEntryCache<
+      TPayload,
+      SourceRunContextEntry<TInput, TPayload, TEntity, RResult, TEntityId>
+    >({
+      createEntry: createRunContextEntry,
+      limit: RUN_CONTEXT_CACHE_LIMIT,
+    });
 
-      const setContext = (input: Partial<SourceContext>): void => {
-        const hasRehydrated = Object.prototype.hasOwnProperty.call(input, 'rehydrated');
-        const hasRefreshing = Object.prototype.hasOwnProperty.call(input, 'refreshing');
-        const hasCacheState = Object.prototype.hasOwnProperty.call(input, 'cacheState');
-        const hasError = Object.prototype.hasOwnProperty.call(input, 'error');
+    const setContext = (input: Partial<SourceContext>): void => {
+      const hasCacheState = Object.prototype.hasOwnProperty.call(input, 'cacheState');
+      const hasError = Object.prototype.hasOwnProperty.call(input, 'error');
 
-        if (
-          (!hasRehydrated || input.rehydrated === internal.state.context.rehydrated)
-          && (!hasRefreshing || input.refreshing === internal.state.context.refreshing)
-          && (!hasCacheState || input.cacheState === internal.state.context.cacheState)
-          && (!hasError || Object.is(input.error, internal.state.context.error))
-        ) {
+      if (
+        (!hasCacheState || input.cacheState === internal.state.context.cacheState)
+        && (!hasError || Object.is(input.error, internal.state.context.error))
+      ) {
+        return;
+      }
+
+      internal.state.context = {
+        ...internal.state.context,
+        ...input,
+      };
+    };
+
+    const cacheEnabled = Boolean(
+      cacheStorage
+      && (cacheTtl === 'infinity' || cacheTtl > 0),
+    );
+    const cacheLruEnabled = Boolean(
+      cacheEnabled
+      && cacheLruMaxEntries > 0
+      && cacheStorage
+      && cacheWriteQueue,
+    );
+    const cacheLruStorageKey = `${cacheKeyPrefix}:${SOURCE_CACHE_LRU_STORAGE_KEY_SUFFIX}`;
+    let cacheLruLoaded = false;
+    let cacheLruKeys: string[] = [];
+    let activePayloadCacheKey: string | null = null;
+
+    const loadCacheLruState = (): void => {
+      if (!cacheLruEnabled || cacheLruLoaded || !cacheStorage) {
+        return;
+      }
+
+      cacheLruLoaded = true;
+      const rawLruState = cacheStorage.getItem(cacheLruStorageKey);
+      if (!rawLruState) {
+        return;
+      }
+
+      try {
+        const parsedLruState: unknown = JSON.parse(rawLruState);
+        if (!isRecordValue(parsedLruState)) {
           return;
         }
 
-        internal.state.context = {
-          ...internal.state.context,
-          ...input,
-        };
-      };
+        const keysCandidate = parsedLruState.keys;
+        if (!Array.isArray(keysCandidate)) {
+          return;
+        }
 
-      const unitCacheKey = `${cacheKeyPrefix}:${key}`;
-      const cacheEnabled = Boolean(
-        cacheStorage
-        && (cacheTtl === 'infinity' || cacheTtl > 0),
+        if (!keysCandidate.every((entry) => typeof entry === 'string')) {
+          return;
+        }
+
+        cacheLruKeys = keysCandidate;
+      } catch {
+        return;
+      }
+    };
+
+    const persistCacheLruState = (): void => {
+      if (!cacheLruEnabled || !cacheWriteQueue) {
+        return;
+      }
+
+      if (cacheLruKeys.length === 0) {
+        cacheWriteQueue.enqueueRemove(cacheLruStorageKey);
+        return;
+      }
+
+      cacheWriteQueue.enqueueSet(
+        cacheLruStorageKey,
+        () => {
+          return JSON.stringify({
+            keys: cacheLruKeys,
+          });
+        },
       );
+    };
 
-      const buildCacheRecord = (): SourceCacheRecord<TEntity> => {
+    const touchCacheLruKey = (unitCacheKey: string): void => {
+      if (!cacheLruEnabled || !cacheWriteQueue) {
+        return;
+      }
+
+      loadCacheLruState();
+      if (cacheLruKeys[0] === unitCacheKey) {
+        return;
+      }
+
+      const existingIndex = cacheLruKeys.findIndex((entry) => entry === unitCacheKey);
+      if (existingIndex > 0) {
+        const existingEntry = cacheLruKeys[existingIndex];
+        if (existingEntry === undefined) {
+          return;
+        }
+
+        cacheLruKeys.splice(existingIndex, 1);
+        cacheLruKeys.unshift(existingEntry);
+        persistCacheLruState();
+        return;
+      }
+
+      cacheLruKeys.unshift(unitCacheKey);
+      const evictedEntry = cacheLruKeys.length > cacheLruMaxEntries
+        ? cacheLruKeys.pop()
+        : undefined;
+      if (evictedEntry && evictedEntry !== unitCacheKey) {
+        cacheWriteQueue.enqueueRemove(evictedEntry);
+      }
+
+      persistCacheLruState();
+    };
+
+    const removeCacheLruKey = (unitCacheKey: string): void => {
+      if (!cacheLruEnabled) {
+        return;
+      }
+
+      loadCacheLruState();
+      const existingIndex = cacheLruKeys.findIndex((entry) => entry === unitCacheKey);
+      if (existingIndex < 0) {
+        return;
+      }
+
+      cacheLruKeys.splice(existingIndex, 1);
+      persistCacheLruState();
+    };
+
+    const resolvePayloadCacheKey = (payload: TPayload): string => {
+      return payloadKeyCache.getOrCreateKey(payload);
+    };
+
+    const resolveUnitCacheKey = (payloadCacheKey: string): string => {
+      return `${cacheKeyPrefix}:${key}:${payloadCacheKey}`;
+    };
+
+    const syncCacheRecord = (): void => {
+      if (!cacheEnabled || !cacheWriteQueue) {
+        return;
+      }
+
+      const payloadCacheKey = resolvePayloadCacheKey(internal.payload);
+      const unitCacheKey = resolveUnitCacheKey(payloadCacheKey);
+      if (!internal.hasEntityValue) {
+        removeCacheLruKey(unitCacheKey);
+        cacheWriteQueue.enqueueRemove(unitCacheKey);
+        return;
+      }
+
+      touchCacheLruKey(unitCacheKey);
+      cacheWriteQueue.enqueueSet(unitCacheKey, () => {
         const entities = internal.membershipIds
           .map((id) => entity.getById(id))
           .filter((entry): entry is TEntity => entry !== undefined);
 
-        return {
+        return serializeSourceCacheRecord({
           mode: internal.mode,
           entities,
           writtenAt: Date.now(),
-        };
-      };
-
-      const writeCacheRecord = (): void => {
-        if (!cacheEnabled || !cacheWriteQueue || !internal.hasEntityValue) {
-          return;
-        }
-
-        cacheWriteQueue.enqueueSet(unitCacheKey, () => {
-          const record = buildCacheRecord();
-          return serializeSourceCacheRecord(record);
         });
-      };
+      });
+    };
 
-      const hydrateFromCache = (): void => {
-        if (!cacheStorage) {
-          setContext({
-            cacheState: 'disabled',
-          });
-          return;
-        }
+    const hydrateFromCache = (payloadCacheKey: string): boolean => {
+      if (!cacheStorage) {
+        setContext({
+          cacheState: 'disabled',
+        });
+        return false;
+      }
 
-        if (!cacheEnabled) {
-          setContext({
-            cacheState: 'disabled',
-          });
-          return;
-        }
+      if (!cacheEnabled) {
+        setContext({
+          cacheState: 'disabled',
+        });
+        return false;
+      }
 
-        const rawRecord = cacheStorage.getItem(unitCacheKey);
-        const parsedRecord = readSourceCacheRecord<TEntity>(rawRecord);
-        if (!parsedRecord) {
-          setContext({
-            cacheState: 'miss',
-          });
-          return;
-        }
+      const unitCacheKey = resolveUnitCacheKey(payloadCacheKey);
+      const rawRecord = cacheStorage.getItem(unitCacheKey);
+      const parsedRecord = readSourceCacheRecord<TEntity>(rawRecord);
+      if (!parsedRecord) {
+        setContext({
+          cacheState: 'miss',
+        });
+        return false;
+      }
 
-        if (isCacheRecordExpired({ ttl: cacheTtl, writtenAt: parsedRecord.writtenAt })) {
-          cacheWriteQueue?.enqueueRemove(unitCacheKey);
-          setContext({
-            cacheState: 'stale',
-          });
-          return;
-        }
-
-          if (parsedRecord.mode === 'one') {
-          const firstEntity = parsedRecord.entities[0];
-          internal.hasEntityValue = true;
-
-          if (firstEntity) {
-            const upsertedEntity = entity.upsertOne(firstEntity);
-            setOneEntityMembership(internal, { entity, value: upsertedEntity });
-            internal.state.value = getModeValue(internal, readEntityValueById);
-          } else {
-            clearEntityMembership(internal, { clearUnitMembership: entity.clearUnitMembership });
-            internal.state.value = getModeValue(internal, readEntityValueById);
+      if (isCacheRecordExpired({ ttl: cacheTtl, writtenAt: parsedRecord.writtenAt })) {
+        removeCacheLruKey(unitCacheKey);
+        if (cacheWriteQueue) {
+          cacheWriteQueue.enqueueRemove(unitCacheKey);
+        } else {
+          try {
+            cacheStorage.removeItem(unitCacheKey);
+          } catch {
+            // Ignore storage write errors and continue with stale cache behavior.
           }
         }
+        setContext({
+          cacheState: 'stale',
+        });
+        return false;
+      }
 
-        if (parsedRecord.mode === 'many') {
-          const upsertedEntities = entity.upsertMany(parsedRecord.entities);
-          setManyEntityMembership(internal, { entity, values: upsertedEntities });
+      touchCacheLruKey(unitCacheKey);
+      if (parsedRecord.mode === 'one') {
+        const firstEntity = parsedRecord.entities[0];
+        internal.hasEntityValue = true;
+
+        if (firstEntity) {
+          const upsertedEntity = entity.upsertOne(firstEntity);
+          setOneEntityMembership(internal, {
+            entity,
+            value: upsertedEntity,
+            operation: 'cache rehydrate one',
+          });
+          internal.state.value = getModeValue(internal, readEntityValueById);
+        } else {
+          clearEntityMembership(internal, { clearUnitMembership: entity.clearUnitMembership });
           internal.state.value = getModeValue(internal, readEntityValueById);
         }
+      }
 
-        internal.state.status = 'success';
-        setContext({
-          rehydrated: true,
-          cacheState: 'hit',
-          error: null,
+      if (parsedRecord.mode === 'many') {
+        const upsertedEntities = entity.upsertMany(parsedRecord.entities);
+        setManyEntityMembership(internal, {
+          entity,
+          values: upsertedEntities,
+          operation: 'cache rehydrate many',
         });
-      };
+        internal.state.value = getModeValue(internal, readEntityValueById);
+      }
 
-      const unregisterFromEntity = entity.registerUnit({
-        key: internal.key,
-        onChange: () => {
-          if (internal.destroyed) {
-            return;
-          }
-
-          notifyUnit(internal);
-          writeCacheRecord();
-        },
+      internal.state.status = 'rehydrated';
+      setContext({
+        cacheState: 'hit',
+        error: null,
       });
+      return true;
+    };
 
-      hydrateFromCache();
+    const hydrateFromPayloadCache = (payload: TPayload): boolean => {
+      const payloadCacheKey = resolvePayloadCacheKey(payload);
+      if (activePayloadCacheKey === payloadCacheKey) {
+        return false;
+      }
 
-      const destroyInternal = (): void => {
+      activePayloadCacheKey = payloadCacheKey;
+      return hydrateFromCache(payloadCacheKey);
+    };
+
+    const unregisterFromEntity = entity.registerUnit({
+      key: internal.key,
+      onChange: () => {
         if (internal.destroyed) {
           return;
         }
 
-        internal.runSequence += 1;
-        internal.latestRunSequence = internal.runSequence;
-        internal.stopped = true;
-        invokeSourceCleanup(internal.cleanup);
-        internal.cleanup = null;
-        internal.destroyed = true;
-        runContextEntriesByPrimitivePayload.clear();
-        runContextPrimitivePayloadOrder.clear();
-        latestObjectPayload = null;
-        latestObjectRunContextEntry = null;
-        previousObjectPayload = null;
-        previousObjectRunContextEntry = null;
-        payloadKeyCache.clear();
-        singleInFlightPromise = null;
-        hasSingleInFlightPayload = false;
-        singleInFlightPayload = undefined;
-        singleInFlightPayloadKey = null;
+        notifyUnit(internal);
+        syncCacheRecord();
+      },
+    });
 
-        unregisterFromEntity();
-        internal.listeners.clear();
+    hydrateFromPayloadCache(internal.payload);
 
-        if (!internal.destroyHandled) {
-          internal.destroyHandled = true;
-          onDestroy?.({
-            scope: internal.scope,
-            payload: internal.payload,
-          });
-        }
+    const destroyInternal = (): void => {
+      if (internal.destroyed) {
+        return;
+      }
 
-        unitsByKey.delete(internal.key);
-      };
+      internal.runSequence += 1;
+      internal.latestRunSequence = internal.runSequence;
+      internal.stopped = true;
+      invokeSourceCleanup(internal.cleanup);
+      internal.cleanup = null;
+      internal.destroyed = true;
+      runContextEntryCache.clear();
+      payloadKeyCache.clear();
+      activePayloadCacheKey = null;
+      singleInFlightPromise = null;
+      hasSingleInFlightPayload = false;
+      singleInFlightPayload = undefined;
+      singleInFlightPayloadKey = null;
+
+      unregisterFromEntity();
+      internal.listeners.clear();
+
+      if (!internal.destroyHandled) {
+        internal.destroyHandled = true;
+        onDestroy?.({
+          scope: internal.scope,
+          payload: internal.payload,
+        });
+      }
+
+      unitsByKey.delete(internal.key);
+    };
       let singleInFlightPromise: Promise<RResult> | null = null;
       let hasSingleInFlightPayload = false;
       let singleInFlightPayload: TPayload | undefined;
@@ -593,17 +644,20 @@ export const source = <
           return internal.latestRunSequence === runSequence && !internal.destroyed;
         };
 
+        const didHydrateFromPayloadCache = hydrateFromPayloadCache(internal.payload);
+        if (didHydrateFromPayloadCache && isLatestRun()) {
+          notifyUnit(internal);
+        }
+
         if (!isForce && !hasPayloadInput && shouldUseCache(internal)) {
           return Promise.resolve(internal.state.value);
         }
 
-        const shouldRunSilentRefresh = internal.state.context.rehydrated && internal.lastRunAt === null;
-        if (!shouldRunSilentRefresh && isLatestRun()) {
-          internal.state.status = 'loading';
-        }
+        const shouldUseRefreshingStatus = internal.state.status === 'rehydrated'
+          || internal.state.status === 'success';
         if (isLatestRun()) {
+          internal.state.status = shouldUseRefreshingStatus ? 'refreshing' : 'loading';
           setContext({
-            refreshing: shouldRunSilentRefresh,
             error: null,
           });
           notifyUnit(internal);
@@ -614,30 +668,20 @@ export const source = <
             return;
           }
 
-          if (nextValue === undefined) {
-            internal.state.value = getModeValue(internal, readEntityValueById);
-            return;
-          }
-
-          if (isEntityArray<TEntity>(nextValue)) {
-            const upsertedEntities = entity.upsertMany(nextValue);
-            setManyEntityMembership(internal, { entity, values: upsertedEntities });
-            internal.state.value = getModeValue(internal, readEntityValueById);
-            return;
-          }
-
-          if (isEntityValue<TEntity>(nextValue)) {
-            const upsertedEntity = entity.upsertOne(nextValue);
-            setOneEntityMembership(internal, { entity, value: upsertedEntity });
-            internal.state.value = getModeValue(internal, readEntityValueById);
-            return;
-          }
-
-          clearEntityMembership(internal, { clearUnitMembership: entity.clearUnitMembership });
-          internal.state.value = nextValue;
+          applyEntityRunResult({
+            entity,
+            state: internal,
+            nextValue,
+            refreshValueFromMembership: () => {
+              internal.state.value = getModeValue(internal, readEntityValueById);
+            },
+            setRawValue: (value) => {
+              internal.state.value = value;
+            },
+          });
         };
 
-        const runContextEntry = getOrCreateRunContextEntry(internal.payload);
+        const runContextEntry = runContextEntryCache.getOrCreate(internal.payload);
         runContextEntry.gate.isLatestRun = isLatestRun;
         runContextEntry.context.payload = internal.payload;
 
@@ -673,12 +717,10 @@ export const source = <
             internal.lastRunAt = Date.now();
             internal.state.status = 'success';
             setContext({
-              rehydrated: false,
-              refreshing: false,
               error: null,
             });
             notifyUnit(internal);
-            writeCacheRecord();
+            syncCacheRecord();
 
             return internal.state.value;
           })
@@ -686,7 +728,6 @@ export const source = <
             if (isLatestRun()) {
               internal.state.status = 'error';
               setContext({
-                refreshing: false,
                 error,
               });
               notifyUnit(internal);

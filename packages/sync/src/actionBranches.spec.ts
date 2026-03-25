@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { action, type Action } from './action.js';
 import { entity, type Entity } from './entity.js';
 import { randomNumber, randomString } from './testing/randomData.js';
+import { type UnitStatus } from './utils/index.js';
 
 interface User {
   id: string;
@@ -26,7 +27,6 @@ interface Release {
   (): void;
 }
 
-type UnitStatus = 'idle' | 'loading' | 'success' | 'error';
 type UserEntity = Entity<User>;
 type CreateUserAction = Action<UserSlug, CreateUserPayload, User | null, User>;
 
@@ -220,6 +220,39 @@ describe('action() branches', () => {
   });
 
   describe('sad', () => {
+    it('should throw semantic error when runContext switches a locked scope mode from one to many', async () => {
+      let writesMany = false;
+
+      const createUserWithModeSwitch = action<UserSlug, CreateUserPayload, User, User | null, User>({
+        entity: usersEntity,
+        run: async ({ payload, upsertMany, upsertOne }) => {
+          if (!writesMany) {
+            upsertOne({
+              id: createdUserId,
+              name: payload.name,
+            });
+            return;
+          }
+
+          upsertMany([
+            {
+              id: createdUserId,
+              name: payload.name,
+            },
+          ]);
+        },
+      });
+
+      const unit = createUserWithModeSwitch({ slugId });
+
+      await unit.run({ name: createName });
+      writesMany = true;
+
+      await expect(
+        unit.run({ name: randomString({ prefix: 'next-create-name' }) }),
+      ).rejects.toThrow("Cannot switch to 'many' via runContext.upsertMany().");
+    });
+
     it('should not call run handler when run is invoked after destroy', async () => {
       const unit = createUser({ slugId });
 

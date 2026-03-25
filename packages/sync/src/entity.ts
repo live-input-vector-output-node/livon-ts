@@ -5,6 +5,10 @@ import {
   type EntityReadWriteConfig,
   type EntityReadWriteInput,
 } from './utils/readWriteStrategy.js';
+import {
+  resolveAdaptiveReadWriteByCache,
+  type AdaptiveReadWriteOperation,
+} from './utils/adaptiveReadWrite.js';
 
 export interface UpsertOptions {
   merge?: boolean;
@@ -23,6 +27,7 @@ export interface CacheStorage {
 export interface CacheConfig {
   key?: string;
   ttl?: CacheTtl;
+  lruMaxEntries?: number;
   storage?: CacheStorage;
 }
 
@@ -156,8 +161,51 @@ interface EntityUnitKeyInput<TId extends EntityId> {
   key: string;
 }
 
+interface TimeoutRuntime {
+  setTimeout: (callback: () => void, delay: number) => unknown;
+  clearTimeout: (handle: unknown) => void;
+}
+
 let nextEntityQueueId = 0;
 const NOTIFY_BATCH_THRESHOLD = 32;
+
+const hasTimeoutRuntime = (value: unknown): value is TimeoutRuntime => {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  return 'setTimeout' in value
+    && 'clearTimeout' in value
+    && typeof value.setTimeout === 'function'
+    && typeof value.clearTimeout === 'function';
+};
+
+const resolveTimeoutRuntime = (): TimeoutRuntime | undefined => {
+  const runtime = globalThis;
+  if (!hasTimeoutRuntime(runtime)) {
+    return undefined;
+  }
+
+  return runtime;
+};
+
+const resolveOrphanRetentionTtl = ({
+  cache,
+  ttl,
+}: {
+  cache?: CacheConfig;
+  ttl?: number;
+}): CacheTtl => {
+  if (cache?.ttl !== undefined) {
+    return cache.ttl;
+  }
+
+  if (ttl !== undefined) {
+    return ttl;
+  }
+
+  return 0;
+};
 
 export const entity = <
   TInput extends object,
@@ -175,15 +223,135 @@ export const entity = <
   const unitStateByKey = new Map<string, EntityUnitState<TId>>();
   const unitKeysById = new Map<TId, Set<string>>();
   const dirtyUnitKeys = new Set<string>();
+  const orphanExpiresAtById = new Map<TId, number>();
+  const orphanTimeoutById = new Map<TId, unknown>();
   nextEntityQueueId += 1;
   const dirtyUnitsQueueKey = `entity-dirty:${nextEntityQueueId}`;
   const readWriteConfig = resolveEntityReadWriteConfig(readWrite);
+  const adaptiveReadWriteEnabled = readWrite?.adaptive ?? false;
+  const hasExplicitBatchReadWrite = readWrite?.batch !== undefined;
+  const hasExplicitSubviewReadWrite = readWrite?.subview !== undefined;
+  const cacheEnabled = Boolean(cache);
+  const lruEnabled = typeof cache?.lruMaxEntries === 'number'
+    && Number.isFinite(cache.lruMaxEntries)
+    && cache.lruMaxEntries > 0;
+  const readWriteStrategyByOperation = new Map<AdaptiveReadWriteOperation, EntityReadWriteConfig>();
+  const resolveReadWriteStrategy = (
+    operation: AdaptiveReadWriteOperation,
+  ): EntityReadWriteConfig => {
+    if (!adaptiveReadWriteEnabled) {
+      return readWriteConfig;
+    }
+
+    const existingStrategy = readWriteStrategyByOperation.get(operation);
+    if (existingStrategy) {
+      return existingStrategy;
+    }
+
+    const recommendedStrategy = resolveAdaptiveReadWriteByCache({
+      cacheEnabled,
+      lruEnabled,
+      operation,
+      fallback: readWriteConfig,
+    });
+    const resolvedStrategy: EntityReadWriteConfig = {
+      batch: hasExplicitBatchReadWrite
+        ? (readWrite?.batch ?? recommendedStrategy.batch)
+        : recommendedStrategy.batch,
+      subview: hasExplicitSubviewReadWrite
+        ? (readWrite?.subview ?? recommendedStrategy.subview)
+        : recommendedStrategy.subview,
+    };
+    readWriteStrategyByOperation.set(operation, resolvedStrategy);
+    return resolvedStrategy;
+  };
+  const defaultReadWriteStrategy = resolveReadWriteStrategy('readMany');
+  const timeoutRuntime = resolveTimeoutRuntime();
+  const orphanRetentionTtl = resolveOrphanRetentionTtl({
+    cache,
+    ttl,
+  });
+
+  const hasEntitySubscribers = (id: TId): boolean => {
+    const keys = unitKeysById.get(id);
+    return Boolean(keys && keys.size > 0);
+  };
+
+  const clearOrphanCleanupSchedule = (id: TId): void => {
+    orphanExpiresAtById.delete(id);
+    const timeoutHandle = orphanTimeoutById.get(id);
+    if (timeoutHandle !== undefined && timeoutRuntime) {
+      timeoutRuntime.clearTimeout(timeoutHandle);
+    }
+    orphanTimeoutById.delete(id);
+  };
+
+  const removeOrphanEntityById = (id: TId): void => {
+    if (hasEntitySubscribers(id)) {
+      clearOrphanCleanupSchedule(id);
+      return;
+    }
+
+    clearOrphanCleanupSchedule(id);
+    entitiesById.delete(id);
+    draftsById.delete(id);
+  };
+
+  const sweepExpiredOrphans = (): void => {
+    if (orphanExpiresAtById.size === 0) {
+      return;
+    }
+
+    const now = Date.now();
+    Array.from(orphanExpiresAtById.entries()).forEach(([id, expiresAt]) => {
+      if (expiresAt > now) {
+        return;
+      }
+
+      removeOrphanEntityById(id);
+    });
+  };
+
+  const scheduleOrphanCleanup = (id: TId): void => {
+    if (hasEntitySubscribers(id)) {
+      clearOrphanCleanupSchedule(id);
+      return;
+    }
+
+    if (orphanRetentionTtl === 'infinity') {
+      clearOrphanCleanupSchedule(id);
+      return;
+    }
+
+    if (orphanRetentionTtl > 0) {
+      const expiresAt = Date.now() + orphanRetentionTtl;
+      orphanExpiresAtById.set(id, expiresAt);
+      if (timeoutRuntime) {
+        const previousTimeout = orphanTimeoutById.get(id);
+        if (previousTimeout !== undefined) {
+          timeoutRuntime.clearTimeout(previousTimeout);
+        }
+
+        const nextTimeout = timeoutRuntime.setTimeout(() => {
+          orphanTimeoutById.delete(id);
+          removeOrphanEntityById(id);
+        }, orphanRetentionTtl);
+
+        orphanTimeoutById.set(id, nextTimeout);
+      }
+      return;
+    }
+
+    removeOrphanEntityById(id);
+  };
 
   const getById = (id: TId): TInput | undefined => {
+    sweepExpiredOrphans();
     return entitiesById.get(id);
   };
 
   const getDraftById = (id: TId): TInput | undefined => {
+    sweepExpiredOrphans();
     return draftsById.get(id);
   };
 
@@ -191,6 +359,7 @@ export const entity = <
     id,
     key,
   }: EntityUnitKeyInput<TId>): void => {
+    sweepExpiredOrphans();
     const keys = unitKeysById.get(id);
 
     if (!keys) {
@@ -200,6 +369,7 @@ export const entity = <
     keys.delete(key);
     if (keys.size === 0) {
       unitKeysById.delete(id);
+      scheduleOrphanCleanup(id);
     }
   };
 
@@ -207,6 +377,9 @@ export const entity = <
     id,
     key,
   }: EntityUnitKeyInput<TId>): void => {
+    sweepExpiredOrphans();
+    clearOrphanCleanupSchedule(id);
+
     const existingKeys = unitKeysById.get(id);
     if (existingKeys) {
       existingKeys.add(key);
@@ -237,6 +410,7 @@ export const entity = <
     key,
     onChange,
   }: RegisterEntityUnitInput): (() => void) => {
+    sweepExpiredOrphans();
     unregisterUnit(key);
     unitStateByKey.set(key, {
       onChange,
@@ -252,6 +426,7 @@ export const entity = <
     key,
     ids,
   }: SetEntityUnitMembershipInput<TId>): void => {
+    sweepExpiredOrphans();
     const unitState = unitStateByKey.get(key);
     if (!unitState) {
       return;
@@ -281,11 +456,18 @@ export const entity = <
       }
 
       currentMembershipIds.forEach((id) => {
+        if (id === nextSingleMembershipId) {
+          return;
+        }
+
         removeUnitKeyFromId({ id, key });
       });
+      const hasNextSingleMembershipId = currentMembershipIds.has(nextSingleMembershipId);
       currentMembershipIds.clear();
       currentMembershipIds.add(nextSingleMembershipId);
-      addUnitKeyToId({ id: nextSingleMembershipId, key });
+      if (!hasNextSingleMembershipId) {
+        addUnitKeyToId({ id: nextSingleMembershipId, key });
+      }
       return;
     }
 
@@ -397,6 +579,7 @@ export const entity = <
   };
 
   const upsertOne = (input: TInput, options?: UpsertOptions): TInput => {
+    sweepExpiredOrphans();
     const id = idOf(input);
     const currentEntity = entitiesById.get(id);
     const mergedInput = mergeEntity({
@@ -411,7 +594,7 @@ export const entity = <
 
     entitiesById.set(id, mergedInput);
     runEntityWriteStrategy({
-      strategy: readWriteConfig,
+      strategy: resolveReadWriteStrategy('updateOne'),
       changedIdCount: 1,
       batchThreshold: NOTIFY_BATCH_THRESHOLD,
       runImmediate: () => {
@@ -426,6 +609,7 @@ export const entity = <
   };
 
   const upsertMany = (input: readonly TInput[], options?: UpsertOptions): readonly TInput[] => {
+    sweepExpiredOrphans();
     const changedIds = new Set<TId>();
     let hasDuplicates = false;
     const mergedValues: TInput[] = [];
@@ -453,7 +637,7 @@ export const entity = <
     });
 
     runEntityWriteStrategy({
-      strategy: readWriteConfig,
+      strategy: resolveReadWriteStrategy('updateMany'),
       changedIdCount: changedIds.size,
       hasDuplicates,
       batchThreshold: NOTIFY_BATCH_THRESHOLD,
@@ -471,6 +655,8 @@ export const entity = <
   };
 
   const removeOne = (id: TId): boolean => {
+    sweepExpiredOrphans();
+    clearOrphanCleanupSchedule(id);
     const existed = entitiesById.delete(id);
     draftsById.delete(id);
 
@@ -492,7 +678,7 @@ export const entity = <
     unitKeysById.delete(id);
 
     runEntityWriteStrategy({
-      strategy: readWriteConfig,
+      strategy: resolveReadWriteStrategy('updateOne'),
       changedIdCount: 1,
       affectedKeyCount: affectedKeys.length,
       batchThreshold: NOTIFY_BATCH_THRESHOLD,
@@ -510,10 +696,12 @@ export const entity = <
   };
 
   const removeMany = (ids: readonly TId[]): readonly TId[] => {
+    sweepExpiredOrphans();
     const removedIds: TId[] = [];
     const affectedKeys = new Set<string>();
 
     ids.forEach((id) => {
+      clearOrphanCleanupSchedule(id);
       const existed = entitiesById.delete(id);
       draftsById.delete(id);
       if (!existed) {
@@ -540,7 +728,7 @@ export const entity = <
     });
 
     runEntityWriteStrategy({
-      strategy: readWriteConfig,
+      strategy: resolveReadWriteStrategy('updateMany'),
       changedIdCount: removedIds.length,
       affectedKeyCount: affectedKeys.size,
       batchThreshold: NOTIFY_BATCH_THRESHOLD,
@@ -562,7 +750,7 @@ export const entity = <
     destroyDelay,
     draft,
     cache,
-    readWrite: readWriteConfig,
+    readWrite: defaultReadWriteStrategy,
     idOf,
     entitiesById,
     getDraftById,

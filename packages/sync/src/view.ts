@@ -1,6 +1,9 @@
 import {
   createSerializedKeyCache,
   createUnitSnapshot,
+  isUnitLoadingStatus,
+  isUnitSettledStatus,
+  isUnitStatus,
   notifyEffectListeners,
   type EffectListener,
   type UnitSnapshot,
@@ -83,12 +86,7 @@ const isSnapshotLike = <TValue>(input: unknown): input is UnitSnapshot<TValue> =
     return false;
   }
 
-  return (
-    candidate.status === 'idle'
-    || candidate.status === 'loading'
-    || candidate.status === 'success'
-    || candidate.status === 'error'
-  );
+  return isUnitStatus(candidate.status);
 };
 
 const createErrorContext = (error: unknown): { message: string; cause: unknown } => {
@@ -309,32 +307,32 @@ const ensureDependencySubscription = <
     const hasMetaChange = !Object.is(snapshot.meta, previousSnapshot.meta);
     const hasMeaningfulChange = hasDataChange || hasMetaChange;
     const shouldProcessSettledFromDirty = dependency.dirtyWhileLoading
-      && (snapshot.status === 'success' || snapshot.status === 'error');
+      && isUnitSettledStatus(snapshot.status);
     if (!hasMeaningfulChange && !shouldProcessSettledFromDirty) {
       return;
     }
 
-    if (snapshot.status === 'loading' && internal.snapshot.status === 'idle') {
+    if (isUnitLoadingStatus(snapshot.status) && internal.snapshot.status === 'idle') {
       if (hasDataChange || hasMetaChange) {
         dependency.dirtyWhileLoading = true;
       }
 
       applySnapshot(internal, {
-        status: 'loading',
+        status: snapshot.status,
         meta: snapshot.meta,
         context: snapshot.context,
       });
       return;
     }
 
-    if (snapshot.status === 'loading') {
+    if (isUnitLoadingStatus(snapshot.status)) {
       if (hasDataChange || hasMetaChange) {
         dependency.dirtyWhileLoading = true;
       }
       return;
     }
 
-    if (snapshot.status === 'success' || snapshot.status === 'error') {
+    if (isUnitSettledStatus(snapshot.status)) {
       const shouldRecompute =
         hasDataChange
         || hasMetaChange
@@ -369,14 +367,14 @@ const ensureDependencySubscription = <
   internal.lastDependencyMeta = latestSnapshot.meta;
   internal.lastDependencyContext = latestSnapshot.context;
 
-  if (latestSnapshot.status === 'loading') {
+  if (isUnitLoadingStatus(latestSnapshot.status)) {
     if (hasLatestDataChange || hasLatestMetaChange) {
       dependency.dirtyWhileLoading = true;
     }
 
     if (internal.snapshot.status === 'idle') {
       applySnapshot(internal, {
-        status: 'loading',
+        status: latestSnapshot.status,
         meta: latestSnapshot.meta,
         context: latestSnapshot.context,
       });
@@ -384,7 +382,7 @@ const ensureDependencySubscription = <
     return;
   }
 
-  if (latestSnapshot.status === 'success' || latestSnapshot.status === 'error') {
+  if (isUnitSettledStatus(latestSnapshot.status)) {
     if (hasLatestDataChange || hasLatestMetaChange || dependency.dirtyWhileLoading) {
       dependency.dirtyWhileLoading = false;
       queueRecompute({

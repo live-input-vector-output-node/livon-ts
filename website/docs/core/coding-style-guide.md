@@ -112,12 +112,22 @@ const requestUser = (userId: string, includePosts: boolean) =>
   apiRequest({userId, includePosts});
 ```
 
+## Allocation stability and root scope
+
+- In hot paths, prefer defining reusable functions at module/root scope instead of redefining them inside frequently called functions.
+- In hot paths, prefer reusing stable arrays/objects/maps/sets and other complex values when semantics allow.
+- Avoid wrapping a function in a factory only to move code: if it still creates a new closure per call, it does not solve allocation churn.
+- Create values inside a function only when they depend on per-call/per-instance mutable state or changing inputs.
+- Prioritize behavior correctness first; apply allocation-stability optimizations only when they preserve the existing contract.
+
 ## Function typing rules
 
 - No inline object types for function parameters.
 - No inline function type signatures for reusable function interfaces.
 - Define function interfaces as named `interface` types.
 - For overloads, use callable `interface` signatures plus `const` arrow assignments (do not use `function` overload declarations).
+- Reuse existing named types/interfaces instead of rebuilding composite inline types (including local `const` object annotations in implementation/tests).
+- If only a subset is needed, prefer simple `Pick`/`Omit`; if that becomes noisy, define a small new named type instead of inline reconstruction.
 
 ```ts
 interface BuildDisplayNameInput {
@@ -187,6 +197,7 @@ const moduleName = input.name ?? 'runtime-module';
 - Keep reusable helpers in scoped `utils/` folders.
 - Keep one utility per file and re-export through a local `utils/index.ts` barrel.
 - Split core functionality into focused files instead of growing large multi-purpose files.
+- Before adding new logic/helpers, treat reuse lookup as mandatory: check existing modules first (including across package boundaries), then prefer extending shared helpers with config/options instead of creating parallel implementations.
 - Expose module boundaries explicitly through package `exports` in `package.json` plus stable `index.ts` barrel exports.
 - Prefer this structure for better testability, mockability, and dependency injection.
 

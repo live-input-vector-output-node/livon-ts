@@ -166,6 +166,20 @@
       ],
       "outputs": []
     },
+    "bench:matrix:lru-set": {
+      "dependsOn": [
+        "build",
+        "^build"
+      ],
+      "outputs": []
+    },
+    "bench:matrix:adaptive": {
+      "dependsOn": [
+        "build",
+        "^build"
+      ],
+      "outputs": []
+    },
     "release:check": {
       "outputs": []
     },

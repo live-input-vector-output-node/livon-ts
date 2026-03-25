@@ -115,9 +115,92 @@ describe('source() branches', () => {
 
       expect(usersStore.get()).toEqual([{ id: thirdUserId, name: thirdUserName }]);
     });
+
+    it('should remove orphaned entities when many-mode run result replaces previous ids', async () => {
+      const firstUserId = randomString({ prefix: 'first-user-id' });
+      const secondUserId = randomString({ prefix: 'second-user-id' });
+      const firstUserName = randomString({ prefix: 'first-user-name' });
+      const secondUserName = randomString({ prefix: 'second-user-name' });
+      let runCount = 0;
+      const replaceUsersEntity = entity<User>({
+        idOf: (value) => value.id,
+      });
+
+      const readUsers = source<UserSlug, SearchPayload, User, readonly User[]>({
+        entity: replaceUsersEntity,
+        run: async () => {
+          runCount += 1;
+          if (runCount === 1) {
+            return [
+              { id: firstUserId, name: firstUserName },
+              { id: secondUserId, name: secondUserName },
+            ];
+          }
+
+          return [{ id: secondUserId, name: secondUserName }];
+        },
+      });
+
+      const usersStore = readUsers({ slugId });
+
+      await usersStore.run({ search: searchValue });
+      expect(replaceUsersEntity.getById(firstUserId)).toEqual({
+        id: firstUserId,
+        name: firstUserName,
+      });
+
+      await usersStore.run({ search: randomString({ prefix: 'next-search' }) });
+
+      expect(usersStore.get()).toEqual([{ id: secondUserId, name: secondUserName }]);
+      expect(replaceUsersEntity.getById(firstUserId)).toBeUndefined();
+    });
   });
 
   describe('sad', () => {
+    it('should throw semantic error when run switches a locked scope mode from one to many', async () => {
+      const firstUserId = randomString({ prefix: 'first-user-id' });
+      const secondUserId = randomString({ prefix: 'second-user-id' });
+      const secondUserName = randomString({ prefix: 'second-user-name' });
+      let returnsMany = false;
+
+      const readUserWithModeSwitch = source<
+        UserSlug,
+        SearchPayload,
+        User,
+        User | readonly User[] | null
+      >({
+        entity: usersEntity,
+        run: async ({ payload }) => {
+          if (!returnsMany) {
+            return {
+              id: firstUserId,
+              name: payload.search,
+            };
+          }
+
+          return [
+            {
+              id: firstUserId,
+              name: payload.search,
+            },
+            {
+              id: secondUserId,
+              name: secondUserName,
+            },
+          ];
+        },
+      });
+
+      const userStore = readUserWithModeSwitch({ slugId });
+
+      await userStore.run({ search: searchValue });
+      returnsMany = true;
+
+      await expect(
+        userStore.run({ search: randomString({ prefix: 'next-search' }) }),
+      ).rejects.toThrow("Cannot switch to 'many' via run() result array.");
+    });
+
     it('should not call run handler when run is invoked after destroy', async () => {
       const userStore = readUser({ slugId });
 

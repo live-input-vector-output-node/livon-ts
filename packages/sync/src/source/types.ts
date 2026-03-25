@@ -10,6 +10,7 @@ import {
   type EffectListener,
   type InputUpdater,
   type ModeValueReadWriteInput,
+  type UnitStatus,
   type ValueUpdater,
 } from '../utils/index.js';
 
@@ -96,7 +97,7 @@ export interface Source<
 
 export interface SourceUnitState<RResult> {
   value: RResult;
-  status: 'idle' | 'loading' | 'success' | 'error';
+  status: UnitStatus;
   meta: unknown;
   context: SourceContext;
 }
@@ -115,6 +116,7 @@ export interface SourceUnitInternal<
   payload: TPayload;
   state: SourceUnitState<RResult>;
   mode: 'one' | 'many';
+  modeLocked: boolean;
   hasEntityValue: boolean;
   membershipIds: readonly TEntityId[];
   readWrite: ModeValueReadWriteInput;
@@ -154,8 +156,6 @@ export interface SourceRunContextEntry<
 }
 
 export interface SourceContext {
-  rehydrated: boolean;
-  refreshing: boolean;
   cacheState: 'disabled' | 'miss' | 'hit' | 'stale';
   error: unknown;
 }
@@ -167,6 +167,11 @@ export interface SourceCacheRecord<TEntity extends object> {
 }
 
 export interface ResolveCacheTtlInput {
+  sourceCache: CacheConfig | undefined;
+  entityCache: CacheConfig | undefined;
+}
+
+export interface ResolveCacheLruMaxEntriesInput {
   sourceCache: CacheConfig | undefined;
   entityCache: CacheConfig | undefined;
 }

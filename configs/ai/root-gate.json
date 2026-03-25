@@ -50,9 +50,69 @@
       ]
     },
     {
+      "id": "reuse-existing-types-first",
+      "statement": "Reuse existing named types/interfaces instead of rebuilding composite inline types. If only a subset is needed, prefer simple Pick/Omit; if that becomes noisy, define a small new named type instead of inline reconstruction.",
+      "humanSources": [
+        "website/docs/core/coding-style-guide.md",
+        "website/docs/ai/root-gate.md"
+      ],
+      "agentSources": [
+        "PROMPT.md",
+        "AGENTS.md"
+      ]
+    },
+    {
+      "id": "cross-module-type-reuse",
+      "statement": "When the same type contract is used across modules, define and reuse one shared type instead of duplicating local variants. Compose from existing types with intersections and utility types (for example Pick/Omit/Exclude) when it stays readable, and prefer simpler named types when utility composition becomes noisy.",
+      "humanSources": [
+        "website/docs/core/coding-style-guide.md",
+        "website/docs/ai/root-gate.md"
+      ],
+      "agentSources": [
+        "PROMPT.md",
+        "AGENTS.md"
+      ]
+    },
+    {
+      "id": "avoid-circular-import-paths",
+      "statement": "Avoid circular import paths by default. If a circular dependency appears, extract the shared behavior/types into a dedicated module and import that module from both sides instead of importing each other directly.",
+      "humanSources": [
+        "website/docs/core/coding-style-guide.md",
+        "website/docs/ai/root-gate.md"
+      ],
+      "agentSources": [
+        "PROMPT.md",
+        "AGENTS.md"
+      ]
+    },
+    {
+      "id": "prefer-flat-control-flow",
+      "statement": "Prefer flat control flow and avoid deeply nested if blocks when feasible. Use guard clauses, extracted helper functions, or table/map-driven branching to keep indentation depth low while preserving readability and avoiding messy abstractions.",
+      "humanSources": [
+        "website/docs/core/coding-style-guide.md",
+        "website/docs/ai/root-gate.md"
+      ],
+      "agentSources": [
+        "PROMPT.md",
+        "AGENTS.md"
+      ]
+    },
+    {
       "id": "stable-reference-rebuild-policy",
       "statement": "Keep object and array references stable by default: rebuild only when relevant values change, compare before building in hot paths, and use explicit invalidation or bounded limits for caches.",
       "humanSources": [
+        "website/docs/ai/root-gate.md"
+      ],
+      "agentSources": [
+        "PROMPT.md",
+        "AGENTS.md"
+      ]
+    },
+    {
+      "id": "allocation-stability-root-scope",
+      "statement": "Minimize complex allocations on hot paths: define reusable functions, arrays, objects, maps, and other complex values at module/root scope when semantics allow; avoid defining functions inside frequently called functions unless local state is required; and avoid function factories that still allocate new closures per call.",
+      "humanSources": [
+        "website/docs/core/coding-style-guide.md",
         "website/docs/ai/root-gate.md"
       ],
       "agentSources": [
@@ -112,7 +172,7 @@
     },
     {
       "id": "reuse-existing-utils-first",
-      "statement": "Before implementing new logic, first check existing utilities/modules for reusable equivalents, including across package boundaries. If similar logic exists in another package, prefer consolidating it into @livon/utils and introducing that package dependency where needed. When two or more candidate implementations exist, prefer the most performant and cleanest implementation, or merge them into one shared configurable solution that combines the best traits.",
+      "statement": "Before implementing new logic, first check existing utilities/modules for reusable equivalents, including across package boundaries. Treat this lookup as a mandatory first step for each change. If similar logic exists in another package, prefer consolidating it into @livon/utils and introducing that package dependency where needed. When two or more candidate implementations exist, prefer the most performant and cleanest implementation, or merge them into one shared configurable solution (config/options) that combines the best traits instead of parallel helpers.",
       "humanSources": [
         "website/docs/core/coding-style-guide.md",
         "website/docs/ai/root-gate.md"

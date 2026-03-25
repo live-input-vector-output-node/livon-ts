@@ -6,7 +6,7 @@ export interface ValueUpdater<RResult, UUpdate> {
   (previous: RResult): UUpdate;
 }
 
-export type UnitStatus = 'idle' | 'loading' | 'success' | 'error';
+export type UnitStatus = 'idle' | 'rehydrated' | 'loading' | 'refreshing' | 'success' | 'error';
 
 export interface UnitSnapshot<RResult> {
   value: RResult;

@@ -263,11 +263,20 @@ Functions and symbols are not valid scope/payload values for key serialization.
 - `draft`: optional draft mode (`global` | `scoped` | `off`)
 - `destroyDelay`: optional default destroy delay for units using this entity
 - `cache`: optional cache defaults (`key`, `ttl`, `storage`)
+- `readWrite`: optional strategy config (`batch`, `subview`, optional `adaptive`)
+  - `adaptive: true` enables matrix-driven strategy selection based on cache/lru profile and operation class.
+  - explicit `batch`/`subview` flags override adaptive values per field.
 
 Entity mutation methods exposed to units:
 
 - `upsertOne`, `upsertMany`
 - `removeOne`, `removeMany`
+
+Adaptive strategy helpers exported at package root:
+
+- `resolveAdaptiveReadWriteProfileKey(...)`
+- `resolveAdaptiveReadWriteConfig(...)`
+- `resolveAdaptiveReadWriteByCache(...)`
 
 ### `source({ ... })`
 

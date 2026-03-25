@@ -1,6 +1,7 @@
 export interface EntityReadWriteInput {
   batch?: boolean;
   subview?: boolean;
+  adaptive?: boolean;
 }
 
 export interface EntityReadWriteConfig {
