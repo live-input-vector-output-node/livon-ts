@@ -12,7 +12,7 @@ export interface UseLivonSourceState {
   TInput extends object | undefined,
   TPayload,
   RResult,
-  TMeta,
+  TMeta = unknown,
   >(unit: SourceUnit<TInput, TPayload, RResult, TMeta>): LivonSourceStateOf<
     SourceUnit<TInput, TPayload, RResult, TMeta>
   >;
@@ -22,7 +22,7 @@ const useLivonSourceStateInternal: UseLivonSourceState = <
   TInput extends object | undefined,
   TPayload,
   RResult,
-  TMeta,
+  TMeta = unknown,
 >(
   unit: SourceUnit<TInput, TPayload, RResult, TMeta>,
 ): LivonSourceStateOf<SourceUnit<TInput, TPayload, RResult, TMeta>> => {

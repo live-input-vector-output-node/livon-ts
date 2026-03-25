@@ -9,14 +9,14 @@ export interface UseLivonActionState {
   <
   RResult,
   TPayload,
-  TMeta,
+  TMeta = unknown,
   >(unit: ActionUnit<TPayload, RResult, TMeta>): LivonActionStateOf<ActionUnit<TPayload, RResult, TMeta>>;
 }
 
 const useLivonActionStateInternal: UseLivonActionState = <
   RResult,
   TPayload,
-  TMeta,
+  TMeta = unknown,
 >(
   unit: ActionUnit<TPayload, RResult, TMeta>,
 ): LivonActionStateOf<ActionUnit<TPayload, RResult, TMeta>> => {

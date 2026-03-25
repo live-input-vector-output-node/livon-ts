@@ -15,7 +15,7 @@ export interface UseLivonState {
   TInput extends object | undefined,
   TPayload,
   RResult,
-  TMeta,
+  TMeta = unknown,
   >(unit: SourceUnit<TInput, TPayload, RResult, TMeta>): LivonStateOf<
     SourceUnit<TInput, TPayload, RResult, TMeta>
   >;
@@ -23,13 +23,13 @@ export interface UseLivonState {
   <
   RResult,
   TPayload,
-  TMeta,
+  TMeta = unknown,
   >(unit: ActionUnit<TPayload, RResult, TMeta>): LivonStateOf<ActionUnit<TPayload, RResult, TMeta>>;
 
   <
   TPayload,
   RResult,
-  TMeta,
+  TMeta = unknown,
   >(unit: StreamUnit<TPayload, RResult, TMeta>): LivonStateOf<StreamUnit<TPayload, RResult, TMeta>>;
 }
 
@@ -38,6 +38,30 @@ type AnyActionUnit = ActionUnit<unknown, unknown, unknown>;
 type AnyStreamUnit = StreamUnit<unknown, unknown, unknown>;
 type AnyStateUnit = AnySourceUnit | AnyActionUnit | AnyStreamUnit;
 
+interface SelectStateValue {
+  <TValue, TMeta>(snapshot: UnitSnapshot<TValue, TMeta | null>): TValue;
+}
+
+interface SelectStateStatus {
+  <TValue, TMeta>(snapshot: UnitSnapshot<TValue, TMeta | null>): UnitStatus;
+}
+
+interface SelectStateMeta {
+  <TValue, TMeta>(snapshot: UnitSnapshot<TValue, TMeta | null>): TMeta | null;
+}
+
+const selectStateValue: SelectStateValue = (snapshot) => {
+  return snapshot.value;
+};
+
+const selectStateStatus: SelectStateStatus = (snapshot) => {
+  return snapshot.status;
+};
+
+const selectStateMeta: SelectStateMeta = (snapshot) => {
+  return snapshot.meta;
+};
+
 const useLivonStateInternal: UseLivonState = <
   TValue,
   TMeta,
@@ -45,23 +69,17 @@ const useLivonStateInternal: UseLivonState = <
 >(
   unit: TUnit,
 ): LivonState<TValue, UnitStatus, TMeta | null> => {
-  const value = useLivonSelection({
+  const value = useLivonSelection<TValue, TValue, TMeta>({
     unit,
-    select: (snapshot: UnitSnapshot<TValue, TMeta | null>) => {
-      return snapshot.value;
-    },
+    select: selectStateValue,
   });
-  const status = useLivonSelection({
+  const status = useLivonSelection<TValue, UnitStatus, TMeta>({
     unit,
-    select: (snapshot: UnitSnapshot<TValue, TMeta | null>): UnitStatus => {
-      return snapshot.status;
-    },
+    select: selectStateStatus,
   });
-  const meta = useLivonSelection({
+  const meta = useLivonSelection<TValue, TMeta | null, TMeta>({
     unit,
-    select: (snapshot: UnitSnapshot<TValue, TMeta | null>) => {
-      return snapshot.meta;
-    },
+    select: selectStateMeta,
   });
 
   return {

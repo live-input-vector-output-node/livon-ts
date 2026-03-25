@@ -9,14 +9,14 @@ export interface UseLivonStreamState {
   <
   TPayload,
   RResult,
-  TMeta,
+  TMeta = unknown,
   >(unit: StreamUnit<TPayload, RResult, TMeta>): LivonStreamStateOf<StreamUnit<TPayload, RResult, TMeta>>;
 }
 
 const useLivonStreamStateInternal: UseLivonStreamState = <
   TPayload,
   RResult,
-  TMeta,
+  TMeta = unknown,
 >(
   unit: StreamUnit<TPayload, RResult, TMeta>,
 ): LivonStreamStateOf<StreamUnit<TPayload, RResult, TMeta>> => {
