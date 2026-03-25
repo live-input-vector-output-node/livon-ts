@@ -17,7 +17,7 @@
     "build": "turbo run build",
     "build:watch": "turbo run build:watch",
     "ci": "turbo run ci --output-logs=errors-only",
-    "qg": "turbo run qg --concurrency=1 --output-logs=errors-only",
+    "qg": "turbo run qg --output-logs=errors-only",
     "qg:changed": "turbo run qg --affected --output-logs=errors-only",
     "dev": "turbo run build:watch dev gen:client:watch",
     "docs": "turbo run docs",

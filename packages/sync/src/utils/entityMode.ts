@@ -27,10 +27,6 @@ export interface ModeValueReadWriteInput {
   subview?: boolean;
 }
 
-interface ModeValueReadWriteConfig {
-  subview: boolean;
-}
-
 interface ReadManyDirectInput<TId, TEntity extends object> {
   membershipIds: readonly TId[];
   readById: ReadById<TId, TEntity>;
@@ -52,9 +48,7 @@ interface ResolveManyWithSubviewCacheInput<
 }
 
 const manySubviewCacheByState = new WeakMap<ModeValueCacheKey, ManySubviewCacheState>();
-const DEFAULT_MODE_VALUE_READ_WRITE_CONFIG: ModeValueReadWriteConfig = {
-  subview: true,
-};
+const DEFAULT_MODE_VALUE_READ_WRITE_SUBVIEW = true;
 // Adaptive split (measured 2026-03-24, local median A/B vs last green main commit 1e2ddb4):
 // - todo entity read by id: +14.98%
 // - todo source get: +2.93%
@@ -204,16 +198,14 @@ export function getModeValue<
   internal: ModeValueState<TId, RResult>,
   readById: ReadById<TId, TEntity>,
 ): RResult | readonly TEntity[] | TEntity | null {
-  const readWriteConfig: ModeValueReadWriteConfig = {
-    subview: internal.readWrite?.subview ?? DEFAULT_MODE_VALUE_READ_WRITE_CONFIG.subview,
-  };
+  const subviewEnabled = internal.readWrite?.subview ?? DEFAULT_MODE_VALUE_READ_WRITE_SUBVIEW;
 
   if (!internal.hasEntityValue) {
     return internal.state.value;
   }
 
   if (internal.mode === 'many') {
-    if (!readWriteConfig.subview) {
+    if (!subviewEnabled) {
       manySubviewCacheByState.delete(internal);
       return readManyDirect({
         membershipIds: internal.membershipIds,
