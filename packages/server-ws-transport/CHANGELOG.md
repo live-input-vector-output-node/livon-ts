@@ -1,5 +1,11 @@
 # @livon/node-ws-transport
 
+## 0.29.0-rc.9
+
+### Patch Changes
+
+- @livon/runtime@0.29.0-rc.9
+
 ## 0.29.0-rc.8
 
 ### Patch Changes

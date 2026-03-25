@@ -1,5 +1,12 @@
 # @livon/react
 
+## 0.29.0-rc.9
+
+### Patch Changes
+
+- Prepare 0.29.0-rc.9 release line.
+  - @livon/sync@0.29.0-rc.9
+
 ## 0.29.0-rc.8
 
 ### Patch Changes
