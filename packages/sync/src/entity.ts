@@ -1,4 +1,10 @@
 import { defaultRuntimeQueue } from './runtimeQueue/index.js';
+import {
+  resolveEntityReadWriteConfig,
+  runEntityWriteStrategy,
+  type EntityReadWriteConfig,
+  type EntityReadWriteInput,
+} from './utils/readWriteStrategy.js';
 
 export interface UpsertOptions {
   merge?: boolean;
@@ -39,6 +45,7 @@ export interface EntityConfig<
   destroyDelay?: number;
   draft?: DraftMode;
   cache?: CacheConfig;
+  readWrite?: EntityReadWriteInput;
 }
 
 export type EntityByIdMap<TInput extends object, TId extends EntityId> = Map<TId, TInput>;
@@ -51,6 +58,7 @@ export interface Entity<
   destroyDelay?: number;
   draft?: DraftMode;
   cache?: CacheConfig;
+  readWrite: EntityReadWriteConfig;
   idOf: (input: TInput) => TId;
   entitiesById: EntityByIdMap<TInput, TId>;
   getDraftById: (id: TId) => TInput | undefined;
@@ -160,6 +168,7 @@ export const entity = <
   destroyDelay,
   draft,
   cache,
+  readWrite,
 }: EntityConfig<TInput, TId>): Entity<TInput, TId> => {
   const entitiesById: EntityByIdMap<TInput, TId> = new Map<TId, TInput>();
   const draftsById: EntityByIdMap<TInput, TId> = new Map<TId, TInput>();
@@ -168,6 +177,7 @@ export const entity = <
   const dirtyUnitKeys = new Set<string>();
   nextEntityQueueId += 1;
   const dirtyUnitsQueueKey = `entity-dirty:${nextEntityQueueId}`;
+  const readWriteConfig = resolveEntityReadWriteConfig(readWrite);
 
   const getById = (id: TId): TInput | undefined => {
     return entitiesById.get(id);
@@ -316,6 +326,11 @@ export const entity = <
     });
   };
 
+  const notifyUnitByKey = (key: string): void => {
+    const unitState = unitStateByKey.get(key);
+    unitState?.onChange();
+  };
+
   const setDraftById = (id: TId, input: TInput): TInput => {
     draftsById.set(id, input);
     notifyUnitsById(id);
@@ -395,7 +410,17 @@ export const entity = <
     }
 
     entitiesById.set(id, mergedInput);
-    notifyUnitsById(id);
+    runEntityWriteStrategy({
+      strategy: readWriteConfig,
+      changedIdCount: 1,
+      batchThreshold: NOTIFY_BATCH_THRESHOLD,
+      runImmediate: () => {
+        notifyUnitsById(id);
+      },
+      runBatched: () => {
+        queueUnitsByIds(new Set<TId>([id]));
+      },
+    });
 
     return mergedInput;
   };
@@ -427,13 +452,20 @@ export const entity = <
       mergedValues.push(mergedInput);
     });
 
-    if (hasDuplicates || changedIds.size >= NOTIFY_BATCH_THRESHOLD) {
-      queueUnitsByIds(changedIds);
-    } else {
-      changedIds.forEach((id) => {
-        notifyUnitsById(id);
-      });
-    }
+    runEntityWriteStrategy({
+      strategy: readWriteConfig,
+      changedIdCount: changedIds.size,
+      hasDuplicates,
+      batchThreshold: NOTIFY_BATCH_THRESHOLD,
+      runImmediate: () => {
+        changedIds.forEach((id) => {
+          notifyUnitsById(id);
+        });
+      },
+      runBatched: () => {
+        queueUnitsByIds(changedIds);
+      },
+    });
 
     return mergedValues;
   };
@@ -459,9 +491,19 @@ export const entity = <
 
     unitKeysById.delete(id);
 
-    affectedKeys.forEach((key) => {
-      const unitState = unitStateByKey.get(key);
-      unitState?.onChange();
+    runEntityWriteStrategy({
+      strategy: readWriteConfig,
+      changedIdCount: 1,
+      affectedKeyCount: affectedKeys.length,
+      batchThreshold: NOTIFY_BATCH_THRESHOLD,
+      runImmediate: () => {
+        affectedKeys.forEach((key) => {
+          notifyUnitByKey(key);
+        });
+      },
+      runBatched: () => {
+        queueUnitsByKeys(new Set<string>(affectedKeys));
+      },
     });
 
     return true;
@@ -497,14 +539,20 @@ export const entity = <
       unitKeysById.delete(id);
     });
 
-    if (affectedKeys.size >= NOTIFY_BATCH_THRESHOLD || removedIds.length >= NOTIFY_BATCH_THRESHOLD) {
-      queueUnitsByKeys(affectedKeys);
-    } else {
-      affectedKeys.forEach((key) => {
-        const unitState = unitStateByKey.get(key);
-        unitState?.onChange();
-      });
-    }
+    runEntityWriteStrategy({
+      strategy: readWriteConfig,
+      changedIdCount: removedIds.length,
+      affectedKeyCount: affectedKeys.size,
+      batchThreshold: NOTIFY_BATCH_THRESHOLD,
+      runImmediate: () => {
+        affectedKeys.forEach((key) => {
+          notifyUnitByKey(key);
+        });
+      },
+      runBatched: () => {
+        queueUnitsByKeys(affectedKeys);
+      },
+    });
 
     return removedIds;
   };
@@ -514,6 +562,7 @@ export const entity = <
     destroyDelay,
     draft,
     cache,
+    readWrite: readWriteConfig,
     idOf,
     entitiesById,
     getDraftById,

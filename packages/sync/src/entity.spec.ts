@@ -40,6 +40,32 @@ describe('entity()', () => {
       expect(usersEntity.ttl).toBe(30_000);
     });
 
+    it('should expose default readWrite strategy when not configured', () => {
+      const usersEntity = entity<User>({
+        idOf: (value) => value.id,
+      });
+
+      expect(usersEntity.readWrite).toEqual({
+        batch: true,
+        subview: true,
+      });
+    });
+
+    it('should keep configured readWrite strategy when entity is created', () => {
+      const usersEntity = entity<User>({
+        idOf: (value) => value.id,
+        readWrite: {
+          batch: false,
+          subview: false,
+        },
+      });
+
+      expect(usersEntity.readWrite).toEqual({
+        batch: false,
+        subview: false,
+      });
+    });
+
     it('should expose a shared map when entity is created', () => {
       const usersEntity = entity<User>({
         idOf: (value) => value.id,
@@ -249,6 +275,83 @@ describe('entity()', () => {
       expect(notifyCount).toBe(0);
       defaultRuntimeQueue.flush('state');
       expect(notifyCount).toBe(1);
+    });
+
+    it('should keep large upsertMany notifications synchronous when batch strategy is disabled', () => {
+      defaultRuntimeQueue.flush('state');
+      const usersEntity = entity<User>({
+        idOf: (value) => value.id,
+        readWrite: {
+          batch: false,
+        },
+      });
+      const ids = Array.from({ length: 40 }, (_unused, index) => {
+        return `sync-user-${index}`;
+      });
+      let notifyCount = 0;
+
+      usersEntity.registerUnit({
+        key: 'sync-upsert-many-unit',
+        onChange: () => {
+          notifyCount += 1;
+        },
+      });
+      usersEntity.setUnitMembership({
+        key: 'sync-upsert-many-unit',
+        ids,
+      });
+
+      usersEntity.upsertMany(ids.map((id) => {
+        return {
+          id,
+          name: `Name ${id}`,
+        };
+      }));
+
+      expect(notifyCount).toBeGreaterThan(0);
+      const notifyCountAfterUpsert = notifyCount;
+      defaultRuntimeQueue.flush('state');
+      expect(notifyCount).toBe(notifyCountAfterUpsert);
+    });
+
+    it('should keep large removeMany notifications synchronous when batch strategy is disabled', () => {
+      defaultRuntimeQueue.flush('state');
+      const usersEntity = entity<User>({
+        idOf: (value) => value.id,
+        readWrite: {
+          batch: false,
+        },
+      });
+      const ids = Array.from({ length: 40 }, (_unused, index) => {
+        return `sync-remove-user-${index}`;
+      });
+      let notifyCount = 0;
+
+      usersEntity.upsertMany(ids.map((id) => {
+        return {
+          id,
+          name: `Name ${id}`,
+        };
+      }));
+      defaultRuntimeQueue.flush('state');
+
+      usersEntity.registerUnit({
+        key: 'sync-remove-many-unit',
+        onChange: () => {
+          notifyCount += 1;
+        },
+      });
+      usersEntity.setUnitMembership({
+        key: 'sync-remove-many-unit',
+        ids,
+      });
+
+      usersEntity.removeMany(ids);
+
+      expect(notifyCount).toBeGreaterThan(0);
+      const notifyCountAfterRemove = notifyCount;
+      defaultRuntimeQueue.flush('state');
+      expect(notifyCount).toBe(notifyCountAfterRemove);
     });
   });
 });

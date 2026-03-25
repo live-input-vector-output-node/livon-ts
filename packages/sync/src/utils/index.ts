@@ -8,6 +8,10 @@ export {
   setOneEntityMembership,
 } from './entityMembership.js';
 export { getModeValue, isEntityArray, isEntityValue } from './entityMode.js';
+export {
+  resolveEntityReadWriteConfig,
+  runEntityWriteStrategy,
+} from './readWriteStrategy.js';
 export { cloneValue } from './cloneValue.js';
 export { createSerializedKeyCache } from './serializedKeyCache.js';
 export { resolveInput } from './resolveInput.js';
@@ -41,4 +45,9 @@ export type {
   DependencyCacheGetOrCreateInput,
 } from './dependencyCache.js';
 export type { EntityMembershipState } from './entityMembership.js';
-export type { ModeValueState, ReadById } from './entityMode.js';
+export type { ModeValueReadWriteInput, ModeValueState, ReadById } from './entityMode.js';
+export type {
+  EntityReadWriteConfig,
+  EntityReadWriteInput,
+  RunEntityWriteStrategyInput,
+} from './readWriteStrategy.js';

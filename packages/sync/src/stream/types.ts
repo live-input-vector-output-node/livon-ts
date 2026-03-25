@@ -2,6 +2,7 @@ import { type Entity, type EntityId, type UpsertOptions } from '../entity.js';
 import {
   type EffectListener,
   type InputUpdater,
+  type ModeValueReadWriteInput,
   type ValueUpdater,
 } from '../utils/index.js';
 
@@ -93,6 +94,7 @@ export interface StreamUnitInternal<
   mode: 'one' | 'many';
   hasEntityValue: boolean;
   membershipIds: readonly TEntityId[];
+  readWrite: ModeValueReadWriteInput;
   state: StreamUnitState<RResult>;
   listeners: Set<EffectListener<RResult>>;
   stopCallback: StreamCleanup | null;

@@ -8,6 +8,7 @@ export interface ModeValueState<
   state: {
     value: RResult;
   };
+  readWrite?: ModeValueReadWriteInput;
 }
 
 interface ModeValueCacheKey {
@@ -20,6 +21,14 @@ interface ModeValueCacheKey {
 interface ManySubviewCacheState {
   membershipIds: readonly unknown[];
   values: readonly unknown[];
+}
+
+export interface ModeValueReadWriteInput {
+  subview?: boolean;
+}
+
+interface ModeValueReadWriteConfig {
+  subview: boolean;
 }
 
 interface ReadManyDirectInput<TId, TEntity extends object> {
@@ -43,6 +52,9 @@ interface ResolveManyWithSubviewCacheInput<
 }
 
 const manySubviewCacheByState = new WeakMap<ModeValueCacheKey, ManySubviewCacheState>();
+const DEFAULT_MODE_VALUE_READ_WRITE_CONFIG: ModeValueReadWriteConfig = {
+  subview: true,
+};
 // Adaptive split (measured 2026-03-24, local median A/B vs last green main commit 1e2ddb4):
 // - todo entity read by id: +14.98%
 // - todo source get: +2.93%
@@ -192,11 +204,23 @@ export function getModeValue<
   internal: ModeValueState<TId, RResult>,
   readById: ReadById<TId, TEntity>,
 ): RResult | readonly TEntity[] | TEntity | null {
+  const readWriteConfig: ModeValueReadWriteConfig = {
+    subview: internal.readWrite?.subview ?? DEFAULT_MODE_VALUE_READ_WRITE_CONFIG.subview,
+  };
+
   if (!internal.hasEntityValue) {
     return internal.state.value;
   }
 
   if (internal.mode === 'many') {
+    if (!readWriteConfig.subview) {
+      manySubviewCacheByState.delete(internal);
+      return readManyDirect({
+        membershipIds: internal.membershipIds,
+        readById,
+      });
+    }
+
     if (internal.membershipIds.length < MANY_SUBVIEW_MIN_SIZE) {
       // Small memberships: direct read is faster than cache validation/setup overhead.
       manySubviewCacheByState.delete(internal);

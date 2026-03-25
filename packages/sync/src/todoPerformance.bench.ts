@@ -40,6 +40,17 @@ interface ReadTodosRunInput {
   payload: readonly Todo[] | undefined;
 }
 
+interface ResolveBooleanEnvInput {
+  name: string;
+  fallback: boolean;
+}
+
+interface RuntimeWithProcessEnv {
+  process?: {
+    env?: Record<string, string | undefined>;
+  };
+}
+
 const TODO_COUNT = 100_000;
 const TODO_LIST_ID = 'bench-list-100k';
 const TODO_READ_INDEX = 50_000;
@@ -57,6 +68,28 @@ const HEAVY_BENCH_OPTIONS = {
   warmupTime: 300,
   iterations: 6,
   warmupIterations: 2,
+};
+
+const resolveBooleanEnv = ({
+  name,
+  fallback,
+}: ResolveBooleanEnvInput): boolean => {
+  const runtime = globalThis as RuntimeWithProcessEnv;
+  const rawValue = runtime.process?.env?.[name];
+  if (!rawValue) {
+    return fallback;
+  }
+
+  const normalizedValue = rawValue.toLowerCase();
+  if (normalizedValue === '1' || normalizedValue === 'true' || normalizedValue === 'on') {
+    return true;
+  }
+
+  if (normalizedValue === '0' || normalizedValue === 'false' || normalizedValue === 'off') {
+    return false;
+  }
+
+  return fallback;
 };
 
 const createTodoDataset = (): readonly Todo[] => {
@@ -105,6 +138,16 @@ describe('todo performance benchmarks (new dx)', () => {
     values: new Map<string, string>(),
   };
   const memoryStorage = createMemoryStorage(memoryStorageState)();
+  const benchmarkReadWrite = {
+    batch: resolveBooleanEnv({
+      name: 'LIVON_SYNC_BENCH_BATCH',
+      fallback: true,
+    }),
+    subview: resolveBooleanEnv({
+      name: 'LIVON_SYNC_BENCH_SUBVIEW',
+      fallback: true,
+    }),
+  };
 
   const todosEntity = entity<Todo>({
     idOf: (todo) => todo.id,
@@ -113,6 +156,7 @@ describe('todo performance benchmarks (new dx)', () => {
       ttl: 'infinity',
       storage: memoryStorage,
     },
+    readWrite: benchmarkReadWrite,
   });
 
   const readTodosRun = async ({ payload }: ReadTodosRunInput): Promise<readonly Todo[] | undefined> => {
@@ -261,6 +305,7 @@ describe('todo performance benchmarks (new dx)', () => {
     await ensureSeeded();
     const nextEntity = entity<Todo>({
       idOf: (todo) => todo.id,
+      readWrite: benchmarkReadWrite,
     });
     const nextReadTodos = source<TodoScope, readonly Todo[] | undefined, Todo, readonly Todo[]>({
       entity: nextEntity,

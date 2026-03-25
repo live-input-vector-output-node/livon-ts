@@ -92,6 +92,9 @@ export const stream = <
       mode: initialMode,
       hasEntityValue: false,
       membershipIds: [],
+      readWrite: {
+        subview: entity.readWrite.subview,
+      },
       state: {
         value: initialValue,
         status: 'idle',
