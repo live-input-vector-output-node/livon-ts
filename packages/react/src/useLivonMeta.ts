@@ -37,6 +37,12 @@ type AnyActionUnit = ActionUnit<unknown, unknown, unknown>;
 type AnyStreamUnit = StreamUnit<unknown, unknown, unknown>;
 type AnyMetaUnit = AnySourceUnit | AnyActionUnit | AnyStreamUnit;
 
+const selectMeta = <TValue, TMeta>(
+  snapshot: UnitSnapshot<TValue, TMeta | null>,
+): TMeta | null => {
+  return snapshot.meta;
+};
+
 const useLivonMetaInternal: UseLivonMeta = <
   TValue,
   TMeta,
@@ -46,9 +52,7 @@ const useLivonMetaInternal: UseLivonMeta = <
 ): TMeta | null => {
   return useLivonSelection({
     unit,
-    select: (snapshot: UnitSnapshot<TValue, TMeta | null>) => {
-      return snapshot.meta;
-    },
+    select: selectMeta<TValue, TMeta>,
   });
 };
 
