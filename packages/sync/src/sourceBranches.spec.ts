@@ -411,6 +411,48 @@ describe('source() branches', () => {
         name: updatedUserName,
       });
     });
+
+    it('should notify listeners immediately when run context set updates value before run resolves', async () => {
+      const pendingUserId = randomString({ prefix: 'pending-user-id' });
+      let releaseRun = () => undefined;
+      let hasReleaseRun = false;
+      let runResolved = false;
+      const observedValues: Array<User | null> = [];
+
+      const readWithPendingRun = source<UserSlug, SearchPayload, User | null>({
+        entity: usersEntity,
+        run: async ({ payload, set }) => {
+          set({
+            id: payload.search,
+            name: payload.search,
+          });
+          await new Promise<void>((resolve) => {
+            hasReleaseRun = true;
+            releaseRun = () => {
+              resolve();
+            };
+          });
+        },
+      });
+
+      const userStore = readWithPendingRun({ slugId });
+      userStore.effect((snapshot) => {
+        observedValues.push(snapshot.value);
+      });
+
+      const runPromise = userStore
+        .run({ search: pendingUserId })
+        .then(() => {
+          runResolved = true;
+        });
+      await Promise.resolve();
+
+      expect(runResolved).toBe(false);
+      expect(hasReleaseRun).toBe(true);
+      expect(observedValues.some((value) => value?.id === pendingUserId)).toBe(true);
+      releaseRun();
+      await runPromise;
+    });
   });
 
   describe('sad', () => {
