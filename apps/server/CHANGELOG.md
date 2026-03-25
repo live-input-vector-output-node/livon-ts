@@ -1,5 +1,14 @@
 # @livon/app-server
 
+## 0.29.0-rc.7
+
+### Patch Changes
+
+- @livon/dlq-module@0.29.0-rc.7
+- @livon/runtime@0.29.0-rc.7
+- @livon/schema@0.29.0-rc.7
+- @livon/node-ws-transport@0.29.0-rc.7
+
 ## 0.29.0-rc.6
 
 ### Patch Changes

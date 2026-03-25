@@ -16,11 +16,13 @@ interface TodoScope {
 }
 
 interface ContextShape {
+  hasTopLevelSet: boolean;
   hasTopLevelUpsertOne: boolean;
   hasTopLevelUpsertMany: boolean;
   hasTopLevelRemoveOne: boolean;
   hasTopLevelRemoveMany: boolean;
   hasTopLevelReset: boolean;
+  hasEntitySet: boolean;
   hasEntityUpsertOne: boolean;
   hasEntityUpsertMany: boolean;
   hasEntityRemoveOne: boolean;
@@ -33,6 +35,7 @@ interface ContextReferenceShape {
   scope: unknown;
   payload: unknown;
   setMeta: unknown;
+  set?: unknown;
   upsertOne: unknown;
   upsertMany: unknown;
   removeOne: unknown;
@@ -64,6 +67,7 @@ describe('run context entity api', () => {
             scope: context.scope,
             payload: context.payload,
             setMeta: context.setMeta,
+            set: context.set,
             upsertOne: context.upsertOne,
             upsertMany: context.upsertMany,
             removeOne: context.removeOne,
@@ -95,6 +99,7 @@ describe('run context entity api', () => {
       expect(first.scope).toBe(second.scope);
       expect(first.payload).toBe(second.payload);
       expect(first.setMeta).toBe(second.setMeta);
+      expect(first.set).toBe(second.set);
       expect(first.upsertOne).toBe(second.upsertOne);
       expect(first.upsertMany).toBe(second.upsertMany);
       expect(first.removeOne).toBe(second.removeOne);
@@ -105,6 +110,7 @@ describe('run context entity api', () => {
       expect(first.scope).toBe(third.scope);
       expect(first.payload).not.toBe(third.payload);
       expect(first.setMeta).not.toBe(third.setMeta);
+      expect(first.set).not.toBe(third.set);
       expect(first.upsertOne).not.toBe(third.upsertOne);
       expect(first.upsertMany).not.toBe(third.upsertMany);
       expect(first.removeOne).not.toBe(third.removeOne);
@@ -115,6 +121,7 @@ describe('run context entity api', () => {
       expect(first.scope).toBe(fourth.scope);
       expect(first.payload).toBe(fourth.payload);
       expect(first.setMeta).toBe(fourth.setMeta);
+      expect(first.set).toBe(fourth.set);
       expect(first.upsertOne).toBe(fourth.upsertOne);
       expect(first.upsertMany).toBe(fourth.upsertMany);
       expect(first.removeOne).toBe(fourth.removeOne);
@@ -302,11 +309,13 @@ describe('run context entity api', () => {
           const entityApi = rawContext.entity as Record<string, unknown> | undefined;
 
           contextShape = {
+            hasTopLevelSet: typeof rawContext.set === 'function',
             hasTopLevelUpsertOne: typeof rawContext.upsertOne === 'function',
             hasTopLevelUpsertMany: typeof rawContext.upsertMany === 'function',
             hasTopLevelRemoveOne: typeof rawContext.removeOne === 'function',
             hasTopLevelRemoveMany: typeof rawContext.removeMany === 'function',
             hasTopLevelReset: typeof rawContext.reset === 'function',
+            hasEntitySet: typeof entityApi?.set === 'function',
             hasEntityUpsertOne: typeof entityApi?.upsertOne === 'function',
             hasEntityUpsertMany: typeof entityApi?.upsertMany === 'function',
             hasEntityRemoveOne: typeof entityApi?.removeOne === 'function',
@@ -319,11 +328,13 @@ describe('run context entity api', () => {
       await readTodo({ listId: randomString({ prefix: 'list-id' }) }).run();
 
       expect(contextShape).toEqual({
+        hasTopLevelSet: true,
         hasTopLevelUpsertOne: true,
         hasTopLevelUpsertMany: true,
         hasTopLevelRemoveOne: true,
         hasTopLevelRemoveMany: true,
         hasTopLevelReset: true,
+        hasEntitySet: false,
         hasEntityUpsertOne: false,
         hasEntityUpsertMany: false,
         hasEntityRemoveOne: false,
@@ -345,11 +356,13 @@ describe('run context entity api', () => {
           const entityApi = rawContext.entity as Record<string, unknown> | undefined;
 
           contextShape = {
+            hasTopLevelSet: typeof rawContext.set === 'function',
             hasTopLevelUpsertOne: typeof rawContext.upsertOne === 'function',
             hasTopLevelUpsertMany: typeof rawContext.upsertMany === 'function',
             hasTopLevelRemoveOne: typeof rawContext.removeOne === 'function',
             hasTopLevelRemoveMany: typeof rawContext.removeMany === 'function',
             hasTopLevelReset: typeof rawContext.reset === 'function',
+            hasEntitySet: typeof entityApi?.set === 'function',
             hasEntityUpsertOne: typeof entityApi?.upsertOne === 'function',
             hasEntityUpsertMany: typeof entityApi?.upsertMany === 'function',
             hasEntityRemoveOne: typeof entityApi?.removeOne === 'function',
@@ -365,11 +378,13 @@ describe('run context entity api', () => {
       });
 
       expect(contextShape).toEqual({
+        hasTopLevelSet: false,
         hasTopLevelUpsertOne: true,
         hasTopLevelUpsertMany: true,
         hasTopLevelRemoveOne: true,
         hasTopLevelRemoveMany: true,
         hasTopLevelReset: false,
+        hasEntitySet: false,
         hasEntityUpsertOne: false,
         hasEntityUpsertMany: false,
         hasEntityRemoveOne: false,
@@ -391,11 +406,13 @@ describe('run context entity api', () => {
           const entityApi = rawContext.entity as Record<string, unknown> | undefined;
 
           contextShape = {
+            hasTopLevelSet: typeof rawContext.set === 'function',
             hasTopLevelUpsertOne: typeof rawContext.upsertOne === 'function',
             hasTopLevelUpsertMany: typeof rawContext.upsertMany === 'function',
             hasTopLevelRemoveOne: typeof rawContext.removeOne === 'function',
             hasTopLevelRemoveMany: typeof rawContext.removeMany === 'function',
             hasTopLevelReset: typeof rawContext.reset === 'function',
+            hasEntitySet: typeof entityApi?.set === 'function',
             hasEntityUpsertOne: typeof entityApi?.upsertOne === 'function',
             hasEntityUpsertMany: typeof entityApi?.upsertMany === 'function',
             hasEntityRemoveOne: typeof entityApi?.removeOne === 'function',
@@ -415,11 +432,13 @@ describe('run context entity api', () => {
       await Promise.resolve();
 
       expect(contextShape).toEqual({
+        hasTopLevelSet: false,
         hasTopLevelUpsertOne: true,
         hasTopLevelUpsertMany: true,
         hasTopLevelRemoveOne: true,
         hasTopLevelRemoveMany: true,
         hasTopLevelReset: false,
+        hasEntitySet: false,
         hasEntityUpsertOne: false,
         hasEntityUpsertMany: false,
         hasEntityRemoveOne: false,

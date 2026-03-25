@@ -327,17 +327,35 @@ Adaptive strategy helpers exported at package root:
   - `set(payload)` -> executes `in(...)`
   - `effect`, `stop`, `destroy`
 
-### Shared run context (`source` / `action` / `stream`)
+### Run context reference
 
-- `scope`
-- `payload`
-- `setMeta`
-- `getValue`
-- `upsertOne`, `upsertMany`, `removeOne`, `removeMany`
+`source`, `action`, and `stream` all receive a run context object.
 
-Additional source-only run-context API:
+Common fields available in all three contexts:
 
-- `reset()` restores source state to initial value/status/meta/context and clears current unit membership.
+- `scope`: current unit scope.
+- `payload`: current payload for this run/start.
+- `setMeta(meta | ((previousMeta) => nextMeta))`: updates unit `meta`.
+- `getValue()`: reads current unit value.
+- `upsertOne(input, options?)`: upserts one entity and syncs unit membership.
+- `upsertMany(input[], options?)`: upserts multiple entities and syncs unit membership.
+- `removeOne(id)`: removes one entity by id.
+- `removeMany(ids[])`: removes multiple entities by ids.
+
+Source-only fields (`source(...).run(context)`):
+
+- `set(nextValue | ((previousValue) => nextValue))`: hard-replaces source state for the active run and updates membership accordingly, including removing entries not present in the next value.
+- `reset()`: restores source state to initial value/status/meta/context and clears current unit membership.
+
+Action-only notes (`action(...).run(context)`):
+
+- no `set(...)`.
+- no `reset()`.
+
+Stream-only notes (`stream(...).run(context)`):
+
+- no `set(...)`.
+- no `reset()`.
 
 `run` may return a cleanup function for run-based units (`source`, `action`, `stream`).
 That cleanup executes on `stop()`/`destroy()`.

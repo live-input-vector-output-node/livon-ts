@@ -57,6 +57,19 @@ type SourceRunHasLegacyUpsertOne = 'upsertOne' extends keyof SourceRunContext<To
 type SourceRunHasLegacyUpsertMany = 'upsertMany' extends keyof SourceRunContext<TodoScope, UpdateTodoPayload, Todo | null>
   ? true
   : false;
+type SourceRunHasSet = 'set' extends keyof SourceRunContext<TodoScope, UpdateTodoPayload, Todo | null>
+  ? true
+  : false;
+type SourceRunSetAcceptsValue = SourceRunContext<TodoScope, UpdateTodoPayload, Todo | null>['set'] extends (
+  input: Todo | null,
+) => void
+  ? true
+  : false;
+type SourceRunSetAcceptsUpdater = SourceRunContext<TodoScope, UpdateTodoPayload, Todo | null>['set'] extends (
+  input: Todo | null | ((previous: Todo | null) => Todo | null),
+) => void
+  ? true
+  : false;
 type SourceRunHasReset = 'reset' extends keyof SourceRunContext<TodoScope, UpdateTodoPayload, Todo | null>
   ? true
   : false;
@@ -64,6 +77,9 @@ type SourceRunHasReset = 'reset' extends keyof SourceRunContext<TodoScope, Updat
 type _sourceRunHasNoEntityApi = AssertFalse<SourceRunHasEntityApi>;
 type _sourceRunHasTopLevelUpsertOne = AssertTrue<SourceRunHasLegacyUpsertOne>;
 type _sourceRunHasTopLevelUpsertMany = AssertTrue<SourceRunHasLegacyUpsertMany>;
+type _sourceRunHasTopLevelSet = AssertTrue<SourceRunHasSet>;
+type _sourceRunSetAcceptsValue = AssertTrue<SourceRunSetAcceptsValue>;
+type _sourceRunSetAcceptsUpdater = AssertTrue<SourceRunSetAcceptsUpdater>;
 type _sourceRunHasTopLevelReset = AssertTrue<SourceRunHasReset>;
 
 type ActionRunHasEntityApi = 'entity' extends keyof ActionRunContext<TodoScope, UpdateTodoPayload, Todo | null>

@@ -1,5 +1,11 @@
 # @livon/sync
 
+## 0.29.0-rc.7
+
+### Patch Changes
+
+- Add source run-context `set(...)` with value and updater forms (`set(nextValue)` and `set((previous) => nextValue)`) for hard-replace state updates.
+
 ## 0.29.0-rc.6
 
 ### Patch Changes

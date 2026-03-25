@@ -1,5 +1,11 @@
 # @livon/schema
 
+## 0.29.0-rc.7
+
+### Patch Changes
+
+- @livon/runtime@0.29.0-rc.7
+
 ## 0.29.0-rc.6
 
 ### Patch Changes

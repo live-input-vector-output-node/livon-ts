@@ -305,6 +305,112 @@ describe('source() branches', () => {
         undefined,
       ]);
     });
+
+    it('should allow run context to call set and hard-replace many-mode source state', async () => {
+      const firstUserId = randomString({ prefix: 'first-user-id' });
+      const secondUserId = randomString({ prefix: 'second-user-id' });
+      const secondUserName = randomString({ prefix: 'second-user-name' });
+      let runCount = 0;
+      let hasSetMethod = false;
+
+      const readUsers = source<UserSlug, SearchPayload, readonly User[]>({
+        entity: usersEntity,
+        defaultValue: [],
+        run: async ({ payload, set }) => {
+          runCount += 1;
+          hasSetMethod = typeof set === 'function';
+
+          if (runCount === 1) {
+            set([
+              {
+                id: firstUserId,
+                name: payload.search,
+              },
+              {
+                id: secondUserId,
+                name: secondUserName,
+              },
+            ]);
+            return;
+          }
+
+          set((previousUsers) => {
+            return previousUsers.filter((entry) => entry.id === secondUserId);
+          });
+        },
+      });
+
+      const usersStore = readUsers({ slugId });
+
+      await usersStore.run({ search: searchValue });
+      expect(usersStore.get()).toEqual([
+        {
+          id: firstUserId,
+          name: searchValue,
+        },
+        {
+          id: secondUserId,
+          name: secondUserName,
+        },
+      ]);
+
+      await usersStore.run({ search: randomString({ prefix: 'next-search' }) });
+
+      expect(hasSetMethod).toBe(true);
+      expect(usersStore.get()).toEqual([
+        {
+          id: secondUserId,
+          name: secondUserName,
+        },
+      ]);
+    });
+
+    it('should allow run context set updater to derive next one-mode state from previous value', async () => {
+      const initialUserName = randomString({ prefix: 'initial-user-name' });
+      const updatedUserName = randomString({ prefix: 'updated-user-name' });
+      const stableUserId = randomString({ prefix: 'stable-user-id' });
+      let runCount = 0;
+
+      const readUserWithSetter = source<UserSlug, SearchPayload, User | null>({
+        entity: usersEntity,
+        run: async ({ set }) => {
+          runCount += 1;
+
+          if (runCount === 1) {
+            set({
+              id: stableUserId,
+              name: initialUserName,
+            });
+            return;
+          }
+
+          set((previousUser) => {
+            if (!previousUser) {
+              return previousUser;
+            }
+
+            return {
+              ...previousUser,
+              name: updatedUserName,
+            };
+          });
+        },
+      });
+
+      const userStore = readUserWithSetter({ slugId });
+
+      await userStore.run({ search: searchValue });
+      expect(userStore.get()).toEqual({
+        id: stableUserId,
+        name: initialUserName,
+      });
+
+      await userStore.run({ search: randomString({ prefix: 'next-search' }) });
+      expect(userStore.get()).toEqual({
+        id: stableUserId,
+        name: updatedUserName,
+      });
+    });
   });
 
   describe('sad', () => {

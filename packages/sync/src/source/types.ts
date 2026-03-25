@@ -36,6 +36,7 @@ export interface SourceRunContext<
   scope: TInput;
   payload: TPayload;
   setMeta: (meta: TMeta | null | ValueUpdater<TMeta | null, TMeta | null>) => void;
+  set: (input: TData | ValueUpdater<TData, TData>) => void;
   upsertOne: (input: UnitDataEntity<TData>, options?: UpsertOptions) => UnitDataEntity<TData>;
   upsertMany: (
     input: readonly UnitDataEntity<TData>[],
