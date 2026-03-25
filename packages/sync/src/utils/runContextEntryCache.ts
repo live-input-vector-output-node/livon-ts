@@ -60,8 +60,8 @@ export const createRunContextEntryCache = <TPayload, TEntry>({
       return createdEntry;
     }
 
-    const existingPrimitiveEntry = primitiveEntries.get(payload);
-    if (existingPrimitiveEntry) {
+    if (primitiveEntries.has(payload)) {
+      const existingPrimitiveEntry = primitiveEntries.get(payload) as TEntry;
       primitiveOrder.delete(payload);
       primitiveOrder.add(payload);
       return existingPrimitiveEntry;
