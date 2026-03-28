@@ -48,7 +48,7 @@ Use it as the reference when implementing or reviewing schema definitions.
 - [api](api)
 - [operation](operation)
 - [subscription](subscription)
-- [fieldResolver](field-resolver)
+- [fieldOperation](field-operation)
 
 ## Complete example (all schema APIs)
 
@@ -168,7 +168,7 @@ Each function parameter used above is documented on its dedicated schema page:
 
 - primitives and collections: [string](string), [number](number), [boolean](boolean), [date](date), [enumeration](enumeration), [object](object), [array](array), [tuple](tuple), [literal](literal), [union](union), [or](or), [binary](binary)
 - combinators: [before](before), [after](after), [and](and)
-- schemas: [api](api), [operation](operation), [subscription](subscription), [fieldResolver](field-resolver)
+- schemas: [api](api), [operation](operation), [subscription](subscription), [fieldOperation](field-operation)
 
 ## Advanced APIs
 

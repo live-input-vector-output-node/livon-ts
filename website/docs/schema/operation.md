@@ -102,5 +102,5 @@ Important: every publish topic must exist in `api(...).subscriptions`.
 
 - [api](api)
 - [subscription](subscription)
-- [fieldResolver](field-resolver)
+- [fieldOperation](field-operation)
 - [Schema APIs](/docs/schema)
