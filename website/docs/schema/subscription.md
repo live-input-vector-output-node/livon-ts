@@ -104,5 +104,5 @@ API schemas (`api`) are not valid as subscription schemas.
 
 - [api](api)
 - [operation](operation)
-- [fieldResolver](field-resolver)
+- [fieldOperation](field-operation)
 - [Schema APIs](/docs/schema)
