@@ -78,4 +78,4 @@ No extra schema-module input adapter is required.
 
 - [operation](operation)
 - [subscription](subscription)
-- [fieldResolver](field-resolver)
+- [fieldOperation](field-operation)
