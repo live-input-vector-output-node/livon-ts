@@ -5,6 +5,11 @@ import { resolveCacheKey, serializeSourceCacheRecord } from './source/helpers.js
 import { source } from './source.js';
 import { randomNumber, randomString } from './testing/randomData.js';
 import { serializeKey, type UnitStatus } from './utils/index.js';
+import {
+  readOrCreateSharedIndexedDbCacheStorage,
+  setSharedIndexedDbCacheStorageForTests,
+  type IndexedDbCacheStorage,
+} from './utils/indexedDbCacheStorage.js';
 
 interface User {
   id: string;
@@ -31,11 +36,7 @@ interface StructuredUser {
   profile: StructuredCacheValue;
 }
 
-interface MemoryStorage {
-  getItem: (key: string) => unknown | null;
-  setItem: (key: string, value: unknown) => void;
-  removeItem: (key: string) => void;
-}
+type MemoryStorage = IndexedDbCacheStorage;
 
 interface SpyMemoryStorage extends MemoryStorage {
   setItemSpy: ReturnType<typeof vi.fn>;
@@ -51,7 +52,6 @@ interface CreateSpyMemoryStorage {
 }
 
 interface SeedSourceCacheInput<TEntity extends object> {
-  storage: MemoryStorage;
   scope: UserSlug;
   entityKey?: string;
   sourceKey?: string;
@@ -75,6 +75,7 @@ const createMemoryStorage: CreateMemoryStorage = () => {
   const values = new Map<string, unknown>();
 
   return {
+    supportsStructuredValues: true,
     getItem: (key) => {
       return values.get(key) ?? null;
     },
@@ -84,6 +85,7 @@ const createMemoryStorage: CreateMemoryStorage = () => {
     removeItem: (key) => {
       values.delete(key);
     },
+    flush: async () => undefined,
   };
 };
 
@@ -97,6 +99,7 @@ const createSpyMemoryStorage: CreateSpyMemoryStorage = () => {
   });
 
   return {
+    supportsStructuredValues: true,
     getItem: (key) => {
       return values.get(key) ?? null;
     },
@@ -104,6 +107,7 @@ const createSpyMemoryStorage: CreateSpyMemoryStorage = () => {
     removeItem: removeItemSpy,
     setItemSpy,
     removeItemSpy,
+    flush: async () => undefined,
   };
 };
 
@@ -132,7 +136,6 @@ const buildSourceCacheRecordKey = ({
 };
 
 const seedSourceCache = <TEntity extends object>({
-  storage,
   scope,
   entityKey,
   sourceKey,
@@ -142,6 +145,11 @@ const seedSourceCache = <TEntity extends object>({
   entities,
   writtenAt,
 }: SeedSourceCacheInput<TEntity>): void => {
+  const storage = readOrCreateSharedIndexedDbCacheStorage();
+  if (!storage) {
+    throw new Error('indexedDB cache storage is not available in sourceCache.spec');
+  }
+
   const sourceCacheRecordKey = buildSourceCacheRecordKey({
     scope,
     entityKey,
@@ -161,11 +169,13 @@ const seedSourceCache = <TEntity extends object>({
 
 describe('source cache', () => {
   beforeEach(() => {
+    setSharedIndexedDbCacheStorageForTests(createMemoryStorage());
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-01-01T00:00:00.000Z'));
   });
 
   afterEach(() => {
+    setSharedIndexedDbCacheStorageForTests(undefined);
     vi.useRealTimers();
   });
 
@@ -176,6 +186,7 @@ describe('source cache', () => {
       const userId = randomString({ prefix: 'user-id' });
       const userName = randomString({ prefix: 'user-name' });
       const storage = createSpyMemoryStorage();
+      setSharedIndexedDbCacheStorageForTests(storage);
 
       const usersEntity = entity<User>({
         idOf: (value) => value.id,
@@ -184,7 +195,6 @@ describe('source cache', () => {
         entity: usersEntity,
         cache: {
           key: cacheKey,
-          storage,
           ttl: 'infinity',
         },
         run: async ({ payload }) => {
@@ -209,6 +219,7 @@ describe('source cache', () => {
       const secondName = randomString({ prefix: 'name' });
       const thirdName = randomString({ prefix: 'name' });
       const storage = createSpyMemoryStorage();
+      setSharedIndexedDbCacheStorageForTests(storage);
 
       const usersEntity = entity<User>({
         idOf: (value) => value.id,
@@ -217,7 +228,6 @@ describe('source cache', () => {
         entity: usersEntity,
         cache: {
           key: cacheKey,
-          storage,
           ttl: 'infinity',
         },
         run: async ({ payload }) => {
@@ -243,6 +253,7 @@ describe('source cache', () => {
       const slugId = randomNumber();
       const cacheKey = randomString({ prefix: 'cache-key' });
       const storage = createMemoryStorage();
+      setSharedIndexedDbCacheStorageForTests(storage);
 
       const payloadOne = { query: randomString({ prefix: 'query-one' }) };
       const payloadTwo = { query: randomString({ prefix: 'query-two' }) };
@@ -255,7 +266,6 @@ describe('source cache', () => {
         entity: usersEntity,
         cache: {
           key: cacheKey,
-          storage,
           ttl: 'infinity',
           lruMaxEntries: 2,
         },
@@ -306,6 +316,7 @@ describe('source cache', () => {
       const userId = randomString({ prefix: 'user-id' });
       const userName = randomString({ prefix: 'user-name' });
       const storage = createSpyMemoryStorage();
+      setSharedIndexedDbCacheStorageForTests(storage);
 
       const usersEntity = entity<User>({
         idOf: (value) => value.id,
@@ -314,7 +325,6 @@ describe('source cache', () => {
         entity: usersEntity,
         cache: {
           key: cacheKey,
-          storage,
           ttl: 100,
         },
         run: async ({ payload }) => {
@@ -339,12 +349,12 @@ describe('source cache', () => {
       const userName = randomString({ prefix: 'user-name' });
       const user = { id: userId, name: userName };
       const storage = createMemoryStorage();
+      setSharedIndexedDbCacheStorageForTests(storage);
       const runMock = vi.fn(async () => {
         return user;
       });
 
       seedSourceCache({
-        storage,
         scope: { slugId },
         mode: 'one',
         entities: [user],
@@ -359,7 +369,6 @@ describe('source cache', () => {
         entity: secondEntity,
         cache: {
           key: cacheKey,
-          storage,
           ttl: 'infinity',
         },
         run: runMock,
@@ -386,12 +395,12 @@ describe('source cache', () => {
         name: randomString({ prefix: 'fresh-user-name' }),
       };
       const storage = createMemoryStorage();
+      setSharedIndexedDbCacheStorageForTests(storage);
       const runMock = vi.fn(async () => {
         return freshUser;
       });
 
       seedSourceCache({
-        storage,
         scope: { slugId },
         payload,
         mode: 'one',
@@ -407,7 +416,6 @@ describe('source cache', () => {
         entity: usersEntity,
         cache: {
           key: cacheKey,
-          storage,
           ttl: 'infinity',
         },
         run: runMock,
@@ -436,6 +444,7 @@ describe('source cache', () => {
       const slugId = randomNumber();
       const cacheKey = randomString({ prefix: 'cache-key' });
       const storage = createMemoryStorage();
+      setSharedIndexedDbCacheStorageForTests(storage);
       const value: StructuredUser = {
         id: randomString({ prefix: 'user-id' }),
         name: randomString({ prefix: 'user-name' }),
@@ -454,7 +463,6 @@ describe('source cache', () => {
       };
 
       seedSourceCache({
-        storage,
         scope: { slugId },
         mode: 'one',
         entities: [value],
@@ -469,7 +477,6 @@ describe('source cache', () => {
         entity: secondEntity,
         cache: {
           key: cacheKey,
-          storage,
           ttl: 'infinity',
         },
         run: async () => undefined,
@@ -504,12 +511,12 @@ describe('source cache', () => {
       const userName = randomString({ prefix: 'user-name' });
       const user = { id: userId, name: userName };
       const storage = createMemoryStorage();
+      setSharedIndexedDbCacheStorageForTests(storage);
       const runMock = vi.fn(async () => {
         return user;
       });
 
       seedSourceCache({
-        storage,
         scope: { slugId },
         mode: 'one',
         entities: [user],
@@ -524,7 +531,6 @@ describe('source cache', () => {
         entity: secondEntity,
         cache: {
           key: cacheKey,
-          storage,
           ttl: 'infinity',
         },
         run: runMock,
@@ -549,12 +555,12 @@ describe('source cache', () => {
       const userName = randomString({ prefix: 'user-name' });
       const user = { id: userId, name: userName };
       const storage = createMemoryStorage();
+      setSharedIndexedDbCacheStorageForTests(storage);
       const runMock = vi.fn(async () => {
         return user;
       });
 
       seedSourceCache({
-        storage,
         scope: { slugId },
         mode: 'one',
         entities: [user],
@@ -570,7 +576,6 @@ describe('source cache', () => {
         entity: secondEntity,
         cache: {
           key: cacheKey,
-          storage,
           ttl: 1_000,
         },
         run: runMock,
@@ -589,12 +594,12 @@ describe('source cache', () => {
       const userName = randomString({ prefix: 'user-name' });
       const user = { id: userId, name: userName };
       const storage = createSpyMemoryStorage();
+      setSharedIndexedDbCacheStorageForTests(storage);
       const runMock = vi.fn(async () => {
         return user;
       });
 
       seedSourceCache({
-        storage,
         scope: { slugId },
         mode: 'one',
         entities: [user],
@@ -610,7 +615,6 @@ describe('source cache', () => {
         entity: secondEntity,
         cache: {
           key: cacheKey,
-          storage,
           ttl: 1_000,
         },
         run: runMock,
@@ -634,12 +638,12 @@ describe('source cache', () => {
       const userName = randomString({ prefix: 'user-name' });
       const user = { id: userId, name: userName };
       const storage = createMemoryStorage();
+      setSharedIndexedDbCacheStorageForTests(storage);
       const runMock = vi.fn(async () => {
         return user;
       });
 
       seedSourceCache({
-        storage,
         scope: { slugId },
         mode: 'one',
         entities: [user],
@@ -652,7 +656,6 @@ describe('source cache', () => {
         idOf: (value) => value.id,
         cache: {
           key: cacheKey,
-          storage,
           ttl: 1_000,
         },
       });
@@ -675,12 +678,12 @@ describe('source cache', () => {
       const userName = randomString({ prefix: 'user-name' });
       const user = { id: userId, name: userName };
       const storage = createMemoryStorage();
+      setSharedIndexedDbCacheStorageForTests(storage);
       const runMock = vi.fn(async () => {
         return user;
       });
 
       seedSourceCache({
-        storage,
         scope: { slugId },
         mode: 'one',
         entities: [user],
@@ -693,7 +696,6 @@ describe('source cache', () => {
         idOf: (value) => value.id,
         cache: {
           key: cacheKey,
-          storage,
           ttl: 'infinity',
         },
       });

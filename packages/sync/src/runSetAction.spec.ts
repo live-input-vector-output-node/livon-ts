@@ -1,10 +1,14 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { action } from './action.js';
 import { entity } from './entity.js';
 import { source } from './source.js';
 import type { SourceRunContext } from './source.js';
 import { stream } from './stream.js';
+import {
+  setSharedIndexedDbCacheStorageForTests,
+  type IndexedDbCacheStorage,
+} from './utils/indexedDbCacheStorage.js';
 
 interface Todo {
   id: string;
@@ -25,12 +29,6 @@ interface UpdateTodoPayload {
   title: string;
 }
 
-interface MemoryStorage {
-  getItem: (key: string) => unknown | null;
-  setItem: (key: string, value: unknown) => void;
-  removeItem: (key: string) => void;
-}
-
 interface Deferred<TValue> {
   promise: Promise<TValue>;
   resolve: (value: TValue | PromiseLike<TValue>) => void;
@@ -45,9 +43,10 @@ const createTodoEntity = (key = 'todo-entity') => {
     idOf: (value) => value.id,
   });
 };
-const createMemoryStorage = (): MemoryStorage => {
+const createMemoryStorage = (): IndexedDbCacheStorage => {
   const values = new Map<string, unknown>();
   return {
+    supportsStructuredValues: true,
     getItem: (key) => {
       return values.get(key) ?? null;
     },
@@ -57,6 +56,7 @@ const createMemoryStorage = (): MemoryStorage => {
     removeItem: (key) => {
       values.delete(key);
     },
+    flush: async () => undefined,
   };
 };
 const createDeferred = <TValue>(): Deferred<TValue> => {
@@ -84,6 +84,10 @@ const createTodosForQuery = (query: string): readonly Todo[] => {
 };
 
 describe('run setAction inputs', () => {
+  afterEach(() => {
+    setSharedIndexedDbCacheStorageForTests(undefined);
+  });
+
   describe('happy', () => {
     it('should resolve source run input from direct setAction callback', async () => {
       const todoEntity = createTodoEntity();
@@ -242,13 +246,13 @@ describe('run setAction inputs', () => {
       const storage = createMemoryStorage();
 
       const writerEntity = createTodoEntity('todo-cache-entity');
+      setSharedIndexedDbCacheStorageForTests(storage);
       const readTodosWriter = source<TodoIdentity, ReadTodosPayload, readonly Todo[]>({
         key: 'read-todos',
         entity: writerEntity,
         defaultValue: [],
         cache: {
           key: cacheKey,
-          storage,
           ttl: 'infinity',
         },
         run: async ({ payload, set }) => {
@@ -276,7 +280,6 @@ describe('run setAction inputs', () => {
         defaultValue: [],
         cache: {
           key: cacheKey,
-          storage,
           ttl: 'infinity',
         },
         run: readerRunMock,
@@ -314,6 +317,7 @@ describe('run setAction inputs', () => {
     it('should rehydrate cached value for same source when source cache key is omitted', async () => {
       const todoEntity = createTodoEntity('todo-cache-entity');
       const storage = createMemoryStorage();
+      setSharedIndexedDbCacheStorageForTests(storage);
       const readTodosRun = async ({ payload, set }: ReadTodosRunContext): Promise<void> => {
         set(createTodosForQuery(payload.query));
       };
@@ -323,7 +327,6 @@ describe('run setAction inputs', () => {
         entity: todoEntity,
         defaultValue: [],
         cache: {
-          storage,
           ttl: 'infinity',
         },
         run: readTodosRun,
@@ -343,7 +346,6 @@ describe('run setAction inputs', () => {
         entity: nextTodoEntity,
         defaultValue: [],
         cache: {
-          storage,
           ttl: 'infinity',
         },
         run: readTodosRun,
@@ -358,13 +360,13 @@ describe('run setAction inputs', () => {
     it('should isolate caches between different sources when source cache key is omitted', async () => {
       const todoEntity = createTodoEntity('todo-cache-entity-a');
       const storage = createMemoryStorage();
+      setSharedIndexedDbCacheStorageForTests(storage);
 
       const readTodosA = source<TodoIdentity, ReadTodosPayload, readonly Todo[]>({
         key: 'read-todos-a',
         entity: todoEntity,
         defaultValue: [],
         cache: {
-          storage,
           ttl: 'infinity',
         },
         run: async ({ payload, set }) => {
@@ -386,7 +388,6 @@ describe('run setAction inputs', () => {
         entity: anotherTodoEntity,
         defaultValue: [],
         cache: {
-          storage,
           ttl: 'infinity',
         },
         run: async ({ payload, set }) => {
@@ -402,6 +403,7 @@ describe('run setAction inputs', () => {
 
     it('should throw when cache is enabled without entity and source keys', () => {
       const storage = createMemoryStorage();
+      setSharedIndexedDbCacheStorageForTests(storage);
       const todoEntity = entity<Todo>({
         idOf: (value) => value.id,
       });
@@ -411,7 +413,6 @@ describe('run setAction inputs', () => {
           entity: todoEntity,
           defaultValue: [],
           cache: {
-            storage,
             ttl: 'infinity',
           },
           run: async ({ set }) => {
@@ -423,6 +424,7 @@ describe('run setAction inputs', () => {
 
     it('should throw when cache is enabled without source key', () => {
       const storage = createMemoryStorage();
+      setSharedIndexedDbCacheStorageForTests(storage);
       const todoEntity = createTodoEntity('todo-entity');
 
       expect(() => {
@@ -430,7 +432,6 @@ describe('run setAction inputs', () => {
           entity: todoEntity,
           defaultValue: [],
           cache: {
-            storage,
             ttl: 'infinity',
           },
           run: async ({ set }) => {

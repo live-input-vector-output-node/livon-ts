@@ -1,6 +1,6 @@
 import { bench, describe } from 'vitest';
 
-import { entity, type CacheConfig, type CacheStorage } from './entity.js';
+import { entity, type CacheConfig } from './entity.js';
 import { defaultRuntimeQueue } from './runtimeQueue/index.js';
 import { source } from './source.js';
 import { transform } from './transform.js';
@@ -27,14 +27,6 @@ interface UpdateTodoTitlePayload {
 interface RemoveAndRestoreTodoPayload {
   id: string;
   restore: Todo;
-}
-
-interface MemoryStorageState {
-  values: Map<string, unknown>;
-}
-
-interface CreateMemoryStorage {
-  (): CacheStorage;
 }
 
 interface ReadTodosRunInput {
@@ -80,7 +72,6 @@ interface RegisterTodoBenchmarkSuiteInput {
   todoIdentity: TodoIdentity;
   todos: readonly Todo[];
   seedTodo: Todo;
-  memoryStorage: CacheStorage;
   writeManyPayloads: readonly (readonly Todo[])[];
   setManyPayloads: readonly (readonly Todo[])[];
 }
@@ -158,22 +149,6 @@ const createTodoDataset = (): readonly Todo[] => {
       updatedAt: index,
     };
   });
-};
-
-const createMemoryStorage = (state: MemoryStorageState): CreateMemoryStorage => {
-  return () => {
-    return {
-      getItem: (key) => {
-        return state.values.get(key) ?? null;
-      },
-      setItem: (key, value) => {
-        state.values.set(key, value);
-      },
-      removeItem: (key) => {
-        state.values.delete(key);
-      },
-    };
-  };
 };
 
 interface CreateTodoBatchInput {
@@ -296,10 +271,6 @@ describe('todo performance benchmarks (new dx)', () => {
   }
 
   const todoIdentity: TodoIdentity = { listId: TODO_LIST_ID };
-  const memoryStorageState: MemoryStorageState = {
-    values: new Map<string, unknown>(),
-  };
-  const memoryStorage = createMemoryStorage(memoryStorageState)();
   const benchmarkReadWrite: EntityReadWriteConfig = {
     batch: resolveBooleanEnv({
       name: 'LIVON_SYNC_BENCH_BATCH',
@@ -359,7 +330,6 @@ describe('todo performance benchmarks (new dx)', () => {
     todoIdentity: benchmarkIdentity,
     todos: benchmarkTodos,
     seedTodo: benchmarkSeedTodo,
-    memoryStorage: benchmarkMemoryStorage,
     writeManyPayloads: benchmarkWriteManyPayloads,
     setManyPayloads: benchmarkSetManyPayloads,
   }: RegisterTodoBenchmarkSuiteInput): void => {
@@ -369,7 +339,6 @@ describe('todo performance benchmarks (new dx)', () => {
         key: cacheKey,
         ttl: 'infinity',
         lruMaxEntries: benchmarkCacheLruMaxEntries,
-        storage: benchmarkMemoryStorage,
       }
       : undefined;
     const todosEntity = entity<Todo>({
@@ -601,7 +570,6 @@ describe('todo performance benchmarks (new dx)', () => {
           key: cacheKey,
           ttl: 'infinity',
           lruMaxEntries: benchmarkCacheLruMaxEntries,
-          storage: benchmarkMemoryStorage,
         },
         run: readTodosRun,
       });
@@ -620,7 +588,6 @@ describe('todo performance benchmarks (new dx)', () => {
       todoIdentity,
       todos,
       seedTodo,
-      memoryStorage,
       writeManyPayloads,
       setManyPayloads,
     });

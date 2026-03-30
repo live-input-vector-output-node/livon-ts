@@ -138,10 +138,7 @@ export const source = <
     sourceCache: cache,
     entityCache: entity.cache,
   });
-  const cacheStorage = resolveCacheStorage({
-    sourceCache: cache,
-    entityCache: entity.cache,
-  });
+  const cacheStorage = resolveCacheStorage();
   const sourceMode: 'one' | 'many' = Array.isArray(defaultValue ?? null) ? 'many' : 'one';
   const normalizedEntityKey = isNonEmptyString(entity.key)
     ? entity.key

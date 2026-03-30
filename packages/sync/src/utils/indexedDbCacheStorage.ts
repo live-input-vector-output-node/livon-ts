@@ -150,6 +150,7 @@ const readManyFromDb = async ({
   }
 
   const transaction = database.transaction(storeName, 'readonly');
+  const transactionDone = waitForTransaction(transaction);
   const store = transaction.objectStore(storeName);
 
   const pairs = await Promise.all(keys.map(async (key) => {
@@ -159,7 +160,7 @@ const readManyFromDb = async ({
       value,
     };
   }));
-  await waitForTransaction(transaction);
+  await transactionDone;
 
   pairs.forEach(({ key, value }) => {
     if (value !== undefined) {
@@ -180,6 +181,7 @@ const writeManyToDb = async ({
   }
 
   const transaction = database.transaction(storeName, 'readwrite');
+  const transactionDone = waitForTransaction(transaction);
   const store = transaction.objectStore(storeName);
   operationsByKey.forEach((operation, key) => {
     if (operation.type === 'set') {
@@ -189,7 +191,7 @@ const writeManyToDb = async ({
 
     store.delete(key);
   });
-  await waitForTransaction(transaction);
+  await transactionDone;
 };
 
 export const createIndexedDbCacheStorage = ({
@@ -396,4 +398,10 @@ export const readOrCreateSharedIndexedDbCacheStorage = (): IndexedDbCacheStorage
 
   sharedIndexedDbCacheStorage = storage;
   return sharedIndexedDbCacheStorage;
+};
+
+export const setSharedIndexedDbCacheStorageForTests = (
+  storage: IndexedDbCacheStorage | undefined,
+): void => {
+  sharedIndexedDbCacheStorage = storage;
 };
