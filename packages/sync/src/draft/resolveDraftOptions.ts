@@ -30,8 +30,8 @@ interface ResolveDraftOptionsInput<
   identityKey: string;
 }
 
-const resolveSourceFunctionKey = createFunctionKeyResolver({
-  prefix: 'source-fallback',
+const resolveDraftFunctionKey = createFunctionKeyResolver({
+  prefix: 'draft-fallback',
 });
 
 const resolveDraftLocalIdentityKey = <
@@ -48,21 +48,21 @@ const resolveDraftLocalIdentityKey = <
   const normalizedEntityKey = isNonEmptyString(entity.key)
     ? entity.key
     : '';
-  const resolvedSourceKey = resolveSourceFunctionKey(config.key);
-  const { mode: resolvedSourceMode } = resolveUnitMode({
+  const resolvedDraftKey = resolveDraftFunctionKey(config.key);
+  const { mode: resolvedDraftMode } = resolveUnitMode({
     entityMode,
     defaultValue: config.defaultValue,
   });
-  const sourceEntityFunctionKey = resolveEntityFunctionKey({
+  const draftEntityFunctionKey = resolveEntityFunctionKey({
     entityKey: normalizedEntityKey,
     functionKey: serializeKey({
-      sourceKey: resolvedSourceKey,
-      entityMode: resolvedSourceMode,
+      sourceKey: resolvedDraftKey,
+      entityMode: resolvedDraftMode,
     }),
   });
 
   return resolveEntityFunctionIdentityKey({
-    entityFunctionKey: sourceEntityFunctionKey,
+    entityFunctionKey: draftEntityFunctionKey,
     identityKey,
   });
 };
