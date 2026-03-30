@@ -34,6 +34,16 @@ export interface ResolveFunctionKey {
   (key: string | undefined): string;
 }
 
+export interface ResolveDefaultUnitValue {
+  <
+    TEntity extends object,
+    TMode extends UnitEntityMode,
+  >(
+    input: ResolveTypedDefaultUnitValueInput<TEntity, TMode>,
+  ): UnitDataByEntityMode<TEntity, TMode>;
+  (input: ResolveDefaultUnitValueInput): unknown;
+}
+
 export const isNonEmptyString = (input: unknown): input is string => {
   return typeof input === 'string' && input.trim().length > 0;
 };
@@ -71,19 +81,13 @@ export const resolveUnitMode = ({
   };
 };
 
-export function resolveDefaultUnitValue<
-  TEntity extends object,
-  TMode extends UnitEntityMode,
->(
-  input: ResolveTypedDefaultUnitValueInput<TEntity, TMode>,
-): UnitDataByEntityMode<TEntity, TMode>;
-export function resolveDefaultUnitValue({
+export const resolveDefaultUnitValue: ResolveDefaultUnitValue = ({
   defaultValue,
   mode,
-}: ResolveDefaultUnitValueInput): unknown {
+}: ResolveDefaultUnitValueInput): unknown => {
   if (defaultValue !== undefined) {
     return defaultValue;
   }
 
   return mode === 'many' ? [] : null;
-}
+};
