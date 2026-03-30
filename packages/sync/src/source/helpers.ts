@@ -1,6 +1,6 @@
 import { Packr } from 'msgpackr';
 
-import { type CacheStorage, type CacheTtl } from '../entity.js';
+import { type CacheTtl } from '../entity.js';
 import {
   decodeLatin1,
   deserializeStructuredValue,
@@ -12,7 +12,6 @@ import type {
   IsCacheRecordExpiredInput,
   ResolveCacheLruMaxEntriesInput,
   ResolveCacheKeyInput,
-  ResolveCacheStorageInput,
   ResolveCacheTtlInput,
   SourceCacheRecord,
   SourceCleanup,
@@ -78,20 +77,6 @@ const isSourceCacheRecordValue = <TEntity extends object>(
   return true;
 };
 
-const hasLocalStorageRuntime = (
-  value: unknown,
-): value is { localStorage: CacheStorage } => {
-  if (!isRecordValue(value)) {
-    return false;
-  }
-
-  if (!('localStorage' in value)) {
-    return false;
-  }
-
-  return isRecordValue(value.localStorage);
-};
-
 export const serializeSourceCacheRecord = <TEntity extends object>(
   record: SourceCacheRecord<TEntity>,
 ): string => {
@@ -138,35 +123,6 @@ const deserializeSourceCacheRecord = <TEntity extends object>(
   }
 };
 
-const resolveGlobalStorage = (): CacheStorage | undefined => {
-  const indexedDbStorage = readOrCreateSharedIndexedDbCacheStorage();
-  if (indexedDbStorage) {
-    return indexedDbStorage;
-  }
-
-  const runtime = globalThis;
-  if (!hasLocalStorageRuntime(runtime)) {
-    return undefined;
-  }
-  const localStorage = runtime.localStorage;
-
-  if (!localStorage) {
-    return undefined;
-  }
-
-  if (
-    typeof localStorage.getItem !== 'function'
-    || typeof localStorage.setItem !== 'function'
-    || typeof localStorage.removeItem !== 'function'
-  ) {
-    return undefined;
-  }
-
-  return localStorage;
-};
-
-const globalStorage = resolveGlobalStorage();
-
 export const resolveCacheTtl = ({
   sourceCache,
   entityCache,
@@ -182,19 +138,8 @@ export const resolveCacheTtl = ({
   return DEFAULT_CACHE_TTL;
 };
 
-export const resolveCacheStorage = ({
-  sourceCache,
-  entityCache,
-}: ResolveCacheStorageInput): CacheStorage | undefined => {
-  if (sourceCache && sourceCache.storage) {
-    return sourceCache.storage;
-  }
-
-  if (entityCache && entityCache.storage) {
-    return entityCache.storage;
-  }
-
-  return globalStorage;
+export const resolveCacheStorage = () => {
+  return readOrCreateSharedIndexedDbCacheStorage();
 };
 
 export const resolveCacheLruMaxEntries = ({

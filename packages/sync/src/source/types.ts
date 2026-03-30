@@ -200,11 +200,6 @@ export interface ResolveCacheLruMaxEntriesInput {
   entityCache: CacheConfig | undefined;
 }
 
-export interface ResolveCacheStorageInput {
-  sourceCache: CacheConfig | undefined;
-  entityCache: CacheConfig | undefined;
-}
-
 export interface ResolveCacheKeyInput {
   sourceKey: string;
 }

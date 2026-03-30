@@ -245,7 +245,7 @@ Source cache now uses a two-layer cache:
 - L1: in-memory `Map` (hot path reads)
 - L2: `IndexedDB` (batched async reads/writes via microtask queue)
 
-When `IndexedDB` is available, source cache records are stored as native structured values (no payload serialization). Only cache keys are serialized.
+Source cache records are stored as native structured values in `IndexedDB` (no payload serialization). Only cache keys are serialized.
 
 Round-trips preserve common non-JSON values such as:
 
@@ -267,10 +267,10 @@ Functions and symbols are not valid identity/payload values for key serializatio
 - `idOf`: required id extractor
 - `ttl`: optional entity ttl fallback
 - `draft`: optional draft mode (`global` | `scoped` | `off`)
-- `cache`: optional cache defaults (`ttl`, `storage`, `lruMaxEntries`)
+- `cache`: optional cache defaults (`ttl`, `lruMaxEntries`)
   - source cache uses LRU by default (`lruMaxEntries: 256`).
   - set `lruMaxEntries: 0` to disable LRU explicitly.
-  - default storage is `IndexedDB` (L1 `Map` + L2 `IndexedDB`); custom `storage` overrides it.
+  - cache backend is fixed to `IndexedDB` (L1 `Map` + L2 `IndexedDB`).
 - `readWrite`: optional strategy config (`batch`, `subview`, optional `adaptive`)
   - `adaptive: true` enables matrix-driven strategy selection based on cache/lru profile and operation class.
   - explicit `batch`/`subview` flags override adaptive values per field.

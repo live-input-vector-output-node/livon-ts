@@ -23,6 +23,7 @@ export default {
       'src/utils/dependencyCache.spec.ts',
       'src/utils/entityMembership.spec.ts',
       'src/utils/entityMode.spec.ts',
+      'src/utils/indexedDbCacheStorage.spec.ts',
       'src/utils/readWriteStrategy.spec.ts',
       'src/utils/runContextEntryCache.spec.ts',
       'src/utils/scheduleAsync.spec.ts',

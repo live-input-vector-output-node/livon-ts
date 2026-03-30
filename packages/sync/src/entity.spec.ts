@@ -85,15 +85,6 @@ describe('entity()', () => {
           key: 'adaptive-cache',
           ttl: 'infinity',
           lruMaxEntries: 256,
-          storage: {
-            getItem: () => null,
-            setItem: () => {
-              return;
-            },
-            removeItem: () => {
-              return;
-            },
-          },
         },
         readWrite: {
           adaptive: true,
@@ -119,15 +110,6 @@ describe('entity()', () => {
           key: 'adaptive-cache',
           ttl: 'infinity',
           lruMaxEntries: 256,
-          storage: {
-            getItem: () => null,
-            setItem: () => {
-              return;
-            },
-            removeItem: () => {
-              return;
-            },
-          },
         },
         readWrite: {
           adaptive: true,

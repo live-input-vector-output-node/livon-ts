@@ -29,7 +29,6 @@ export interface CacheConfig {
   key?: string;
   ttl?: CacheTtl;
   lruMaxEntries?: number;
-  storage?: CacheStorage;
 }
 
 export interface RegisterEntityUnitInput {

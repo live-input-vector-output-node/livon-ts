@@ -14,7 +14,6 @@ export type {
 export { entity } from './entity.js';
 export type {
   CacheConfig,
-  CacheStorage,
   CacheTtl,
   DraftMode,
   Entity,
