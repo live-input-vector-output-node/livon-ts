@@ -10,11 +10,11 @@ import type { LivonValueOf } from './types.js';
 
 export interface UseLivonValue {
   <
-  TInput extends object | undefined,
+  TIdentity extends object | undefined,
   TPayload,
   RResult,
->(unit: SourceUnit<TInput, TPayload, RResult>): LivonValueOf<
-    SourceUnit<TInput, TPayload, RResult>
+>(unit: SourceUnit<TIdentity, TPayload, RResult>): LivonValueOf<
+    SourceUnit<TIdentity, TPayload, RResult>
   >;
 
   <

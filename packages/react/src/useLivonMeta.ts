@@ -10,12 +10,12 @@ import type { LivonMetaOf } from './types.js';
 
 export interface UseLivonMeta {
   <
-  TInput extends object | undefined,
+  TIdentity extends object | undefined,
   TPayload,
   RResult,
   TMeta = unknown,
-  >(unit: SourceUnit<TInput, TPayload, RResult, TMeta>): LivonMetaOf<
-    SourceUnit<TInput, TPayload, RResult, TMeta>
+  >(unit: SourceUnit<TIdentity, TPayload, RResult, TMeta>): LivonMetaOf<
+    SourceUnit<TIdentity, TPayload, RResult, TMeta>
   >;
 
   <

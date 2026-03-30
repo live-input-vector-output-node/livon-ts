@@ -172,7 +172,7 @@ export const readTrackedUnitDestroyDelay = <
   RResult,
   TMeta = unknown,
 >(
-  unit: TrackedUnit<RResult, TMeta>,
+  _unit: TrackedUnit<RResult, TMeta>,
 ): number => {
-  return normalizeDestroyDelay(unit.destroyDelay);
+  return normalizeDestroyDelay(undefined);
 };

@@ -3,44 +3,41 @@ import {
   createUnitSnapshot,
   isUnitLoadingStatus,
   isUnitSettledStatus,
-  isUnitStatus,
   notifyEffectListeners,
   type EffectListener,
   type UnitSnapshot,
 } from './utils/index.js';
 
 interface DependencyUnit<TValue> {
-  get: () => TValue | UnitSnapshot<TValue>;
-  effect: (listener: (snapshot: UnitSnapshot<TValue>) => void) => (() => void) | void;
+  getSnapshot: () => UnitSnapshot<TValue>;
+  subscribe: (listener: (snapshot: UnitSnapshot<TValue>) => void) => (() => void) | void;
 }
 
-interface ViewGetContext<TInput extends object | undefined> {
-  scope: TInput;
+interface ViewGetContext<TIdentity extends object | undefined> {
+  identity: TIdentity;
   get: <TValue>(unit: DependencyUnit<TValue>) => Promise<UnitSnapshot<TValue>>;
 }
 
 export interface ViewConfig<
-  TInput extends object | undefined,
+  TIdentity extends object | undefined,
   RResult,
 > {
-  out: (context: ViewGetContext<TInput>) => Promise<RResult> | RResult;
+  out: (context: ViewGetContext<TIdentity>) => Promise<RResult> | RResult;
   defaultValue?: RResult;
   destroyDelay?: number;
 }
 
 export interface ViewUnit<RResult> {
-  destroyDelay: number;
-  get: () => UnitSnapshot<RResult>;
-  effect: (listener: EffectListener<RResult>) => (() => void) | void;
-  stop: () => void;
-  destroy: () => void;
+  run: () => Promise<UnitSnapshot<RResult>>;
+  getSnapshot: () => UnitSnapshot<RResult>;
+  subscribe: (listener: EffectListener<RResult>) => (() => void) | void;
 }
 
 export interface View<
-  TInput extends object | undefined = object | undefined,
+  TIdentity extends object | undefined = object | undefined,
   RResult = unknown,
 > {
-  (scope: TInput): ViewUnit<RResult>;
+  (identity: TIdentity): ViewUnit<RResult>;
 }
 
 interface DependencyInternal {
@@ -51,11 +48,11 @@ interface DependencyInternal {
 }
 
 interface ViewUnitInternal<
-  TInput extends object | undefined,
+  TIdentity extends object | undefined,
   RResult,
 > {
   key: string;
-  scope: TInput;
+  identity: TIdentity;
   snapshot: UnitSnapshot<RResult>;
   listeners: Set<EffectListener<RResult>>;
   dependencies: Map<object, DependencyInternal>;
@@ -70,24 +67,6 @@ interface ViewUnitInternal<
 }
 
 const DEFAULT_DESTROY_DELAY = 250;
-
-const isSnapshotLike = <TValue>(input: unknown): input is UnitSnapshot<TValue> => {
-  if (typeof input !== 'object' || input === null) {
-    return false;
-  }
-
-  const candidate = input as Record<string, unknown>;
-  if (
-    typeof candidate.status !== 'string'
-    || !('value' in candidate)
-    || !('meta' in candidate)
-    || !('context' in candidate)
-  ) {
-    return false;
-  }
-
-  return isUnitStatus(candidate.status);
-};
 
 const createErrorContext = (error: unknown): { message: string; cause: unknown } => {
   if (error instanceof Error) {
@@ -147,10 +126,10 @@ const getSnapshotContext = <RResult>(
 };
 
 const applySnapshot = <
-  TInput extends object | undefined,
+  TIdentity extends object | undefined,
   RResult,
 >(
-  internal: ViewUnitInternal<TInput, RResult>,
+  internal: ViewUnitInternal<TIdentity, RResult>,
   next: NextSnapshotInput<RResult>,
 ): boolean => {
   const currentSnapshot = internal.snapshot;
@@ -179,35 +158,10 @@ const applySnapshot = <
   return true;
 };
 
-const createSnapshotFromValue = <TValue>(
-  value: TValue | UnitSnapshot<TValue>,
-): UnitSnapshot<TValue> => {
-  if (isSnapshotLike(value)) {
-    return value as UnitSnapshot<TValue>;
-  }
-
-  return createUnitSnapshot({
-    value: value as TValue,
-    status: 'idle',
-    meta: null,
-    context: null,
-  });
-};
-
 const readCurrentDependencySnapshot = <TValue>(
   unit: DependencyUnit<TValue>,
 ): UnitSnapshot<TValue> => {
-  if ('getSnapshot' in unit) {
-    const snapshotGetter = unit.getSnapshot;
-    if (typeof snapshotGetter === 'function') {
-      const snapshot = snapshotGetter();
-      if (isSnapshotLike<TValue>(snapshot)) {
-        return snapshot;
-      }
-    }
-  }
-
-  return createSnapshotFromValue(unit.get());
+  return unit.getSnapshot();
 };
 
 const unsubscribeDependency = (dependency: DependencyInternal): void => {
@@ -216,10 +170,10 @@ const unsubscribeDependency = (dependency: DependencyInternal): void => {
 };
 
 const unsubscribeAllDependencies = <
-  TInput extends object | undefined,
+  TIdentity extends object | undefined,
   RResult,
 >(
-  internal: ViewUnitInternal<TInput, RResult>,
+  internal: ViewUnitInternal<TIdentity, RResult>,
 ): void => {
   Array.from(internal.dependencies.values()).forEach((dependency) => {
     unsubscribeDependency(dependency);
@@ -227,25 +181,25 @@ const unsubscribeAllDependencies = <
 };
 
 const shouldTrackDependencies = <
-  TInput extends object | undefined,
+  TIdentity extends object | undefined,
   RResult,
 >(
-  internal: ViewUnitInternal<TInput, RResult>,
+  internal: ViewUnitInternal<TIdentity, RResult>,
 ): boolean => {
   return !internal.destroyed && !internal.stopped && internal.listeners.size > 0;
 };
 
-interface RecomputeInput<TInput extends object | undefined, RResult> {
-  internal: ViewUnitInternal<TInput, RResult>;
-  out: (context: ViewGetContext<TInput>) => Promise<RResult> | RResult;
+interface RecomputeInput<TIdentity extends object | undefined, RResult> {
+  internal: ViewUnitInternal<TIdentity, RResult>;
+  out: (context: ViewGetContext<TIdentity>) => Promise<RResult> | RResult;
   shouldThrow?: boolean;
 }
 
 const queueRecompute = <
-  TInput extends object | undefined,
+  TIdentity extends object | undefined,
   RResult,
 >(
-  input: RecomputeInput<TInput, RResult>,
+  input: RecomputeInput<TIdentity, RResult>,
 ): void => {
   const { internal } = input;
   if (internal.destroyed || internal.stopped) {
@@ -269,17 +223,17 @@ const queueRecompute = <
 };
 
 interface EnsureDependencySubscriptionInput<
-  TInput extends object | undefined,
+  TIdentity extends object | undefined,
   RResult,
 > {
-  internal: ViewUnitInternal<TInput, RResult>;
+  internal: ViewUnitInternal<TIdentity, RResult>;
   dependencyKey: object;
   dependency: DependencyInternal;
-  out: (context: ViewGetContext<TInput>) => Promise<RResult> | RResult;
+  out: (context: ViewGetContext<TIdentity>) => Promise<RResult> | RResult;
 }
 
 const ensureDependencySubscription = <
-  TInput extends object | undefined,
+  TIdentity extends object | undefined,
   RResult,
 >(
   {
@@ -287,13 +241,13 @@ const ensureDependencySubscription = <
     dependencyKey,
     dependency,
     out,
-  }: EnsureDependencySubscriptionInput<TInput, RResult>,
+  }: EnsureDependencySubscriptionInput<TIdentity, RResult>,
 ): void => {
   if (dependency.removeEffect || !shouldTrackDependencies(internal)) {
     return;
   }
 
-  const removeEffect = dependency.unit.effect((snapshot) => {
+  const removeEffect = dependency.unit.subscribe((snapshot) => {
     const previousSnapshot = dependency.snapshot;
     dependency.snapshot = snapshot;
     internal.lastDependencyMeta = snapshot.meta;
@@ -394,23 +348,23 @@ const ensureDependencySubscription = <
 };
 
 interface SyncDependenciesInput<
-  TInput extends object | undefined,
+  TIdentity extends object | undefined,
   RResult,
 > {
-  internal: ViewUnitInternal<TInput, RResult>;
+  internal: ViewUnitInternal<TIdentity, RResult>;
   usedDependencies: Map<object, DependencyInternal>;
-  out: (context: ViewGetContext<TInput>) => Promise<RResult> | RResult;
+  out: (context: ViewGetContext<TIdentity>) => Promise<RResult> | RResult;
 }
 
 const syncDependencies = <
-  TInput extends object | undefined,
+  TIdentity extends object | undefined,
   RResult,
 >(
   {
     internal,
     usedDependencies,
     out,
-  }: SyncDependenciesInput<TInput, RResult>,
+  }: SyncDependenciesInput<TIdentity, RResult>,
 ): void => {
   Array.from(internal.dependencies.entries()).forEach(([dependencyKey, dependency]) => {
     if (usedDependencies.has(dependencyKey)) {
@@ -448,11 +402,11 @@ const syncDependencies = <
 };
 
 const readDependencySnapshot = <
-  TInput extends object | undefined,
+  TIdentity extends object | undefined,
   RResult,
   TValue,
 >(
-  internal: ViewUnitInternal<TInput, RResult>,
+  internal: ViewUnitInternal<TIdentity, RResult>,
   unit: DependencyUnit<TValue>,
 ): UnitSnapshot<TValue> => {
   const dependencyKey = unit as unknown as object;
@@ -470,13 +424,13 @@ const readDependencySnapshot = <
 };
 
 const runRecompute = async <
-  TInput extends object | undefined,
+  TIdentity extends object | undefined,
   RResult,
 >({
   internal,
   out,
   shouldThrow = false,
-}: RecomputeInput<TInput, RResult>): Promise<RResult> => {
+}: RecomputeInput<TIdentity, RResult>): Promise<RResult> => {
   if (internal.destroyed || internal.stopped) {
     return internal.snapshot.value;
   }
@@ -497,7 +451,7 @@ const runRecompute = async <
     }
 
     const nextValue = await out({
-      scope: internal.scope,
+      identity: internal.identity,
       get: async <TValue>(unit: DependencyUnit<TValue>) => {
         const snapshot = readDependencySnapshot(internal, unit);
         usedDependencies.set(unit as unknown as object, {
@@ -562,20 +516,20 @@ const runRecompute = async <
 };
 
 export const view = <
-  TInput extends object | undefined,
+  TIdentity extends object | undefined,
   RResult = unknown,
 >({
   out,
   defaultValue,
-  destroyDelay = DEFAULT_DESTROY_DELAY,
-}: ViewConfig<TInput, RResult>): View<TInput, RResult> => {
-  const unitsByKey = new Map<string, ViewUnitInternal<TInput, RResult>>();
+  destroyDelay: _destroyDelay = DEFAULT_DESTROY_DELAY,
+}: ViewConfig<TIdentity, RResult>): View<TIdentity, RResult> => {
+  const unitsByKey = new Map<string, ViewUnitInternal<TIdentity, RResult>>();
   const unitKeyCache = createSerializedKeyCache({
     mode: 'scoped-unit',
   });
 
-  const viewFactory: View<TInput, RResult> = (scope) => {
-    const key = unitKeyCache.getOrCreateKey(scope);
+  const viewFactory: View<TIdentity, RResult> = (identity) => {
+    const key = unitKeyCache.getOrCreateKey(identity);
     const existing = unitsByKey.get(key);
     if (existing) {
       return existing.unit;
@@ -588,9 +542,9 @@ export const view = <
       context: null,
     });
 
-    const internal: ViewUnitInternal<TInput, RResult> = {
+    const internal: ViewUnitInternal<TIdentity, RResult> = {
       key,
-      scope,
+      identity,
       snapshot: initialSnapshot,
       listeners: new Set<EffectListener<RResult>>(),
       dependencies: new Map<object, DependencyInternal>(),
@@ -605,11 +559,18 @@ export const view = <
     };
 
     const unit: ViewUnit<RResult> = {
-      destroyDelay,
-      get: () => {
+      run: async () => {
+        await runRecompute({
+          internal,
+          out,
+          shouldThrow: true,
+        });
         return internal.snapshot;
       },
-      effect: (listener) => {
+      getSnapshot: () => {
+        return internal.snapshot;
+      },
+      subscribe: (listener) => {
         if (internal.destroyed) {
           return undefined;
         }
@@ -631,25 +592,6 @@ export const view = <
             unsubscribeAllDependencies(internal);
           }
         };
-      },
-      stop: () => {
-        if (internal.destroyed) {
-          return;
-        }
-
-        internal.stopped = true;
-        unsubscribeAllDependencies(internal);
-      },
-      destroy: () => {
-        if (internal.destroyed) {
-          return;
-        }
-
-        internal.destroyed = true;
-        internal.stopped = true;
-        unsubscribeAllDependencies(internal);
-        internal.listeners.clear();
-        unitsByKey.delete(internal.key);
       },
     };
 

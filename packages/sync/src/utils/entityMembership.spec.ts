@@ -173,6 +173,6 @@ describe('entity membership helpers', () => {
         ],
         operation: 'runContext.upsertMany()',
       });
-    }).toThrow("Entity mode is locked for scope unit 'todo-unit-locked-mode' as 'one'. Cannot switch to 'many' via runContext.upsertMany().");
+    }).toThrow("Entity mode is locked for identity unit 'todo-unit-locked-mode' as 'one'. Cannot switch to 'many' via runContext.upsertMany().");
   });
 });

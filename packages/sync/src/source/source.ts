@@ -6,7 +6,6 @@ import {
   createRunContextEntryCache,
   readOrCreateSharedCacheWriteQueue,
   createSerializedKeyCache,
-  cloneValue,
   createUnitSnapshot,
   notifyEffectListeners,
   resolveInput,
@@ -15,19 +14,15 @@ import {
   setOneEntityMembership,
   serializeKey,
   type EffectListener,
-  type InputUpdater,
+  type UnitRunPrevious,
   type UnitDataEntity,
-  type UnitDataUpdate,
   type ValueUpdater,
 } from '../utils/index.js';
 
 import {
-  areDraftValuesEqual,
   getModeValue,
   invokeSourceCleanup,
   isCacheRecordExpired,
-  isEntityArray,
-  isEntityValue,
   isRecordValue,
   isSourceCleanup,
   readSourceCacheRecord,
@@ -43,9 +38,13 @@ import type {
   Source,
   SourceConfig,
   SourceContext,
+  SourceRunConfig,
+  SourceRun,
+  SourceRunInput,
   SourceRunContext,
   SourceRunContextEntry,
   SourceRunGate,
+  SourceSetAction,
   SourceUnit,
   SourceUnitByKeyMap,
   SourceUnitInternal,
@@ -65,8 +64,46 @@ const createInitialSourceContext = (
   };
 };
 
+const isSourceSetAction = <
+  TPayload,
+  TData,
+  TMeta,
+>(
+  input: unknown,
+): input is SourceSetAction<TPayload, TData, TMeta> => {
+  return typeof input === 'function';
+};
+
+interface ResolveSourceRunInputInput<
+  TPayload,
+  TData,
+  TMeta,
+> {
+  input: SourceRunInput<TPayload, TData, TMeta> | undefined;
+  config: SourceRunConfig | undefined;
+  previous: UnitRunPrevious<TPayload, SourceRunConfig, TData, TMeta | null>;
+}
+
+const resolveSourceRunInput = <
+  TPayload,
+  TData,
+  TMeta,
+>(
+  {
+    input,
+    config,
+    previous,
+  }: ResolveSourceRunInputInput<TPayload, TData, TMeta>,
+): TPayload | undefined => {
+  if (isSourceSetAction<TPayload, TData, TMeta>(input)) {
+    return input(previous, config);
+  }
+
+  return input;
+};
+
 export const source = <
-  TInput extends object | undefined,
+  TIdentity extends object | undefined,
   TPayload = unknown,
   TData = unknown,
   TMeta = unknown,
@@ -76,11 +113,10 @@ export const source = <
   draft = entity.draft ?? DEFAULT_DRAFT_MODE,
   cache,
   destroyDelay = entity.destroyDelay ?? DEFAULT_DESTROY_DELAY,
-  onDestroy,
   run,
   defaultValue,
-}: SourceConfig<TInput, TPayload, TData, TMeta>,
-): Source<TInput, TPayload, TData, TMeta> => {
+}: SourceConfig<TIdentity, TPayload, TData, TMeta>,
+): Source<TIdentity, TPayload, TData, TMeta> => {
   const cacheTtl = resolveCacheTtl({
     sourceCache: cache,
     entityCache: entity.cache,
@@ -104,23 +140,11 @@ export const source = <
     }),
   });
 
-  const unitsByKey: SourceUnitByKeyMap<TInput, TPayload, TData, TMeta> =
-    new Map<string, SourceUnitInternal<TInput, TPayload, TData, TMeta>>();
-  const scopedDraftsById = new Map<EntityId, UnitDataEntity<TData>>();
+  const unitsByKey: SourceUnitByKeyMap<TIdentity, TPayload, TData, TMeta> =
+    new Map<string, SourceUnitInternal<TIdentity, TPayload, TData, TMeta>>();
   const unitKeyCache = createSerializedKeyCache({
     mode: 'scoped-unit',
   });
-
-  const notifyScopedUnitsById = (id: EntityId): void => {
-    Array.from(unitsByKey.values()).forEach((unitInternal) => {
-      const hasMembership = unitInternal.membershipIds.some((membershipId) => membershipId === id);
-      if (!hasMembership) {
-        return;
-      }
-
-      notifyUnit(unitInternal);
-    });
-  };
 
   const readEntityValueById: ReadEntityValueById<EntityId, UnitDataEntity<TData>> = (id) => {
     if (draft === 'off') {
@@ -136,48 +160,11 @@ export const source = <
       return entity.getById(id);
     }
 
-    const scopedDraft = scopedDraftsById.get(id);
-    if (scopedDraft) {
-      return scopedDraft;
-    }
-
     return entity.getById(id);
   };
 
-  const setDraftById = (id: EntityId, value: UnitDataEntity<TData>): void => {
-    if (draft === 'off') {
-      return;
-    }
-
-    if (draft === 'global') {
-      entity.setDraftById(id, value);
-      return;
-    }
-
-    scopedDraftsById.set(id, value);
-    notifyScopedUnitsById(id);
-  };
-
-  const clearDraftById = (id: EntityId): void => {
-    if (draft === 'off') {
-      return;
-    }
-
-    if (draft === 'global') {
-      entity.clearDraftById(id);
-      return;
-    }
-
-    const existed = scopedDraftsById.delete(id);
-    if (!existed) {
-      return;
-    }
-
-    notifyScopedUnitsById(id);
-  };
-
   const notifyUnit = (
-    internal: SourceUnitInternal<TInput, TPayload, TData, TMeta>,
+    internal: SourceUnitInternal<TIdentity, TPayload, TData, TMeta>,
   ): void => {
     internal.state.value = getModeValue(internal, readEntityValueById);
 
@@ -192,8 +179,8 @@ export const source = <
     );
   };
 
-  const sourceFactory: Source<TInput, TPayload, TData, TMeta> = (scope) => {
-    const key = unitKeyCache.getOrCreateKey(scope);
+  const sourceFactory: Source<TIdentity, TPayload, TData, TMeta> = (identity) => {
+    const key = unitKeyCache.getOrCreateKey(identity);
     const existingUnit = unitsByKey.get(key);
 
     if (existingUnit) {
@@ -204,11 +191,11 @@ export const source = <
     const initialPayload = undefined as TPayload;
     const initialMode: 'one' | 'many' = Array.isArray(initialValue) ? 'many' : 'one';
 
-    const internal: SourceUnitInternal<TInput, TPayload, TData, TMeta> = {
+    const internal: SourceUnitInternal<TIdentity, TPayload, TData, TMeta> = {
       key,
       ttl,
       destroyDelay,
-      scope,
+      identity,
       payload: initialPayload,
       state: {
         value: initialValue,
@@ -232,7 +219,7 @@ export const source = <
       stopped: false,
       destroyed: false,
       destroyHandled: false,
-      unit: {} as SourceUnit<TInput, TPayload, TData, TMeta>,
+      unit: {} as SourceUnit<TIdentity, TPayload, TData, TMeta>,
     };
     const payloadKeyCache = createSerializedKeyCache({
       mode: 'payload-hot-path',
@@ -240,7 +227,7 @@ export const source = <
     });
     const createRunContextEntry = (
       payload: TPayload,
-    ): SourceRunContextEntry<TInput, TPayload, TData, TMeta> => {
+    ): SourceRunContextEntry<TIdentity, TPayload, TData, TMeta> => {
       const gate: SourceRunGate = {
         isLatestRun: () => false,
       };
@@ -258,12 +245,12 @@ export const source = <
         readValue: () => internal.state.value,
       });
       const runContextBase: SourceRunContext<
-        TInput,
+        TIdentity,
         TPayload,
         TData,
         TMeta
       > = {
-        scope: internal.scope,
+        identity: internal.identity,
         payload,
         setMeta: (metaInput: TMeta | null | ValueUpdater<TMeta | null, TMeta | null>) => {
           if (!gate.isLatestRun()) {
@@ -325,7 +312,7 @@ export const source = <
     };
     const runContextEntryCache = createRunContextEntryCache<
       TPayload,
-      SourceRunContextEntry<TInput, TPayload, TData, TMeta>
+      SourceRunContextEntry<TIdentity, TPayload, TData, TMeta>
     >({
       createEntry: createRunContextEntry,
       limit: RUN_CONTEXT_CACHE_LIMIT,
@@ -588,7 +575,7 @@ export const source = <
       return hydrateFromCache(payloadCacheKey);
     };
 
-    const unregisterFromEntity = entity.registerUnit({
+    entity.registerUnit({
       key: internal.key,
       onChange: () => {
         if (internal.destroyed) {
@@ -603,9 +590,10 @@ export const source = <
     hydrateFromPayloadCache(internal.payload);
 
     let singleInFlightPromise: Promise<TData> | null = null;
-    let hasSingleInFlightPayload = false;
-    let singleInFlightPayload: TPayload | undefined;
-    let singleInFlightPayloadKey: string | null = null;
+      let hasSingleInFlightPayload = false;
+      let singleInFlightPayload: TPayload | undefined;
+      let singleInFlightPayloadKey: string | null = null;
+      let runConfig: SourceRunConfig | undefined;
 
     const clearInFlightTracking = (): void => {
       internal.inFlightByPayload.clear();
@@ -628,19 +616,12 @@ export const source = <
         return;
       }
 
-      const previousMembershipIds = internal.membershipIds;
       stopInternal();
       clearInFlightTracking();
       runContextEntryCache.clear();
       payloadKeyCache.clear();
       activePayloadCacheKey = null;
       internal.payload = initialPayload;
-
-      if (draft === 'scoped') {
-        previousMembershipIds.forEach((id) => {
-          scopedDraftsById.delete(id);
-        });
-      }
 
       clearEntityMembership(internal, { clearUnitMembership: entity.clearUnitMembership });
       internal.mode = initialMode;
@@ -655,35 +636,9 @@ export const source = <
       syncCacheRecord();
     };
 
-    const destroyInternal = (): void => {
-      if (internal.destroyed) {
-        return;
-      }
-
-      stopInternal();
-      internal.destroyed = true;
-      runContextEntryCache.clear();
-      payloadKeyCache.clear();
-      activePayloadCacheKey = null;
-      clearInFlightTracking();
-
-      unregisterFromEntity();
-      internal.listeners.clear();
-
-      if (!internal.destroyHandled) {
-        internal.destroyHandled = true;
-        onDestroy?.({
-          scope: internal.scope,
-          payload: internal.payload,
-        });
-      }
-
-      unitsByKey.delete(internal.key);
-    };
-
     const executeRun = (
       isForce: boolean,
-      payloadInput?: TPayload | InputUpdater<TPayload>,
+      payloadInput?: TPayload,
     ): Promise<TData> => {
       if (internal.destroyed) {
         return Promise.resolve(internal.state.value);
@@ -847,68 +802,15 @@ export const source = <
       return runPromise;
     };
 
-    const unit = ((payloadInput?: TPayload | InputUpdater<TPayload>) => {
-      internal.payload = resolveInput(internal.payload, payloadInput);
-      return unit;
-    }) as SourceUnit<TInput, TPayload, TData, TMeta>;
-
-    unit.ttl = ttl;
-    unit.cacheTtl = cacheTtl;
-    unit.destroyDelay = destroyDelay;
-    unit.run = (payloadInput) => executeRun(false, payloadInput);
-    unit.get = () => {
-      return internal.state.value;
+    const getSnapshot = () => {
+      return createUnitSnapshot({
+        value: internal.state.value,
+        status: internal.state.status,
+        meta: internal.state.meta,
+        context: internal.state.context,
+      });
     };
-    unit.draft = {
-      set: (input: UnitDataUpdate<TData> | ValueUpdater<TData, UnitDataUpdate<TData>>) => {
-        if (internal.destroyed || draft === 'off') {
-          return;
-        }
-
-        const previousValue: TData = getModeValue(internal, readEntityValueById);
-        const draftSeed: TData = cloneValue(previousValue);
-        const nextUpdate = resolveValue(draftSeed, input);
-
-        if (Object.is(nextUpdate, previousValue)) {
-          return;
-        }
-
-        if (areDraftValuesEqual(previousValue, nextUpdate)) {
-          return;
-        }
-
-        if (internal.mode === 'one') {
-          const firstId = internal.membershipIds[0];
-          if (!firstId || !isEntityValue<UnitDataEntity<TData>>(nextUpdate)) {
-            return;
-          }
-
-          setDraftById(firstId, cloneValue(nextUpdate));
-          return;
-        }
-
-        if (internal.mode === 'many') {
-          if (!isEntityArray<UnitDataEntity<TData>>(nextUpdate)) {
-            return;
-          }
-
-          nextUpdate.forEach((entry) => {
-            const entryId = entity.idOf(entry);
-            setDraftById(entryId, cloneValue(entry));
-          });
-        }
-      },
-      clean: () => {
-        if (internal.destroyed || draft === 'off') {
-          return;
-        }
-
-        internal.membershipIds.forEach((id) => {
-          clearDraftById(id);
-        });
-      },
-    };
-    unit.effect = (listener) => {
+    const subscribe = (listener: EffectListener<TData, TMeta | null>) => {
       if (internal.destroyed) {
         return undefined;
       }
@@ -919,38 +821,44 @@ export const source = <
         internal.listeners.delete(listener);
       };
     };
-    unit.refetch = (payloadInput) => {
-      const nextPayload = resolveInput(internal.payload, payloadInput);
-      return sourceFactory(internal.scope).force(nextPayload);
-    };
-    unit.force = (payloadInput) => executeRun(true, payloadInput);
-    unit.reset = () => {
-      resetState();
-    };
-    unit.stop = () => {
-      if (internal.destroyed) {
-        return;
-      }
+    const runUnit: SourceRun<TPayload, TData, TMeta> = (
+      input?: SourceRunInput<TPayload, TData, TMeta>,
+      config?: SourceRunConfig,
+    ) => {
+        if (config) {
+          runConfig = config;
+        }
 
-      stopInternal();
-    };
-    unit.destroy = () => {
-      destroyInternal();
-    };
-
-    Object.defineProperty(unit, 'getSnapshot', {
-      configurable: false,
-      enumerable: false,
-      writable: false,
-      value: () => {
-        return createUnitSnapshot({
-          value: internal.state.value,
-          status: internal.state.status,
-          meta: internal.state.meta,
-          context: internal.state.context,
+        const previous: UnitRunPrevious<
+          TPayload,
+          SourceRunConfig,
+          TData,
+          TMeta | null
+        > = {
+          snapshot: getSnapshot(),
+          data: internal.payload,
+          config: runConfig,
+        };
+        const payloadInput = resolveSourceRunInput<
+          TPayload,
+          TData,
+          TMeta
+        >({
+          input,
+          config,
+          previous,
         });
-      },
-    });
+        if (config?.mode === 'force' || config?.mode === 'refetch') {
+          return executeRun(true, payloadInput).then(() => undefined);
+        }
+        return executeRun(false, payloadInput).then(() => undefined);
+      };
+    const unit: SourceUnit<TIdentity, TPayload, TData, TMeta> = {
+      identity: internal.identity,
+      run: runUnit,
+      getSnapshot,
+      subscribe,
+    };
 
     internal.unit = unit;
     unitsByKey.set(key, internal);

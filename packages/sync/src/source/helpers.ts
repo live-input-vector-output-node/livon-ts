@@ -205,12 +205,12 @@ export const readSourceCacheRecord = <TEntity extends object>(
 };
 
 export const shouldUseCache = <
-  TInput extends object | undefined,
+  TIdentity extends object | undefined,
   TPayload,
   TData,
   TMeta,
 >(
-  internal: SourceUnitInternal<TInput, TPayload, TData, TMeta>,
+  internal: SourceUnitInternal<TIdentity, TPayload, TData, TMeta>,
 ): boolean => {
   if (internal.ttl <= 0) {
     return false;

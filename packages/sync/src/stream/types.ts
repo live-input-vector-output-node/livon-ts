@@ -1,9 +1,11 @@
 import { type Entity, type EntityId, type UpsertOptions } from '../entity.js';
 import {
   type EffectListener,
-  type InputUpdater,
   type ModeValueReadWriteInput,
+  type UnitRun,
+  type UnitSetAction,
   type UnitDataEntity,
+  type UnitSnapshot,
   type UnitStatus,
   type ValueUpdater,
 } from '../utils/index.js';
@@ -13,12 +15,12 @@ export interface StreamCleanup {
 }
 
 export interface StreamRunContext<
-  TInput,
+  TIdentity,
   TPayload,
   TData,
   TMeta = unknown,
 > {
-  scope: TInput;
+  identity: TIdentity;
   payload: TPayload;
   setMeta: (meta: TMeta | null | ValueUpdater<TMeta | null, TMeta | null>) => void;
   upsertOne: (input: UnitDataEntity<TData>, options?: UpsertOptions) => UnitDataEntity<TData>;
@@ -34,7 +36,7 @@ export interface StreamRunContext<
 export type StreamRunResult<TData> = TData | StreamCleanup | void;
 
 export interface StreamConfig<
-  TInput extends object | undefined,
+  TIdentity extends object | undefined,
   TPayload,
   TData,
   TMeta = unknown,
@@ -42,32 +44,60 @@ export interface StreamConfig<
   entity: Entity<UnitDataEntity<TData>, EntityId>;
   destroyDelay?: number;
   run: (
-    context: StreamRunContext<TInput, TPayload, TData, TMeta>,
+    context: StreamRunContext<TIdentity, TPayload, TData, TMeta>,
   ) => Promise<StreamRunResult<TData>> | StreamRunResult<TData>;
   defaultValue?: TData;
 }
+
+export interface StreamRunConfig {}
+
+export type StreamSetAction<
+  TPayload,
+  TData,
+  TMeta = unknown,
+> = UnitSetAction<
+  TPayload,
+  StreamRunConfig,
+  TData,
+  TMeta | null
+>;
+
+export type StreamRunInput<
+  TPayload,
+  TData = unknown,
+  TMeta = unknown,
+> =
+  | TPayload
+  | StreamSetAction<TPayload, TData, TMeta>;
+
+export type StreamRun<
+  TPayload,
+  TData,
+  TMeta = unknown,
+> = UnitRun<
+  TPayload,
+  StreamRunConfig,
+  TData,
+  TMeta | null
+>;
 
 export interface StreamUnit<
   TPayload,
   TData,
   TMeta = unknown,
 > {
-  (payloadInput?: TPayload | InputUpdater<TPayload>): StreamUnit<TPayload, TData, TMeta>;
-  destroyDelay: number;
-  start: (payloadInput?: TPayload | InputUpdater<TPayload>) => void;
-  stop: () => void;
-  get: () => TData;
-  effect: (listener: EffectListener<TData, TMeta | null>) => (() => void) | void;
-  destroy: () => void;
+  run: StreamRun<TPayload, TData, TMeta>;
+  getSnapshot: () => UnitSnapshot<TData, TMeta | null>;
+  subscribe: (listener: EffectListener<TData, TMeta | null>) => (() => void) | void;
 }
 
 export interface Stream<
-  TInput extends object | undefined = object | undefined,
+  TIdentity extends object | undefined = object | undefined,
   TPayload = unknown,
   TData = unknown,
   TMeta = unknown,
 > {
-  (scope: TInput): StreamUnit<TPayload, TData, TMeta>;
+  (identity: TIdentity): StreamUnit<TPayload, TData, TMeta>;
 }
 
 export interface StreamUnitState<TData, TMeta = unknown> {
@@ -78,14 +108,14 @@ export interface StreamUnitState<TData, TMeta = unknown> {
 }
 
 export interface StreamUnitInternal<
-  TInput extends object | undefined,
+  TIdentity extends object | undefined,
   TPayload,
   TData,
   TMeta = unknown,
 > {
   key: string;
   destroyDelay: number;
-  scope: TInput;
+  identity: TIdentity;
   payload: TPayload;
   mode: 'one' | 'many';
   modeLocked: boolean;
@@ -101,19 +131,19 @@ export interface StreamUnitInternal<
 }
 
 export type StreamUnitByKeyMap<
-  TInput extends object | undefined,
+  TIdentity extends object | undefined,
   TPayload,
   TData,
   TMeta = unknown,
-> = Map<string, StreamUnitInternal<TInput, TPayload, TData, TMeta>>;
+> = Map<string, StreamUnitInternal<TIdentity, TPayload, TData, TMeta>>;
 
 export interface StreamRunContextEntry<
-  TInput,
+  TIdentity,
   TPayload,
   TData,
   TMeta = unknown,
 > {
-  context: StreamRunContext<TInput, TPayload, TData, TMeta>;
+  context: StreamRunContext<TIdentity, TPayload, TData, TMeta>;
 }
 
 export type StreamMetaUpdater<TMeta = unknown> = ValueUpdater<TMeta | null, TMeta | null>;

@@ -1,59 +1,34 @@
 import type { SourceUnit } from '@livon/sync';
-import { useCallback } from 'react';
 
-import { useLivonDraft } from './useLivonDraft.js';
 import { useLivonRun } from './useLivonRun.js';
 import { useLivonState } from './useLivonState.js';
-import { useLivonStop } from './useLivonStop.js';
 import type { LivonSourceStateOf } from './types.js';
 
 export interface UseLivonSourceState {
   <
-  TInput extends object | undefined,
+  TIdentity extends object | undefined,
   TPayload,
   RResult,
   TMeta = unknown,
-  >(unit: SourceUnit<TInput, TPayload, RResult, TMeta>): LivonSourceStateOf<
-    SourceUnit<TInput, TPayload, RResult, TMeta>
+  >(unit: SourceUnit<TIdentity, TPayload, RResult, TMeta>): LivonSourceStateOf<
+    SourceUnit<TIdentity, TPayload, RResult, TMeta>
   >;
 }
 
 const useLivonSourceStateInternal: UseLivonSourceState = <
-  TInput extends object | undefined,
+  TIdentity extends object | undefined,
   TPayload,
   RResult,
   TMeta = unknown,
 >(
-  unit: SourceUnit<TInput, TPayload, RResult, TMeta>,
-): LivonSourceStateOf<SourceUnit<TInput, TPayload, RResult, TMeta>> => {
+  unit: SourceUnit<TIdentity, TPayload, RResult, TMeta>,
+): LivonSourceStateOf<SourceUnit<TIdentity, TPayload, RResult, TMeta>> => {
   const state = useLivonState(unit);
   const run = useLivonRun(unit);
-  const stop = useLivonStop(unit);
-  const [setDraft, cleanDraft] = useLivonDraft(unit);
-
-  const reset = useCallback(() => {
-    unit.reset();
-  }, [unit]);
-
-  const refetch = useCallback((payloadInput?: TPayload | ((input: TPayload) => TPayload)) => {
-    return unit.refetch(payloadInput);
-  }, [unit]);
-
-  const force = useCallback((payloadInput?: TPayload | ((input: TPayload) => TPayload)) => {
-    return unit.force(payloadInput);
-  }, [unit]);
 
   return {
     ...state,
     run,
-    refetch,
-    force,
-    reset,
-    stop,
-    draft: {
-      set: setDraft,
-      clean: cleanDraft,
-    },
   };
 };
 

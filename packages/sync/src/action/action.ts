@@ -10,7 +10,7 @@ import {
   resolveInput,
   resolveValue,
   type EffectListener,
-  type InputUpdater,
+  type UnitRunPrevious,
   type UnitDataEntity,
   type ValueUpdater,
 } from '../utils/index.js';
@@ -21,9 +21,13 @@ import {
 import type {
   Action,
   ActionConfig,
+  ActionRunConfig,
+  ActionRunInput,
+  ActionRun,
   ActionRunContext,
   ActionRunContextEntry,
   ActionRunGate,
+  ActionSetAction,
   ActionUnit,
   ActionUnitByKeyMap,
   ActionUnitInternal,
@@ -32,8 +36,46 @@ import type {
 const DEFAULT_DESTROY_DELAY = 250;
 const RUN_CONTEXT_CACHE_LIMIT = 32;
 
+const isActionSetAction = <
+  TPayload,
+  TData,
+  TMeta,
+>(
+  input: unknown,
+): input is ActionSetAction<TPayload, TData, TMeta> => {
+  return typeof input === 'function';
+};
+
+interface ResolveActionRunInputInput<
+  TPayload,
+  TData,
+  TMeta,
+> {
+  input: ActionRunInput<TPayload, TData, TMeta> | undefined;
+  config: ActionRunConfig | undefined;
+  previous: UnitRunPrevious<TPayload, ActionRunConfig, TData, TMeta | null>;
+}
+
+const resolveActionRunInput = <
+  TPayload,
+  TData,
+  TMeta,
+>(
+  {
+    input,
+    config,
+    previous,
+  }: ResolveActionRunInputInput<TPayload, TData, TMeta>,
+): TPayload | undefined => {
+  if (isActionSetAction<TPayload, TData, TMeta>(input)) {
+    return input(previous, config);
+  }
+
+  return input;
+};
+
 export const action = <
-  TInput extends object | undefined,
+  TIdentity extends object | undefined,
   TPayload = unknown,
   TData = unknown,
   TMeta = unknown,
@@ -42,17 +84,17 @@ export const action = <
   destroyDelay = entity.destroyDelay ?? DEFAULT_DESTROY_DELAY,
   run,
   defaultValue,
-}: ActionConfig<TInput, TPayload, TData, TMeta>,
-): Action<TInput, TPayload, TData, TMeta> => {
-  const unitsByKey: ActionUnitByKeyMap<TInput, TPayload, TData, TMeta> =
-    new Map<string, ActionUnitInternal<TInput, TPayload, TData, TMeta>>();
+}: ActionConfig<TIdentity, TPayload, TData, TMeta>,
+): Action<TIdentity, TPayload, TData, TMeta> => {
+  const unitsByKey: ActionUnitByKeyMap<TIdentity, TPayload, TData, TMeta> =
+    new Map<string, ActionUnitInternal<TIdentity, TPayload, TData, TMeta>>();
   const readEntityValueById = entity.getById;
   const unitKeyCache = createSerializedKeyCache({
     mode: 'scoped-unit',
   });
 
   const notifyUnit = (
-    internal: ActionUnitInternal<TInput, TPayload, TData, TMeta>,
+    internal: ActionUnitInternal<TIdentity, TPayload, TData, TMeta>,
   ): void => {
     internal.state.value = getModeValue(internal, readEntityValueById);
 
@@ -67,8 +109,8 @@ export const action = <
     );
   };
 
-  const actionFactory: Action<TInput, TPayload, TData, TMeta> = (scope) => {
-    const key = unitKeyCache.getOrCreateKey(scope);
+  const actionFactory: Action<TIdentity, TPayload, TData, TMeta> = (identity) => {
+    const key = unitKeyCache.getOrCreateKey(identity);
     const existingUnit = unitsByKey.get(key);
 
     if (existingUnit) {
@@ -78,10 +120,10 @@ export const action = <
     const initialValue = (defaultValue ?? null) as TData;
     const initialMode: 'one' | 'many' = Array.isArray(initialValue) ? 'many' : 'one';
 
-    const internal: ActionUnitInternal<TInput, TPayload, TData, TMeta> = {
+    const internal: ActionUnitInternal<TIdentity, TPayload, TData, TMeta> = {
       key,
       destroyDelay,
-      scope,
+      identity,
       payload: undefined as TPayload,
       mode: initialMode,
       modeLocked: false,
@@ -110,7 +152,7 @@ export const action = <
       limit: RUN_CONTEXT_CACHE_LIMIT,
     });
 
-      const unregisterFromEntity = entity.registerUnit({
+      entity.registerUnit({
         key: internal.key,
         onChange: () => {
           if (internal.destroyed) {
@@ -121,32 +163,9 @@ export const action = <
         },
       });
 
-      const destroyInternal = (): void => {
-        if (internal.destroyed) {
-          return;
-        }
-
-        internal.runSequence += 1;
-        internal.latestRunSequence = internal.runSequence;
-        internal.stopped = true;
-        invokeActionCleanup(internal.cleanup);
-        internal.cleanup = null;
-        internal.destroyed = true;
-        runContextEntryCache.clear();
-        payloadKeyCache.clear();
-        singleInFlightPromise = null;
-        hasSingleInFlightPayload = false;
-        singleInFlightPayload = undefined;
-        singleInFlightPayloadKey = null;
-
-        unregisterFromEntity();
-        internal.listeners.clear();
-        unitsByKey.delete(internal.key);
-      };
-
       const createRunContextEntry = (
         payload: TPayload,
-      ): ActionRunContextEntry<TInput, TPayload, TData, TMeta> => {
+      ): ActionRunContextEntry<TIdentity, TPayload, TData, TMeta> => {
         const gate: ActionRunGate = {
           isLatestRun: () => false,
         };
@@ -165,12 +184,12 @@ export const action = <
           refreshOnGet: true,
         });
         const runContextBase: ActionRunContext<
-          TInput,
+          TIdentity,
           TPayload,
           TData,
           TMeta
         > = {
-          scope: internal.scope,
+          identity: internal.identity,
           payload,
           setMeta: (metaInput: TMeta | null | ValueUpdater<TMeta | null, TMeta | null>) => {
             if (!gate.isLatestRun()) {
@@ -198,7 +217,7 @@ export const action = <
       };
       const runContextEntryCache = createRunContextEntryCache<
         TPayload,
-        ActionRunContextEntry<TInput, TPayload, TData, TMeta>
+        ActionRunContextEntry<TIdentity, TPayload, TData, TMeta>
       >({
         createEntry: createRunContextEntry,
         limit: RUN_CONTEXT_CACHE_LIMIT,
@@ -208,9 +227,10 @@ export const action = <
       let hasSingleInFlightPayload = false;
       let singleInFlightPayload: TPayload | undefined;
       let singleInFlightPayloadKey: string | null = null;
+      let runConfig: ActionRunConfig | undefined;
 
       const executeRun = (
-        payloadInput?: TPayload | InputUpdater<TPayload>,
+        payloadInput?: TPayload,
       ): Promise<TData> => {
         if (internal.destroyed) {
           return Promise.resolve(internal.state.value);
@@ -350,18 +370,16 @@ export const action = <
         return runPromise;
       };
 
-    const unit = ((payloadInput?: TPayload | InputUpdater<TPayload>) => {
-      internal.payload = resolveInput(internal.payload, payloadInput);
-      return unit;
-    }) as ActionUnit<TPayload, TData, TMeta>;
-
-    unit.destroyDelay = destroyDelay;
-    unit.run = (payloadInput) => executeRun(payloadInput);
-    unit.get = () => {
+    const getSnapshot = () => {
       internal.state.value = getModeValue(internal, readEntityValueById);
-      return internal.state.value;
+      return createUnitSnapshot({
+        value: internal.state.value,
+        status: internal.state.status,
+        meta: internal.state.meta,
+        context: internal.state.context,
+      });
     };
-    unit.effect = (listener) => {
+    const subscribe = (listener: EffectListener<TData, TMeta | null>) => {
       if (internal.destroyed) {
         return undefined;
       }
@@ -372,35 +390,40 @@ export const action = <
         internal.listeners.delete(listener);
       };
     };
-    unit.stop = () => {
-      if (internal.destroyed) {
-        return;
-      }
+    const runUnit: ActionRun<TPayload, TData, TMeta> = (
+      input?: ActionRunInput<TPayload, TData, TMeta>,
+      config?: ActionRunConfig,
+    ) => {
+        if (config) {
+          runConfig = config;
+        }
 
-      internal.runSequence += 1;
-      internal.latestRunSequence = internal.runSequence;
-      internal.stopped = true;
-      invokeActionCleanup(internal.cleanup);
-      internal.cleanup = null;
-    };
-    unit.destroy = () => {
-      destroyInternal();
-    };
-
-    Object.defineProperty(unit, 'getSnapshot', {
-      configurable: false,
-      enumerable: false,
-      writable: false,
-      value: () => {
-        internal.state.value = getModeValue(internal, readEntityValueById);
-        return createUnitSnapshot({
-          value: internal.state.value,
-          status: internal.state.status,
-          meta: internal.state.meta,
-          context: internal.state.context,
+        const previous: UnitRunPrevious<
+          TPayload,
+          ActionRunConfig,
+          TData,
+          TMeta | null
+        > = {
+          snapshot: getSnapshot(),
+          data: internal.payload,
+          config: runConfig,
+        };
+        const payloadInput = resolveActionRunInput<
+          TPayload,
+          TData,
+          TMeta
+        >({
+          input,
+          config,
+          previous,
         });
-      },
-    });
+        return executeRun(payloadInput).then(() => undefined);
+      };
+    const unit: ActionUnit<TPayload, TData, TMeta> = {
+      run: runUnit,
+      getSnapshot,
+      subscribe,
+    };
 
       internal.unit = unit;
       unitsByKey.set(key, internal);

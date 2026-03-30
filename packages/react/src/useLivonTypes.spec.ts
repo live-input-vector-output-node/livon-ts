@@ -2,13 +2,11 @@ import { action, entity, source, stream, type UnitStatus } from '@livon/sync';
 import { describe, expectTypeOf, it } from 'vitest';
 
 import { useLivonActionState } from './useLivonActionState.js';
-import { useLivonDraft } from './useLivonDraft.js';
 import { useLivonMeta } from './useLivonMeta.js';
 import { useLivonRun } from './useLivonRun.js';
 import { useLivonSourceState } from './useLivonSourceState.js';
 import { useLivonState } from './useLivonState.js';
 import { useLivonStatus } from './useLivonStatus.js';
-import { useLivonStop } from './useLivonStop.js';
 import { useLivonStreamState } from './useLivonStreamState.js';
 import { useLivonValue } from './useLivonValue.js';
 
@@ -17,16 +15,8 @@ interface User {
   name: string;
 }
 
-interface UserSlug {
+interface UserIdentity {
   templateId: string;
-}
-
-interface UpdateUser {
-  (input: User): User;
-}
-
-interface UpdateUndefined {
-  (input: undefined): undefined;
 }
 
 interface UserMeta {
@@ -41,7 +31,7 @@ const createUserEntity = () => {
 };
 
 const createReadUsersSource = (userEntity: ReturnType<typeof createUserEntity>) => {
-  return source<UserSlug, undefined, readonly User[]>({
+  return source<UserIdentity, undefined, readonly User[]>({
     entity: userEntity,
     run: async () => {
       return [];
@@ -51,7 +41,7 @@ const createReadUsersSource = (userEntity: ReturnType<typeof createUserEntity>) 
 
 const createTypedMetaUnits = () => {
   const userEntity = createUserEntity();
-  const readUsers = source<UserSlug, undefined, readonly User[], UserMeta>({
+  const readUsers = source<UserIdentity, undefined, readonly User[], UserMeta>({
     entity: userEntity,
     run: async ({ setMeta }) => {
       setMeta({
@@ -61,7 +51,7 @@ const createTypedMetaUnits = () => {
       return [];
     },
   });
-  const createUser = action<UserSlug, User, User | null, UserMeta>({
+  const createUser = action<UserIdentity, User, User | null, UserMeta>({
     entity: userEntity,
     run: async ({ payload, setMeta }) => {
       setMeta({
@@ -71,7 +61,7 @@ const createTypedMetaUnits = () => {
       return payload;
     },
   });
-  const onUserUpdated = stream<UserSlug, User, User | null, UserMeta>({
+  const onUserUpdated = stream<UserIdentity, User, User | null, UserMeta>({
     entity: userEntity,
     run: async ({ payload, setMeta }) => {
       setMeta({
@@ -97,21 +87,19 @@ describe('hook type inference', () => {
     const unit = readUsers({ templateId: 't1' });
     const resolveValue = (currentUnit: typeof unit) => useLivonValue(currentUnit);
     const resolveRun = (currentUnit: typeof unit) => useLivonRun(currentUnit);
-    const resolveStop = (currentUnit: typeof unit) => useLivonStop(currentUnit);
 
     expectTypeOf(resolveValue).toEqualTypeOf<(currentUnit: typeof unit) => readonly User[]>();
     expectTypeOf(resolveRun).toEqualTypeOf<
       (
         currentUnit: typeof unit,
-      ) => (payloadInput?: undefined | UpdateUndefined) => Promise<readonly User[]>
+      ) => typeof unit.run
     >();
-    expectTypeOf(resolveStop).toEqualTypeOf<(currentUnit: typeof unit) => () => void>();
   });
 
   it('should infer action value and run types when action unit is passed to hooks', () => {
     const userEntity = createUserEntity();
 
-    const createUser = action<UserSlug, User, User | null>({
+    const createUser = action<UserIdentity, User, User | null>({
       entity: userEntity,
       run: async ({ payload }) => {
         return payload;
@@ -121,21 +109,19 @@ describe('hook type inference', () => {
     const unit = createUser({ templateId: 't1' });
     const resolveValue = (currentUnit: typeof unit) => useLivonValue(currentUnit);
     const resolveRun = (currentUnit: typeof unit) => useLivonRun(currentUnit);
-    const resolveStop = (currentUnit: typeof unit) => useLivonStop(currentUnit);
 
     expectTypeOf(resolveValue).toEqualTypeOf<(currentUnit: typeof unit) => User | null>();
     expectTypeOf(resolveRun).toEqualTypeOf<
       (
         currentUnit: typeof unit,
-      ) => (payloadInput?: User | UpdateUser) => Promise<User | null>
+      ) => typeof unit.run
     >();
-    expectTypeOf(resolveStop).toEqualTypeOf<(currentUnit: typeof unit) => () => void>();
   });
 
-  it('should infer stream run and stop types when stream unit is passed to hooks', () => {
+  it('should infer stream run type when stream unit is passed to hooks', () => {
     const userEntity = createUserEntity();
 
-    const onUserUpdated = stream<UserSlug, User, User | null>({
+    const onUserUpdated = stream<UserIdentity, User, User | null>({
       entity: userEntity,
       run: async ({ payload }) => {
         return payload;
@@ -143,9 +129,13 @@ describe('hook type inference', () => {
     });
 
     const unit = onUserUpdated({ templateId: 't1' });
-    const resolveStop = (currentUnit: typeof unit) => useLivonStop(currentUnit);
+    const resolveRun = (currentUnit: typeof unit) => useLivonRun(currentUnit);
 
-    expectTypeOf(resolveStop).toEqualTypeOf<(currentUnit: typeof unit) => () => void>();
+    expectTypeOf(resolveRun).toEqualTypeOf<
+      (
+        currentUnit: typeof unit,
+      ) => typeof unit.run
+    >();
   });
 
   it('should infer status and meta types when source unit snapshot is used by hooks', () => {
@@ -228,101 +218,24 @@ describe('hook type inference', () => {
     >();
   });
 
-  it('should preserve explicit source meta type in useLivonSourceState', () => {
-    const { sourceUnit } = createTypedMetaUnits();
-    const resolveSourceGroupedState = (currentUnit: typeof sourceUnit) => useLivonSourceState(currentUnit);
-    type TypedSourceState = ReturnType<typeof resolveSourceGroupedState>;
-
-    void sourceUnit;
-    void resolveSourceGroupedState;
-
-    expectTypeOf<TypedSourceState['meta']>().toEqualTypeOf<UserMeta | null>();
-  });
-
-  it('should preserve explicit action meta type in useLivonActionState', () => {
-    const { actionUnit } = createTypedMetaUnits();
-    const resolveActionGroupedState = (currentUnit: typeof actionUnit) => useLivonActionState(currentUnit);
-    type TypedActionState = ReturnType<typeof resolveActionGroupedState>;
-
-    void actionUnit;
-    void resolveActionGroupedState;
-
-    expectTypeOf<TypedActionState['meta']>().toEqualTypeOf<UserMeta | null>();
-  });
-
-  it('should preserve explicit stream meta type in useLivonStreamState', () => {
-    const { streamUnit } = createTypedMetaUnits();
-    const resolveStreamGroupedState = (currentUnit: typeof streamUnit) => useLivonStreamState(currentUnit);
-    type TypedStreamState = ReturnType<typeof resolveStreamGroupedState>;
-
-    void streamUnit;
-    void resolveStreamGroupedState;
-
-    expectTypeOf<TypedStreamState['meta']>().toEqualTypeOf<UserMeta | null>();
-  });
-
-  it('should infer draft tuple types when source unit is passed to useLivonDraft', () => {
-    const userEntity = createUserEntity();
-    const readUsers = createReadUsersSource(userEntity);
-    const unit = readUsers({ templateId: 't1' });
-    const resolveDraft = (currentUnit: typeof unit) => useLivonDraft(currentUnit);
-
-    expectTypeOf(resolveDraft).toEqualTypeOf<
-      (currentUnit: typeof unit) => [
-        (input: readonly User[] | ((value: readonly User[]) => readonly User[])) => void,
-        () => void,
-      ]
-    >();
-  });
-
-  it('should infer grouped state shape when source unit is passed to useLivonState', () => {
-    const userEntity = createUserEntity();
-    const readUsers = createReadUsersSource(userEntity);
-    const unit = readUsers({ templateId: 't1' });
-    const resolveState = (currentUnit: typeof unit) => useLivonState(currentUnit);
-
-    expectTypeOf(resolveState).toEqualTypeOf<
-      (currentUnit: typeof unit) => {
-        value: readonly User[];
-        status: UnitStatus;
-        meta: unknown;
-      }
-    >();
-  });
-
-  it('should infer grouped source state shape including draft API', () => {
+  it('should infer grouped source state shape with run only', () => {
     const userEntity = createUserEntity();
     const readUsers = createReadUsersSource(userEntity);
     const unit = readUsers({ templateId: 't1' });
     const resolveSourceState = (currentUnit: typeof unit) => useLivonSourceState(currentUnit);
     type SourceState = ReturnType<typeof resolveSourceState>;
-
     void unit;
     void resolveSourceState;
 
     expectTypeOf<SourceState['value']>().toEqualTypeOf<readonly User[]>();
     expectTypeOf<SourceState['status']>().toEqualTypeOf<UnitStatus>();
     expectTypeOf<SourceState['meta']>().toEqualTypeOf<unknown>();
-    expectTypeOf<SourceState['run']>().toEqualTypeOf<
-      (payloadInput?: undefined | UpdateUndefined) => Promise<readonly User[]>
-    >();
-    expectTypeOf<SourceState['refetch']>().toEqualTypeOf<
-      (payloadInput?: undefined | UpdateUndefined) => Promise<readonly User[]>
-    >();
-    expectTypeOf<SourceState['force']>().toEqualTypeOf<
-      (payloadInput?: undefined | UpdateUndefined) => Promise<readonly User[]>
-    >();
-    expectTypeOf<SourceState['reset']>().toEqualTypeOf<() => void>();
-    expectTypeOf<SourceState['stop']>().toEqualTypeOf<() => void>();
-    expectTypeOf<SourceState['draft']['set']>().toEqualTypeOf<
-      (input: readonly User[] | ((value: readonly User[]) => readonly User[])) => void
-    >();
-    expectTypeOf<SourceState['draft']['clean']>().toEqualTypeOf<() => void>();
+    expectTypeOf<SourceState['run']>().toEqualTypeOf<typeof unit.run>();
   });
 
-  it('should infer grouped action state shape', () => {
+  it('should infer grouped action state shape with run only', () => {
     const userEntity = createUserEntity();
-    const createUser = action<UserSlug, User, User | null>({
+    const createUser = action<UserIdentity, User, User | null>({
       entity: userEntity,
       run: async ({ payload }) => {
         return payload;
@@ -332,22 +245,18 @@ describe('hook type inference', () => {
     const unit = createUser({ templateId: 't1' });
     const resolveActionState = (currentUnit: typeof unit) => useLivonActionState(currentUnit);
     type ActionState = ReturnType<typeof resolveActionState>;
-
     void unit;
     void resolveActionState;
 
     expectTypeOf<ActionState['value']>().toEqualTypeOf<User | null>();
     expectTypeOf<ActionState['status']>().toEqualTypeOf<UnitStatus>();
     expectTypeOf<ActionState['meta']>().toEqualTypeOf<unknown>();
-    expectTypeOf<ActionState['run']>().toEqualTypeOf<
-      (payloadInput?: User | UpdateUser) => Promise<User | null>
-    >();
-    expectTypeOf<ActionState['stop']>().toEqualTypeOf<() => void>();
+    expectTypeOf<ActionState['run']>().toEqualTypeOf<typeof unit.run>();
   });
 
-  it('should infer grouped stream state shape', () => {
+  it('should infer grouped stream state shape with run only', () => {
     const userEntity = createUserEntity();
-    const onUserUpdated = stream<UserSlug, User, User | null>({
+    const onUserUpdated = stream<UserIdentity, User, User | null>({
       entity: userEntity,
       run: async ({ payload }) => {
         return payload;
@@ -357,16 +266,12 @@ describe('hook type inference', () => {
     const unit = onUserUpdated({ templateId: 't1' });
     const resolveStreamState = (currentUnit: typeof unit) => useLivonStreamState(currentUnit);
     type StreamState = ReturnType<typeof resolveStreamState>;
-
     void unit;
     void resolveStreamState;
 
     expectTypeOf<StreamState['value']>().toEqualTypeOf<User | null>();
     expectTypeOf<StreamState['status']>().toEqualTypeOf<UnitStatus>();
     expectTypeOf<StreamState['meta']>().toEqualTypeOf<unknown>();
-    expectTypeOf<StreamState['start']>().toEqualTypeOf<
-      (payloadInput?: User | UpdateUser) => void
-    >();
-    expectTypeOf<StreamState['stop']>().toEqualTypeOf<() => void>();
+    expectTypeOf<StreamState['run']>().toEqualTypeOf<typeof unit.run>();
   });
 });

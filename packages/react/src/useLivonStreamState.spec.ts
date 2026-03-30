@@ -15,11 +15,10 @@ describe('useLivonStreamState()', () => {
     templateSlug = createTemplateSlug();
   });
 
-  it('should expose stream start/stop capabilities', async () => {
+  it('should expose stream run capability', async () => {
     const onUserUpdated = createUserUpdatedStream();
     const unit = onUserUpdated(templateSlug);
-    const startSpy = vi.spyOn(unit, 'start');
-    const stopSpy = vi.spyOn(unit, 'stop');
+    const runSpy = vi.spyOn(unit, 'run');
     const payload = createRandomUser({
       idPrefix: 'stream-id',
       namePrefix: 'stream-name',
@@ -27,13 +26,10 @@ describe('useLivonStreamState()', () => {
 
     const { result } = renderHook(() => useLivonStreamState(unit));
 
-    act(() => {
-      result.current.start(payload);
-      result.current.stop();
+    await act(async () => {
+      await result.current.run(payload);
     });
-    await Promise.resolve();
 
-    expect(startSpy).toHaveBeenCalledTimes(1);
-    expect(stopSpy).toHaveBeenCalledTimes(1);
+    expect(runSpy).toHaveBeenCalledTimes(1);
   });
 });

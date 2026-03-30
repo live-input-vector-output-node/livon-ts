@@ -12,12 +12,12 @@ import type { LivonState, LivonStateOf } from './types.js';
 
 export interface UseLivonState {
   <
-  TInput extends object | undefined,
+  TIdentity extends object | undefined,
   TPayload,
   RResult,
   TMeta = unknown,
-  >(unit: SourceUnit<TInput, TPayload, RResult, TMeta>): LivonStateOf<
-    SourceUnit<TInput, TPayload, RResult, TMeta>
+  >(unit: SourceUnit<TIdentity, TPayload, RResult, TMeta>): LivonStateOf<
+    SourceUnit<TIdentity, TPayload, RResult, TMeta>
   >;
 
   <
