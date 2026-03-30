@@ -19,9 +19,10 @@ export type DraftMode = 'global' | 'scoped' | 'off';
 export type CacheTtl = number | 'infinity';
 
 export interface CacheStorage {
-  getItem: (key: string) => string | null;
-  setItem: (key: string, value: string) => void;
+  getItem: (key: string) => unknown | null;
+  setItem: (key: string, value: unknown) => void;
   removeItem: (key: string) => void;
+  supportsStructuredValues?: boolean;
 }
 
 export interface CacheConfig {
