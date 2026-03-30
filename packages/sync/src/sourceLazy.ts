@@ -80,9 +80,6 @@ const createLazySourceFromConfig = <
       });
     }
 
-    if (!sourceFactoryPromise) {
-      throw new Error('Failed to initialize source factory.');
-    }
     return sourceFactoryPromise;
   };
 
@@ -105,7 +102,7 @@ const createLazySourceFromConfig = <
     const initialValue = resolveDefaultUnitValue({
       defaultValue: config.defaultValue,
       mode,
-    }) as TData;
+    });
     let snapshot: UnitSnapshot<TData, TMeta | null, SourceContext, TIdentity> = {
       identity,
       value: initialValue,

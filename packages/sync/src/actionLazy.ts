@@ -73,9 +73,6 @@ const createLazyActionFromConfig = <
       });
     }
 
-    if (!actionFactoryPromise) {
-      throw new Error('Failed to initialize action factory.');
-    }
     return actionFactoryPromise;
   };
 
@@ -98,7 +95,7 @@ const createLazyActionFromConfig = <
     const initialValue = resolveDefaultUnitValue({
       defaultValue: config.defaultValue,
       mode,
-    }) as TData;
+    });
     let snapshot: UnitSnapshot<TData, TMeta | null> = {
       identity,
       value: initialValue,
