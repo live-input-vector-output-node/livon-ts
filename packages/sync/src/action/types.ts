@@ -14,7 +14,7 @@ export interface ActionCleanup {
   (): void;
 }
 
-export type ActionRunResult<TData> = TData | ActionCleanup | void;
+export type ActionRunResult = ActionCleanup | void;
 
 export interface ActionRunContext<
   TIdentity,
@@ -30,8 +30,8 @@ export interface ActionRunContext<
     input: readonly UnitDataEntity<TData>[],
     options?: UpsertOptions,
   ) => readonly UnitDataEntity<TData>[];
-  removeOne: (id: EntityId) => boolean;
-  removeMany: (ids: readonly EntityId[]) => readonly EntityId[];
+  deleteOne: (id: EntityId) => boolean;
+  deleteMany: (ids: readonly EntityId[]) => readonly EntityId[];
   getValue: () => TData;
 }
 
@@ -45,7 +45,7 @@ export interface ActionConfig<
   destroyDelay?: number;
   run: (
     context: ActionRunContext<TIdentity, TPayload, TData, TMeta>,
-  ) => Promise<ActionRunResult<TData>> | ActionRunResult<TData>;
+  ) => Promise<ActionRunResult> | ActionRunResult;
   defaultValue?: TData;
 }
 

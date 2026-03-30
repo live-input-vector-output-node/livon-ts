@@ -1,40 +1,40 @@
 {
   "version": 1,
-  "generatedAt": "2026-03-25T10:52:42.911Z",
+  "generatedAt": "2026-03-26T15:47:35.830Z",
   "profiles": {
     "cache-off-lru-off": {
       "readOne": {
-        "batch": true,
+        "batch": false,
         "subview": false
       },
       "readMany": {
-        "batch": true,
+        "batch": false,
         "subview": false
       },
       "updateOne": {
         "batch": false,
-        "subview": false
+        "subview": true
       },
       "updateMany": {
-        "batch": true,
+        "batch": false,
         "subview": false
       },
       "setOne": {
         "batch": false,
-        "subview": false
+        "subview": true
       },
       "setMany": {
-        "batch": false,
+        "batch": true,
         "subview": false
       }
     },
     "cache-off-lru-on": {
       "readOne": {
-        "batch": false,
+        "batch": true,
         "subview": true
       },
       "readMany": {
-        "batch": false,
+        "batch": true,
         "subview": true
       },
       "updateOne": {
@@ -42,15 +42,15 @@
         "subview": false
       },
       "updateMany": {
-        "batch": false,
+        "batch": true,
         "subview": false
       },
       "setOne": {
-        "batch": false,
+        "batch": true,
         "subview": false
       },
       "setMany": {
-        "batch": false,
+        "batch": true,
         "subview": false
       }
     },
@@ -64,37 +64,37 @@
         "subview": true
       },
       "updateOne": {
-        "batch": false,
+        "batch": true,
         "subview": true
       },
       "updateMany": {
-        "batch": true,
+        "batch": false,
         "subview": true
       },
       "setOne": {
         "batch": true,
-        "subview": true
+        "subview": false
       },
       "setMany": {
         "batch": true,
-        "subview": true
+        "subview": false
       }
     },
     "cache-on-lru-on": {
       "readOne": {
         "batch": false,
-        "subview": false
+        "subview": true
       },
       "readMany": {
         "batch": false,
-        "subview": false
+        "subview": true
       },
       "updateOne": {
         "batch": false,
-        "subview": false
+        "subview": true
       },
       "updateMany": {
-        "batch": true,
+        "batch": false,
         "subview": false
       },
       "setOne": {

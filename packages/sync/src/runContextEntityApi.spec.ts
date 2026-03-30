@@ -38,8 +38,8 @@ interface ContextReferenceShape {
   set?: unknown;
   upsertOne: unknown;
   upsertMany: unknown;
-  removeOne: unknown;
-  removeMany: unknown;
+  deleteOne: unknown;
+  deleteMany: unknown;
   reset?: unknown;
 }
 
@@ -70,8 +70,8 @@ describe('run context entity api', () => {
             set: context.set,
             upsertOne: context.upsertOne,
             upsertMany: context.upsertMany,
-            removeOne: context.removeOne,
-            removeMany: context.removeMany,
+            deleteOne: context.deleteOne,
+            deleteMany: context.deleteMany,
             reset: context.reset,
           });
 
@@ -102,8 +102,8 @@ describe('run context entity api', () => {
       expect(first.set).toBe(second.set);
       expect(first.upsertOne).toBe(second.upsertOne);
       expect(first.upsertMany).toBe(second.upsertMany);
-      expect(first.removeOne).toBe(second.removeOne);
-      expect(first.removeMany).toBe(second.removeMany);
+      expect(first.deleteOne).toBe(second.deleteOne);
+      expect(first.deleteMany).toBe(second.deleteMany);
       expect(first.reset).toBe(second.reset);
 
       expect(first.context).not.toBe(third.context);
@@ -113,8 +113,8 @@ describe('run context entity api', () => {
       expect(first.set).not.toBe(third.set);
       expect(first.upsertOne).not.toBe(third.upsertOne);
       expect(first.upsertMany).not.toBe(third.upsertMany);
-      expect(first.removeOne).not.toBe(third.removeOne);
-      expect(first.removeMany).not.toBe(third.removeMany);
+      expect(first.deleteOne).not.toBe(third.deleteOne);
+      expect(first.deleteMany).not.toBe(third.deleteMany);
       expect(first.reset).not.toBe(third.reset);
 
       expect(first.context).toBe(fourth.context);
@@ -124,8 +124,8 @@ describe('run context entity api', () => {
       expect(first.set).toBe(fourth.set);
       expect(first.upsertOne).toBe(fourth.upsertOne);
       expect(first.upsertMany).toBe(fourth.upsertMany);
-      expect(first.removeOne).toBe(fourth.removeOne);
-      expect(first.removeMany).toBe(fourth.removeMany);
+      expect(first.deleteOne).toBe(fourth.deleteOne);
+      expect(first.deleteMany).toBe(fourth.deleteMany);
       expect(first.reset).toBe(fourth.reset);
     });
 
@@ -153,8 +153,8 @@ describe('run context entity api', () => {
             setMeta: context.setMeta,
             upsertOne: context.upsertOne,
             upsertMany: context.upsertMany,
-            removeOne: context.removeOne,
-            removeMany: context.removeMany,
+            deleteOne: context.deleteOne,
+            deleteMany: context.deleteMany,
           });
 
           return context.payload;
@@ -183,8 +183,8 @@ describe('run context entity api', () => {
       expect(first.setMeta).toBe(second.setMeta);
       expect(first.upsertOne).toBe(second.upsertOne);
       expect(first.upsertMany).toBe(second.upsertMany);
-      expect(first.removeOne).toBe(second.removeOne);
-      expect(first.removeMany).toBe(second.removeMany);
+      expect(first.deleteOne).toBe(second.deleteOne);
+      expect(first.deleteMany).toBe(second.deleteMany);
 
       expect(first.context).not.toBe(third.context);
       expect(first.scope).toBe(third.scope);
@@ -192,8 +192,8 @@ describe('run context entity api', () => {
       expect(first.setMeta).not.toBe(third.setMeta);
       expect(first.upsertOne).not.toBe(third.upsertOne);
       expect(first.upsertMany).not.toBe(third.upsertMany);
-      expect(first.removeOne).not.toBe(third.removeOne);
-      expect(first.removeMany).not.toBe(third.removeMany);
+      expect(first.deleteOne).not.toBe(third.deleteOne);
+      expect(first.deleteMany).not.toBe(third.deleteMany);
 
       expect(first.context).toBe(fourth.context);
       expect(first.scope).toBe(fourth.scope);
@@ -201,8 +201,8 @@ describe('run context entity api', () => {
       expect(first.setMeta).toBe(fourth.setMeta);
       expect(first.upsertOne).toBe(fourth.upsertOne);
       expect(first.upsertMany).toBe(fourth.upsertMany);
-      expect(first.removeOne).toBe(fourth.removeOne);
-      expect(first.removeMany).toBe(fourth.removeMany);
+      expect(first.deleteOne).toBe(fourth.deleteOne);
+      expect(first.deleteMany).toBe(fourth.deleteMany);
     });
 
     it('should keep stream run-context instance and top-level mutation methods stable for same scope and payload', async () => {
@@ -229,8 +229,8 @@ describe('run context entity api', () => {
             setMeta: context.setMeta,
             upsertOne: context.upsertOne,
             upsertMany: context.upsertMany,
-            removeOne: context.removeOne,
-            removeMany: context.removeMany,
+            deleteOne: context.deleteOne,
+            deleteMany: context.deleteMany,
           });
         },
       });
@@ -272,8 +272,8 @@ describe('run context entity api', () => {
       expect(first.setMeta).toBe(second.setMeta);
       expect(first.upsertOne).toBe(second.upsertOne);
       expect(first.upsertMany).toBe(second.upsertMany);
-      expect(first.removeOne).toBe(second.removeOne);
-      expect(first.removeMany).toBe(second.removeMany);
+      expect(first.deleteOne).toBe(second.deleteOne);
+      expect(first.deleteMany).toBe(second.deleteMany);
 
       expect(first.context).not.toBe(third.context);
       expect(first.scope).toBe(third.scope);
@@ -281,8 +281,8 @@ describe('run context entity api', () => {
       expect(first.setMeta).not.toBe(third.setMeta);
       expect(first.upsertOne).not.toBe(third.upsertOne);
       expect(first.upsertMany).not.toBe(third.upsertMany);
-      expect(first.removeOne).not.toBe(third.removeOne);
-      expect(first.removeMany).not.toBe(third.removeMany);
+      expect(first.deleteOne).not.toBe(third.deleteOne);
+      expect(first.deleteMany).not.toBe(third.deleteMany);
 
       expect(first.context).toBe(fourth.context);
       expect(first.scope).toBe(fourth.scope);
@@ -290,8 +290,8 @@ describe('run context entity api', () => {
       expect(first.setMeta).toBe(fourth.setMeta);
       expect(first.upsertOne).toBe(fourth.upsertOne);
       expect(first.upsertMany).toBe(fourth.upsertMany);
-      expect(first.removeOne).toBe(fourth.removeOne);
-      expect(first.removeMany).toBe(fourth.removeMany);
+      expect(first.deleteOne).toBe(fourth.deleteOne);
+      expect(first.deleteMany).toBe(fourth.deleteMany);
     });
   });
 
@@ -312,14 +312,14 @@ describe('run context entity api', () => {
             hasTopLevelSet: typeof rawContext.set === 'function',
             hasTopLevelUpsertOne: typeof rawContext.upsertOne === 'function',
             hasTopLevelUpsertMany: typeof rawContext.upsertMany === 'function',
-            hasTopLevelRemoveOne: typeof rawContext.removeOne === 'function',
-            hasTopLevelRemoveMany: typeof rawContext.removeMany === 'function',
+            hasTopLevelRemoveOne: typeof rawContext.deleteOne === 'function',
+            hasTopLevelRemoveMany: typeof rawContext.deleteMany === 'function',
             hasTopLevelReset: typeof rawContext.reset === 'function',
             hasEntitySet: typeof entityApi?.set === 'function',
             hasEntityUpsertOne: typeof entityApi?.upsertOne === 'function',
             hasEntityUpsertMany: typeof entityApi?.upsertMany === 'function',
-            hasEntityRemoveOne: typeof entityApi?.removeOne === 'function',
-            hasEntityRemoveMany: typeof entityApi?.removeMany === 'function',
+            hasEntityRemoveOne: typeof entityApi?.deleteOne === 'function',
+            hasEntityRemoveMany: typeof entityApi?.deleteMany === 'function',
             hasEntityReset: typeof entityApi?.reset === 'function',
           };
         },
@@ -359,14 +359,14 @@ describe('run context entity api', () => {
             hasTopLevelSet: typeof rawContext.set === 'function',
             hasTopLevelUpsertOne: typeof rawContext.upsertOne === 'function',
             hasTopLevelUpsertMany: typeof rawContext.upsertMany === 'function',
-            hasTopLevelRemoveOne: typeof rawContext.removeOne === 'function',
-            hasTopLevelRemoveMany: typeof rawContext.removeMany === 'function',
+            hasTopLevelRemoveOne: typeof rawContext.deleteOne === 'function',
+            hasTopLevelRemoveMany: typeof rawContext.deleteMany === 'function',
             hasTopLevelReset: typeof rawContext.reset === 'function',
             hasEntitySet: typeof entityApi?.set === 'function',
             hasEntityUpsertOne: typeof entityApi?.upsertOne === 'function',
             hasEntityUpsertMany: typeof entityApi?.upsertMany === 'function',
-            hasEntityRemoveOne: typeof entityApi?.removeOne === 'function',
-            hasEntityRemoveMany: typeof entityApi?.removeMany === 'function',
+            hasEntityRemoveOne: typeof entityApi?.deleteOne === 'function',
+            hasEntityRemoveMany: typeof entityApi?.deleteMany === 'function',
             hasEntityReset: typeof entityApi?.reset === 'function',
           };
         },
@@ -409,14 +409,14 @@ describe('run context entity api', () => {
             hasTopLevelSet: typeof rawContext.set === 'function',
             hasTopLevelUpsertOne: typeof rawContext.upsertOne === 'function',
             hasTopLevelUpsertMany: typeof rawContext.upsertMany === 'function',
-            hasTopLevelRemoveOne: typeof rawContext.removeOne === 'function',
-            hasTopLevelRemoveMany: typeof rawContext.removeMany === 'function',
+            hasTopLevelRemoveOne: typeof rawContext.deleteOne === 'function',
+            hasTopLevelRemoveMany: typeof rawContext.deleteMany === 'function',
             hasTopLevelReset: typeof rawContext.reset === 'function',
             hasEntitySet: typeof entityApi?.set === 'function',
             hasEntityUpsertOne: typeof entityApi?.upsertOne === 'function',
             hasEntityUpsertMany: typeof entityApi?.upsertMany === 'function',
-            hasEntityRemoveOne: typeof entityApi?.removeOne === 'function',
-            hasEntityRemoveMany: typeof entityApi?.removeMany === 'function',
+            hasEntityRemoveOne: typeof entityApi?.deleteOne === 'function',
+            hasEntityRemoveMany: typeof entityApi?.deleteMany === 'function',
             hasEntityReset: typeof entityApi?.reset === 'function',
           };
         },

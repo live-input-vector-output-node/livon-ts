@@ -17,8 +17,8 @@ export const invokeActionCleanup = (
   }
 };
 
-export const isActionCleanup = <RResult>(
-  input: ActionRunResult<RResult>,
+export const isActionCleanup = (
+  input: ActionRunResult,
 ): input is ActionCleanup => {
   return typeof input === 'function';
 };

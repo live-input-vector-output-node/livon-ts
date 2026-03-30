@@ -25,26 +25,76 @@ interface UpdateTodoPayload {
   title: string;
 }
 
+interface MemoryStorage {
+  getItem: (key: string) => string | null;
+  setItem: (key: string, value: string) => void;
+  removeItem: (key: string) => void;
+}
+
+interface Deferred<TValue> {
+  promise: Promise<TValue>;
+  resolve: (value: TValue | PromiseLike<TValue>) => void;
+  reject: (reason?: unknown) => void;
+}
+
 type ReadTodosRunContext = SourceRunContext<TodoIdentity, ReadTodosPayload, readonly Todo[]>;
 
-const createTodoEntity = () => {
+const createTodoEntity = (key = 'todo-entity') => {
   return entity<Todo>({
+    key,
     idOf: (value) => value.id,
   });
+};
+const createMemoryStorage = (): MemoryStorage => {
+  const values = new Map<string, string>();
+  return {
+    getItem: (key) => {
+      return values.get(key) ?? null;
+    },
+    setItem: (key, value) => {
+      values.set(key, value);
+    },
+    removeItem: (key) => {
+      values.delete(key);
+    },
+  };
+};
+const createDeferred = <TValue>(): Deferred<TValue> => {
+  let resolveDeferred: Deferred<TValue>['resolve'] = () => undefined;
+  let rejectDeferred: Deferred<TValue>['reject'] = () => undefined;
+  const promise = new Promise<TValue>((resolve, reject) => {
+    resolveDeferred = resolve;
+    rejectDeferred = reject;
+  });
+
+  return {
+    promise,
+    resolve: resolveDeferred,
+    reject: rejectDeferred,
+  };
+};
+const createTodosForQuery = (query: string): readonly Todo[] => {
+  return [
+    {
+      id: `todo-${query}`,
+      title: query,
+      completed: false,
+    },
+  ];
 };
 
 describe('run setAction inputs', () => {
   describe('happy', () => {
     it('should resolve source run input from direct setAction callback', async () => {
       const todoEntity = createTodoEntity();
-      const runMock = vi.fn(async ({ identity, payload }: ReadTodosRunContext) => {
-        return [
+      const runMock = vi.fn(async ({ identity, payload, set }: ReadTodosRunContext) => {
+        set([
           {
             id: `${identity.listId}-${payload.query}`,
             title: payload.query,
             completed: false,
           },
-        ];
+        ]);
       });
 
       const readTodos = source<TodoIdentity, ReadTodosPayload, readonly Todo[]>({
@@ -80,14 +130,14 @@ describe('run setAction inputs', () => {
 
     it('should resolve source run input from config setAction callback', async () => {
       const todoEntity = createTodoEntity();
-      const runMock = vi.fn(async ({ payload }: ReadTodosRunContext) => {
-        return [
+      const runMock = vi.fn(async ({ payload, set }: ReadTodosRunContext) => {
+        set([
           {
             id: payload.query,
             title: payload.query,
             completed: false,
           },
-        ];
+        ]);
       });
 
       const readTodos = source<TodoIdentity, ReadTodosPayload, readonly Todo[]>({
@@ -116,12 +166,12 @@ describe('run setAction inputs', () => {
       const todoEntity = createTodoEntity();
       const updateTodo = action<TodoIdentity, UpdateTodoPayload, Todo | null>({
         entity: todoEntity,
-        run: async ({ payload }) => {
-          return {
+        run: async ({ payload, upsertOne }) => {
+          upsertOne({
             id: payload.id,
             title: payload.title,
             completed: false,
-          };
+          });
         },
         defaultValue: null,
       });
@@ -158,8 +208,8 @@ describe('run setAction inputs', () => {
       const todoEntity = createTodoEntity();
       const onTodoChanged = stream<TodoIdentity, Todo, Todo | null>({
         entity: todoEntity,
-        run: async ({ payload }) => {
-          return payload;
+        run: async ({ payload, upsertOne }) => {
+          upsertOne(payload);
         },
         defaultValue: null,
       });
@@ -185,6 +235,209 @@ describe('run setAction inputs', () => {
       }, {});
 
       expect(unit.getSnapshot().value?.title).toBe('second');
+    });
+
+    it('should rehydrate newest cached payload and refresh in background when payload changes without direct cache hit', async () => {
+      const cacheKey = 'todo-cache-lru-default';
+      const storage = createMemoryStorage();
+
+      const writerEntity = createTodoEntity('todo-cache-entity');
+      const readTodosWriter = source<TodoIdentity, ReadTodosPayload, readonly Todo[]>({
+        key: 'read-todos',
+        entity: writerEntity,
+        defaultValue: [],
+        cache: {
+          key: cacheKey,
+          storage,
+          ttl: 'infinity',
+        },
+        run: async ({ payload, set }) => {
+          set(createTodosForQuery(payload.query));
+        },
+      });
+      const writerUnit = readTodosWriter({
+        listId: 'list-1',
+      });
+      await writerUnit.run({
+        query: 'open',
+      });
+      await Promise.resolve();
+      await Promise.resolve();
+
+      const readerEntity = createTodoEntity('todo-cache-entity');
+      const runDeferred = createDeferred<readonly Todo[]>();
+      const readerRunMock = vi.fn(async ({ payload, set }: ReadTodosRunContext) => {
+        await runDeferred.promise;
+        set(createTodosForQuery(payload.query));
+      });
+      const readTodosReader = source<TodoIdentity, ReadTodosPayload, readonly Todo[]>({
+        key: 'read-todos',
+        entity: readerEntity,
+        defaultValue: [],
+        cache: {
+          key: cacheKey,
+          storage,
+          ttl: 'infinity',
+        },
+        run: readerRunMock,
+      });
+      const readerUnit = readTodosReader({
+        listId: 'list-1',
+      });
+
+      const runPromise = readerUnit.run({
+        query: 'mine',
+      });
+
+      const snapshotDuringRefresh = readerUnit.getSnapshot();
+      expect(snapshotDuringRefresh.value[0]?.title).toBe('open');
+      expect(snapshotDuringRefresh.status).toBe('refreshing');
+      expect(snapshotDuringRefresh.context.cacheState).toBe('stale');
+      expect(readerRunMock).toHaveBeenCalledTimes(1);
+      expect(readerRunMock).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({
+          payload: {
+            query: 'mine',
+          },
+        }),
+      );
+
+      runDeferred.resolve(createTodosForQuery('mine'));
+      await runPromise;
+
+      const snapshotAfterRefresh = readerUnit.getSnapshot();
+      expect(snapshotAfterRefresh.value[0]?.title).toBe('mine');
+      expect(snapshotAfterRefresh.status).toBe('success');
+    });
+
+    it('should rehydrate cached value for same source when source cache key is omitted', async () => {
+      const todoEntity = createTodoEntity('todo-cache-entity');
+      const storage = createMemoryStorage();
+      const readTodosRun = async ({ payload, set }: ReadTodosRunContext): Promise<void> => {
+        set(createTodosForQuery(payload.query));
+      };
+
+      const readTodosWriter = source<TodoIdentity, ReadTodosPayload, readonly Todo[]>({
+        key: 'read-todos',
+        entity: todoEntity,
+        defaultValue: [],
+        cache: {
+          storage,
+          ttl: 'infinity',
+        },
+        run: readTodosRun,
+      });
+      const writerUnit = readTodosWriter({
+        listId: 'list-1',
+      });
+      await writerUnit.run({
+        query: 'open',
+      });
+      await Promise.resolve();
+      await Promise.resolve();
+
+      const nextTodoEntity = createTodoEntity('todo-cache-entity');
+      const readTodosReader = source<TodoIdentity, ReadTodosPayload, readonly Todo[]>({
+        key: 'read-todos',
+        entity: nextTodoEntity,
+        defaultValue: [],
+        cache: {
+          storage,
+          ttl: 'infinity',
+        },
+        run: readTodosRun,
+      });
+      const readerUnit = readTodosReader({
+        listId: 'list-1',
+      });
+
+      expect(readerUnit.getSnapshot().value[0]?.title).toBe('open');
+    });
+
+    it('should isolate caches between different sources when source cache key is omitted', async () => {
+      const todoEntity = createTodoEntity('todo-cache-entity-a');
+      const storage = createMemoryStorage();
+
+      const readTodosA = source<TodoIdentity, ReadTodosPayload, readonly Todo[]>({
+        key: 'read-todos-a',
+        entity: todoEntity,
+        defaultValue: [],
+        cache: {
+          storage,
+          ttl: 'infinity',
+        },
+        run: async ({ payload, set }) => {
+          set(createTodosForQuery(`a-${payload.query}`));
+        },
+      });
+      const unitA = readTodosA({
+        listId: 'list-1',
+      });
+      await unitA.run({
+        query: 'open',
+      });
+      await Promise.resolve();
+      await Promise.resolve();
+
+      const anotherTodoEntity = createTodoEntity('todo-cache-entity-b');
+      const readTodosB = source<TodoIdentity, ReadTodosPayload, readonly Todo[]>({
+        key: 'read-todos-b',
+        entity: anotherTodoEntity,
+        defaultValue: [],
+        cache: {
+          storage,
+          ttl: 'infinity',
+        },
+        run: async ({ payload, set }) => {
+          set(createTodosForQuery(`b-${payload.query}`));
+        },
+      });
+      const unitB = readTodosB({
+        listId: 'list-1',
+      });
+
+      expect(unitB.getSnapshot().value).toEqual([]);
+    });
+
+    it('should throw when cache is enabled without entity and source keys', () => {
+      const storage = createMemoryStorage();
+      const todoEntity = entity<Todo>({
+        idOf: (value) => value.id,
+      });
+
+      expect(() => {
+        source<TodoIdentity, ReadTodosPayload, readonly Todo[]>({
+          entity: todoEntity,
+          defaultValue: [],
+          cache: {
+            storage,
+            ttl: 'infinity',
+          },
+          run: async ({ set }) => {
+            set([]);
+          },
+        });
+      }).toThrowError('entity.key is required when source cache is enabled.');
+    });
+
+    it('should throw when cache is enabled without source key', () => {
+      const storage = createMemoryStorage();
+      const todoEntity = createTodoEntity('todo-entity');
+
+      expect(() => {
+        source<TodoIdentity, ReadTodosPayload, readonly Todo[]>({
+          entity: todoEntity,
+          defaultValue: [],
+          cache: {
+            storage,
+            ttl: 'infinity',
+          },
+          run: async ({ set }) => {
+            set([]);
+          },
+        });
+      }).toThrowError('source.key is required when source cache is enabled.');
     });
   });
 });

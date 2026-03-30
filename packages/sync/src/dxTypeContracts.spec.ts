@@ -38,8 +38,8 @@ type EntityHasUnifiedUpsert = 'upsert' extends keyof Entity<Todo> ? true : false
 type EntityHasUnifiedRemove = 'remove' extends keyof Entity<Todo> ? true : false;
 type EntityHasUpsertOne = 'upsertOne' extends keyof Entity<Todo> ? true : false;
 type EntityHasUpsertMany = 'upsertMany' extends keyof Entity<Todo> ? true : false;
-type EntityHasRemoveOne = 'removeOne' extends keyof Entity<Todo> ? true : false;
-type EntityHasRemoveMany = 'removeMany' extends keyof Entity<Todo> ? true : false;
+type EntityHasRemoveOne = 'deleteOne' extends keyof Entity<Todo> ? true : false;
+type EntityHasRemoveMany = 'deleteMany' extends keyof Entity<Todo> ? true : false;
 
 type _entityHasNoUnifiedUpsert = AssertFalse<EntityHasUnifiedUpsert>;
 type _entityHasNoUnifiedRemove = AssertFalse<EntityHasUnifiedRemove>;

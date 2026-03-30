@@ -28,12 +28,12 @@ export interface StreamRunContext<
     input: readonly UnitDataEntity<TData>[],
     options?: UpsertOptions,
   ) => readonly UnitDataEntity<TData>[];
-  removeOne: (id: EntityId) => boolean;
-  removeMany: (ids: readonly EntityId[]) => readonly EntityId[];
+  deleteOne: (id: EntityId) => boolean;
+  deleteMany: (ids: readonly EntityId[]) => readonly EntityId[];
   getValue: () => TData;
 }
 
-export type StreamRunResult<TData> = TData | StreamCleanup | void;
+export type StreamRunResult = StreamCleanup | void;
 
 export interface StreamConfig<
   TIdentity extends object | undefined,
@@ -45,7 +45,7 @@ export interface StreamConfig<
   destroyDelay?: number;
   run: (
     context: StreamRunContext<TIdentity, TPayload, TData, TMeta>,
-  ) => Promise<StreamRunResult<TData>> | StreamRunResult<TData>;
+  ) => Promise<StreamRunResult> | StreamRunResult;
   defaultValue?: TData;
 }
 

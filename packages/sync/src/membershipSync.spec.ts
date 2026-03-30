@@ -181,7 +181,7 @@ describe('entity membership sync across sources', () => {
       oneStore.effect(oneListener);
       await oneStore.run();
       oneListener.mockClear();
-      usersEntity.removeOne(firstUserId);
+      usersEntity.deleteOne(firstUserId);
       expect(oneListener).toHaveBeenCalledTimes(1);
       expect(oneStore.get()).toBeNull();
       oneListener.mockClear();
@@ -198,7 +198,7 @@ describe('entity membership sync across sources', () => {
       manyStore.effect(manyListener);
       await manyStore.run();
       manyListener.mockClear();
-      usersEntity.removeOne(firstUserId);
+      usersEntity.deleteOne(firstUserId);
 
       expect(manyListener).toHaveBeenCalledTimes(1);
       expect(manyStore.get()).toEqual([]);

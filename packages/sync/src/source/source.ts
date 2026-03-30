@@ -10,6 +10,7 @@ import {
   notifyEffectListeners,
   resolveInput,
   resolveValue,
+  scheduleAsync,
   setManyEntityMembership,
   setOneEntityMembership,
   serializeKey,
@@ -54,6 +55,27 @@ const DEFAULT_DESTROY_DELAY = 250;
 const DEFAULT_DRAFT_MODE: DraftMode = 'global';
 const RUN_CONTEXT_CACHE_LIMIT = 32;
 const SOURCE_CACHE_LRU_STORAGE_KEY_SUFFIX = '__lru__';
+const SOURCE_CACHE_ENTITY_KEY_ERROR = 'entity.key is required when source cache is enabled.';
+const SOURCE_CACHE_SOURCE_KEY_ERROR = 'source.key is required when source cache is enabled.';
+const SOURCE_RUN_RESULT_ERROR = 'source.run() must return void or a cleanup function.';
+const resolveRunAsVoid = (): void => undefined;
+
+interface ReadUnitCacheLruCandidatesInput {
+  excludeUnitCacheKey: string;
+}
+
+interface HydrateFromUnitCacheKeyInput {
+  unitCacheKey: string;
+  cacheStateOnHit: 'hit' | 'stale';
+}
+
+interface ResolveSourceCacheNamespaceKeyInput<
+  TMode extends 'one' | 'many',
+> {
+  entityKey: string;
+  sourceKey: string;
+  mode: TMode;
+}
 
 const createInitialSourceContext = (
   hasCacheStorage: boolean,
@@ -74,32 +96,22 @@ const isSourceSetAction = <
   return typeof input === 'function';
 };
 
-interface ResolveSourceRunInputInput<
-  TPayload,
-  TData,
-  TMeta,
-> {
-  input: SourceRunInput<TPayload, TData, TMeta> | undefined;
-  config: SourceRunConfig | undefined;
-  previous: UnitRunPrevious<TPayload, SourceRunConfig, TData, TMeta | null>;
-}
+const isNonEmptyString = (input: unknown): input is string => {
+  return typeof input === 'string' && input.trim().length > 0;
+};
 
-const resolveSourceRunInput = <
-  TPayload,
-  TData,
-  TMeta,
->(
-  {
-    input,
-    config,
-    previous,
-  }: ResolveSourceRunInputInput<TPayload, TData, TMeta>,
-): TPayload | undefined => {
-  if (isSourceSetAction<TPayload, TData, TMeta>(input)) {
-    return input(previous, config);
-  }
-
-  return input;
+const resolveSourceCacheNamespaceKey = <
+  TMode extends 'one' | 'many',
+>({
+  entityKey,
+  sourceKey,
+  mode,
+}: ResolveSourceCacheNamespaceKeyInput<TMode>): string => {
+  return serializeKey({
+    entityKey,
+    sourceKey,
+    mode,
+  });
 };
 
 export const source = <
@@ -108,6 +120,7 @@ export const source = <
   TData = unknown,
   TMeta = unknown,
 >({
+  key: sourceKey,
   entity,
   ttl = entity.ttl ?? 0,
   draft = entity.draft ?? DEFAULT_DRAFT_MODE,
@@ -129,15 +142,33 @@ export const source = <
     sourceCache: cache,
     entityCache: entity.cache,
   });
+  const sourceMode: 'one' | 'many' = Array.isArray(defaultValue ?? null) ? 'many' : 'one';
+  const normalizedEntityKey = isNonEmptyString(entity.key)
+    ? entity.key
+    : (isNonEmptyString(entity.cache?.key) ? entity.cache.key : '');
+  const normalizedSourceKey = isNonEmptyString(sourceKey)
+    ? sourceKey
+    : (isNonEmptyString(cache?.key) ? cache.key : '');
+  const hasEnabledCache = Boolean(
+    cacheStorage
+    && (cacheTtl === 'infinity' || cacheTtl > 0),
+  );
+  if (hasEnabledCache && normalizedEntityKey.length === 0) {
+    throw new Error(SOURCE_CACHE_ENTITY_KEY_ERROR);
+  }
+  if (hasEnabledCache && normalizedSourceKey.length === 0) {
+    throw new Error(SOURCE_CACHE_SOURCE_KEY_ERROR);
+  }
+  const sourceCacheNamespaceKey = resolveSourceCacheNamespaceKey({
+    entityKey: normalizedEntityKey,
+    sourceKey: normalizedSourceKey,
+    mode: sourceMode,
+  });
   const cacheWriteQueue = cacheStorage
     ? readOrCreateSharedCacheWriteQueue({ storage: cacheStorage })
     : undefined;
   const cacheKeyPrefix = resolveCacheKey({
-    sourceCache: cache,
-    entityCache: entity.cache,
-    sourceKey: serializeKey({
-      mode: Array.isArray(defaultValue ?? null) ? 'many' : 'one',
-    }),
+    sourceKey: sourceCacheNamespaceKey,
   });
 
   const unitsByKey: SourceUnitByKeyMap<TIdentity, TPayload, TData, TMeta> =
@@ -163,25 +194,9 @@ export const source = <
     return entity.getById(id);
   };
 
-  const notifyUnit = (
-    internal: SourceUnitInternal<TIdentity, TPayload, TData, TMeta>,
-  ): void => {
-    internal.state.value = getModeValue(internal, readEntityValueById);
-
-    notifyEffectListeners(
-      internal.listeners,
-      createUnitSnapshot({
-        value: internal.state.value,
-        status: internal.state.status,
-        meta: internal.state.meta,
-        context: internal.state.context,
-      }),
-    );
-  };
-
   const sourceFactory: Source<TIdentity, TPayload, TData, TMeta> = (identity) => {
-    const key = unitKeyCache.getOrCreateKey(identity);
-    const existingUnit = unitsByKey.get(key);
+    const unitKey = unitKeyCache.getOrCreateKey(identity);
+    const existingUnit = unitsByKey.get(unitKey);
 
     if (existingUnit) {
       return existingUnit.unit;
@@ -192,7 +207,7 @@ export const source = <
     const initialMode: 'one' | 'many' = Array.isArray(initialValue) ? 'many' : 'one';
 
     const internal: SourceUnitInternal<TIdentity, TPayload, TData, TMeta> = {
-      key,
+      key: unitKey,
       ttl,
       destroyDelay,
       identity,
@@ -225,6 +240,26 @@ export const source = <
       mode: 'payload-hot-path',
       limit: RUN_CONTEXT_CACHE_LIMIT,
     });
+    const refreshValueFromEntity = (): void => {
+      internal.state.value = getModeValue(internal, readEntityValueById);
+    };
+    const setRawValue = (value: TData): void => {
+      internal.state.value = value;
+    };
+
+    const notifyUnit = (): void => {
+      refreshValueFromEntity();
+      notifyEffectListeners(
+        internal.listeners,
+        createUnitSnapshot({
+          value: internal.state.value,
+          status: internal.state.status,
+          meta: internal.state.meta,
+          context: internal.state.context,
+        }),
+      );
+    };
+
     const createRunContextEntry = (
       payload: TPayload,
     ): SourceRunContextEntry<TIdentity, TPayload, TData, TMeta> => {
@@ -239,9 +274,7 @@ export const source = <
         entity,
         state: internal,
         isActive: () => gate.isLatestRun(),
-        refreshValue: () => {
-          internal.state.value = getModeValue(internal, readEntityValueById);
-        },
+        refreshValue: refreshValueFromEntity,
         readValue: () => internal.state.value,
       });
       const runContextBase: SourceRunContext<
@@ -266,7 +299,7 @@ export const source = <
           }
 
           internal.state.meta = nextMeta;
-          notifyUnit(internal);
+          notifyUnit();
         },
         set: (input: TData | ValueUpdater<TData, TData>) => {
           if (!gate.isLatestRun()) {
@@ -278,12 +311,8 @@ export const source = <
             entity,
             state: internal,
             nextValue,
-            refreshValueFromMembership: () => {
-              internal.state.value = getModeValue(internal, readEntityValueById);
-            },
-            setRawValue: (value) => {
-              internal.state.value = value;
-            },
+            refreshValueFromMembership: refreshValueFromEntity,
+            setRawValue,
             upsertOneOperation: 'runContext.set() object',
             upsertManyOperation: 'runContext.set() array',
           });
@@ -292,7 +321,7 @@ export const source = <
             return;
           }
 
-          notifyUnit(internal);
+          notifyUnit();
           syncCacheRecord();
         },
         reset: () => {
@@ -347,8 +376,24 @@ export const source = <
     );
     const cacheLruStorageKey = `${cacheKeyPrefix}:${SOURCE_CACHE_LRU_STORAGE_KEY_SUFFIX}`;
     let cacheLruLoaded = false;
-    let cacheLruKeys: string[] = [];
+    let cacheLruKeyOrderMap = new Map<string, true>();
+    let cacheLruNewestKey: string | null = null;
+    let cacheLruPersistScheduled = false;
+    let cacheLruPersistDirty = false;
     let activePayloadCacheKey: string | null = null;
+
+    const readNewestCacheLruKey = (): string | null => {
+      let nextNewestKey: string | null = null;
+      cacheLruKeyOrderMap.forEach((_present, currentKey) => {
+        nextNewestKey = currentKey;
+      });
+
+      return nextNewestKey;
+    };
+
+    const readPersistedCacheLruKeys = (): string[] => {
+      return Array.from(cacheLruKeyOrderMap.keys()).reverse();
+    };
 
     const loadCacheLruState = (): void => {
       if (!cacheLruEnabled || cacheLruLoaded || !cacheStorage) {
@@ -376,7 +421,16 @@ export const source = <
           return;
         }
 
-        cacheLruKeys = keysCandidate;
+        const nextKeyOrderMap = new Map<string, true>();
+        keysCandidate
+          .slice()
+          .reverse()
+          .forEach((entry) => {
+            nextKeyOrderMap.set(entry, true);
+          });
+
+        cacheLruKeyOrderMap = nextKeyOrderMap;
+        cacheLruNewestKey = readNewestCacheLruKey();
       } catch {
         return;
       }
@@ -387,19 +441,45 @@ export const source = <
         return;
       }
 
-      if (cacheLruKeys.length === 0) {
+      if (cacheLruKeyOrderMap.size === 0) {
         cacheWriteQueue.enqueueRemove(cacheLruStorageKey);
         return;
       }
 
+      const persistedKeys = readPersistedCacheLruKeys();
       cacheWriteQueue.enqueueSet(
         cacheLruStorageKey,
         () => {
           return JSON.stringify({
-            keys: cacheLruKeys,
+            keys: persistedKeys,
           });
         },
       );
+    };
+
+    const flushCacheLruPersistence = (): void => {
+      if (!cacheLruPersistDirty) {
+        return;
+      }
+
+      cacheLruPersistDirty = false;
+      persistCacheLruState();
+    };
+
+    const scheduleCacheLruPersistence = (): void => {
+      cacheLruPersistDirty = true;
+
+      if (cacheLruPersistScheduled) {
+        return;
+      }
+
+      cacheLruPersistScheduled = true;
+      scheduleAsync({
+        callback: () => {
+          cacheLruPersistScheduled = false;
+          flushCacheLruPersistence();
+        },
+      });
     };
 
     const touchCacheLruKey = (unitCacheKey: string): void => {
@@ -408,32 +488,29 @@ export const source = <
       }
 
       loadCacheLruState();
-      if (cacheLruKeys[0] === unitCacheKey) {
+      if (cacheLruNewestKey === unitCacheKey) {
         return;
       }
 
-      const existingIndex = cacheLruKeys.findIndex((entry) => entry === unitCacheKey);
-      if (existingIndex > 0) {
-        const existingEntry = cacheLruKeys[existingIndex];
-        if (existingEntry === undefined) {
-          return;
-        }
-
-        cacheLruKeys.splice(existingIndex, 1);
-        cacheLruKeys.unshift(existingEntry);
-        persistCacheLruState();
+      if (cacheLruKeyOrderMap.has(unitCacheKey)) {
+        cacheLruKeyOrderMap.delete(unitCacheKey);
+        cacheLruKeyOrderMap.set(unitCacheKey, true);
+        cacheLruNewestKey = unitCacheKey;
+        scheduleCacheLruPersistence();
         return;
       }
 
-      cacheLruKeys.unshift(unitCacheKey);
-      const evictedEntry = cacheLruKeys.length > cacheLruMaxEntries
-        ? cacheLruKeys.pop()
+      cacheLruKeyOrderMap.set(unitCacheKey, true);
+      cacheLruNewestKey = unitCacheKey;
+      const evictedEntry = cacheLruKeyOrderMap.size > cacheLruMaxEntries
+        ? cacheLruKeyOrderMap.keys().next().value
         : undefined;
       if (evictedEntry && evictedEntry !== unitCacheKey) {
+        cacheLruKeyOrderMap.delete(evictedEntry);
         cacheWriteQueue.enqueueRemove(evictedEntry);
       }
 
-      persistCacheLruState();
+      scheduleCacheLruPersistence();
     };
 
     const removeCacheLruKey = (unitCacheKey: string): void => {
@@ -442,13 +519,16 @@ export const source = <
       }
 
       loadCacheLruState();
-      const existingIndex = cacheLruKeys.findIndex((entry) => entry === unitCacheKey);
-      if (existingIndex < 0) {
+      const existed = cacheLruKeyOrderMap.delete(unitCacheKey);
+      if (!existed) {
         return;
       }
 
-      cacheLruKeys.splice(existingIndex, 1);
-      persistCacheLruState();
+      if (cacheLruNewestKey === unitCacheKey) {
+        cacheLruNewestKey = readNewestCacheLruKey();
+      }
+
+      scheduleCacheLruPersistence();
     };
 
     const resolvePayloadCacheKey = (payload: TPayload): string => {
@@ -456,7 +536,24 @@ export const source = <
     };
 
     const resolveUnitCacheKey = (payloadCacheKey: string): string => {
-      return `${cacheKeyPrefix}:${key}:${payloadCacheKey}`;
+      return `${cacheKeyPrefix}:${unitKey}:${payloadCacheKey}`;
+    };
+    const resolveUnitCacheKeyPrefix = (): string => {
+      return `${cacheKeyPrefix}:${unitKey}:`;
+    };
+    const readUnitCacheLruCandidates = ({
+      excludeUnitCacheKey,
+    }: ReadUnitCacheLruCandidatesInput): string[] => {
+      if (!cacheLruEnabled) {
+        return [];
+      }
+
+      loadCacheLruState();
+      const unitCacheKeyPrefix = resolveUnitCacheKeyPrefix();
+      return readPersistedCacheLruKeys().filter((entry) => {
+        return entry !== excludeUnitCacheKey
+          && entry.startsWith(unitCacheKeyPrefix);
+      });
     };
 
     const syncCacheRecord = (): void => {
@@ -486,7 +583,10 @@ export const source = <
       });
     };
 
-    const hydrateFromCache = (payloadCacheKey: string): boolean => {
+    const hydrateFromUnitCacheKey = ({
+      unitCacheKey,
+      cacheStateOnHit,
+    }: HydrateFromUnitCacheKeyInput): boolean => {
       if (!cacheStorage) {
         setContext({
           cacheState: 'disabled',
@@ -501,7 +601,6 @@ export const source = <
         return false;
       }
 
-      const unitCacheKey = resolveUnitCacheKey(payloadCacheKey);
       const rawRecord = cacheStorage.getItem(unitCacheKey);
       const parsedRecord = readSourceCacheRecord<UnitDataEntity<TData>>(rawRecord);
       if (!parsedRecord) {
@@ -540,10 +639,10 @@ export const source = <
             value: upsertedEntity,
             operation: 'cache rehydrate one',
           });
-          internal.state.value = getModeValue(internal, readEntityValueById);
+          refreshValueFromEntity();
         } else {
           clearEntityMembership(internal, { clearUnitMembership: entity.clearUnitMembership });
-          internal.state.value = getModeValue(internal, readEntityValueById);
+          refreshValueFromEntity();
         }
       }
 
@@ -554,12 +653,12 @@ export const source = <
           values: upsertedEntities,
           operation: 'cache rehydrate many',
         });
-        internal.state.value = getModeValue(internal, readEntityValueById);
+        refreshValueFromEntity();
       }
 
       internal.state.status = 'rehydrated';
       setContext({
-        cacheState: 'hit',
+        cacheState: cacheStateOnHit,
         error: null,
       });
       return true;
@@ -572,7 +671,26 @@ export const source = <
       }
 
       activePayloadCacheKey = payloadCacheKey;
-      return hydrateFromCache(payloadCacheKey);
+      const unitCacheKey = resolveUnitCacheKey(payloadCacheKey);
+      if (hydrateFromUnitCacheKey({
+        unitCacheKey,
+        cacheStateOnHit: 'hit',
+      })) {
+        return true;
+      }
+
+      const fallbackCandidates = readUnitCacheLruCandidates({
+        excludeUnitCacheKey: unitCacheKey,
+      });
+      let didHydrateFromFallback = false;
+      fallbackCandidates.some((fallbackUnitCacheKey) => {
+        didHydrateFromFallback = hydrateFromUnitCacheKey({
+          unitCacheKey: fallbackUnitCacheKey,
+          cacheStateOnHit: 'stale',
+        });
+        return didHydrateFromFallback;
+      });
+      return didHydrateFromFallback;
     };
 
     entity.registerUnit({
@@ -582,7 +700,7 @@ export const source = <
           return;
         }
 
-        notifyUnit(internal);
+        notifyUnit();
         syncCacheRecord();
       },
     });
@@ -632,7 +750,7 @@ export const source = <
       internal.state.status = 'idle';
       internal.state.meta = null;
       internal.state.context = createInitialSourceContext(Boolean(cacheStorage));
-      notifyUnit(internal);
+      notifyUnit();
       syncCacheRecord();
     };
 
@@ -683,7 +801,7 @@ export const source = <
 
       const didHydrateFromPayloadCache = hydrateFromPayloadCache(internal.payload);
       if (didHydrateFromPayloadCache && isLatestRun()) {
-        notifyUnit(internal);
+        notifyUnit();
       }
 
       if (!isForce && !hasPayloadInput && shouldUseCache(internal)) {
@@ -697,26 +815,8 @@ export const source = <
         setContext({
           error: null,
         });
-        notifyUnit(internal);
+        notifyUnit();
       }
-
-      const applyRunValue = (nextValue: TData | void): void => {
-        if (!isLatestRun()) {
-          return;
-        }
-
-        applyEntityRunResult({
-          entity,
-          state: internal,
-          nextValue,
-          refreshValueFromMembership: () => {
-            internal.state.value = getModeValue(internal, readEntityValueById);
-          },
-          setRawValue: (value) => {
-            internal.state.value = value;
-          },
-        });
-      };
 
       const runContextEntry = runContextEntryCache.getOrCreate(internal.payload);
       runContextEntry.gate.isLatestRun = isLatestRun;
@@ -729,16 +829,12 @@ export const source = <
 
       const runPromise: Promise<TData> = Promise.resolve(run(runContextEntry.context))
         .then((result) => {
-          if (!isLatestRun() && isSourceCleanup(result)) {
-            invokeSourceCleanup(result);
-            return internal.state.value;
-          }
-
-          if (!isLatestRun()) {
-            return internal.state.value;
-          }
-
           if (isSourceCleanup(result)) {
+            if (!isLatestRun()) {
+              invokeSourceCleanup(result);
+              return internal.state.value;
+            }
+
             if (internal.destroyed || internal.stopped) {
               invokeSourceCleanup(result);
             } else {
@@ -746,9 +842,13 @@ export const source = <
               internal.cleanup = result;
             }
 
-            internal.state.value = getModeValue(internal, readEntityValueById);
-          } else {
-            applyRunValue(result);
+            refreshValueFromEntity();
+          } else if (result !== undefined) {
+            throw new TypeError(SOURCE_RUN_RESULT_ERROR);
+          }
+
+          if (!isLatestRun()) {
+            return internal.state.value;
           }
 
           internal.lastRunAt = Date.now();
@@ -756,7 +856,7 @@ export const source = <
           setContext({
             error: null,
           });
-          notifyUnit(internal);
+          notifyUnit();
           syncCacheRecord();
 
           return internal.state.value;
@@ -767,7 +867,7 @@ export const source = <
             setContext({
               error,
             });
-            notifyUnit(internal);
+            notifyUnit();
           }
 
           throw error;
@@ -829,29 +929,27 @@ export const source = <
           runConfig = config;
         }
 
-        const previous: UnitRunPrevious<
-          TPayload,
-          SourceRunConfig,
-          TData,
-          TMeta | null
-        > = {
-          snapshot: getSnapshot(),
-          data: internal.payload,
-          config: runConfig,
-        };
-        const payloadInput = resolveSourceRunInput<
-          TPayload,
-          TData,
-          TMeta
-        >({
-          input,
-          config,
-          previous,
-        });
-        if (config?.mode === 'force' || config?.mode === 'refetch') {
-          return executeRun(true, payloadInput).then(() => undefined);
+        let payloadInput: TPayload | undefined;
+        if (isSourceSetAction<TPayload, TData, TMeta>(input)) {
+          const previous: UnitRunPrevious<
+            TPayload,
+            SourceRunConfig,
+            TData,
+            TMeta | null
+          > = {
+            snapshot: getSnapshot(),
+            data: internal.payload,
+            config: runConfig,
+          };
+          payloadInput = input(previous, config);
+        } else {
+          payloadInput = input;
         }
-        return executeRun(false, payloadInput).then(() => undefined);
+
+        if (config?.mode === 'force' || config?.mode === 'refetch') {
+          return executeRun(true, payloadInput).then(resolveRunAsVoid);
+        }
+        return executeRun(false, payloadInput).then(resolveRunAsVoid);
       };
     const unit: SourceUnit<TIdentity, TPayload, TData, TMeta> = {
       identity: internal.identity,
@@ -861,7 +959,7 @@ export const source = <
     };
 
     internal.unit = unit;
-    unitsByKey.set(key, internal);
+    unitsByKey.set(unitKey, internal);
 
     return unit;
   };

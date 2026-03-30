@@ -3,8 +3,8 @@ import {
   type StreamRunResult,
 } from './types.js';
 
-export const isStreamCleanup = <RResult>(
-  input: StreamRunResult<RResult>,
+export const isStreamCleanup = (
+  input: StreamRunResult,
 ): input is StreamCleanup => {
   return typeof input === 'function';
 };

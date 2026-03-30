@@ -3,7 +3,9 @@ import { describe, expect, it, vi } from 'vitest';
 import { entity } from './entity.js';
 import { defaultRuntimeQueue } from './runtimeQueue/index.js';
 import { randomString } from './testing/randomData.js';
-import { resolveAdaptiveReadWriteByCache } from './utils/adaptiveReadWrite.js';
+import {
+  resolveAdaptiveReadWriteByCache,
+} from './utils/adaptiveReadWrite.js';
 
 interface Project {
   id: string;
@@ -139,6 +141,26 @@ describe('entity()', () => {
       });
     });
 
+    it('should resolve adaptive strategy from matrix when adaptive is enabled', () => {
+      const expected = resolveAdaptiveReadWriteByCache({
+        cacheEnabled: false,
+        lruEnabled: false,
+        operation: 'readMany',
+        fallback: {
+          batch: true,
+          subview: true,
+        },
+      });
+      const usersEntity = entity<User>({
+        idOf: (value) => value.id,
+        readWrite: {
+          adaptive: true,
+        },
+      });
+
+      expect(usersEntity.readWrite).toEqual(expected);
+    });
+
     it('should expose a shared map when entity is created', () => {
       const usersEntity = entity<User>({
         idOf: (value) => value.id,
@@ -249,7 +271,7 @@ describe('entity()', () => {
       expect(notifyCount).toBe(1);
     });
 
-    it('should remove a record when removeOne is called with one id', () => {
+    it('should remove a record when deleteOne is called with one id', () => {
       const userId = randomString({ prefix: 'user-id' });
       const userName = randomString({ prefix: 'user-name' });
 
@@ -258,12 +280,12 @@ describe('entity()', () => {
       });
 
       usersEntity.upsertOne({ id: userId, name: userName });
-      usersEntity.removeOne(userId);
+      usersEntity.deleteOne(userId);
 
       expect(usersEntity.getById(userId)).toBeUndefined();
     });
 
-    it('should remove multiple records when removeMany is called with many ids', () => {
+    it('should remove multiple records when deleteMany is called with many ids', () => {
       const firstUserId = randomString({ prefix: 'first-user-id' });
       const secondUserId = randomString({ prefix: 'second-user-id' });
       const firstUserName = randomString({ prefix: 'first-user-name' });
@@ -275,7 +297,7 @@ describe('entity()', () => {
 
       usersEntity.upsertOne({ id: firstUserId, name: firstUserName });
       usersEntity.upsertOne({ id: secondUserId, name: secondUserName });
-      usersEntity.removeMany([firstUserId, secondUserId]);
+      usersEntity.deleteMany([firstUserId, secondUserId]);
 
       expect(usersEntity.getById(firstUserId)).toBeUndefined();
       expect(usersEntity.getById(secondUserId)).toBeUndefined();
@@ -449,7 +471,7 @@ describe('entity()', () => {
       expect(notifyCount).toBe(1);
     });
 
-    it('should batch large removeMany notifications through microtask queue', () => {
+    it('should batch large deleteMany notifications through microtask queue', () => {
       defaultRuntimeQueue.flush('state');
       const usersEntity = entity<User>({
         idOf: (value) => value.id,
@@ -478,7 +500,7 @@ describe('entity()', () => {
         ids,
       });
 
-      usersEntity.removeMany(ids);
+      usersEntity.deleteMany(ids);
 
       expect(notifyCount).toBe(0);
       defaultRuntimeQueue.flush('state');
@@ -522,7 +544,7 @@ describe('entity()', () => {
       expect(notifyCount).toBe(notifyCountAfterUpsert);
     });
 
-    it('should keep large removeMany notifications synchronous when batch strategy is disabled', () => {
+    it('should keep large deleteMany notifications synchronous when batch strategy is disabled', () => {
       defaultRuntimeQueue.flush('state');
       const usersEntity = entity<User>({
         idOf: (value) => value.id,
@@ -554,7 +576,7 @@ describe('entity()', () => {
         ids,
       });
 
-      usersEntity.removeMany(ids);
+      usersEntity.deleteMany(ids);
 
       expect(notifyCount).toBeGreaterThan(0);
       const notifyCountAfterRemove = notifyCount;

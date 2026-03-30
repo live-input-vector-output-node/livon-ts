@@ -238,7 +238,7 @@ removeListener?.();
 
 ## Structured Value Support
 
-`@livon/sync` uses msgpack-based serialization for identity/payload keys and source cache rehydration.
+`@livon/sync` uses `msgpackr` with latin1 string encoding for identity/payload key serialization and source cache rehydration.
 Identity and payload inputs must be msgpack-serializable.
 
 Round-trips preserve common non-JSON values such as:
@@ -257,10 +257,13 @@ Functions and symbols are not valid identity/payload values for key serializatio
 
 ### `entity({ ... })`
 
+- `key`: required when any connected `source` uses cache
 - `idOf`: required id extractor
 - `ttl`: optional entity ttl fallback
 - `draft`: optional draft mode (`global` | `scoped` | `off`)
-- `cache`: optional cache defaults (`key`, `ttl`, `storage`)
+- `cache`: optional cache defaults (`ttl`, `storage`, `lruMaxEntries`)
+  - source cache uses LRU by default (`lruMaxEntries: 256`).
+  - set `lruMaxEntries: 0` to disable LRU explicitly.
 - `readWrite`: optional strategy config (`batch`, `subview`, optional `adaptive`)
   - `adaptive: true` enables matrix-driven strategy selection based on cache/lru profile and operation class.
   - explicit `batch`/`subview` flags override adaptive values per field.
@@ -268,17 +271,20 @@ Functions and symbols are not valid identity/payload values for key serializatio
 Entity mutation methods exposed to units:
 
 - `upsertOne`, `upsertMany`
-- `removeOne`, `removeMany`
+- `deleteOne`, `deleteMany`
 
 Adaptive strategy helpers exported at package root:
 
 - `resolveAdaptiveReadWriteProfileKey(...)`
 - `resolveAdaptiveReadWriteConfig(...)`
 - `resolveAdaptiveReadWriteByCache(...)`
+- `resolveAdaptiveReadWriteByIntent(...)`
 
 ### `source({ ... })`
 
-- config: `entity`, optional `ttl`, `draft`, `cache`, `onDestroy`, `defaultValue`, `run`
+- config: `key`, `entity`, optional `ttl`, `draft`, `cache`, `onDestroy`, `defaultValue`, `run`
+  - `run(context)` must return `void` or a cleanup function.
+  - when cache is enabled, `entity.key` and `source.key` are required and form the cache namespace.
 - unit from `source(identity)`:
   - `run(data?, config?)`
   - `run(setAction, config?)`
@@ -288,6 +294,7 @@ Adaptive strategy helpers exported at package root:
 ### `action({ ... })`
 
 - config: `entity`, optional `defaultValue`, `run`
+  - `run(context)` must return `void` or a cleanup function.
 - unit from `action(identity)`:
   - `run(data?, config?)`
   - `run(setAction, config?)`
@@ -297,6 +304,7 @@ Adaptive strategy helpers exported at package root:
 ### `stream({ ... })`
 
 - config: `entity`, optional `defaultValue`, `run`
+  - `run(context)` must return `void` or a cleanup function.
 - unit from `stream(identity)`:
   - `run(data?, config?)`
   - `run(setAction, config?)`
@@ -331,8 +339,8 @@ Common fields available in all three contexts:
 - `getValue()`: reads current unit value.
 - `upsertOne(input, options?)`: upserts one entity and syncs unit membership.
 - `upsertMany(input[], options?)`: upserts multiple entities and syncs unit membership.
-- `removeOne(id)`: removes one entity by id.
-- `removeMany(ids[])`: removes multiple entities by ids.
+- `deleteOne(id)`: removes one entity by id.
+- `deleteMany(ids[])`: removes multiple entities by ids.
 
 Source-only fields (`source(...).run(context)`):
 

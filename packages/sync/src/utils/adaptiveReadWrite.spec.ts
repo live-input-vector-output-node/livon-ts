@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   resolveAdaptiveReadWriteByCache,
+  resolveAdaptiveReadWriteByIntent,
   resolveAdaptiveReadWriteConfig,
   resolveAdaptiveReadWriteDefault,
   resolveAdaptiveReadWriteProfileKey,
@@ -51,6 +52,29 @@ describe('adaptive read write matrix', () => {
 
       expect(typeof resolved.batch).toBe('boolean');
       expect(typeof resolved.subview).toBe('boolean');
+    });
+
+    it('should resolve operation-intent strategy for read and write operations', () => {
+      const fallback = resolveAdaptiveReadWriteDefault();
+      const readResolved = resolveAdaptiveReadWriteByIntent({
+        intent: 'read',
+        operation: 'readMany',
+        fallback,
+      });
+      const writeResolved = resolveAdaptiveReadWriteByIntent({
+        intent: 'write',
+        operation: 'updateMany',
+        fallback,
+      });
+
+      expect(readResolved).toEqual({
+        batch: true,
+        subview: true,
+      });
+      expect(writeResolved).toEqual({
+        batch: false,
+        subview: false,
+      });
     });
   });
 });

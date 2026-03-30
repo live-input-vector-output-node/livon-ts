@@ -12,8 +12,8 @@ export interface EntityRunContextMethods<
 > {
   upsertOne: (input: TEntity, options?: UpsertOptions) => TEntity;
   upsertMany: (input: readonly TEntity[], options?: UpsertOptions) => readonly TEntity[];
-  removeOne: (id: TEntityId) => boolean;
-  removeMany: (ids: readonly TEntityId[]) => readonly TEntityId[];
+  deleteOne: (id: TEntityId) => boolean;
+  deleteMany: (ids: readonly TEntityId[]) => readonly TEntityId[];
   getValue: () => RResult;
 }
 
@@ -86,22 +86,22 @@ export const createEntityRunContextMethods = <
     return updated;
   };
 
-  const removeOne = (id: TEntityId): boolean => {
+  const deleteOne = (id: TEntityId): boolean => {
     if (!isActive()) {
       return false;
     }
 
-    const removed = entity.removeOne(id);
+    const removed = entity.deleteOne(id);
     refreshValue();
     return removed;
   };
 
-  const removeMany = (ids: readonly TEntityId[]): readonly TEntityId[] => {
+  const deleteMany = (ids: readonly TEntityId[]): readonly TEntityId[] => {
     if (!isActive()) {
       return [];
     }
 
-    const removedIds = entity.removeMany(ids);
+    const removedIds = entity.deleteMany(ids);
     refreshValue();
     return removedIds;
   };
@@ -117,8 +117,8 @@ export const createEntityRunContextMethods = <
   return {
     upsertOne,
     upsertMany,
-    removeOne,
-    removeMany,
+    deleteOne,
+    deleteMany,
     getValue,
   };
 };

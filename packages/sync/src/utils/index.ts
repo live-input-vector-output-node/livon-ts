@@ -1,5 +1,5 @@
 export { serializeKey } from './serializeKey.js';
-export { decodeBase64, encodeBase64 } from './base64.js';
+export { decodeLatin1, encodeLatin1 } from './latin1.js';
 export { createCacheWriteQueue, readOrCreateSharedCacheWriteQueue } from './cacheWriteQueue.js';
 export { applyEntityRunResult } from './applyEntityRunResult.js';
 export { createDependencyCache } from './dependencyCache.js';
@@ -17,6 +17,7 @@ export {
 } from './readWriteStrategy.js';
 export {
   resolveAdaptiveReadWriteByCache,
+  resolveAdaptiveReadWriteByIntent,
   resolveAdaptiveReadWriteConfig,
   resolveAdaptiveReadWriteDefault,
   resolveAdaptiveReadWriteProfileKey,
@@ -71,6 +72,7 @@ export type {
 } from './entityRunContextMethods.js';
 export type { ModeValueReadWriteInput, ModeValueState, ReadById } from './entityMode.js';
 export type {
+  AdaptiveReadWriteIntent,
   AdaptiveReadWriteOperation,
   AdaptiveReadWriteProfileKey,
 } from './adaptiveReadWrite.js';
