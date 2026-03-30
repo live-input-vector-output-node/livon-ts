@@ -1,4 +1,7 @@
-import { type UnitEntityMode } from './unitDataTypes.js';
+import {
+  type UnitDataByEntityMode,
+  type UnitEntityMode,
+} from './unitDataTypes.js';
 
 export interface CreateFunctionKeyResolverInput {
   prefix: string;
@@ -17,6 +20,14 @@ export interface ResolvedUnitMode {
 export interface ResolveDefaultUnitValueInput {
   defaultValue: unknown;
   mode: UnitEntityMode;
+}
+
+export interface ResolveTypedDefaultUnitValueInput<
+  TEntity extends object,
+  TMode extends UnitEntityMode,
+> {
+  defaultValue: UnitDataByEntityMode<TEntity, TMode> | undefined;
+  mode: TMode;
 }
 
 export interface ResolveFunctionKey {
@@ -60,13 +71,19 @@ export const resolveUnitMode = ({
   };
 };
 
-export const resolveDefaultUnitValue = ({
+export function resolveDefaultUnitValue<
+  TEntity extends object,
+  TMode extends UnitEntityMode,
+>(
+  input: ResolveTypedDefaultUnitValueInput<TEntity, TMode>,
+): UnitDataByEntityMode<TEntity, TMode>;
+export function resolveDefaultUnitValue({
   defaultValue,
   mode,
-}: ResolveDefaultUnitValueInput): unknown => {
+}: ResolveDefaultUnitValueInput): unknown {
   if (defaultValue !== undefined) {
     return defaultValue;
   }
 
   return mode === 'many' ? [] : null;
-};
+}
