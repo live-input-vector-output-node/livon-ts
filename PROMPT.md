@@ -46,7 +46,8 @@ Rule highlights:
 - Repository-wide recurring rules are centralized in `/docs/ai/root-gate`.
 - Scope-specific deviations are centralized in `/docs/ai/specializations`.
 - Repository workflow orchestration is Turborepo-only with no exceptions: workflows are invoked via root scripts (`pnpm run <task>`), never via direct `pnpm turbo run ...` or manual orchestration scripts/commands; workflow tasks are declared in `turbo.json`; package scripts remain atomic and non-orchestrating.
-- Avoid TypeScript `as` assertions in repository code; design type contracts so casts are not required.
+- Avoid TypeScript `as` assertions in repository code (except `as const`, which is allowed); design type contracts so casts are not required.
+- Prefer TypeScript inference by default: provide explicit type annotations and generic arguments only when required for correctness, public API clarity, or unresolved inference limits; avoid redundant explicit typing in local implementation and tests.
 - Reuse existing named types instead of rebuilding composite inline types; if a subset is needed, prefer simple `Pick`/`Omit` or define a small new named type when that is clearer.
 - When the same type contract is used across modules, define one shared reusable type; compose from existing types with intersections and utility types (`Pick`/`Omit`/`Exclude`) while keeping readability, and prefer simpler named types when utility chains become noisy.
 - Avoid circular import paths by default; if a circular dependency appears, extract shared behavior/types into a dedicated module and import that module from both sides.

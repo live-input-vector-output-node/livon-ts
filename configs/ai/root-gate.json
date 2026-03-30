@@ -39,7 +39,19 @@
     },
     {
       "id": "no-as-type-assertions",
-      "statement": "Do not use TypeScript `as` type assertions in repository code; design the type contracts (generics, overloads, discriminated unions, type guards) so casts are not required.",
+      "statement": "Do not use TypeScript `as` type assertions in repository code (except `as const`, which is allowed); design the type contracts (generics, overloads, discriminated unions, type guards) so casts are not required.",
+      "humanSources": [
+        "website/docs/core/coding-style-guide.md",
+        "website/docs/ai/root-gate.md"
+      ],
+      "agentSources": [
+        "PROMPT.md",
+        "AGENTS.md"
+      ]
+    },
+    {
+      "id": "prefer-type-inference-minimal-annotations",
+      "statement": "Prefer TypeScript inference by default: provide explicit type annotations and generic arguments only when required for correctness, public API clarity, or unresolved inference limits; avoid redundant explicit typing in local implementation and tests.",
       "humanSources": [
         "website/docs/core/coding-style-guide.md",
         "website/docs/ai/root-gate.md"

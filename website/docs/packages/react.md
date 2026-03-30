@@ -13,13 +13,16 @@ sidebar_position: 9
 
 ## Purpose
 
-[@livon/react](/docs/packages/react) is the React framework adapter for `@livon/sync` units.
-It provides:
+[@livon/react](/docs/packages/react) is the React adapter for `@livon/sync` units.
 
-- atomic hooks for focused read/write concerns,
-- grouped hooks for common unit workflows with lower boilerplate.
+Public hooks are intentionally minimal:
 
-Keep framework-agnostic state and lifecycle behavior in `@livon/sync`; keep React integration here.
+- `useLivonState(unit)` -> full snapshot
+- `useLivonValue(unit)` -> `snapshot.value`
+- `useLivonStatus(unit)` -> `snapshot.status`
+- `useLivonMeta(unit)` -> `snapshot.meta`
+
+Keep framework-agnostic behavior in `@livon/sync`; React-specific subscription/render integration stays in `@livon/react`.
 
 ## Install
 
@@ -27,42 +30,51 @@ Keep framework-agnostic state and lifecycle behavior in `@livon/sync`; keep Reac
 pnpm add @livon/react @livon/sync
 ```
 
-## Atomic Hooks
+## Hooks
 
 ```ts
 import {
   useLivonMeta,
-  useLivonRun,
+  useLivonState,
   useLivonStatus,
   useLivonValue,
 } from '@livon/react';
 ```
 
-- `useLivonValue(unit)` -> `snapshot.value`
-- `useLivonStatus(unit)` -> `idle | loading | success | error`
-- `useLivonMeta(unit)` -> `snapshot.meta`
-- `useLivonRun(unit)` -> calls `run(...)`
+- `useLivonState(unit)` returns the complete unit snapshot, including unit-specific methods (`load`, `submit`, `start`, `refresh`, `apply`, `set`, `clear`, ...).
+- `useLivonValue(unit)` subscribes only to value changes.
+- `useLivonStatus(unit)` subscribes only to status changes.
+- `useLivonMeta(unit)` subscribes only to meta changes.
 
-## Grouped Hooks
+Status values depend on unit type:
+source/action/stream/view/transform use `idle | rehydrated | loading | refreshing | success | error`,
+while draft uses `'dirty' | 'clear'`.
+
+## Type Helpers
 
 ```ts
-import {
-  useLivonActionState,
-  useLivonSourceState,
-  useLivonState,
-  useLivonStreamState,
+import type {
+  LivonMetaOf,
+  LivonSnapshotOf,
+  LivonStateOf,
+  LivonStatusOf,
+  LivonValueOf,
 } from '@livon/react';
 ```
 
-- `useLivonState(unit)` -> `{ value, status, meta }`
-- `useLivonSourceState(sourceUnit)` -> `{ value, status, meta, run }`
-- `useLivonActionState(actionUnit)` -> `{ value, status, meta, run }`
-- `useLivonStreamState(streamUnit)` -> `{ value, status, meta, run }`
+Available helpers:
+
+- `LivonSnapshotOf<TUnit>`
+- `LivonValueOf<TUnit>`
+- `LivonStatusOf<TUnit>`
+- `LivonMetaOf<TUnit>`
+- `LivonState<TValue, TStatus, TMeta>`
+- `LivonStateOf<TUnit>`
 
 ## Shared Todo Setup
 
 ```ts
-import { action, entity, source, stream } from '@livon/sync';
+import { action, entity, source, transform, view } from '@livon/sync';
 
 interface Todo {
   id: string;
@@ -85,185 +97,127 @@ interface UpdateTodoPayload {
 }
 
 const todoEntity = entity<Todo>({
-  idOf: (value) => value.id,
-  draft: 'global',
+  idOf: ({ id }) => id,
 });
 
-const readTodos = source<TodoIdentity, ReadTodosPayload, readonly Todo[]>({
+const readTodos = source({
   entity: todoEntity,
+  mode: 'many',
+})<TodoIdentity, ReadTodosPayload>({
   defaultValue: [],
-  run: async ({ identity, payload, entity }) => {
+  run: async ({ identity: { listId }, payload: { query }, upsertMany }) => {
     const todos = await api.readTodos({
-      listId: identity.listId,
-      query: payload.query,
+      listId,
+      query,
     });
-    entity.upsertMany(todos, { merge: true });
+
+    upsertMany(todos, { merge: true });
   },
 });
 
-const updateTodo = action<TodoIdentity, UpdateTodoPayload, Todo | null>({
+const updateTodo = action({
   entity: todoEntity,
-  run: async ({ identity, payload, entity }) => {
-    const updated = await api.updateTodo({
-      id: payload.id,
-      listId: identity.listId,
-      title: payload.title,
-    });
-    entity.upsertOne(updated, { merge: true });
+  mode: 'one',
+})<TodoIdentity, UpdateTodoPayload>({
+  defaultValue: null,
+  run: async ({ identity: { listId }, payload: { id, title }, upsertOne }) => {
+    const updated = await api.updateTodo({ listId, id, title });
+    upsertOne(updated, { merge: true });
   },
 });
 
-const onTodoChanged = stream<TodoIdentity, undefined, null>({
-  entity: todoEntity,
-  run: async ({ identity }) => {
-    return api.subscribeTodoEvents({
-      listId: identity.listId,
-      onEvent: (event) => {
-        if (event.type !== 'changed') {
-          return;
-        }
+const todoStatsView = view<TodoIdentity, { total: number; open: number }>({
+  defaultValue: { total: 0, open: 0 },
+  out: async ({ identity, get }) => {
+    const { value: todos } = await get(readTodos(identity));
+    return {
+      total: todos.length,
+      open: todos.filter(({ completed }) => !completed).length,
+    };
+  },
+});
 
-        const todoListUnit = readTodos(identity);
-        void todoListUnit.run(undefined, { mode: 'refetch' });
-      },
+const renameFirstTodo = transform<TodoIdentity, { title: string }, string>({
+  defaultValue: '',
+  out: async ({ identity, get }) => {
+    const { value: todos } = await get(readTodos(identity));
+    return todos[0]?.title ?? '';
+  },
+  in: async ({ identity, payload: { title }, get, set }) => {
+    const { value: todos } = await get(readTodos(identity));
+    const first = todos[0];
+    if (!first) {
+      return;
+    }
+
+    await set(updateTodo(identity), {
+      id: first.id,
+      title,
     });
   },
 });
 ```
 
-## Single Hook Examples
-
-### `useLivonValue`
-
-Use this when the component only needs the current data value (`snapshot.value`).
-It is the minimal read hook for render output.
-
-```ts
-const unit = readTodos({ listId: 'list-1' });
-const todos = useLivonValue(unit);
-```
-
-### `useLivonStatus`
-
-Use this when the component should react to request/subscription lifecycle state.
-Possible values are `idle`, `loading`, `success`, `error`.
-
-```ts
-const unit = readTodos({ listId: 'list-1' });
-const status = useLivonStatus(unit);
-```
-
-### `useLivonMeta`
-
-Use this to read custom metadata set from `run` via `setMeta(...)`.
-Typical use cases: UI hints, messages, request diagnostics.
-
-```ts
-const unit = readTodos({ listId: 'list-1' });
-const meta = useLivonMeta(unit);
-```
-
-### `useLivonRun`
-
-Use this to trigger execution:
-
-- `source` / `action` / `stream`: calls `run(...)`
-
-```ts
-const unit = readTodos({ listId: 'list-1' });
-const run = useLivonRun(unit);
-void run({ query: 'open' });
-```
-
-## Group Hook Examples
+## Examples
 
 ### `useLivonState`
 
 ```ts
-const { value, status, meta } = useLivonState(readTodos({ listId: 'list-1' }));
+const todoListUnit = readTodos({ listId: 'list-1' });
+const { load, refetch, value } = useLivonState(todoListUnit);
+
+void load({ query: 'open' });
+void refetch();
 ```
 
-### `useLivonSourceState`
+### `useLivonState` with `view`
 
 ```ts
-const { run: loadTodoList } = useLivonSourceState(readTodos({ listId: 'list-1' }));
-void loadTodoList({ payload: { query: 'open' } });
+const todoStatsUnit = todoStatsView({ listId: 'list-1' });
+const {
+  value: stats,
+  status: statsStatus,
+  refresh: refreshStats,
+} = useLivonState(todoStatsUnit);
+
+void refreshStats();
 ```
 
-### `useLivonActionState`
+### `useLivonState` with `transform`
 
 ```ts
-const { run: updateTodoList } = useLivonActionState(updateTodo({ listId: 'list-1' }));
+const renameUnit = renameFirstTodo({ listId: 'list-1' });
+const {
+  value: firstTodoTitle,
+  apply: applyRename,
+} = useLivonState(renameUnit);
 
-void updateTodoList({
-  id: 'todo-1',
-  title: 'Renamed from action state',
-});
+void applyRename({ title: `${firstTodoTitle} (renamed)` });
 ```
 
-### `useLivonStreamState`
+### `useLivonValue`
 
 ```ts
-const { run: runTodoStream } = useLivonStreamState(onTodoChanged({ listId: 'list-1' }));
-runTodoStream();
+const todos = useLivonValue(readTodos({ listId: 'list-1' }));
 ```
 
-## Combined Example
+### `useLivonStatus`
 
 ```ts
-import {
-  useLivonActionState,
-  useLivonSourceState,
-  useLivonStreamState,
-} from '@livon/react';
-import { useEffect } from 'react';
+const status = useLivonStatus(readTodos({ listId: 'list-1' }));
+```
 
-export const TodoListScreen = ({ listId }: { listId: string }) => {
-  const {
-    value: todoList,
-    status: todoListStatus,
-    meta: todoListMeta,
-    run: loadTodoList,
-  } = useLivonSourceState(readTodos({ listId }));
-  const {
-    status: todoUpdateStatus,
-    run: updateTodoList,
-  } = useLivonActionState(updateTodo({ listId }));
-  const { status: todoStreamStatus, run: runTodoStream } = useLivonStreamState(onTodoChanged({ listId }));
+### `useLivonMeta`
 
-  useEffect(() => {
-    void loadTodoList({ payload: { query: 'open' } });
-    void runTodoStream();
-  }, [loadTodoList, runTodoStream]);
-
-  const onRenameFirstTodo = () => {
-    const firstTodo = todoList[0];
-    if (!firstTodo) {
-      return;
-    }
-
-    void updateTodoList({
-      id: firstTodo.id,
-      title: `${firstTodo.title} (renamed)`,
-    });
-  };
-  return {
-    todos: todoList,
-    todosStatus: todoListStatus,
-    todosMeta: todoListMeta,
-    updateStatus: todoUpdateStatus,
-    streamStatus: todoStreamStatus,
-    onRenameFirstTodo,
-  };
-};
+```ts
+const meta = useLivonMeta(readTodos({ listId: 'list-1' }));
 ```
 
 ## Listener Lifecycle
 
-`useLivonValue`, `useLivonStatus`, and `useLivonMeta` subscribe through a shared tracked-unit counter.
-Grouped hooks are built from these primitives and follow the same lifecycle behavior.
-Subscriptions are driven by unit-level `subscribe(...)` callbacks and `getSnapshot()` reads.
-`subscribe(...)` does not emit an initial snapshot; initial render state comes from `getSnapshot()`.
+`useLivonValue`, `useLivonStatus`, and `useLivonMeta` are selective subscriptions.
+A subscribe trigger does not force re-render when the selected slice did not change.
+Initial render state always comes from `unit.getSnapshot()`.
 
 ## Related pages
 

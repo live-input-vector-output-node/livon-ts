@@ -96,7 +96,7 @@ They must communicate behavior clearly enough that readers understand the implem
 
 ### Example domain consistency
 
-- When feasible, use the Todo domain as the default use case in tests (`Todo`, `TodoScope`, `readTodos`, `updateTodo`, ...).
+- When feasible, use the Todo domain as the default use case in tests (`Todo`, `TodoIdentity`, `readTodos`, `updateTodo`, ...).
 - Apply this to new tests and when updating existing tests so test language stays aligned with repository docs and examples.
 
 ### Default delivery flow

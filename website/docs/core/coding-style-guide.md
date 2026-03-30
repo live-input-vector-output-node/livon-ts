@@ -16,7 +16,7 @@ Use it to keep implementation style consistent across packages and apps.
 
 ## Example domain consistency
 
-- Use the Todo domain as the default use case in repository examples (`Todo`, `TodoScope`, `readTodos`, `updateTodo`, ...).
+- Use the Todo domain as the default use case in repository examples (`Todo`, `TodoIdentity`, `readTodos`, `updateTodo`, ...).
 - Apply this rule to new examples and when updating existing examples, so documentation converges to one consistent domain language over time.
 
 ## Example destructuring style
@@ -164,8 +164,9 @@ interface ModuleInput {
 ## Types and validation
 
 - Avoid `any`. If unavoidable, document why.
-- Do not use TypeScript `as` assertions in repository code.
+- Do not use TypeScript `as` assertions in repository code, except `as const`.
 - Shape APIs and helpers so assertions are unnecessary (generics, overloads, discriminated unions, type guards).
+- Prefer TypeScript inference by default: provide explicit type annotations and generic arguments only when required for correctness, public API clarity, or unresolved inference limits; avoid redundant explicit typing in local implementation and tests.
 - Use `interface` for object shapes.
 - Do not use manual `parseX...` or `toX...` validation helpers.
 - Use [schema composition](/docs/schema) and `schema.parse`.
