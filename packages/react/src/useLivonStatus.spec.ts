@@ -2,52 +2,52 @@ import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import {
-  createRandomUser,
-  createReadUserSource,
-  createTemplateSlug,
+  createRandomTodo,
+  createReadTodoSource,
+  createTodoIdentity,
 } from './testing/utils/index.js';
 import { useLivonStatus } from './useLivonStatus.js';
 
 describe('useLivonStatus()', () => {
-  let templateSlug: ReturnType<typeof createTemplateSlug>;
+  let todoIdentity: ReturnType<typeof createTodoIdentity>;
 
   beforeEach(() => {
-    templateSlug = createTemplateSlug();
+    todoIdentity = createTodoIdentity();
   });
 
-  it('should return idle when run has not been called', () => {
-    const readUser = createReadUserSource();
-    const unit = readUser(templateSlug);
+  it('should return idle when load has not been called', () => {
+    const readTodo = createReadTodoSource();
+    const unit = readTodo(todoIdentity);
 
     const { result } = renderHook(() => useLivonStatus(unit));
 
     expect(result.current).toBe('idle');
   });
 
-  it('should return success when run resolves', async () => {
-    const readUser = createReadUserSource({
-      run: async () => {
+  it('should return success when load resolves', async () => {
+    const readTodo = createReadTodoSource({
+      run: async ({ set }) => {
         await Promise.resolve();
-        return createRandomUser({
+        set(createRandomTodo({
           idPrefix: 'resolved-id',
-          namePrefix: 'resolved-name',
-        });
+          titlePrefix: 'resolved-title',
+        }));
       },
     });
 
-    const unit = readUser(templateSlug);
+    const unit = readTodo(todoIdentity);
     const { result } = renderHook(() => useLivonStatus(unit));
 
     await act(async () => {
-      await unit.run();
+      await unit.getSnapshot().load();
     });
 
     expect(result.current).toBe('success');
   });
 
   it('should keep same status value when rerender does not change snapshot status', () => {
-    const readUser = createReadUserSource();
-    const unit = readUser(templateSlug);
+    const readTodo = createReadTodoSource();
+    const unit = readTodo(todoIdentity);
     const { result, rerender } = renderHook(() => useLivonStatus(unit));
     const firstStatus = result.current;
 

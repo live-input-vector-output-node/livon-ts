@@ -1,56 +1,28 @@
-import type {
-  ActionUnit,
-  SourceUnit,
-  StreamUnit,
-  UnitSnapshot,
-  UnitStatus,
-} from '@livon/sync';
+import { useLivonSelection, type SubscribableSnapshotUnit } from './useLivonSelection.js';
 
-import { useLivonSelection } from './useLivonSelection.js';
-import type { LivonStatusOf } from './types.js';
-
-export interface UseLivonStatus {
-  <
-  TIdentity extends object | undefined,
-  TPayload,
-  RResult,
->(unit: SourceUnit<TIdentity, TPayload, RResult>): LivonStatusOf<
-    SourceUnit<TIdentity, TPayload, RResult>
-  >;
-
-  <
-  RResult,
-  TPayload,
->(unit: ActionUnit<TPayload, RResult>): LivonStatusOf<ActionUnit<TPayload, RResult>>;
-
-  <
-  TPayload,
-  RResult,
->(unit: StreamUnit<TPayload, RResult>): LivonStatusOf<StreamUnit<TPayload, RResult>>;
+interface SnapshotWithStatus {
+  status: string;
 }
 
-type AnySourceUnit = SourceUnit<object | undefined, unknown, unknown>;
-type AnyActionUnit = ActionUnit<unknown, unknown>;
-type AnyStreamUnit = StreamUnit<unknown, unknown>;
-type AnyStatusUnit = AnySourceUnit | AnyActionUnit | AnyStreamUnit;
+export interface UseLivonStatus {
+  <TSnapshot extends SnapshotWithStatus>(unit: SubscribableSnapshotUnit<TSnapshot>): TSnapshot['status'];
+}
 
 interface SelectStatus {
-  <RResult>(snapshot: UnitSnapshot<RResult>): UnitStatus;
+  <TSnapshot extends SnapshotWithStatus>(snapshot: TSnapshot): TSnapshot['status'];
 }
 
 const selectStatus: SelectStatus = (snapshot) => {
   return snapshot.status;
 };
 
-const useLivonStatusInternal = <TUnit extends AnyStatusUnit>(
-  unit: TUnit,
-): LivonStatusOf<TUnit> => {
-  const status = useLivonSelection({
+const useLivonStatusInternal: UseLivonStatus = <TSnapshot extends SnapshotWithStatus>(
+  unit: SubscribableSnapshotUnit<TSnapshot>,
+): TSnapshot['status'] => {
+  return useLivonSelection({
     unit,
     select: selectStatus,
   });
-
-  return status as LivonStatusOf<TUnit>;
 };
 
 export const useLivonStatus: UseLivonStatus = useLivonStatusInternal;
