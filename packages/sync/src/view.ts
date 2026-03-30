@@ -1,6 +1,8 @@
 import {
+  DEFAULT_UNIT_DESTROY_DELAY,
   createSerializedKeyCache,
   createUnitSnapshot,
+  isUnitSnapshotEqual,
   isUnitLoadingStatus,
   isUnitSettledStatus,
   notifyEffectListeners,
@@ -28,8 +30,7 @@ export interface ViewConfig<
 }
 
 export interface ViewUnit<RResult> {
-  run: () => Promise<UnitSnapshot<RResult>>;
-  getSnapshot: () => UnitSnapshot<RResult>;
+  getSnapshot: () => ViewSnapshot<RResult>;
   subscribe: (listener: EffectListener<RResult>) => (() => void) | void;
 }
 
@@ -66,7 +67,9 @@ interface ViewUnitInternal<
   unit: ViewUnit<RResult>;
 }
 
-const DEFAULT_DESTROY_DELAY = 250;
+export type ViewSnapshot<RResult> = UnitSnapshot<RResult> & {
+  refresh: () => Promise<ViewSnapshot<RResult>>;
+};
 
 const createErrorContext = (error: unknown): { message: string; cause: unknown } => {
   if (error instanceof Error) {
@@ -138,16 +141,20 @@ const applySnapshot = <
   const nextMeta = getSnapshotMeta(currentSnapshot, next);
   const nextContext = getSnapshotContext(currentSnapshot, next);
 
-  if (
-    Object.is(nextValue, currentSnapshot.value)
-    && nextStatus === currentSnapshot.status
-    && Object.is(nextMeta, currentSnapshot.meta)
-    && Object.is(nextContext, currentSnapshot.context)
-  ) {
+  if (isUnitSnapshotEqual({
+    left: currentSnapshot,
+    right: {
+      value: nextValue,
+      status: nextStatus,
+      meta: nextMeta,
+      context: nextContext,
+    },
+  })) {
     return false;
   }
 
   const nextSnapshot = createUnitSnapshot({
+    identity: internal.identity,
     value: nextValue,
     status: nextStatus,
     meta: nextMeta,
@@ -521,11 +528,11 @@ export const view = <
 >({
   out,
   defaultValue,
-  destroyDelay: _destroyDelay = DEFAULT_DESTROY_DELAY,
+  destroyDelay: _destroyDelay = DEFAULT_UNIT_DESTROY_DELAY,
 }: ViewConfig<TIdentity, RResult>): View<TIdentity, RResult> => {
   const unitsByKey = new Map<string, ViewUnitInternal<TIdentity, RResult>>();
   const unitKeyCache = createSerializedKeyCache({
-    mode: 'scoped-unit',
+    mode: 'identity-unit',
   });
 
   const viewFactory: View<TIdentity, RResult> = (identity) => {
@@ -536,6 +543,7 @@ export const view = <
     }
 
     const initialSnapshot = createUnitSnapshot({
+      identity,
       value: (defaultValue ?? null) as RResult,
       status: 'idle',
       meta: null,
@@ -558,17 +566,25 @@ export const view = <
       unit: {} as ViewUnit<RResult>,
     };
 
+    const refresh = async (): Promise<ViewSnapshot<RResult>> => {
+      await runRecompute({
+        internal,
+        out,
+        shouldThrow: true,
+      });
+      return unit.getSnapshot();
+    };
+
+    const resolveViewSnapshot = (): ViewSnapshot<RResult> => {
+      return {
+        ...internal.snapshot,
+        refresh,
+      };
+    };
+
     const unit: ViewUnit<RResult> = {
-      run: async () => {
-        await runRecompute({
-          internal,
-          out,
-          shouldThrow: true,
-        });
-        return internal.snapshot;
-      },
       getSnapshot: () => {
-        return internal.snapshot;
+        return resolveViewSnapshot();
       },
       subscribe: (listener) => {
         if (internal.destroyed) {

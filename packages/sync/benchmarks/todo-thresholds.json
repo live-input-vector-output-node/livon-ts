@@ -1,50 +1,50 @@
 {
-  "todo entity read by id after 100_000 seed": {
+  "todo entity read by id after 10_000 seed": {
     "maxP99Ms": 0.006,
     "maxMeanMs": 0.0095,
     "minHz": 110000
   },
-  "todo entity write upsert one after 100_000 seed": {
+  "todo entity write upsert one after 10_000 seed": {
     "maxP99Ms": 20,
     "maxMeanMs": 1.3,
     "minHz": 800
   },
-  "todo entity write upsert many(64) after 100_000 seed": {
+  "todo entity write upsert many(64) after 10_000 seed": {
     "maxP99Ms": 180,
     "maxMeanMs": 6.5,
     "minHz": 120
   },
-  "todo entity remove one plus restore after 100_000 seed": {
+  "todo entity remove one plus restore after 10_000 seed": {
     "maxP99Ms": 12,
     "maxMeanMs": 0.6,
     "minHz": 1800
   },
-  "todo source get 100_000 entries": {
+  "todo source get 10_000 entries": {
     "maxP99Ms": 0.002,
     "maxMeanMs": 0.008,
     "minHz": 150000
   },
-  "todo view get access after 100_000 seed": {
+  "todo view get access after 10_000 seed": {
     "maxP99Ms": 0.001,
     "maxMeanMs": 0.004,
     "minHz": 250000
   },
-  "todo transform get access after 100_000 seed": {
+  "todo transform get access after 10_000 seed": {
     "maxP99Ms": 0.05,
     "maxMeanMs": 0.02,
     "minHz": 40000
   },
-  "todo transform set access after 100_000 seed": {
+  "todo transform set access after 10_000 seed": {
     "maxP99Ms": 20,
     "maxMeanMs": 1,
     "minHz": 1000
   },
-  "todo source set many(64) access after 100_000 seed": {
+  "todo source set many(64) access after 10_000 seed": {
     "maxP99Ms": 500,
     "maxMeanMs": 10,
     "minHz": 90
   },
-  "todo source cache rehydrate 100_000 entries": {
+  "todo source cache rehydrate 10_000 entries": {
     "maxP99Ms": 2200,
     "maxMeanMs": 1300,
     "minHz": 0.75

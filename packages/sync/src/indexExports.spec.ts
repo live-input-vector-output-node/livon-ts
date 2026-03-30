@@ -20,6 +20,10 @@ describe('index named exports', () => {
       expect(typeof sync.stream).toBe('function');
     });
 
+    it('should export draft as named function', () => {
+      expect(typeof sync.draft).toBe('function');
+    });
+
     it('should export view as named function', () => {
       expect(typeof (sync as Record<string, unknown>).view).toBe('function');
     });

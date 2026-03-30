@@ -3,51 +3,75 @@ export type {
   Action,
   ActionCleanup,
   ActionConfig,
-  ActionRun,
-  ActionRunConfig,
-  ActionRunInput,
+  ActionExecute,
   ActionRunContext,
   ActionRunResult,
+  ActionSnapshot,
   ActionUnit,
 } from './action.js';
+
+export { configureLazy } from './configureLazy.js';
+export type { LazyConfig } from './configureLazy.js';
+
+export { draft } from './draft.js';
+export type {
+  Draft,
+  DraftBuilder,
+  DraftBuilderInput,
+  DraftByEntityModeBuilder,
+  DraftCleanup,
+  DraftConfig,
+  DraftContext,
+  DraftMetaOfConfig,
+  DraftMode,
+  DraftSetInput,
+  DraftSetUpdater,
+  DraftSetValue,
+  DraftSnapshot,
+  DraftSnapshotListener,
+  DraftState,
+  DraftStatus,
+  DraftUnit,
+} from './draft.js';
 
 export { entity } from './entity.js';
 export type {
   CacheConfig,
   CacheTtl,
-  DraftMode,
   Entity,
   EntityConfig,
+  EntityDraftMode,
+  EntityDraftOptions,
+  EntityDraftState,
   EntityId,
   RegisterEntityUnitInput,
   SetEntityUnitMembershipInput,
   UpsertOptions,
 } from './entity.js';
-export {
-  resolveAdaptiveReadWriteByCache,
-  resolveAdaptiveReadWriteByIntent,
-  resolveAdaptiveReadWriteConfig,
-  resolveAdaptiveReadWriteDefault,
-  resolveAdaptiveReadWriteProfileKey,
-} from './utils/adaptiveReadWrite.js';
-export type {
-  AdaptiveReadWriteIntent,
-  AdaptiveReadWriteOperation,
-  AdaptiveReadWriteProfileKey,
-} from './utils/adaptiveReadWrite.js';
+
+export { preload } from './preload.js';
+export type { PreloadInput } from './preload.js';
 
 export { source } from './source.js';
 export type {
-  SourceCleanup,
   Source,
+  SourceBuilder,
+  SourceBuilderInput,
+  SourceByEntityModeBuilder,
+  SourceCleanup,
   SourceConfig,
   SourceDestroyContext,
-  SourceRun,
-  SourceRunConfig,
-  SourceRunInput,
+  SourceFetch,
+  SourceFetchConfig,
+  SourceFetchInput,
+  SourceMetaOfConfig,
+  SourcePayloadOfConfig,
   SourceRunContext,
   SourceRunResult,
+  SourceSnapshot,
+  SourceContext,
   SourceUnit,
+  SourceUnitByKeyMap,
 } from './source.js';
 
 export { stream } from './stream.js';
@@ -55,11 +79,10 @@ export type {
   Stream,
   StreamCleanup,
   StreamConfig,
-  StreamRun,
-  StreamRunConfig,
-  StreamRunInput,
+  StreamStart,
   StreamRunContext,
   StreamRunResult,
+  StreamSnapshot,
   StreamUnit,
 } from './stream.js';
 
@@ -83,6 +106,8 @@ export {
   subscribeTrackedUnit,
 } from './tracking/index.js';
 export type {
+  Snapshot,
+  SnapshotBase,
   SubscribeTrackedUnitInput,
   TrackedStoreChangeListener,
   TrackedUnit,

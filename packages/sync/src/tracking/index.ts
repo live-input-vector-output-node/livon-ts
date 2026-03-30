@@ -3,6 +3,8 @@ export { resetTrackedUnit } from './resetTrackedUnit.js';
 export { readTrackedUnitSnapshot } from './snapshotStore.js';
 
 export type {
+  Snapshot,
+  SnapshotBase,
   SubscribeTrackedUnitInput,
   TrackedStoreChangeListener,
   TrackedUnit,

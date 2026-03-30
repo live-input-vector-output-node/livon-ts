@@ -61,9 +61,15 @@ const readManyDirect = <TId, TEntity extends object>({
   membershipIds,
   readById,
 }: ReadManyDirectInput<TId, TEntity>): readonly TEntity[] => {
-  return membershipIds
-    .map((id) => readById(id))
-    .filter((entry): entry is TEntity => entry !== undefined);
+  const result: TEntity[] = [];
+  membershipIds.forEach((id) => {
+    const value = readById(id);
+    if (value !== undefined) {
+      result.push(value);
+    }
+  });
+
+  return result;
 };
 
 const hasSubviewCacheHit = <TId, TEntity extends object>({
@@ -71,41 +77,26 @@ const hasSubviewCacheHit = <TId, TEntity extends object>({
   membershipIds,
   readById,
 }: HasSubviewCacheHitInput<TId, TEntity>): boolean => {
-  const validation = membershipIds.reduce(
-    (state, id) => {
-      if (!state.matches) {
-        return state;
-      }
+  let nextIndex = 0;
+  let hasMismatch = false;
 
-      const currentValue = readById(id);
-      if (currentValue === undefined) {
-        return state;
-      }
+  membershipIds.some((id) => {
+    const currentValue = readById(id);
+    if (currentValue === undefined) {
+      return false;
+    }
 
-      const cachedValue = cache.values[state.nextIndex];
-      if (!Object.is(cachedValue, currentValue)) {
-        return {
-          matches: false,
-          nextIndex: state.nextIndex,
-        };
-      }
+    const cachedValue = cache.values[nextIndex];
+    if (!Object.is(cachedValue, currentValue)) {
+      hasMismatch = true;
+      return true;
+    }
 
-      return {
-        matches: true,
-        nextIndex: state.nextIndex + 1,
-      };
-    },
-    {
-      matches: true,
-      nextIndex: 0,
-    },
-  );
-
-  if (!validation.matches) {
+    nextIndex += 1;
     return false;
-  }
+  });
 
-  return validation.nextIndex === cache.values.length;
+  return !hasMismatch && nextIndex === cache.values.length;
 };
 
 const resolveManyWithSubviewCache = <

@@ -56,11 +56,29 @@
       "import": "./dist/action.js",
       "require": "./dist/action.cjs"
     },
+    "./configureLazy": {
+      "types": "./dist/configureLazy.d.ts",
+      "development": "./src/configureLazy.ts",
+      "import": "./dist/configureLazy.js",
+      "require": "./dist/configureLazy.cjs"
+    },
+    "./draft": {
+      "types": "./dist/draft.d.ts",
+      "development": "./src/draft.ts",
+      "import": "./dist/draft.js",
+      "require": "./dist/draft.cjs"
+    },
     "./entity": {
       "types": "./dist/entity.d.ts",
       "development": "./src/entity.ts",
       "import": "./dist/entity.js",
       "require": "./dist/entity.cjs"
+    },
+    "./preload": {
+      "types": "./dist/preload.d.ts",
+      "development": "./src/preload.ts",
+      "import": "./dist/preload.js",
+      "require": "./dist/preload.cjs"
     },
     "./source": {
       "types": "./dist/source.d.ts",
@@ -74,11 +92,11 @@
       "import": "./dist/stream.js",
       "require": "./dist/stream.cjs"
     },
-    "./view": {
-      "types": "./dist/view.d.ts",
-      "development": "./src/view.ts",
-      "import": "./dist/view.js",
-      "require": "./dist/view.cjs"
+    "./tracking": {
+      "types": "./dist/tracking/index.d.ts",
+      "development": "./src/tracking/index.ts",
+      "import": "./dist/tracking/index.js",
+      "require": "./dist/tracking/index.cjs"
     },
     "./transform": {
       "types": "./dist/transform.d.ts",
@@ -86,17 +104,11 @@
       "import": "./dist/transform.js",
       "require": "./dist/transform.cjs"
     },
-    "./tracking": {
-      "types": "./dist/tracking/index.d.ts",
-      "development": "./src/tracking/index.ts",
-      "import": "./dist/tracking/index.js",
-      "require": "./dist/tracking/index.cjs"
-    },
-    "./utils/adaptiveReadWrite": {
-      "types": "./dist/utils/adaptiveReadWrite.d.ts",
-      "development": "./src/utils/adaptiveReadWrite.ts",
-      "import": "./dist/utils/adaptiveReadWrite.js",
-      "require": "./dist/utils/adaptiveReadWrite.cjs"
+    "./view": {
+      "types": "./dist/view.d.ts",
+      "development": "./src/view.ts",
+      "import": "./dist/view.js",
+      "require": "./dist/view.cjs"
     }
   },
   "scripts": {
@@ -109,6 +121,8 @@
     "test:unit": "vitest run -c vitest.unit.config.ts",
     "test:integration": "true",
     "bench": "vitest bench -c vitest.bench.config.ts",
+    "bench:execution-mode": "node ./scripts/run-bench-execution-mode-compare.mjs",
+    "bench:source-api": "node ./scripts/run-bench-source-api-compare.mjs",
     "bench:visual:matrix": "node ./scripts/run-bench-visual-matrix.mjs",
     "bench:matrix": "node ./scripts/run-bench-strategy-matrix.mjs",
     "bench:matrix:lru-set": "node ./scripts/run-bench-strategy-matrix.mjs",

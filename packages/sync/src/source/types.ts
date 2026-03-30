@@ -1,17 +1,22 @@
 import {
   type CacheConfig,
   type CacheTtl,
-  type DraftMode,
   type Entity,
   type EntityId,
-  type UpsertOptions,
 } from '../entity.js';
 import {
+  type Cleanup,
+  type EntityValueOfStore,
   type EffectListener,
+  type EntityMutationRunContext,
   type ModeValueReadWriteInput,
+  type UnitDataByEntityMode,
+  type UnitBuilderInput,
+  type UnitEntityMode,
   type UnitRun,
-  type UnitSetAction,
   type UnitDataEntity,
+  type UnitSetAction,
+  type Snapshot,
   type UnitSnapshot,
   type UnitStatus,
   type ValueUpdater,
@@ -22,9 +27,7 @@ export interface SourceDestroyContext<TIdentity, TPayload> {
   payload: TPayload;
 }
 
-export interface SourceCleanup {
-  (): void;
-}
+export type SourceCleanup = Cleanup;
 
 export type SourceRunResult = SourceCleanup | void;
 
@@ -33,43 +36,129 @@ export interface SourceRunContext<
   TPayload,
   TData,
   TMeta = unknown,
+  TEntity extends object = UnitDataEntity<TData>,
+> extends EntityMutationRunContext<
+  TIdentity,
+  TPayload,
+  TData,
+  TMeta,
+  SourceContext,
+  TEntity
 > {
-  identity: TIdentity;
-  payload: TPayload;
-  setMeta: (meta: TMeta | null | ValueUpdater<TMeta | null, TMeta | null>) => void;
   set: (input: TData | ValueUpdater<TData, TData>) => void;
-  upsertOne: (input: UnitDataEntity<TData>, options?: UpsertOptions) => UnitDataEntity<TData>;
-  upsertMany: (
-    input: readonly UnitDataEntity<TData>[],
-    options?: UpsertOptions,
-  ) => readonly UnitDataEntity<TData>[];
-  deleteOne: (id: EntityId) => boolean;
-  deleteMany: (ids: readonly EntityId[]) => readonly EntityId[];
   reset: () => void;
-  getValue: () => TData;
 }
 
 export interface SourceConfig<
   TIdentity extends object | undefined,
   TPayload,
-  TData,
+  TEntity extends object,
+  TMode extends UnitEntityMode,
   TMeta = unknown,
 > {
-  key?: string;
-  entity: Entity<UnitDataEntity<TData>, EntityId>;
+  key: string;
   ttl?: number;
-  draft?: DraftMode;
   cache?: CacheConfig;
   destroyDelay?: number;
   run: (
-    context: SourceRunContext<TIdentity, TPayload, TData, TMeta>,
+    context: SourceRunContext<
+      TIdentity,
+      TPayload,
+      UnitDataByEntityMode<TEntity, TMode>,
+      TMeta,
+      TEntity
+    >,
   ) => Promise<SourceRunResult> | SourceRunResult;
-  defaultValue?: TData;
+  defaultValue?: UnitDataByEntityMode<TEntity, TMode>;
+}
+
+export type SourcePayloadOfConfig<TConfig> =
+  TConfig extends SourceConfig<object | undefined, infer TPayload, object, UnitEntityMode, unknown>
+    ? TPayload
+    : never;
+
+export type SourceMetaOfConfig<TConfig> =
+  TConfig extends SourceConfig<object | undefined, unknown, object, UnitEntityMode, infer TMeta>
+    ? TMeta
+    : never;
+
+
+export type SourceBuilderInput<
+  TEntityStore extends Entity<object, EntityId>,
+  TMode extends UnitEntityMode,
+> = UnitBuilderInput<TEntityStore, TMode>;
+
+export interface SourceByEntityModeBuilder<
+  TEntityStore extends Entity<object, EntityId>,
+  TMode extends UnitEntityMode,
+> {
+  <
+    TIdentity extends object | undefined,
+  >(
+    config: SourceConfig<
+      TIdentity,
+      unknown,
+      EntityValueOfStore<TEntityStore>,
+      TMode,
+      unknown
+    >,
+  ): Source<
+    TIdentity,
+    unknown,
+    UnitDataByEntityMode<EntityValueOfStore<TEntityStore>, TMode>,
+    unknown
+  >;
+  <
+    TIdentity extends object | undefined,
+    TPayload,
+  >(
+    config: SourceConfig<
+      TIdentity,
+      TPayload,
+      EntityValueOfStore<TEntityStore>,
+      TMode,
+      unknown
+    >,
+  ): Source<
+    TIdentity,
+    TPayload,
+    UnitDataByEntityMode<EntityValueOfStore<TEntityStore>, TMode>,
+    unknown
+  >;
+  <
+    TIdentity extends object | undefined,
+    TPayload,
+    TMeta,
+  >(
+    config: SourceConfig<
+      TIdentity,
+      TPayload,
+      EntityValueOfStore<TEntityStore>,
+      TMode,
+      TMeta
+    >,
+  ): Source<
+    TIdentity,
+    TPayload,
+    UnitDataByEntityMode<EntityValueOfStore<TEntityStore>, TMode>,
+    TMeta
+  >;
+}
+
+export interface SourceBuilder {
+  <
+    TEntityStore extends Entity<object, EntityId>,
+    TMode extends UnitEntityMode,
+  >(
+    input: SourceBuilderInput<TEntityStore, TMode>,
+  ): SourceByEntityModeBuilder<TEntityStore, TMode>;
 }
 
 export interface SourceRunConfig {
   mode?: 'default' | 'refetch' | 'force';
 }
+
+export type SourceFetchConfig = SourceRunConfig;
 
 export type SourceSetAction<
   TPayload,
@@ -79,7 +168,8 @@ export type SourceSetAction<
   TPayload,
   SourceRunConfig,
   TData,
-  TMeta | null
+  TMeta | null,
+  SourceContext
 >;
 
 export type SourceRunInput<
@@ -90,6 +180,12 @@ export type SourceRunInput<
   | TPayload
   | SourceSetAction<TPayload, TData, TMeta>;
 
+export type SourceFetchInput<
+  TPayload,
+  TData = unknown,
+  TMeta = unknown,
+> = SourceRunInput<TPayload, TData, TMeta>;
+
 export type SourceRun<
   TPayload,
   TData,
@@ -98,8 +194,26 @@ export type SourceRun<
   TPayload,
   SourceRunConfig,
   TData,
-  TMeta | null
+  TMeta | null,
+  SourceContext
 >;
+
+export type SourceFetch<
+  TPayload,
+  TData,
+  TMeta = unknown,
+> = SourceRun<TPayload, TData, TMeta>;
+
+export type SourceSnapshot<
+  TIdentity,
+  TPayload,
+  TData,
+  TMeta = unknown,
+> = UnitSnapshot<TData, TMeta | null, SourceContext, TIdentity> & {
+  load: SourceFetch<TPayload, TData, TMeta>;
+  refetch: (input?: SourceFetchInput<TPayload, TData, TMeta>) => Promise<void>;
+  force: (input?: SourceFetchInput<TPayload, TData, TMeta>) => Promise<void>;
+};
 
 export interface SourceUnit<
   TIdentity extends object | undefined,
@@ -107,10 +221,8 @@ export interface SourceUnit<
   TData,
   TMeta = unknown,
 > {
-  identity: TIdentity;
-  run: SourceRun<TPayload, TData, TMeta>;
-  getSnapshot: () => UnitSnapshot<TData, TMeta | null>;
-  subscribe: (listener: EffectListener<TData, TMeta | null>) => (() => void) | void;
+  getSnapshot: () => SourceSnapshot<TIdentity, TPayload, TData, TMeta>;
+  subscribe: (listener: EffectListener<TData, TMeta | null, SourceContext, TIdentity>) => (() => void) | void;
 }
 
 export interface Source<
@@ -122,12 +234,14 @@ export interface Source<
   (identity: TIdentity): SourceUnit<TIdentity, TPayload, TData, TMeta>;
 }
 
-export interface SourceUnitState<TData, TMeta = unknown> {
-  value: TData;
-  status: UnitStatus;
-  meta: TMeta | null;
-  context: SourceContext;
-}
+export type SourceUnitState<TData, TMeta = unknown> = Snapshot<
+  TData,
+  UnitStatus,
+  TMeta,
+  {
+    context: SourceContext;
+  }
+>;
 
 export interface SourceUnitInternal<
   TIdentity extends object | undefined,
@@ -146,7 +260,7 @@ export interface SourceUnitInternal<
   hasEntityValue: boolean;
   membershipIds: readonly EntityId[];
   readWrite: ModeValueReadWriteInput;
-  listeners: Set<EffectListener<TData, TMeta | null>>;
+  listeners: Set<EffectListener<TData, TMeta | null, SourceContext, TIdentity>>;
   inFlightByPayload: Map<string, Promise<TData>>;
   runSequence: number;
   latestRunSequence: number;
@@ -174,9 +288,10 @@ export interface SourceRunContextEntry<
   TPayload,
   TData,
   TMeta = unknown,
+  TEntity extends object = UnitDataEntity<TData>,
 > {
   gate: SourceRunGate;
-  context: SourceRunContext<TIdentity, TPayload, TData, TMeta>;
+  context: SourceRunContext<TIdentity, TPayload, TData, TMeta, TEntity>;
 }
 
 export interface SourceContext {

@@ -1,87 +1,127 @@
-import { type EntityId } from '../entity.js';
 import {
+  type Entity,
+  type EntityId,
+} from '../entity.js';
+import {
+  DEFAULT_RUN_CONTEXT_CACHE_LIMIT,
+  DEFAULT_UNIT_DESTROY_DELAY,
+  createEntityValueReader,
   createEntityRunContextMethods,
+  createFunctionKeyResolver,
   createRunContextEntryCache,
   createSerializedKeyCache,
   createUnitSnapshot,
   getModeValue,
+  invokeCleanup,
+  isUnitSnapshotEqual,
+  isCleanup,
+  isUnitSetAction,
   notifyEffectListeners,
+  resolveEntityFunctionIdentityKey,
+  resolveEntityFunctionKey,
+  resolveDefaultUnitValue,
   resolveInput,
+  resolveUnitRunAsVoid,
+  resolveUnitMode,
   resolveValue,
+  type EntityValueOfStore,
   type EffectListener,
+  type UnitDataByEntityMode,
+  type UnitEntityMode,
   type UnitRunPrevious,
-  type UnitDataEntity,
+  type UnitSnapshot,
   type ValueUpdater,
 } from '../utils/index.js';
-import {
-  isStreamCleanup,
-} from './helpers.js';
 import type {
   Stream,
+  StreamBuilder,
+  StreamBuilderInput,
+  StreamByEntityModeBuilder,
   StreamConfig,
   StreamRunConfig,
   StreamRun,
   StreamRunInput,
   StreamRunContext,
   StreamRunContextEntry,
-  StreamSetAction,
+  StreamSnapshot,
   StreamUnit,
   StreamUnitByKeyMap,
   StreamUnitInternal,
 } from './types.js';
 
-const DEFAULT_DESTROY_DELAY = 250;
-const RUN_CONTEXT_CACHE_LIMIT = 32;
 const STREAM_RUN_RESULT_ERROR = 'stream.run() must return void or a cleanup function.';
-const resolveRunAsVoid = (): void => undefined;
+const resolveStreamFunctionKey = createFunctionKeyResolver({
+  prefix: 'stream-fallback',
+});
 
-const isStreamSetAction = <
-  TPayload,
-  TData,
-  TMeta,
->(
-  input: unknown,
-): input is StreamSetAction<TPayload, TData, TMeta> => {
-  return typeof input === 'function';
-};
-
-export const stream = <
+const createStreamFromConfig = <
   TIdentity extends object | undefined,
-  TPayload = unknown,
-  TData = unknown,
-  TMeta = unknown,
->({
+  TPayload,
+  TMeta,
+  TEntityStore extends Entity<object, EntityId>,
+  TMode extends UnitEntityMode,
+>(
+{
   entity,
-  destroyDelay = entity.destroyDelay ?? DEFAULT_DESTROY_DELAY,
+  mode,
+}: StreamBuilderInput<TEntityStore, TMode>,
+{
+  key: streamKey,
+  destroyDelay = entity.destroyDelay ?? DEFAULT_UNIT_DESTROY_DELAY,
   run,
   defaultValue,
-}: StreamConfig<TIdentity, TPayload, TData, TMeta>,
-): Stream<TIdentity, TPayload, TData, TMeta> => {
+}: StreamConfig<TIdentity, TPayload, EntityValueOfStore<TEntityStore>, TMode, TMeta>,
+): Stream<TIdentity, TPayload, UnitDataByEntityMode<EntityValueOfStore<TEntityStore>, TMode>, TMeta> => {
+  type TEntity = EntityValueOfStore<TEntityStore>;
+  type TData = UnitDataByEntityMode<TEntity, TMode>;
   const unitsByKey: StreamUnitByKeyMap<TIdentity, TPayload, TData, TMeta> =
     new Map<string, StreamUnitInternal<TIdentity, TPayload, TData, TMeta>>();
-  const readEntityValueById = entity.getById;
   const unitKeyCache = createSerializedKeyCache({
-    mode: 'scoped-unit',
+    mode: 'identity-unit',
+  });
+  const resolvedStreamFunctionKey = resolveStreamFunctionKey(streamKey);
+  const {
+    mode: resolvedEntityMode,
+    modeLocked: resolvedModeLocked,
+  } = resolveUnitMode({
+    entityMode: mode,
+    defaultValue,
+  });
+  const entityFunctionKey = resolveEntityFunctionKey({
+    entityKey: entity.key,
+    functionKey: resolvedStreamFunctionKey,
   });
 
   const streamFactory: Stream<TIdentity, TPayload, TData, TMeta> = (identity) => {
-    const key = unitKeyCache.getOrCreateKey(identity);
-    const existingUnit = unitsByKey.get(key);
+    const identityKey = unitKeyCache.getOrCreateKey(identity);
+    const unitKey = resolveEntityFunctionIdentityKey({
+      entityFunctionKey,
+      identityKey,
+    });
+    const readEntityValueById = createEntityValueReader<TEntity, EntityId>({
+      entity,
+      identityKey,
+      localIdentityKey: unitKey,
+    });
+    const existingUnit = unitsByKey.get(unitKey);
 
     if (existingUnit) {
       return existingUnit.unit;
     }
 
-    const initialValue = (defaultValue ?? null) as TData;
-    const initialMode: 'one' | 'many' = Array.isArray(initialValue) ? 'many' : 'one';
+    const initialValue = resolveDefaultUnitValue({
+      defaultValue,
+      mode: resolvedEntityMode,
+    }) as TData;
+    const initialMode: 'one' | 'many' = resolvedEntityMode;
 
     const internal: StreamUnitInternal<TIdentity, TPayload, TData, TMeta> = {
-      key,
+      key: unitKey,
       destroyDelay,
       identity,
       payload: undefined as TPayload,
       mode: initialMode,
-      modeLocked: false,
+      modeLocked: resolvedModeLocked,
       hasEntityValue: false,
       membershipIds: [],
       readWrite: {
@@ -102,28 +142,69 @@ export const stream = <
     const refreshValueFromEntity = (): void => {
       internal.state.value = getModeValue(internal, readEntityValueById);
     };
+    let snapshotCache: UnitSnapshot<TData, TMeta | null, unknown, TIdentity> = createUnitSnapshot({
+      identity: internal.identity,
+      value: internal.state.value,
+      status: internal.state.status,
+      meta: internal.state.meta,
+      context: internal.state.context,
+    });
+    let lastNotifiedSnapshot = snapshotCache;
+
+    const readSnapshot = (): UnitSnapshot<TData, TMeta | null, unknown, TIdentity> => {
+      if (
+        snapshotCache.status === internal.state.status
+        && Object.is(snapshotCache.value, internal.state.value)
+        && Object.is(snapshotCache.meta, internal.state.meta)
+        && Object.is(snapshotCache.context, internal.state.context)
+      ) {
+        return snapshotCache;
+      }
+
+      if (isUnitSnapshotEqual({
+        left: snapshotCache,
+        right: internal.state,
+      })) {
+        return snapshotCache;
+      }
+
+      snapshotCache = createUnitSnapshot({
+        identity: internal.identity,
+        value: internal.state.value,
+        status: internal.state.status,
+        meta: internal.state.meta,
+        context: internal.state.context,
+      });
+      return snapshotCache;
+    };
 
     const notifyUnit = (refreshValue = true): void => {
       if (refreshValue) {
         refreshValueFromEntity();
       }
+
+      if (internal.listeners.size === 0) {
+        return;
+      }
+
+      const nextSnapshot = readSnapshot();
+      if (Object.is(lastNotifiedSnapshot, nextSnapshot)) {
+        return;
+      }
+
+      lastNotifiedSnapshot = nextSnapshot;
       notifyEffectListeners(
         internal.listeners,
-        createUnitSnapshot({
-          value: internal.state.value,
-          status: internal.state.status,
-          meta: internal.state.meta,
-          context: internal.state.context,
-        }),
+        nextSnapshot,
       );
     };
 
     let runConfig: StreamRunConfig | undefined;
     const createRunContextEntry = (
       payload: TPayload,
-    ): StreamRunContextEntry<TIdentity, TPayload, TData, TMeta> => {
+    ): StreamRunContextEntry<TIdentity, TPayload, TData, TMeta, TEntity> => {
       const runContextMethods = createEntityRunContextMethods<
-        UnitDataEntity<TData>,
+        TEntity,
         TData,
         EntityId
       >({
@@ -138,9 +219,14 @@ export const stream = <
         TIdentity,
         TPayload,
         TData,
-        TMeta
+        TMeta,
+        TEntity
       > = {
         identity: internal.identity,
+        value: internal.state.value,
+        status: internal.state.status,
+        meta: internal.state.meta,
+        context: internal.state.context,
         payload,
         setMeta: (metaInput: TMeta | null | ValueUpdater<TMeta | null, TMeta | null>) => {
           const nextMeta = resolveValue(
@@ -152,6 +238,7 @@ export const stream = <
           }
 
           internal.state.meta = nextMeta;
+          runContextBase.meta = nextMeta;
           notifyUnit(false);
         },
         ...runContextMethods,
@@ -163,10 +250,10 @@ export const stream = <
     };
       const runContextEntryCache = createRunContextEntryCache<
       TPayload,
-      StreamRunContextEntry<TIdentity, TPayload, TData, TMeta>
+      StreamRunContextEntry<TIdentity, TPayload, TData, TMeta, TEntity>
     >({
       createEntry: createRunContextEntry,
-      limit: RUN_CONTEXT_CACHE_LIMIT,
+      limit: DEFAULT_RUN_CONTEXT_CACHE_LIMIT,
     });
 
       entity.registerUnit({
@@ -191,12 +278,16 @@ export const stream = <
 
         const runContextEntry = runContextEntryCache.getOrCreate(eventPayload);
         runContextEntry.context.payload = eventPayload;
+        runContextEntry.context.value = internal.state.value;
+        runContextEntry.context.status = internal.state.status;
+        runContextEntry.context.meta = internal.state.meta;
+        runContextEntry.context.context = internal.state.context;
 
         return Promise.resolve(run(runContextEntry.context))
           .then((result) => {
-            if (isStreamCleanup(result)) {
+            if (isCleanup(result)) {
               if (internal.destroyed || !internal.started) {
-                result();
+                invokeCleanup(result);
               } else {
                 internal.stopCallback = result;
               }
@@ -240,15 +331,6 @@ export const stream = <
         }
       };
 
-    const getSnapshot = () => {
-      refreshValueFromEntity();
-      return createUnitSnapshot({
-        value: internal.state.value,
-        status: internal.state.status,
-        meta: internal.state.meta,
-        context: internal.state.context,
-      });
-    };
     const subscribe = (listener: EffectListener<TData, TMeta | null>) => {
       if (internal.destroyed) {
         return undefined;
@@ -263,7 +345,7 @@ export const stream = <
         }
       };
     };
-    const runUnit: StreamRun<TPayload, TData, TMeta> = (
+    const startUnit: StreamRun<TPayload, TData, TMeta> = (
       input?: StreamRunInput<TPayload, TData, TMeta>,
       config?: StreamRunConfig,
     ) => {
@@ -276,7 +358,7 @@ export const stream = <
         }
 
         let payloadInput: TPayload | undefined;
-        if (isStreamSetAction<TPayload, TData, TMeta>(input)) {
+        if (isUnitSetAction<TPayload, StreamRunConfig, TData, TMeta | null>(input)) {
           const previous: UnitRunPrevious<
             TPayload,
             StreamRunConfig,
@@ -298,19 +380,64 @@ export const stream = <
         }
 
         internal.started = true;
-        return runWithPayload(internal.payload).then(resolveRunAsVoid);
+        return runWithPayload(internal.payload).then(resolveUnitRunAsVoid);
       };
+    let streamSnapshotCache: StreamSnapshot<TPayload, TData, TMeta> | null = null;
+    let streamSnapshotBaseCache = snapshotCache;
+    const getSnapshot = (): StreamSnapshot<TPayload, TData, TMeta> => {
+      refreshValueFromEntity();
+      const baseSnapshot = readSnapshot();
+      if (streamSnapshotCache && Object.is(streamSnapshotBaseCache, baseSnapshot)) {
+        return streamSnapshotCache;
+      }
+
+      streamSnapshotBaseCache = baseSnapshot;
+      streamSnapshotCache = {
+        ...baseSnapshot,
+        start: startUnit,
+        stop,
+      };
+      return streamSnapshotCache;
+    };
     const unit: StreamUnit<TPayload, TData, TMeta> = {
-      run: runUnit,
       getSnapshot,
       subscribe,
     };
 
-      internal.unit = unit;
-      unitsByKey.set(key, internal);
+    internal.unit = unit;
+    unitsByKey.set(unitKey, internal);
 
       return unit;
   };
 
   return streamFactory;
+};
+
+export const stream: StreamBuilder = <
+  TEntityStore extends Entity<object, EntityId>,
+  TMode extends UnitEntityMode,
+>({
+  entity,
+  mode,
+}: StreamBuilderInput<TEntityStore, TMode>): StreamByEntityModeBuilder<TEntityStore, TMode> => {
+  const streamByEntityMode: StreamByEntityModeBuilder<TEntityStore, TMode> = <
+    TIdentity extends object | undefined,
+    TPayload,
+    TMeta,
+  >(
+    config: StreamConfig<
+      TIdentity,
+      TPayload,
+      EntityValueOfStore<TEntityStore>,
+      TMode,
+      TMeta
+    >,
+  ) => {
+    return createStreamFromConfig({
+      entity,
+      mode,
+    }, config);
+  };
+
+  return streamByEntityMode;
 };

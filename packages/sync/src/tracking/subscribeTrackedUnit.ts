@@ -9,7 +9,11 @@ export const subscribeTrackedUnit = <
   onStoreChange,
 }: SubscribeTrackedUnitInput<RResult, TMeta>): (() => void) => {
   const removeSubscription = unit.subscribe((snapshot) => {
-    writeTrackedUnitSnapshot(unit, snapshot);
+    const didChange = writeTrackedUnitSnapshot(unit, snapshot);
+    if (!didChange) {
+      return;
+    }
+
     onStoreChange();
   });
 

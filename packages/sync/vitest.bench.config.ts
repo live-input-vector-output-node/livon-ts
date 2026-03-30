@@ -6,7 +6,7 @@ export default defineConfig({
     globals: false,
     benchmark: {
       include: ['src/**/*.bench.ts'],
-      includeSamples: false,
+      includeSamples: true,
       outputJson: 'coverage/bench/report.json',
       reporters: ['default'],
     },

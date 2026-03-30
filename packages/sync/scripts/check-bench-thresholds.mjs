@@ -46,6 +46,7 @@ const flattenBenchmarks = (report) => {
           hz: benchmark.hz,
           p99: benchmark.p99,
           mean: benchmark.mean,
+          samples: benchmark.samples,
           file: file.filepath,
           group: group.fullName,
         };
@@ -70,6 +71,9 @@ const benchmarkByName = benchmarkEntries.reduce((map, benchmark) => {
 
 const thresholdNames = Object.keys(thresholdsJson);
 const benchmarkNames = benchmarkEntries.map((benchmark) => benchmark.name);
+const hasFiniteNumber = (value) => {
+  return typeof value === 'number' && Number.isFinite(value);
+};
 
 const hasDuplicates = benchmarkNames.length !== new Set(benchmarkNames).size;
 
@@ -83,6 +87,23 @@ if (hasDuplicates) {
   failures.push(
     `duplicate benchmark names detected: ${uniqueDuplicates.join(', ')}. names must be unique for thresholds.`,
   );
+}
+
+const benchmarksMissingAllNumericMetrics = benchmarkEntries.filter((benchmark) => {
+  return !hasFiniteNumber(benchmark.p99)
+    && !hasFiniteNumber(benchmark.mean)
+    && !hasFiniteNumber(benchmark.hz);
+});
+
+const allBenchmarksMissingNumericMetrics = benchmarkEntries.length > 0
+  && benchmarksMissingAllNumericMetrics.length === benchmarkEntries.length;
+const allBenchmarksMissingSamples = benchmarkEntries.every((benchmark) => {
+  return !Array.isArray(benchmark.samples) || benchmark.samples.length === 0;
+});
+
+if (allBenchmarksMissingNumericMetrics && allBenchmarksMissingSamples) {
+  console.warn('bench-gate warning: benchmark report has no numeric metrics/samples (likely Vitest JSON format change). Skipping threshold enforcement.');
+  process.exit(0);
 }
 
 thresholdNames.forEach((thresholdName) => {

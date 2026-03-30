@@ -50,6 +50,10 @@ interface MockIndexedDbState {
   writeTransactions: number;
 }
 
+interface CreateMockRuntimeInput {
+  failWrites?: boolean;
+}
+
 const scheduleMicrotask = (callback: () => void): void => {
   Promise.resolve().then(callback);
 };
@@ -68,7 +72,9 @@ const createRequest = <TResult>(result: TResult): MockIndexedDbRequest<TResult> 
   return request;
 };
 
-const createMockRuntime = (): { runtime: MockRuntime; state: MockIndexedDbState } => {
+const createMockRuntime = ({
+  failWrites = false,
+}: CreateMockRuntimeInput = {}): { runtime: MockRuntime; state: MockIndexedDbState } => {
   const state: MockIndexedDbState = {
     valuesByKey: new Map<string, unknown>(),
     readTransactions: 0,
@@ -108,6 +114,11 @@ const createMockRuntime = (): { runtime: MockRuntime; state: MockIndexedDbState 
     };
 
     scheduleMicrotask(() => {
+      if (failWrites && mode === 'readwrite') {
+        transaction.onerror?.();
+        return;
+      }
+
       transaction.oncomplete?.();
     });
 
@@ -195,6 +206,53 @@ describe('createIndexedDbCacheStorage()', () => {
       expect(state.readTransactions).toBe(1);
       expect(storage.getItem('a')).toEqual({ value: 1 });
       expect(storage.getItem('b')).toEqual({ value: 2 });
+    });
+  });
+
+  describe('sad', () => {
+    it('should enter degraded mode after first transient indexeddb write failure', async () => {
+      const { runtime } = createMockRuntime({
+        failWrites: true,
+      });
+      const storage = createIndexedDbCacheStorage({
+        runtime,
+        retryDelaysMs: [0, 0, 0, 0],
+      });
+
+      expect(storage).toBeDefined();
+      if (!storage) {
+        return;
+      }
+
+      storage.setItem('a', { value: 1 });
+      await storage.flush();
+
+      expect(storage.readStatus()).toBe('degraded');
+      expect(storage.isFailed()).toBe(false);
+      expect(storage.readFailure()).toBeTruthy();
+    });
+
+    it('should disable storage after retry budget is exhausted', async () => {
+      const { runtime } = createMockRuntime({
+        failWrites: true,
+      });
+      const storage = createIndexedDbCacheStorage({
+        runtime,
+        retryDelaysMs: [0],
+      });
+
+      expect(storage).toBeDefined();
+      if (!storage) {
+        return;
+      }
+
+      storage.setItem('a', { value: 1 });
+      await storage.flush();
+
+      expect(storage.readStatus()).toBe('disabled');
+      expect(storage.isFailed()).toBe(true);
+      expect(storage.readFailure()).toBeTruthy();
+      expect(storage.getItem('a')).toBeNull();
     });
   });
 });

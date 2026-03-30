@@ -12,7 +12,7 @@ export interface SerializedKeyCache {
   clear: () => void;
 }
 
-export type SerializedKeyCacheMode = 'scoped-unit' | 'payload-hot-path' | 'dependency';
+export type SerializedKeyCacheMode = 'identity-unit' | 'payload-hot-path' | 'dependency';
 
 interface SerializedKeyCacheModeDefaults {
   cacheObjects: boolean;
@@ -45,7 +45,7 @@ const resolveModeDefaults = (mode: SerializedKeyCacheMode): SerializedKeyCacheMo
 };
 
 export const createSerializedKeyCache = ({
-  mode = 'scoped-unit',
+  mode = 'identity-unit',
   limit,
   cacheObjects,
   cachePrimitives,

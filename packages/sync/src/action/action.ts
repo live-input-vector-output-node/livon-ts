@@ -1,24 +1,42 @@
-import { type EntityId } from '../entity.js';
 import {
+  type Entity,
+  type EntityId,
+} from '../entity.js';
+import {
+  DEFAULT_RUN_CONTEXT_CACHE_LIMIT,
+  DEFAULT_UNIT_DESTROY_DELAY,
+  createEntityValueReader,
   createEntityRunContextMethods,
+  createFunctionKeyResolver,
   createRunContextEntryCache,
   createSerializedKeyCache,
   createUnitSnapshot,
   getModeValue,
+  invokeCleanup,
+  isUnitSnapshotEqual,
+  isCleanup,
+  isUnitSetAction,
   notifyEffectListeners,
+  resolveEntityFunctionIdentityKey,
+  resolveEntityFunctionKey,
+  resolveDefaultUnitValue,
   resolveInput,
+  resolveUnitRunAsVoid,
+  resolveUnitMode,
   resolveValue,
+  type EntityValueOfStore,
   type EffectListener,
+  type UnitDataByEntityMode,
+  type UnitEntityMode,
   type UnitRunPrevious,
-  type UnitDataEntity,
+  type UnitSnapshot,
   type ValueUpdater,
 } from '../utils/index.js';
-import {
-  invokeActionCleanup,
-  isActionCleanup,
-} from './helpers.js';
 import type {
   Action,
+  ActionBuilder,
+  ActionBuilderInput,
+  ActionByEntityModeBuilder,
   ActionConfig,
   ActionRunConfig,
   ActionRunInput,
@@ -26,64 +44,85 @@ import type {
   ActionRunContext,
   ActionRunContextEntry,
   ActionRunGate,
-  ActionSetAction,
+  ActionSnapshot,
   ActionUnit,
   ActionUnitByKeyMap,
   ActionUnitInternal,
 } from './types.js';
 
-const DEFAULT_DESTROY_DELAY = 250;
-const RUN_CONTEXT_CACHE_LIMIT = 32;
 const ACTION_RUN_RESULT_ERROR = 'action.run() must return void or a cleanup function.';
-const resolveRunAsVoid = (): void => undefined;
+const resolveActionFunctionKey = createFunctionKeyResolver({
+  prefix: 'action-fallback',
+});
 
-const isActionSetAction = <
-  TPayload,
-  TData,
-  TMeta,
->(
-  input: unknown,
-): input is ActionSetAction<TPayload, TData, TMeta> => {
-  return typeof input === 'function';
-};
-
-export const action = <
+const createActionFromConfig = <
   TIdentity extends object | undefined,
-  TPayload = unknown,
-  TData = unknown,
-  TMeta = unknown,
->({
+  TPayload,
+  TMeta,
+  TEntityStore extends Entity<object, EntityId>,
+  TMode extends UnitEntityMode,
+>(
+{
   entity,
-  destroyDelay = entity.destroyDelay ?? DEFAULT_DESTROY_DELAY,
+  mode,
+}: ActionBuilderInput<TEntityStore, TMode>,
+{
+  key: actionKey,
+  destroyDelay = entity.destroyDelay ?? DEFAULT_UNIT_DESTROY_DELAY,
   run,
   defaultValue,
-}: ActionConfig<TIdentity, TPayload, TData, TMeta>,
-): Action<TIdentity, TPayload, TData, TMeta> => {
+}: ActionConfig<TIdentity, TPayload, EntityValueOfStore<TEntityStore>, TMode, TMeta>,
+): Action<TIdentity, TPayload, UnitDataByEntityMode<EntityValueOfStore<TEntityStore>, TMode>, TMeta> => {
+  type TEntity = EntityValueOfStore<TEntityStore>;
+  type TData = UnitDataByEntityMode<TEntity, TMode>;
   const unitsByKey: ActionUnitByKeyMap<TIdentity, TPayload, TData, TMeta> =
     new Map<string, ActionUnitInternal<TIdentity, TPayload, TData, TMeta>>();
-  const readEntityValueById = entity.getById;
   const unitKeyCache = createSerializedKeyCache({
-    mode: 'scoped-unit',
+    mode: 'identity-unit',
+  });
+  const resolvedActionFunctionKey = resolveActionFunctionKey(actionKey);
+  const {
+    mode: resolvedEntityMode,
+    modeLocked: resolvedModeLocked,
+  } = resolveUnitMode({
+    entityMode: mode,
+    defaultValue,
+  });
+  const entityFunctionKey = resolveEntityFunctionKey({
+    entityKey: entity.key,
+    functionKey: resolvedActionFunctionKey,
   });
 
   const actionFactory: Action<TIdentity, TPayload, TData, TMeta> = (identity) => {
-    const key = unitKeyCache.getOrCreateKey(identity);
-    const existingUnit = unitsByKey.get(key);
+    const identityKey = unitKeyCache.getOrCreateKey(identity);
+    const unitKey = resolveEntityFunctionIdentityKey({
+      entityFunctionKey,
+      identityKey,
+    });
+    const readEntityValueById = createEntityValueReader<TEntity, EntityId>({
+      entity,
+      identityKey,
+      localIdentityKey: unitKey,
+    });
+    const existingUnit = unitsByKey.get(unitKey);
 
     if (existingUnit) {
       return existingUnit.unit;
     }
 
-    const initialValue = (defaultValue ?? null) as TData;
-    const initialMode: 'one' | 'many' = Array.isArray(initialValue) ? 'many' : 'one';
+    const initialValue = resolveDefaultUnitValue({
+      defaultValue,
+      mode: resolvedEntityMode,
+    }) as TData;
+    const initialMode: 'one' | 'many' = resolvedEntityMode;
 
     const internal: ActionUnitInternal<TIdentity, TPayload, TData, TMeta> = {
-      key,
+      key: unitKey,
       destroyDelay,
       identity,
       payload: undefined as TPayload,
       mode: initialMode,
-      modeLocked: false,
+      modeLocked: resolvedModeLocked,
       hasEntityValue: false,
       membershipIds: [],
       readWrite: {
@@ -106,24 +145,65 @@ export const action = <
     };
     const payloadKeyCache = createSerializedKeyCache({
       mode: 'payload-hot-path',
-      limit: RUN_CONTEXT_CACHE_LIMIT,
+      limit: DEFAULT_RUN_CONTEXT_CACHE_LIMIT,
     });
     const refreshValueFromEntity = (): void => {
       internal.state.value = getModeValue(internal, readEntityValueById);
+    };
+    let snapshotCache: UnitSnapshot<TData, TMeta | null, unknown, TIdentity> = createUnitSnapshot({
+      identity: internal.identity,
+      value: internal.state.value,
+      status: internal.state.status,
+      meta: internal.state.meta,
+      context: internal.state.context,
+    });
+    let lastNotifiedSnapshot = snapshotCache;
+
+    const readSnapshot = (): UnitSnapshot<TData, TMeta | null, unknown, TIdentity> => {
+      if (
+        snapshotCache.status === internal.state.status
+        && Object.is(snapshotCache.value, internal.state.value)
+        && Object.is(snapshotCache.meta, internal.state.meta)
+        && Object.is(snapshotCache.context, internal.state.context)
+      ) {
+        return snapshotCache;
+      }
+
+      if (isUnitSnapshotEqual({
+        left: snapshotCache,
+        right: internal.state,
+      })) {
+        return snapshotCache;
+      }
+
+      snapshotCache = createUnitSnapshot({
+        identity: internal.identity,
+        value: internal.state.value,
+        status: internal.state.status,
+        meta: internal.state.meta,
+        context: internal.state.context,
+      });
+      return snapshotCache;
     };
 
     const notifyUnit = (refreshValue = true): void => {
       if (refreshValue) {
         refreshValueFromEntity();
       }
+
+      if (internal.listeners.size === 0) {
+        return;
+      }
+
+      const nextSnapshot = readSnapshot();
+      if (Object.is(lastNotifiedSnapshot, nextSnapshot)) {
+        return;
+      }
+
+      lastNotifiedSnapshot = nextSnapshot;
       notifyEffectListeners(
         internal.listeners,
-        createUnitSnapshot({
-          value: internal.state.value,
-          status: internal.state.status,
-          meta: internal.state.meta,
-          context: internal.state.context,
-        }),
+        nextSnapshot,
       );
     };
 
@@ -140,12 +220,12 @@ export const action = <
 
       const createRunContextEntry = (
         payload: TPayload,
-      ): ActionRunContextEntry<TIdentity, TPayload, TData, TMeta> => {
+      ): ActionRunContextEntry<TIdentity, TPayload, TData, TMeta, TEntity> => {
         const gate: ActionRunGate = {
           isLatestRun: () => false,
         };
         const runContextMethods = createEntityRunContextMethods<
-          UnitDataEntity<TData>,
+          TEntity,
           TData,
           EntityId
         >({
@@ -160,9 +240,14 @@ export const action = <
           TIdentity,
           TPayload,
           TData,
-          TMeta
+          TMeta,
+          TEntity
         > = {
           identity: internal.identity,
+          value: internal.state.value,
+          status: internal.state.status,
+          meta: internal.state.meta,
+          context: internal.state.context,
           payload,
           setMeta: (metaInput: TMeta | null | ValueUpdater<TMeta | null, TMeta | null>) => {
             if (!gate.isLatestRun()) {
@@ -178,6 +263,7 @@ export const action = <
             }
 
             internal.state.meta = nextMeta;
+            runContextBase.meta = nextMeta;
             notifyUnit(false);
           },
           ...runContextMethods,
@@ -190,10 +276,10 @@ export const action = <
       };
       const runContextEntryCache = createRunContextEntryCache<
         TPayload,
-        ActionRunContextEntry<TIdentity, TPayload, TData, TMeta>
+        ActionRunContextEntry<TIdentity, TPayload, TData, TMeta, TEntity>
       >({
         createEntry: createRunContextEntry,
-        limit: RUN_CONTEXT_CACHE_LIMIT,
+        limit: DEFAULT_RUN_CONTEXT_CACHE_LIMIT,
       });
 
       let singleInFlightPromise: Promise<TData> | null = null;
@@ -251,6 +337,10 @@ export const action = <
         const runContextEntry = runContextEntryCache.getOrCreate(internal.payload);
         runContextEntry.gate.isLatestRun = isLatestRun;
         runContextEntry.context.payload = internal.payload;
+        runContextEntry.context.value = internal.state.value;
+        runContextEntry.context.status = internal.state.status;
+        runContextEntry.context.meta = internal.state.meta;
+        runContextEntry.context.context = internal.state.context;
 
         const usesSingleInFlight = singleInFlightPromise === null && internal.inFlightByPayload.size === 0;
         const trackedPayloadKey = usesSingleInFlight
@@ -259,16 +349,16 @@ export const action = <
 
         const runPromise: Promise<TData> = Promise.resolve(run(runContextEntry.context))
           .then((result) => {
-            if (isActionCleanup(result)) {
+            if (isCleanup(result)) {
               if (!isLatestRun()) {
-                invokeActionCleanup(result);
+                invokeCleanup(result);
                 return internal.state.value;
               }
 
               if (internal.destroyed || internal.stopped) {
-                invokeActionCleanup(result);
+                invokeCleanup(result);
               } else {
-                invokeActionCleanup(internal.cleanup);
+                invokeCleanup(internal.cleanup);
                 internal.cleanup = result;
               }
 
@@ -325,15 +415,6 @@ export const action = <
         return runPromise;
       };
 
-    const getSnapshot = () => {
-      refreshValueFromEntity();
-      return createUnitSnapshot({
-        value: internal.state.value,
-        status: internal.state.status,
-        meta: internal.state.meta,
-        context: internal.state.context,
-      });
-    };
     const subscribe = (listener: EffectListener<TData, TMeta | null>) => {
       if (internal.destroyed) {
         return undefined;
@@ -345,7 +426,7 @@ export const action = <
         internal.listeners.delete(listener);
       };
     };
-    const runUnit: ActionRun<TPayload, TData, TMeta> = (
+    const executeUnit: ActionRun<TPayload, TData, TMeta> = (
       input?: ActionRunInput<TPayload, TData, TMeta>,
       config?: ActionRunConfig,
     ) => {
@@ -354,7 +435,7 @@ export const action = <
         }
 
         let payloadInput: TPayload | undefined;
-        if (isActionSetAction<TPayload, TData, TMeta>(input)) {
+        if (isUnitSetAction<TPayload, ActionRunConfig, TData, TMeta | null>(input)) {
           const previous: UnitRunPrevious<
             TPayload,
             ActionRunConfig,
@@ -370,19 +451,63 @@ export const action = <
           payloadInput = input;
         }
 
-        return executeRun(payloadInput).then(resolveRunAsVoid);
+        return executeRun(payloadInput).then(resolveUnitRunAsVoid);
+    };
+    let actionSnapshotCache: ActionSnapshot<TPayload, TData, TMeta> | null = null;
+    let actionSnapshotBaseCache = snapshotCache;
+    const getSnapshot = (): ActionSnapshot<TPayload, TData, TMeta> => {
+      refreshValueFromEntity();
+      const baseSnapshot = readSnapshot();
+      if (actionSnapshotCache && Object.is(actionSnapshotBaseCache, baseSnapshot)) {
+        return actionSnapshotCache;
+      }
+
+      actionSnapshotBaseCache = baseSnapshot;
+      actionSnapshotCache = {
+        ...baseSnapshot,
+        submit: executeUnit,
       };
+      return actionSnapshotCache;
+    };
     const unit: ActionUnit<TPayload, TData, TMeta> = {
-      run: runUnit,
       getSnapshot,
       subscribe,
     };
 
-      internal.unit = unit;
-      unitsByKey.set(key, internal);
+    internal.unit = unit;
+    unitsByKey.set(unitKey, internal);
 
       return unit;
   };
 
   return actionFactory;
+};
+
+export const action: ActionBuilder = <
+  TEntityStore extends Entity<object, EntityId>,
+  TMode extends UnitEntityMode,
+>({
+  entity,
+  mode,
+}: ActionBuilderInput<TEntityStore, TMode>): ActionByEntityModeBuilder<TEntityStore, TMode> => {
+  const actionByEntityMode: ActionByEntityModeBuilder<TEntityStore, TMode> = <
+    TIdentity extends object | undefined,
+    TPayload,
+    TMeta,
+  >(
+    config: ActionConfig<
+      TIdentity,
+      TPayload,
+      EntityValueOfStore<TEntityStore>,
+      TMode,
+      TMeta
+    >,
+  ) => {
+    return createActionFromConfig({
+      entity,
+      mode,
+    }, config);
+  };
+
+  return actionByEntityMode;
 };

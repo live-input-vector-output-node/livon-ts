@@ -42,16 +42,17 @@ describe('adaptive read write matrix', () => {
     });
 
     it('should resolve operation strategy by cache flags', () => {
-      const fallback = resolveAdaptiveReadWriteDefault();
       const resolved = resolveAdaptiveReadWriteByCache({
-        cacheEnabled: true,
-        lruEnabled: true,
-        operation: 'updateMany',
-        fallback,
+        cacheEnabled: false,
+        lruEnabled: false,
+        operation: 'readMany',
+        fallback: resolveAdaptiveReadWriteDefault(),
       });
 
-      expect(typeof resolved.batch).toBe('boolean');
-      expect(typeof resolved.subview).toBe('boolean');
+      expect(resolved).toEqual({
+        batch: false,
+        subview: false,
+      });
     });
 
     it('should resolve operation-intent strategy for read and write operations', () => {
@@ -76,5 +77,6 @@ describe('adaptive read write matrix', () => {
         subview: false,
       });
     });
+
   });
 });

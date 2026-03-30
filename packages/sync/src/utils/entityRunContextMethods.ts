@@ -28,12 +28,16 @@ export interface CreateEntityRunContextMethodsInput<
   refreshValue: () => void;
   readValue: () => RResult;
   refreshOnGet?: boolean;
+  refreshStrategy?: EntityRunContextRefreshStrategy;
   upsertOneOperation?: string;
   upsertManyOperation?: string;
 }
 
 const DEFAULT_UPSERT_ONE_OPERATION = 'runContext.upsertOne()';
 const DEFAULT_UPSERT_MANY_OPERATION = 'runContext.upsertMany()';
+const DEFAULT_REFRESH_STRATEGY: EntityRunContextRefreshStrategy = 'eager';
+
+export type EntityRunContextRefreshStrategy = 'eager' | 'lazy';
 
 export const createEntityRunContextMethods = <
   TEntity extends object,
@@ -46,6 +50,7 @@ export const createEntityRunContextMethods = <
   refreshValue,
   readValue,
   refreshOnGet = false,
+  refreshStrategy = DEFAULT_REFRESH_STRATEGY,
   upsertOneOperation = DEFAULT_UPSERT_ONE_OPERATION,
   upsertManyOperation = DEFAULT_UPSERT_MANY_OPERATION,
 }: CreateEntityRunContextMethodsInput<
@@ -53,6 +58,24 @@ export const createEntityRunContextMethods = <
   RResult,
   TEntityId
 >): EntityRunContextMethods<TEntity, RResult, TEntityId> => {
+  let hasPendingRefresh = false;
+  const refreshIfNeeded = (): void => {
+    if (!hasPendingRefresh) {
+      return;
+    }
+
+    refreshValue();
+    hasPendingRefresh = false;
+  };
+  const markValueDirty = (): void => {
+    if (refreshStrategy === 'eager') {
+      refreshValue();
+      return;
+    }
+
+    hasPendingRefresh = true;
+  };
+
   const upsertOne = (input: TEntity, options?: UpsertOptions): TEntity => {
     if (!isActive()) {
       return input;
@@ -64,7 +87,7 @@ export const createEntityRunContextMethods = <
       value: updated,
       operation: upsertOneOperation,
     });
-    refreshValue();
+    markValueDirty();
     return updated;
   };
 
@@ -82,7 +105,7 @@ export const createEntityRunContextMethods = <
       values: updated,
       operation: upsertManyOperation,
     });
-    refreshValue();
+    markValueDirty();
     return updated;
   };
 
@@ -92,7 +115,7 @@ export const createEntityRunContextMethods = <
     }
 
     const removed = entity.deleteOne(id);
-    refreshValue();
+    markValueDirty();
     return removed;
   };
 
@@ -102,13 +125,13 @@ export const createEntityRunContextMethods = <
     }
 
     const removedIds = entity.deleteMany(ids);
-    refreshValue();
+    markValueDirty();
     return removedIds;
   };
 
   const getValue = (): RResult => {
-    if (refreshOnGet) {
-      refreshValue();
+    if (refreshOnGet || hasPendingRefresh) {
+      refreshIfNeeded();
     }
 
     return readValue();

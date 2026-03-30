@@ -60,12 +60,12 @@ const profiles = [
 ];
 
 const operationBenchmarkNameByOperation = {
-  readOne: 'todo entity read by id after 100_000 seed',
-  readMany: 'todo source get 100_000 entries',
-  updateOne: 'todo entity write upsert one after 100_000 seed',
-  updateMany: 'todo entity write upsert many(64) after 100_000 seed',
-  setOne: 'todo transform set access after 100_000 seed',
-  setMany: 'todo source set many(64) access after 100_000 seed',
+  readOne: 'todo entity read by id after 10_000 seed',
+  readMany: 'todo source get 10_000 entries',
+  updateOne: 'todo entity write upsert one after 10_000 seed',
+  updateMany: 'todo entity write upsert many(64) after 10_000 seed',
+  setOne: 'todo transform set access after 10_000 seed',
+  setMany: 'todo source set many(64) access after 10_000 seed',
 };
 
 const operations = Object.keys(operationBenchmarkNameByOperation);

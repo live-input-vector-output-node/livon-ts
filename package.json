@@ -23,6 +23,7 @@
     "docs": "turbo run docs",
     "bench": "turbo run bench --output-logs=errors-only",
     "bench:gate": "turbo run bench:gate --output-logs=errors-only",
+    "bench:execution-mode": "turbo run bench:execution-mode --output-logs=errors-only",
     "bench:matrix:adaptive": "turbo run bench:matrix:adaptive --output-logs=errors-only",
     "bench:matrix:lru-set": "turbo run bench:matrix:lru-set --output-logs=errors-only",
     "bench:ui": "turbo run bench -- --ui",
