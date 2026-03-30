@@ -15,7 +15,7 @@ interface Todo {
   updatedAt: number;
 }
 
-interface TodoScope {
+interface TodoIdentity {
   listId: string;
 }
 
@@ -77,7 +77,7 @@ interface ResolveBenchmarkNameInput {
 interface RegisterTodoBenchmarkSuiteInput {
   variant: BenchVariant;
   useVariantInName: boolean;
-  todoScope: TodoScope;
+  todoIdentity: TodoIdentity;
   todos: readonly Todo[];
   seedTodo: Todo;
   memoryStorage: CacheStorage;
@@ -295,7 +295,7 @@ describe('todo performance benchmarks (new dx)', () => {
     throw new Error('todo benchmark seed item is missing');
   }
 
-  const todoScope: TodoScope = { listId: TODO_LIST_ID };
+  const todoIdentity: TodoIdentity = { listId: TODO_LIST_ID };
   const memoryStorageState: MemoryStorageState = {
     values: new Map<string, string>(),
   };
@@ -356,7 +356,7 @@ describe('todo performance benchmarks (new dx)', () => {
   const registerTodoBenchmarkSuite = ({
     variant,
     useVariantInName,
-    todoScope: benchmarkScope,
+    todoIdentity: benchmarkIdentity,
     todos: benchmarkTodos,
     seedTodo: benchmarkSeedTodo,
     memoryStorage: benchmarkMemoryStorage,
@@ -378,19 +378,19 @@ describe('todo performance benchmarks (new dx)', () => {
       readWrite: variant.readWrite,
     });
 
-    const readTodos = source<TodoScope, readonly Todo[] | undefined, readonly Todo[]>({
+    const readTodos = source<TodoIdentity, readonly Todo[] | undefined, readonly Todo[]>({
       entity: todosEntity,
       defaultValue: [],
       run: readTodosRun,
     });
 
-    const writeTodo = source<TodoScope, Todo, Todo | null>({
+    const writeTodo = source<TodoIdentity, Todo, Todo | null>({
       entity: todosEntity,
       run: async ({ payload }) => {
         return payload;
       },
     });
-    const writeTodosMany = source<TodoScope, readonly Todo[], readonly Todo[]>({
+    const writeTodosMany = source<TodoIdentity, readonly Todo[], readonly Todo[]>({
       entity: todosEntity,
       defaultValue: [],
       run: async ({ payload }) => {
@@ -398,34 +398,34 @@ describe('todo performance benchmarks (new dx)', () => {
       },
     });
 
-    const removeTodo = source<TodoScope, RemoveAndRestoreTodoPayload, Todo | null>({
+    const removeTodo = source<TodoIdentity, RemoveAndRestoreTodoPayload, Todo | null>({
       entity: todosEntity,
       run: async ({ payload }) => {
         return payload.restore;
       },
     });
 
-    const readTodosUnit = readTodos(benchmarkScope);
-    const writeTodoUnit = writeTodo(benchmarkScope);
-    const writeTodosManyUnit = writeTodosMany(benchmarkScope);
-    const removeTodoUnit = removeTodo(benchmarkScope);
+    const readTodosUnit = readTodos(benchmarkIdentity);
+    const writeTodoUnit = writeTodo(benchmarkIdentity);
+    const writeTodosManyUnit = writeTodosMany(benchmarkIdentity);
+    const removeTodoUnit = removeTodo(benchmarkIdentity);
 
-    const todoCountView = view<TodoScope, number>({
-      out: async ({ get, scope }) => {
-        const snapshot = await get(readTodos(scope));
+    const todoCountView = view<TodoIdentity, number>({
+      out: async ({ get, identity }) => {
+        const snapshot = await get(readTodos(identity));
         return snapshot.value.length;
       },
       defaultValue: TODO_COUNT,
     });
 
-    const todoTitleTransform = transform<TodoScope, UpdateTodoTitlePayload, string>({
-      out: async ({ get, scope }) => {
-        const snapshot = await get(readTodos(scope));
+    const todoTitleTransform = transform<TodoIdentity, UpdateTodoTitlePayload, string>({
+      out: async ({ get, identity }) => {
+        const snapshot = await get(readTodos(identity));
         const found = snapshot.value[TODO_READ_INDEX];
         return found ? found.title : '';
       },
       in: async ({ payload, set }) => {
-        await set(writeTodo(benchmarkScope), {
+        await set(writeTodo(benchmarkIdentity), {
           id: payload.id,
           listId: TODO_LIST_ID,
           title: payload.title,
@@ -436,8 +436,8 @@ describe('todo performance benchmarks (new dx)', () => {
       defaultValue: benchmarkSeedTodo.title,
     });
 
-    const todoCountViewUnit = todoCountView(benchmarkScope);
-    const todoTitleTransformUnit = todoTitleTransform(benchmarkScope);
+    const todoCountViewUnit = todoCountView(benchmarkIdentity);
+    const todoTitleTransformUnit = todoTitleTransform(benchmarkIdentity);
 
     let seedPromise: Promise<void> | null = null;
     const ensureSeeded = (): Promise<void> => {
@@ -518,7 +518,7 @@ describe('todo performance benchmarks (new dx)', () => {
       useVariantInName,
     }), async () => {
       await ensureSeeded();
-      const value = readTodosUnit.get();
+      const value = readTodosUnit.getSnapshot().value;
       const first = value[TODO_READ_INDEX];
       if (!first) {
         throw new Error('todo source get benchmark expected seeded entries');
@@ -531,7 +531,7 @@ describe('todo performance benchmarks (new dx)', () => {
       useVariantInName,
     }), async () => {
       await ensureSeeded();
-      const value = todoCountViewUnit.get().value;
+      const value = todoCountViewUnit.getSnapshot().value;
       if (value <= 0) {
         throw new Error('todo view get benchmark expected value greater than zero');
       }
@@ -543,7 +543,7 @@ describe('todo performance benchmarks (new dx)', () => {
       useVariantInName,
     }), async () => {
       await ensureSeeded();
-      const value = todoTitleTransformUnit.get().value;
+      const value = todoTitleTransformUnit.getSnapshot().value;
       if (typeof value !== 'string') {
         throw new Error('todo transform get benchmark expected string value');
       }
@@ -558,7 +558,7 @@ describe('todo performance benchmarks (new dx)', () => {
       await ensureSeeded();
       const sequenceId = `${TODO_WRITE_BASE_ID + transformSequence}`;
       transformSequence += 1;
-      await todoTitleTransformUnit.set({
+      await todoTitleTransformUnit.run({
         id: sequenceId,
         title: `Transform #${sequenceId}`,
       });
@@ -594,7 +594,7 @@ describe('todo performance benchmarks (new dx)', () => {
         idOf: (todo) => todo.id,
         readWrite: variant.readWrite,
       });
-      const nextReadTodos = source<TodoScope, readonly Todo[] | undefined, readonly Todo[]>({
+      const nextReadTodos = source<TodoIdentity, readonly Todo[] | undefined, readonly Todo[]>({
         entity: nextEntity,
         defaultValue: [],
         cache: {
@@ -606,7 +606,7 @@ describe('todo performance benchmarks (new dx)', () => {
         run: readTodosRun,
       });
 
-      const rehydratedLength = nextReadTodos(benchmarkScope).get().length;
+      const rehydratedLength = nextReadTodos(benchmarkIdentity).getSnapshot().value.length;
       if (rehydratedLength < 0) {
         throw new Error('todo cache rehydrate benchmark produced invalid length');
       }
@@ -617,7 +617,7 @@ describe('todo performance benchmarks (new dx)', () => {
     registerTodoBenchmarkSuite({
       variant,
       useVariantInName: runVisualMatrix,
-      todoScope,
+      todoIdentity,
       todos,
       seedTodo,
       memoryStorage,

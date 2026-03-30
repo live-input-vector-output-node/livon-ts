@@ -15,11 +15,10 @@ describe('useLivonActionState()', () => {
     templateSlug = createTemplateSlug();
   });
 
-  it('should expose action run/stop capabilities', async () => {
+  it('should expose action run capability', async () => {
     const createUser = createCreateUserAction();
     const unit = createUser(templateSlug);
     const runSpy = vi.spyOn(unit, 'run');
-    const stopSpy = vi.spyOn(unit, 'stop');
     const userPayload = createRandomUser({
       idPrefix: 'action-id',
       namePrefix: 'action-name',
@@ -31,11 +30,6 @@ describe('useLivonActionState()', () => {
       await result.current.run(userPayload);
     });
 
-    act(() => {
-      result.current.stop();
-    });
-
     expect(runSpy).toHaveBeenCalledTimes(1);
-    expect(stopSpy).toHaveBeenCalledTimes(1);
   });
 });

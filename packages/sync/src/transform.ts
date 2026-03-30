@@ -3,15 +3,14 @@ import {
   createUnitSnapshot,
   isUnitLoadingStatus,
   isUnitSettledStatus,
-  isUnitStatus,
   notifyEffectListeners,
   type EffectListener,
   type UnitSnapshot,
 } from './utils/index.js';
 
 interface DependencyUnit<TValue> {
-  get: () => TValue | UnitSnapshot<TValue>;
-  effect: (listener: (snapshot: UnitSnapshot<TValue>) => void) => (() => void) | void;
+  getSnapshot: () => UnitSnapshot<TValue>;
+  subscribe: (listener: (snapshot: UnitSnapshot<TValue>) => void) => (() => void) | void;
 }
 
 interface SettableUnit<TPayload> {
@@ -19,26 +18,26 @@ interface SettableUnit<TPayload> {
   set?: (payload: TPayload) => Promise<unknown> | unknown;
 }
 
-interface TransformGetContext<TInput extends object | undefined> {
-  scope: TInput;
+interface TransformGetContext<TIdentity extends object | undefined> {
+  identity: TIdentity;
   get: <TValue>(unit: DependencyUnit<TValue>) => Promise<UnitSnapshot<TValue>>;
 }
 
 interface TransformSetContext<
-  TInput extends object | undefined,
+  TIdentity extends object | undefined,
   TPayload,
-> extends TransformGetContext<TInput> {
+> extends TransformGetContext<TIdentity> {
   payload: TPayload;
   set: <TSetPayload>(unit: SettableUnit<TSetPayload>, payload: TSetPayload) => Promise<unknown>;
 }
 
 export interface TransformConfig<
-  TInput extends object | undefined,
+  TIdentity extends object | undefined,
   TPayload,
   RResult,
 > {
-  out: (context: TransformGetContext<TInput>) => Promise<RResult> | RResult;
-  in?: (context: TransformSetContext<TInput, TPayload>) => Promise<void> | void;
+  out: (context: TransformGetContext<TIdentity>) => Promise<RResult> | RResult;
+  in?: (context: TransformSetContext<TIdentity, TPayload>) => Promise<void> | void;
   defaultValue?: RResult;
   destroyDelay?: number;
 }
@@ -47,20 +46,17 @@ export interface TransformUnit<
   TPayload,
   RResult,
 > {
-  destroyDelay: number;
-  get: () => UnitSnapshot<RResult>;
-  set: (payload: TPayload) => Promise<void>;
-  effect: (listener: EffectListener<RResult>) => (() => void) | void;
-  stop: () => void;
-  destroy: () => void;
+  run: (payload: TPayload) => Promise<UnitSnapshot<RResult>>;
+  getSnapshot: () => UnitSnapshot<RResult>;
+  subscribe: (listener: EffectListener<RResult>) => (() => void) | void;
 }
 
 export interface Transform<
-  TInput extends object | undefined = object | undefined,
+  TIdentity extends object | undefined = object | undefined,
   TPayload = unknown,
   RResult = unknown,
 > {
-  (scope: TInput): TransformUnit<TPayload, RResult>;
+  (identity: TIdentity): TransformUnit<TPayload, RResult>;
 }
 
 interface DependencyInternal {
@@ -71,12 +67,12 @@ interface DependencyInternal {
 }
 
 interface TransformUnitInternal<
-  TInput extends object | undefined,
+  TIdentity extends object | undefined,
   TPayload,
   RResult,
 > {
   key: string;
-  scope: TInput;
+  identity: TIdentity;
   payload: TPayload;
   snapshot: UnitSnapshot<RResult>;
   listeners: Set<EffectListener<RResult>>;
@@ -92,24 +88,6 @@ interface TransformUnitInternal<
 }
 
 const DEFAULT_DESTROY_DELAY = 250;
-
-const isSnapshotLike = <TValue>(input: unknown): input is UnitSnapshot<TValue> => {
-  if (typeof input !== 'object' || input === null) {
-    return false;
-  }
-
-  const candidate = input as Record<string, unknown>;
-  if (
-    typeof candidate.status !== 'string'
-    || !('value' in candidate)
-    || !('meta' in candidate)
-    || !('context' in candidate)
-  ) {
-    return false;
-  }
-
-  return isUnitStatus(candidate.status);
-};
 
 const createErrorContext = (error: unknown): { message: string; cause: unknown } => {
   if (error instanceof Error) {
@@ -169,11 +147,11 @@ const getSnapshotContext = <RResult>(
 };
 
 const applySnapshot = <
-  TInput extends object | undefined,
+  TIdentity extends object | undefined,
   TPayload,
   RResult,
 >(
-  internal: TransformUnitInternal<TInput, TPayload, RResult>,
+  internal: TransformUnitInternal<TIdentity, TPayload, RResult>,
   next: NextSnapshotInput<RResult>,
 ): boolean => {
   const currentSnapshot = internal.snapshot;
@@ -202,35 +180,10 @@ const applySnapshot = <
   return true;
 };
 
-const createSnapshotFromValue = <TValue>(
-  value: TValue | UnitSnapshot<TValue>,
-): UnitSnapshot<TValue> => {
-  if (isSnapshotLike(value)) {
-    return value as UnitSnapshot<TValue>;
-  }
-
-  return createUnitSnapshot({
-    value: value as TValue,
-    status: 'idle',
-    meta: null,
-    context: null,
-  });
-};
-
 const readCurrentDependencySnapshot = <TValue>(
   unit: DependencyUnit<TValue>,
 ): UnitSnapshot<TValue> => {
-  if ('getSnapshot' in unit) {
-    const snapshotGetter = unit.getSnapshot;
-    if (typeof snapshotGetter === 'function') {
-      const snapshot = snapshotGetter();
-      if (isSnapshotLike<TValue>(snapshot)) {
-        return snapshot;
-      }
-    }
-  }
-
-  return createSnapshotFromValue(unit.get());
+  return unit.getSnapshot();
 };
 
 const unsubscribeDependency = (dependency: DependencyInternal): void => {
@@ -239,11 +192,11 @@ const unsubscribeDependency = (dependency: DependencyInternal): void => {
 };
 
 const unsubscribeAllDependencies = <
-  TInput extends object | undefined,
+  TIdentity extends object | undefined,
   TPayload,
   RResult,
 >(
-  internal: TransformUnitInternal<TInput, TPayload, RResult>,
+  internal: TransformUnitInternal<TIdentity, TPayload, RResult>,
 ): void => {
   Array.from(internal.dependencies.values()).forEach((dependency) => {
     unsubscribeDependency(dependency);
@@ -251,11 +204,11 @@ const unsubscribeAllDependencies = <
 };
 
 const shouldTrackDependencies = <
-  TInput extends object | undefined,
+  TIdentity extends object | undefined,
   TPayload,
   RResult,
 >(
-  internal: TransformUnitInternal<TInput, TPayload, RResult>,
+  internal: TransformUnitInternal<TIdentity, TPayload, RResult>,
 ): boolean => {
   return !internal.destroyed && !internal.stopped && internal.listeners.size > 0;
 };
@@ -275,18 +228,18 @@ const executeSetOnUnit = async <TPayload>(
   throw new Error('Transform context.set target has no run or set method.');
 };
 
-interface RecomputeInput<TInput extends object | undefined, TPayload, RResult> {
-  internal: TransformUnitInternal<TInput, TPayload, RResult>;
-  out: (context: TransformGetContext<TInput>) => Promise<RResult> | RResult;
+interface RecomputeInput<TIdentity extends object | undefined, TPayload, RResult> {
+  internal: TransformUnitInternal<TIdentity, TPayload, RResult>;
+  out: (context: TransformGetContext<TIdentity>) => Promise<RResult> | RResult;
   shouldThrow?: boolean;
 }
 
 const queueRecompute = <
-  TInput extends object | undefined,
+  TIdentity extends object | undefined,
   TPayload,
   RResult,
 >(
-  input: RecomputeInput<TInput, TPayload, RResult>,
+  input: RecomputeInput<TIdentity, TPayload, RResult>,
 ): void => {
   const { internal } = input;
   if (internal.destroyed || internal.stopped) {
@@ -310,18 +263,18 @@ const queueRecompute = <
 };
 
 interface EnsureDependencySubscriptionInput<
-  TInput extends object | undefined,
+  TIdentity extends object | undefined,
   TPayload,
   RResult,
 > {
-  internal: TransformUnitInternal<TInput, TPayload, RResult>;
+  internal: TransformUnitInternal<TIdentity, TPayload, RResult>;
   dependencyKey: object;
   dependency: DependencyInternal;
-  out: (context: TransformGetContext<TInput>) => Promise<RResult> | RResult;
+  out: (context: TransformGetContext<TIdentity>) => Promise<RResult> | RResult;
 }
 
 const ensureDependencySubscription = <
-  TInput extends object | undefined,
+  TIdentity extends object | undefined,
   TPayload,
   RResult,
 >(
@@ -330,13 +283,13 @@ const ensureDependencySubscription = <
     dependencyKey,
     dependency,
     out,
-  }: EnsureDependencySubscriptionInput<TInput, TPayload, RResult>,
+  }: EnsureDependencySubscriptionInput<TIdentity, TPayload, RResult>,
 ): void => {
   if (dependency.removeEffect || !shouldTrackDependencies(internal)) {
     return;
   }
 
-  const removeEffect = dependency.unit.effect((snapshot) => {
+  const removeEffect = dependency.unit.subscribe((snapshot) => {
     const previousSnapshot = dependency.snapshot;
     dependency.snapshot = snapshot;
     internal.lastDependencyMeta = snapshot.meta;
@@ -437,17 +390,17 @@ const ensureDependencySubscription = <
 };
 
 interface SyncDependenciesInput<
-  TInput extends object | undefined,
+  TIdentity extends object | undefined,
   TPayload,
   RResult,
 > {
-  internal: TransformUnitInternal<TInput, TPayload, RResult>;
+  internal: TransformUnitInternal<TIdentity, TPayload, RResult>;
   usedDependencies: Map<object, DependencyInternal>;
-  out: (context: TransformGetContext<TInput>) => Promise<RResult> | RResult;
+  out: (context: TransformGetContext<TIdentity>) => Promise<RResult> | RResult;
 }
 
 const syncDependencies = <
-  TInput extends object | undefined,
+  TIdentity extends object | undefined,
   TPayload,
   RResult,
 >(
@@ -455,7 +408,7 @@ const syncDependencies = <
     internal,
     usedDependencies,
     out,
-  }: SyncDependenciesInput<TInput, TPayload, RResult>,
+  }: SyncDependenciesInput<TIdentity, TPayload, RResult>,
 ): void => {
   Array.from(internal.dependencies.entries()).forEach(([dependencyKey, dependency]) => {
     if (usedDependencies.has(dependencyKey)) {
@@ -493,12 +446,12 @@ const syncDependencies = <
 };
 
 const readDependencySnapshot = <
-  TInput extends object | undefined,
+  TIdentity extends object | undefined,
   TPayload,
   RResult,
   TValue,
 >(
-  internal: TransformUnitInternal<TInput, TPayload, RResult>,
+  internal: TransformUnitInternal<TIdentity, TPayload, RResult>,
   unit: DependencyUnit<TValue>,
 ): UnitSnapshot<TValue> => {
   const dependencyKey = unit as unknown as object;
@@ -516,14 +469,14 @@ const readDependencySnapshot = <
 };
 
 const runRecompute = async <
-  TInput extends object | undefined,
+  TIdentity extends object | undefined,
   TPayload,
   RResult,
 >({
   internal,
   out,
   shouldThrow = false,
-}: RecomputeInput<TInput, TPayload, RResult>): Promise<RResult> => {
+}: RecomputeInput<TIdentity, TPayload, RResult>): Promise<RResult> => {
   if (internal.destroyed || internal.stopped) {
     return internal.snapshot.value;
   }
@@ -544,7 +497,7 @@ const runRecompute = async <
     }
 
     const nextValue = await out({
-      scope: internal.scope,
+      identity: internal.identity,
       get: async <TValue>(unit: DependencyUnit<TValue>) => {
         const snapshot = readDependencySnapshot(internal, unit);
         usedDependencies.set(unit as unknown as object, {
@@ -609,18 +562,18 @@ const runRecompute = async <
 };
 
 interface RunSetInput<
-  TInput extends object | undefined,
+  TIdentity extends object | undefined,
   TPayload,
   RResult,
 > {
-  internal: TransformUnitInternal<TInput, TPayload, RResult>;
-  out: (context: TransformGetContext<TInput>) => Promise<RResult> | RResult;
-  setIn: ((context: TransformSetContext<TInput, TPayload>) => Promise<void> | void) | undefined;
+  internal: TransformUnitInternal<TIdentity, TPayload, RResult>;
+  out: (context: TransformGetContext<TIdentity>) => Promise<RResult> | RResult;
+  setIn: ((context: TransformSetContext<TIdentity, TPayload>) => Promise<void> | void) | undefined;
   payload: TPayload;
 }
 
 const runSet = async <
-  TInput extends object | undefined,
+  TIdentity extends object | undefined,
   TPayload,
   RResult,
 >({
@@ -628,7 +581,7 @@ const runSet = async <
   out,
   setIn,
   payload,
-}: RunSetInput<TInput, TPayload, RResult>): Promise<void> => {
+}: RunSetInput<TIdentity, TPayload, RResult>): Promise<void> => {
   if (internal.destroyed) {
     return;
   }
@@ -643,7 +596,7 @@ const runSet = async <
   try {
     if (setIn) {
       await setIn({
-        scope: internal.scope,
+        identity: internal.identity,
         payload: internal.payload,
         get: async <TValue>(unit: DependencyUnit<TValue>) => {
           return readDependencySnapshot(internal, unit);
@@ -669,22 +622,22 @@ const runSet = async <
 };
 
 export const transform = <
-  TInput extends object | undefined,
+  TIdentity extends object | undefined,
   TPayload = unknown,
   RResult = unknown,
 >({
   out,
   in: setIn,
   defaultValue,
-  destroyDelay = DEFAULT_DESTROY_DELAY,
-}: TransformConfig<TInput, TPayload, RResult>): Transform<TInput, TPayload, RResult> => {
-  const unitsByKey = new Map<string, TransformUnitInternal<TInput, TPayload, RResult>>();
+  destroyDelay: _destroyDelay = DEFAULT_DESTROY_DELAY,
+}: TransformConfig<TIdentity, TPayload, RResult>): Transform<TIdentity, TPayload, RResult> => {
+  const unitsByKey = new Map<string, TransformUnitInternal<TIdentity, TPayload, RResult>>();
   const unitKeyCache = createSerializedKeyCache({
     mode: 'scoped-unit',
   });
 
-  const transformFactory: Transform<TInput, TPayload, RResult> = (scope) => {
-    const key = unitKeyCache.getOrCreateKey(scope);
+  const transformFactory: Transform<TIdentity, TPayload, RResult> = (identity) => {
+    const key = unitKeyCache.getOrCreateKey(identity);
     const existing = unitsByKey.get(key);
     if (existing) {
       return existing.unit;
@@ -697,9 +650,9 @@ export const transform = <
       context: null,
     });
 
-    const internal: TransformUnitInternal<TInput, TPayload, RResult> = {
+    const internal: TransformUnitInternal<TIdentity, TPayload, RResult> = {
       key,
-      scope,
+      identity,
       payload: undefined as TPayload,
       snapshot: initialSnapshot,
       listeners: new Set<EffectListener<RResult>>(),
@@ -715,19 +668,19 @@ export const transform = <
     };
 
     const unit: TransformUnit<TPayload, RResult> = {
-      destroyDelay,
-      get: () => {
-        return internal.snapshot;
-      },
-      set: async (payloadInput) => {
+      run: async (payloadInput) => {
         await runSet({
           internal,
           out,
           setIn,
           payload: payloadInput,
         });
+        return internal.snapshot;
       },
-      effect: (listener) => {
+      getSnapshot: () => {
+        return internal.snapshot;
+      },
+      subscribe: (listener) => {
         if (internal.destroyed) {
           return undefined;
         }
@@ -749,25 +702,6 @@ export const transform = <
             unsubscribeAllDependencies(internal);
           }
         };
-      },
-      stop: () => {
-        if (internal.destroyed) {
-          return;
-        }
-
-        internal.stopped = true;
-        unsubscribeAllDependencies(internal);
-      },
-      destroy: () => {
-        if (internal.destroyed) {
-          return;
-        }
-
-        internal.destroyed = true;
-        internal.stopped = true;
-        unsubscribeAllDependencies(internal);
-        internal.listeners.clear();
-        unitsByKey.delete(internal.key);
       },
     };
 

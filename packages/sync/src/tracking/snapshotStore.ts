@@ -8,21 +8,9 @@ export const readTrackedUnitSnapshot = <
 >(
   unit: TrackedUnit<RResult, TMeta>,
 ): UnitSnapshot<RResult, TMeta | null> => {
-  const existing = snapshotByUnit.get(unit);
-  if (existing) {
-    return existing as UnitSnapshot<RResult, TMeta | null>;
-  }
-
-  const created: UnitSnapshot<RResult, TMeta | null> = {
-    value: unit.get(),
-    status: 'idle',
-    meta: null,
-    context: null,
-  };
-
-  snapshotByUnit.set(unit, created as UnitSnapshot<unknown, unknown>);
-
-  return created;
+  const current = unit.getSnapshot();
+  snapshotByUnit.set(unit, current as UnitSnapshot<unknown, unknown>);
+  return current;
 };
 
 export const writeTrackedUnitSnapshot = <

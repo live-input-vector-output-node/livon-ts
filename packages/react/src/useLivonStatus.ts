@@ -11,11 +11,11 @@ import type { LivonStatusOf } from './types.js';
 
 export interface UseLivonStatus {
   <
-  TInput extends object | undefined,
+  TIdentity extends object | undefined,
   TPayload,
   RResult,
->(unit: SourceUnit<TInput, TPayload, RResult>): LivonStatusOf<
-    SourceUnit<TInput, TPayload, RResult>
+>(unit: SourceUnit<TIdentity, TPayload, RResult>): LivonStatusOf<
+    SourceUnit<TIdentity, TPayload, RResult>
   >;
 
   <

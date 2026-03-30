@@ -13,10 +13,8 @@ export interface TrackedUnit<
   RResult,
   TMeta = unknown,
 > {
-  destroyDelay?: number;
-  get: () => RResult;
-  effect: (listener: UnitSnapshotListener<RResult, TMeta>) => (() => void) | void;
-  stop: () => void;
+  getSnapshot: () => UnitSnapshot<RResult, TMeta | null>;
+  subscribe: (listener: UnitSnapshotListener<RResult, TMeta>) => (() => void) | void;
 }
 
 export interface TrackedStoreChangeListener {

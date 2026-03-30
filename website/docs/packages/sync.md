@@ -15,14 +15,20 @@ sidebar_position: 8
 
 [@livon/sync](/docs/packages/sync) is the core sync layer for entity-centric state with three unit types:
 
-- `source` for reads and cache-aware refetch flows
-- `action` for writes and mutations
+- `source` for reads
+- `action` for writes
 - `stream` for realtime subscriptions
 
 It also provides:
 
 - `view` for read-only derived units
 - `transform` for derived read/write units
+
+All units now follow one minimal runtime API surface:
+
+- `run(...)`
+- `getSnapshot()`
+- `subscribe((snapshot) => ...)`
 
 `@livon/sync` is framework-agnostic and consumed by adapters such as `@livon/react`.
 
@@ -44,7 +50,7 @@ interface Todo {
   listId: string;
 }
 
-interface TodoScope {
+interface TodoIdentity {
   listId: string;
 }
 
@@ -64,14 +70,14 @@ const todoEntity = entity<Todo>({
   destroyDelay: 250,
 });
 
-const readTodos = source<TodoScope, ReadTodosPayload, readonly Todo[]>({
+const readTodos = source<TodoIdentity, ReadTodosPayload, readonly Todo[]>({
   entity: todoEntity,
   ttl: 60_000,
   defaultValue: [],
-  run: async ({ scope, payload, setMeta, entity }) => {
+  run: async ({ identity, payload, setMeta, entity }) => {
     setMeta({ request: 'loading-todos' });
     const todos = await api.readTodos({
-      listId: scope.listId,
+      listId: identity.listId,
       query: payload.query,
     });
 
@@ -79,12 +85,12 @@ const readTodos = source<TodoScope, ReadTodosPayload, readonly Todo[]>({
   },
 });
 
-const updateTodo = action<TodoScope, UpdateTodoPayload, Todo | null>({
+const updateTodo = action<TodoIdentity, UpdateTodoPayload, Todo | null>({
   entity: todoEntity,
-  run: async ({ scope, payload, entity }) => {
+  run: async ({ identity, payload, entity }) => {
     const updated = await api.updateTodo({
       id: payload.id,
-      listId: scope.listId,
+      listId: identity.listId,
       title: payload.title,
     });
 
@@ -92,19 +98,19 @@ const updateTodo = action<TodoScope, UpdateTodoPayload, Todo | null>({
   },
 });
 
-const onTodoEvents = stream<TodoScope, undefined, null>({
+const onTodoEvents = stream<TodoIdentity, undefined, null>({
   entity: todoEntity,
-  run: async ({ scope }) => {
+  run: async ({ identity }) => {
     return api.subscribeTodoEvents({
-      listId: scope.listId,
+      listId: identity.listId,
       onEvent: (event) => {
         if (event.type !== 'changed') {
           return;
         }
 
-        // Source stays read-only; stream triggers explicit source refetch.
-        const todoListUnit = readTodos({ listId: scope.listId });
-        void todoListUnit.refetch();
+        // Source stays read-only; stream triggers explicit source run.
+        const todoListUnit = readTodos({ listId: identity.listId });
+        void todoListUnit.run(undefined, { mode: 'refetch' });
       },
       onError: () => {
         return;
@@ -113,32 +119,32 @@ const onTodoEvents = stream<TodoScope, undefined, null>({
   },
 });
 
-const todoCount = view<TodoScope, number>({
+const todoCount = view<TodoIdentity, number>({
   defaultValue: 0,
-  out: async ({ scope, get }) => {
-    const todosSnapshot = await get(readTodos(scope));
+  out: async ({ identity, get }) => {
+    const todosSnapshot = await get(readTodos(identity));
     return todosSnapshot.value.length;
   },
 });
 
-const todoTitleTransform = transform<TodoScope, UpdateTodoPayload, string>({
+const todoTitleTransform = transform<TodoIdentity, UpdateTodoPayload, string>({
   defaultValue: '',
-  out: async ({ scope, get }) => {
-    const todosSnapshot = await get(readTodos(scope));
+  out: async ({ identity, get }) => {
+    const todosSnapshot = await get(readTodos(identity));
     return todosSnapshot.value[0]?.title ?? '';
   },
-  in: async ({ scope, payload, set }) => {
-    await set(updateTodo(scope), payload);
+  in: async ({ identity, payload, set }) => {
+    await set(updateTodo(identity), payload);
   },
 });
 ```
 
 ## Unit Identity Rule
 
-`scope` defines unit identity. `run(payload)` defines execution.
+`identity` defines unit identity. `run(payload)` defines execution.
 
-- Same `scope` => same unit/store instance
-- Different `scope` => different unit/store instance
+- Same `identity` => same unit/store instance
+- Different `identity` => different unit/store instance
 
 ### Shared store with different executions
 
@@ -155,27 +161,27 @@ await todoListUnit.run({ query: 'mine' });
 
 ### Separate stores per search result
 
-Put search into `scope` when each search result needs its own store:
+Put search into `identity` when each search result needs its own store:
 
 ```ts
-interface TodoSearchScope {
+interface TodoSearchIdentity {
   listId: string;
   query: string;
 }
 
-const readTodosByScope = source<TodoSearchScope, undefined, readonly Todo[]>({
+const readTodosByIdentity = source<TodoSearchIdentity, undefined, readonly Todo[]>({
   entity: todoEntity,
   defaultValue: [],
-  run: async ({ scope, entity }) => {
-    const todos = await api.readTodos(scope);
+  run: async ({ identity, entity }) => {
+    const todos = await api.readTodos(identity);
     entity.upsertMany(todos);
   },
 });
 
-const openUnit = readTodosByScope({ listId: 'list-1', query: 'open' });
-const mineUnit = readTodosByScope({ listId: 'list-1', query: 'mine' });
+const openUnit = readTodosByIdentity({ listId: 'list-1', query: 'open' });
+const mineUnit = readTodosByIdentity({ listId: 'list-1', query: 'mine' });
 
-// different scopes => different stores
+// different identities => different stores
 ```
 
 ## Runtime Usage
@@ -188,60 +194,52 @@ const todoCountViewUnit = todoCount({ listId: 'list-1' });
 const todoTitleTransformUnit = todoTitleTransform({ listId: 'list-1' });
 
 await todoListUnit.run({ query: 'open' });
-await todoListUnit.refetch(); // reuse previous payload
-await todoListUnit.refetch({ query: 'mine' }); // override payload for refetch
-await todoListUnit.force({ query: 'mine' }); // bypass run dedupe for same payload
+await todoListUnit.run(undefined, { mode: 'refetch' });
+await todoListUnit.run({ query: 'mine' }, { mode: 'force' });
+await todoListUnit.run(
+  (previous) => ({
+    query: previous.snapshot.value.length === 0 ? 'open' : 'mine',
+  }),
+  { mode: 'force' },
+);
 
-const todoList = todoListUnit.get();
+const todoListSnapshot = todoListUnit.getSnapshot();
+const todoList = todoListSnapshot.value;
 
 await updateTodoUnit.run({
   id: todoList[0].id,
   title: 'Updated title',
 });
 
-todoEventsUnit.start();
-todoEventsUnit.stop();
+await todoEventsUnit.run();
 
-todoListUnit.draft.set((previousTodos) => {
-  return previousTodos.map((todo, index) => {
-    if (index !== 0) {
-      return todo;
-    }
-
-    return {
-      ...todo,
-      title: `${todo.title} (draft)`,
-    };
-  });
-});
-todoListUnit.draft.clean();
-todoListUnit.reset(); // restore source unit state to its initial value/status/meta/context
-
-const todoCountSnapshot = todoCountViewUnit.get();
-await todoTitleTransformUnit.set({
+const todoCountSnapshot = todoCountViewUnit.getSnapshot();
+await todoTitleTransformUnit.run({
   id: todoList[0].id,
   title: 'From transform',
 });
-const todoTitleSnapshot = todoTitleTransformUnit.get();
+const todoTitleSnapshot = todoTitleTransformUnit.getSnapshot();
 
-const removeListener = todoListUnit.effect((snapshot) => {
+const removeListener = todoListUnit.subscribe((snapshot) => {
   console.log(snapshot.status, snapshot.meta, snapshot.context);
 });
 
+// subscribe emits only on changes; read initial state via getSnapshot()
+console.log(todoListUnit.getSnapshot());
+
 removeListener?.();
-todoListUnit.destroy();
 ```
 
 ## `view` and `transform`
 
 - `view` is read-only and recomputes from dependencies accessed via `get(...)`.
-- `transform` has `out` (read) and optional `in` (write). Its `set(...)` calls `in`.
-- In both units, `get()` returns a full snapshot (`value`, `status`, `meta`, `context`), not only raw `value`.
+- `transform` has `out` (read) and optional `in` (write). Its `run(...)` calls `in`.
+- In both units, `getSnapshot()` returns a full snapshot (`value`, `status`, `meta`, `context`), not only raw `value`.
 
 ## Structured Value Support
 
-`@livon/sync` uses msgpack-based serialization for scope/payload keys and source cache rehydration.
-Scope and payload inputs must be msgpack-serializable.
+`@livon/sync` uses msgpack-based serialization for identity/payload keys and source cache rehydration.
+Identity and payload inputs must be msgpack-serializable.
 
 Round-trips preserve common non-JSON values such as:
 
@@ -253,7 +251,7 @@ Round-trips preserve common non-JSON values such as:
 - `Map`
 - `Set`
 
-Functions and symbols are not valid scope/payload values for key serialization.
+Functions and symbols are not valid identity/payload values for key serialization.
 
 ## API Summary
 
@@ -262,7 +260,6 @@ Functions and symbols are not valid scope/payload values for key serialization.
 - `idOf`: required id extractor
 - `ttl`: optional entity ttl fallback
 - `draft`: optional draft mode (`global` | `scoped` | `off`)
-- `destroyDelay`: optional default destroy delay for units using this entity
 - `cache`: optional cache defaults (`key`, `ttl`, `storage`)
 - `readWrite`: optional strategy config (`batch`, `subview`, optional `adaptive`)
   - `adaptive: true` enables matrix-driven strategy selection based on cache/lru profile and operation class.
@@ -281,51 +278,46 @@ Adaptive strategy helpers exported at package root:
 
 ### `source({ ... })`
 
-- config: `entity`, optional `ttl`, `draft`, `cache`, `destroyDelay`, `onDestroy`, `defaultValue`, `update`, `run`
-- unit from `source(scope)`:
-  - `(payload?)` to set/reuse the next payload and return the same unit
-  - `run(payload?)`
-  - `force(payload?)`
-  - `refetch(payload?)`
-  - `reset()` (restores initial value/status/meta/context and clears stored payload)
-  - `get`
-  - `draft.set(...)`, `draft.clean()`
-  - `effect`, `stop`, `destroy`
-
-`source` is read-only at unit level: there is no direct `unit.set(...)`.
+- config: `entity`, optional `ttl`, `draft`, `cache`, `onDestroy`, `defaultValue`, `run`
+- unit from `source(identity)`:
+  - `run(data?, config?)`
+  - `run(setAction, config?)`
+  - `getSnapshot()`
+  - `subscribe(listener)`
 
 ### `action({ ... })`
 
-- config: `entity`, optional `destroyDelay`, `defaultValue`, `run`
-- unit from `action(scope)`:
-  - `(payload?)` to set/reuse the next payload and return the same unit
-  - `run(payload?)`
-  - `get`
-  - `effect`, `stop`, `destroy`
+- config: `entity`, optional `defaultValue`, `run`
+- unit from `action(identity)`:
+  - `run(data?, config?)`
+  - `run(setAction, config?)`
+  - `getSnapshot()`
+  - `subscribe(listener)`
 
 ### `stream({ ... })`
 
-- config: `entity`, optional `destroyDelay`, `defaultValue`, `run`
-- unit from `stream(scope)`:
-  - `(payload?)` to set/reuse the next payload and return the same unit
-  - `start(payload?)`
-  - `get`
-  - `effect`, `stop`, `destroy`
+- config: `entity`, optional `defaultValue`, `run`
+- unit from `stream(identity)`:
+  - `run(data?, config?)`
+  - `run(setAction, config?)`
+  - `getSnapshot()`
+  - `subscribe(listener)`
 
 ### `view({ ... })`
 
-- config: `out`, optional `defaultValue`, `destroyDelay`
-- unit from `view(scope)`:
-  - `get()` -> snapshot
-  - `effect`, `stop`, `destroy`
+- config: `out`, optional `defaultValue`
+- unit from `view(identity)`:
+  - `run()`
+  - `getSnapshot()`
+  - `subscribe(listener)`
 
 ### `transform({ ... })`
 
-- config: `out`, optional `in`, `defaultValue`, `destroyDelay`
-- unit from `transform(scope)`:
-  - `get()` -> snapshot
-  - `set(payload)` -> executes `in(...)`
-  - `effect`, `stop`, `destroy`
+- config: `out`, optional `in`, `defaultValue`
+- unit from `transform(identity)`:
+  - `run(payload)` -> executes `in(...)`
+  - `getSnapshot()`
+  - `subscribe(listener)`
 
 ### Run context reference
 
@@ -333,8 +325,8 @@ Adaptive strategy helpers exported at package root:
 
 Common fields available in all three contexts:
 
-- `scope`: current unit scope.
-- `payload`: current payload for this run/start.
+- `identity`: current unit identity.
+- `payload`: current payload for this run.
 - `setMeta(meta | ((previousMeta) => nextMeta))`: updates unit `meta`.
 - `getValue()`: reads current unit value.
 - `upsertOne(input, options?)`: upserts one entity and syncs unit membership.
@@ -356,9 +348,6 @@ Stream-only notes (`stream(...).run(context)`):
 
 - no `set(...)`.
 - no `reset()`.
-
-`run` may return a cleanup function for run-based units (`source`, `action`, `stream`).
-That cleanup executes on `stop()`/`destroy()`.
 
 ## Advanced Tracking API (framework adapters)
 

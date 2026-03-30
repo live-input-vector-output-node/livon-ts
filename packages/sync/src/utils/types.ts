@@ -34,3 +34,38 @@ export interface EffectListener<
 > {
   (snapshot: UnitSnapshot<RResult, TMeta>): void;
 }
+
+export interface UnitRunPrevious<
+  TDataInput,
+  TConfig,
+  TData,
+  TMeta = unknown,
+> {
+  snapshot: UnitSnapshot<TData, TMeta>;
+  data: TDataInput | undefined;
+  config: TConfig | undefined;
+}
+
+export interface UnitSetAction<
+  TDataInput,
+  TConfig,
+  TData,
+  TMeta = unknown,
+> {
+  (
+    previous: UnitRunPrevious<TDataInput, TConfig, TData, TMeta>,
+    config: TConfig | undefined,
+  ): TDataInput | undefined;
+}
+
+export interface UnitRun<
+  TDataInput,
+  TConfig,
+  TData,
+  TMeta = unknown,
+> {
+  (): Promise<void>;
+  (data: TDataInput): Promise<void>;
+  (data: TDataInput | undefined, config: TConfig): Promise<void>;
+  (setAction: UnitSetAction<TDataInput, TConfig, TData, TMeta>, config?: TConfig): Promise<void>;
+}

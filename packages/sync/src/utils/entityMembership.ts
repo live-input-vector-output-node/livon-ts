@@ -53,7 +53,7 @@ const createEntityModeLockError = ({
   operation: string;
 }): Error => {
   return new Error(
-    `[livon/sync] Entity mode is locked for scope unit '${key}' as '${lockedMode}'. `
+    `[livon/sync] Entity mode is locked for identity unit '${key}' as '${lockedMode}'. `
       + `Cannot switch to '${nextMode}' via ${operation}.`,
   );
 };

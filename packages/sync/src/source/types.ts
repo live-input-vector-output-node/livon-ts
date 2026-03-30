@@ -8,16 +8,17 @@ import {
 } from '../entity.js';
 import {
   type EffectListener,
-  type InputUpdater,
   type ModeValueReadWriteInput,
+  type UnitRun,
+  type UnitSetAction,
   type UnitDataEntity,
-  type UnitDataUpdate,
+  type UnitSnapshot,
   type UnitStatus,
   type ValueUpdater,
 } from '../utils/index.js';
 
-export interface SourceDestroyContext<TInput, TPayload> {
-  scope: TInput;
+export interface SourceDestroyContext<TIdentity, TPayload> {
+  identity: TIdentity;
   payload: TPayload;
 }
 
@@ -28,12 +29,12 @@ export interface SourceCleanup {
 export type SourceRunResult<TData> = TData | SourceCleanup | void;
 
 export interface SourceRunContext<
-  TInput,
+  TIdentity,
   TPayload,
   TData,
   TMeta = unknown,
 > {
-  scope: TInput;
+  identity: TIdentity;
   payload: TPayload;
   setMeta: (meta: TMeta | null | ValueUpdater<TMeta | null, TMeta | null>) => void;
   set: (input: TData | ValueUpdater<TData, TData>) => void;
@@ -49,7 +50,7 @@ export interface SourceRunContext<
 }
 
 export interface SourceConfig<
-  TInput extends object | undefined,
+  TIdentity extends object | undefined,
   TPayload,
   TData,
   TMeta = unknown,
@@ -59,46 +60,65 @@ export interface SourceConfig<
   draft?: DraftMode;
   cache?: CacheConfig;
   destroyDelay?: number;
-  onDestroy?: (context: SourceDestroyContext<TInput, TPayload>) => void;
   run: (
-    context: SourceRunContext<TInput, TPayload, TData, TMeta>,
+    context: SourceRunContext<TIdentity, TPayload, TData, TMeta>,
   ) => Promise<SourceRunResult<TData>> | SourceRunResult<TData>;
   defaultValue?: TData;
 }
 
-export interface SourceDraftApi<TData> {
-  set: (input: UnitDataUpdate<TData> | ValueUpdater<TData, UnitDataUpdate<TData>>) => void;
-  clean: () => void;
+export interface SourceRunConfig {
+  mode?: 'default' | 'refetch' | 'force';
 }
 
+export type SourceSetAction<
+  TPayload,
+  TData,
+  TMeta = unknown,
+> = UnitSetAction<
+  TPayload,
+  SourceRunConfig,
+  TData,
+  TMeta | null
+>;
+
+export type SourceRunInput<
+  TPayload,
+  TData = unknown,
+  TMeta = unknown,
+> =
+  | TPayload
+  | SourceSetAction<TPayload, TData, TMeta>;
+
+export type SourceRun<
+  TPayload,
+  TData,
+  TMeta = unknown,
+> = UnitRun<
+  TPayload,
+  SourceRunConfig,
+  TData,
+  TMeta | null
+>;
+
 export interface SourceUnit<
-  TInput extends object | undefined,
+  TIdentity extends object | undefined,
   TPayload,
   TData,
   TMeta = unknown,
 > {
-  (payloadInput?: TPayload | InputUpdater<TPayload>): SourceUnit<TInput, TPayload, TData, TMeta>;
-  ttl: number;
-  cacheTtl: CacheTtl;
-  destroyDelay: number;
-  run: (payloadInput?: TPayload | InputUpdater<TPayload>) => Promise<TData>;
-  get: () => TData;
-  draft: SourceDraftApi<TData>;
-  effect: (listener: EffectListener<TData, TMeta | null>) => (() => void) | void;
-  refetch: (payloadInput?: TPayload | InputUpdater<TPayload>) => Promise<TData>;
-  force: (payloadInput?: TPayload | InputUpdater<TPayload>) => Promise<TData>;
-  reset: () => void;
-  stop: () => void;
-  destroy: () => void;
+  identity: TIdentity;
+  run: SourceRun<TPayload, TData, TMeta>;
+  getSnapshot: () => UnitSnapshot<TData, TMeta | null>;
+  subscribe: (listener: EffectListener<TData, TMeta | null>) => (() => void) | void;
 }
 
 export interface Source<
-  TInput extends object | undefined = object | undefined,
+  TIdentity extends object | undefined = object | undefined,
   TPayload = unknown,
   TData = unknown,
   TMeta = unknown,
 > {
-  (scope: TInput): SourceUnit<TInput, TPayload, TData, TMeta>;
+  (identity: TIdentity): SourceUnit<TIdentity, TPayload, TData, TMeta>;
 }
 
 export interface SourceUnitState<TData, TMeta = unknown> {
@@ -109,7 +129,7 @@ export interface SourceUnitState<TData, TMeta = unknown> {
 }
 
 export interface SourceUnitInternal<
-  TInput extends object | undefined,
+  TIdentity extends object | undefined,
   TPayload,
   TData,
   TMeta = unknown,
@@ -117,7 +137,7 @@ export interface SourceUnitInternal<
   key: string;
   ttl: number;
   destroyDelay: number;
-  scope: TInput;
+  identity: TIdentity;
   payload: TPayload;
   state: SourceUnitState<TData, TMeta>;
   mode: 'one' | 'many';
@@ -134,28 +154,28 @@ export interface SourceUnitInternal<
   stopped: boolean;
   destroyed: boolean;
   destroyHandled: boolean;
-  unit: SourceUnit<TInput, TPayload, TData, TMeta>;
+  unit: SourceUnit<TIdentity, TPayload, TData, TMeta>;
 }
 
 export type SourceUnitByKeyMap<
-  TInput extends object | undefined,
+  TIdentity extends object | undefined,
   TPayload,
   TData,
   TMeta = unknown,
-> = Map<string, SourceUnitInternal<TInput, TPayload, TData, TMeta>>;
+> = Map<string, SourceUnitInternal<TIdentity, TPayload, TData, TMeta>>;
 
 export interface SourceRunGate {
   isLatestRun: () => boolean;
 }
 
 export interface SourceRunContextEntry<
-  TInput,
+  TIdentity,
   TPayload,
   TData,
   TMeta = unknown,
 > {
   gate: SourceRunGate;
-  context: SourceRunContext<TInput, TPayload, TData, TMeta>;
+  context: SourceRunContext<TIdentity, TPayload, TData, TMeta>;
 }
 
 export interface SourceContext {
