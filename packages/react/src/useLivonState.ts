@@ -1,92 +1,24 @@
-import type {
-  ActionUnit,
-  SourceUnit,
-  StreamUnit,
-  TrackedUnit,
-  UnitSnapshot,
-  UnitStatus,
-} from '@livon/sync';
-
-import { useLivonSelection } from './useLivonSelection.js';
-import type { LivonState, LivonStateOf } from './types.js';
+import { useLivonSelection, type SubscribableSnapshotUnit } from './useLivonSelection.js';
 
 export interface UseLivonState {
-  <
-  TIdentity extends object | undefined,
-  TPayload,
-  RResult,
-  TMeta = unknown,
-  >(unit: SourceUnit<TIdentity, TPayload, RResult, TMeta>): LivonStateOf<
-    SourceUnit<TIdentity, TPayload, RResult, TMeta>
-  >;
-
-  <
-  RResult,
-  TPayload,
-  TMeta = unknown,
-  >(unit: ActionUnit<TPayload, RResult, TMeta>): LivonStateOf<ActionUnit<TPayload, RResult, TMeta>>;
-
-  <
-  TPayload,
-  RResult,
-  TMeta = unknown,
-  >(unit: StreamUnit<TPayload, RResult, TMeta>): LivonStateOf<StreamUnit<TPayload, RResult, TMeta>>;
+  <TSnapshot>(unit: SubscribableSnapshotUnit<TSnapshot>): TSnapshot;
 }
 
-type AnySourceUnit = SourceUnit<object | undefined, unknown, unknown, unknown>;
-type AnyActionUnit = ActionUnit<unknown, unknown, unknown>;
-type AnyStreamUnit = StreamUnit<unknown, unknown, unknown>;
-type AnyStateUnit = AnySourceUnit | AnyActionUnit | AnyStreamUnit;
-
-interface SelectStateValue {
-  <TValue, TMeta>(snapshot: UnitSnapshot<TValue, TMeta | null>): TValue;
+interface SelectStateSnapshot {
+  <TSnapshot>(snapshot: TSnapshot): TSnapshot;
 }
 
-interface SelectStateStatus {
-  <TValue, TMeta>(snapshot: UnitSnapshot<TValue, TMeta | null>): UnitStatus;
-}
-
-interface SelectStateMeta {
-  <TValue, TMeta>(snapshot: UnitSnapshot<TValue, TMeta | null>): TMeta | null;
-}
-
-const selectStateValue: SelectStateValue = (snapshot) => {
-  return snapshot.value;
+const selectStateSnapshot: SelectStateSnapshot = (snapshot) => {
+  return snapshot;
 };
 
-const selectStateStatus: SelectStateStatus = (snapshot) => {
-  return snapshot.status;
-};
-
-const selectStateMeta: SelectStateMeta = (snapshot) => {
-  return snapshot.meta;
-};
-
-const useLivonStateInternal: UseLivonState = <
-  TValue,
-  TMeta,
-  TUnit extends TrackedUnit<TValue, TMeta> & AnyStateUnit,
->(
-  unit: TUnit,
-): LivonState<TValue, UnitStatus, TMeta | null> => {
-  const value = useLivonSelection<TValue, TValue, TMeta>({
+const useLivonStateInternal: UseLivonState = <TSnapshot>(
+  unit: SubscribableSnapshotUnit<TSnapshot>,
+): TSnapshot => {
+  return useLivonSelection<TSnapshot, TSnapshot>({
     unit,
-    select: selectStateValue,
+    select: selectStateSnapshot,
   });
-  const status = useLivonSelection<TValue, UnitStatus, TMeta>({
-    unit,
-    select: selectStateStatus,
-  });
-  const meta = useLivonSelection<TValue, TMeta | null, TMeta>({
-    unit,
-    select: selectStateMeta,
-  });
-
-  return {
-    value,
-    status,
-    meta,
-  };
 };
 
 export const useLivonState: UseLivonState = useLivonStateInternal;

@@ -2,16 +2,16 @@ import { renderHook } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import {
-  createReadUserSource,
-  createTemplateSlug,
+  createReadTodoSource,
+  createTodoIdentity,
 } from './testing/utils/index.js';
 import { useLivonStatus } from './useLivonStatus.js';
 import { useLivonValue } from './useLivonValue.js';
 
 describe('useLivon subscriptions', () => {
   it('should subscribe and unsubscribe once for a single hook lifecycle', () => {
-    const readUser = createReadUserSource();
-    const unit = readUser(createTemplateSlug());
+    const readTodo = createReadTodoSource();
+    const unit = readTodo(createTodoIdentity());
     const removeSpy = vi.fn();
     const subscribeSpy = vi.spyOn(unit, 'subscribe')
       .mockImplementation((listener) => {
@@ -27,8 +27,8 @@ describe('useLivon subscriptions', () => {
   });
 
   it('should create one subscription per mounted hook', () => {
-    const readUser = createReadUserSource();
-    const unit = readUser(createTemplateSlug());
+    const readTodo = createReadTodoSource();
+    const unit = readTodo(createTodoIdentity());
     const removeSpy = vi.fn();
     const subscribeSpy = vi.spyOn(unit, 'subscribe')
       .mockImplementation((listener) => {

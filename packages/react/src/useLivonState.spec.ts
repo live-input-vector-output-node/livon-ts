@@ -2,8 +2,8 @@ import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import {
-  createTemplateSlug,
-  createReadUserSource,
+  createTodoIdentity,
+  createReadTodoSource,
 } from './testing/utils/index.js';
 import { useLivonMeta } from './useLivonMeta.js';
 import { useLivonState } from './useLivonState.js';
@@ -11,15 +11,16 @@ import { useLivonStatus } from './useLivonStatus.js';
 import { useLivonValue } from './useLivonValue.js';
 
 describe('useLivonState()', () => {
-  let templateSlug: ReturnType<typeof createTemplateSlug>;
+  let todoIdentity: ReturnType<typeof createTodoIdentity>;
 
   beforeEach(() => {
-    templateSlug = createTemplateSlug();
+    todoIdentity = createTodoIdentity();
   });
 
-  it('should return value, status, and meta for the same unit snapshot', () => {
-    const readUser = createReadUserSource();
-    const unit = readUser(templateSlug);
+  it('should return the full unit snapshot while preserving value/status/meta parity', () => {
+    const readTodo = createReadTodoSource();
+    const unit = readTodo(todoIdentity);
+    const snapshot = unit.getSnapshot();
 
     const { result } = renderHook(() => {
       return {
@@ -30,18 +31,20 @@ describe('useLivonState()', () => {
       };
     });
 
+    expect(result.current.state).toBe(snapshot);
     expect(result.current.state.value).toBe(result.current.value);
     expect(result.current.state.status).toBe(result.current.status);
     expect(result.current.state.meta).toBe(result.current.meta);
+    expect(typeof result.current.state.load).toBe('function');
   });
 
   it('should update grouped state when unit value changes', async () => {
-    const readUser = createReadUserSource();
-    const unit = readUser(templateSlug);
+    const readTodo = createReadTodoSource();
+    const unit = readTodo(todoIdentity);
     const { result } = renderHook(() => useLivonState(unit));
 
     await act(async () => {
-      await unit.run();
+      await unit.getSnapshot().load();
     });
 
     expect(result.current.status).toBe('success');

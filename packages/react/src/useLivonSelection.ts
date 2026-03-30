@@ -1,68 +1,69 @@
-import {
-  readTrackedUnitSnapshot,
-  subscribeTrackedUnit,
-  type TrackedUnit,
-  type UnitSnapshot,
-} from '@livon/sync';
-import { useCallback, useSyncExternalStore } from 'react';
+import { useCallback, useRef, useSyncExternalStore } from 'react';
+
+import { isShallowEqualValue } from './utils/isShallowEqualValue.js';
 
 export interface UseLivonSelectionInput<
-  RResult,
-  TValue,
-  TMeta = unknown,
+  TSnapshot,
+  TSelection,
 > {
-  unit: TrackedUnit<RResult, TMeta>;
-  select: SnapshotSelector<RResult, TValue, TMeta>;
+  unit: SubscribableSnapshotUnit<TSnapshot>;
+  select: SnapshotSelector<TSnapshot, TSelection>;
 }
 
 interface StoreChangeListener {
   (): void;
 }
 
-interface SnapshotSelector<
-  RResult,
-  TValue,
-  TMeta = unknown,
+export interface SnapshotSelector<
+  TSnapshot,
+  TSelection,
 > {
-  (snapshot: UnitSnapshot<RResult, TMeta | null>): TValue;
+  (snapshot: TSnapshot): TSelection;
 }
 
-const subscribeToUnit = <RResult, TMeta>(
-  unit: TrackedUnit<RResult, TMeta>,
-  onStoreChange: StoreChangeListener,
-) =>
-  subscribeTrackedUnit({
-    unit,
-    onStoreChange,
-  });
+export interface SubscribableSnapshotUnit<TSnapshot> {
+  getSnapshot: () => TSnapshot;
+  subscribe: (listener: StoreChangeListener) => (() => void) | void;
+}
+
+const UNSET_SELECTION = Symbol('livon-selection-unset');
 
 export const useLivonSelection = <
-  RResult,
-  TValue,
-  TMeta = unknown,
+  TSnapshot,
+  TSelection,
 >(
-  input: UseLivonSelectionInput<RResult, TValue, TMeta>,
-): TValue => {
+  input: UseLivonSelectionInput<TSnapshot, TSelection>,
+): TSelection => {
   const { unit, select } = input;
+  const selectedRef = useRef<TSelection | typeof UNSET_SELECTION>(UNSET_SELECTION);
+  const unitRef = useRef(unit);
+
+  if (unitRef.current !== unit) {
+    unitRef.current = unit;
+    selectedRef.current = UNSET_SELECTION;
+  }
 
   const subscribe = useCallback((onStoreChange: StoreChangeListener) => {
-    let isSubscribed = true;
-    const removeSubscription = subscribeToUnit(unit, () => {
-      if (!isSubscribed) {
-        return;
-      }
-
-      onStoreChange();
-    });
+    const remove = unit.subscribe(onStoreChange);
 
     return () => {
-      isSubscribed = false;
-      removeSubscription();
+      remove?.();
     };
   }, [unit]);
 
   const getSnapshot = useCallback(() => {
-    return select(readTrackedUnitSnapshot(unit));
+    const nextSelection = select(unit.getSnapshot());
+    const previousSelection = selectedRef.current;
+
+    if (
+      previousSelection !== UNSET_SELECTION
+      && isShallowEqualValue(previousSelection, nextSelection)
+    ) {
+      return previousSelection;
+    }
+
+    selectedRef.current = nextSelection;
+    return nextSelection;
   }, [select, unit]);
 
   return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);

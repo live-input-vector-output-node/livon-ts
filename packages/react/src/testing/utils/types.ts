@@ -1,20 +1,16 @@
 import type {
-  Action,
-  ActionConfig,
   Entity,
   Source,
   SourceConfig,
-  Stream,
-  StreamConfig,
 } from '@livon/sync';
 
-export interface User {
+export interface Todo {
   id: string;
-  name: string;
+  title: string;
 }
 
-export interface UserSlug {
-  templateId: string;
+export interface TodoIdentity {
+  listId: string;
 }
 
 export interface MessageMeta {
@@ -22,34 +18,20 @@ export interface MessageMeta {
   text: string;
 }
 
-export interface CreateRandomUserInput {
+export interface CreateRandomTodoInput {
   idPrefix?: string;
-  namePrefix?: string;
+  titlePrefix?: string;
 }
 
-export interface CreateTemplateSlugInput {
+export interface CreateTodoIdentityInput {
   prefix?: string;
 }
 
-export interface CreateReadUserSourceInput {
-  entity?: UserEntity;
-  run?: ReadUserRun;
+export interface CreateReadTodoSourceInput {
+  entity?: TodoEntity;
+  run?: ReadTodoRun;
 }
 
-export interface CreateCreateUserActionInput {
-  entity?: UserEntity;
-  run?: CreateUserRun;
-}
-
-export interface CreateUserUpdatedStreamInput {
-  entity?: UserEntity;
-  run?: UserUpdatedRun;
-}
-
-export type UserEntity = Entity<User>;
-export type ReadUserSource = Source<UserSlug, undefined, User | null>;
-export type CreateUserAction = Action<UserSlug, User, User | null>;
-export type UserUpdatedStream = Stream<UserSlug, User, User | null>;
-export type ReadUserRun = SourceConfig<UserSlug, undefined, User | null>['run'];
-export type CreateUserRun = ActionConfig<UserSlug, User, User | null>['run'];
-export type UserUpdatedRun = StreamConfig<UserSlug, User, User | null>['run'];
+export type TodoEntity = Entity<Todo>;
+export type ReadTodoSource = Source<TodoIdentity, undefined, Todo | null>;
+export type ReadTodoRun = SourceConfig<TodoIdentity, undefined, Todo, 'one'>['run'];

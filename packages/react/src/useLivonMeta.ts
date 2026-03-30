@@ -1,58 +1,28 @@
-import type {
-  ActionUnit,
-  SourceUnit,
-  StreamUnit,
-  UnitSnapshot,
-} from '@livon/sync';
+import { useLivonSelection, type SubscribableSnapshotUnit } from './useLivonSelection.js';
 
-import { useLivonSelection } from './useLivonSelection.js';
-import type { LivonMetaOf } from './types.js';
-
-export interface UseLivonMeta {
-  <
-  TIdentity extends object | undefined,
-  TPayload,
-  RResult,
-  TMeta = unknown,
-  >(unit: SourceUnit<TIdentity, TPayload, RResult, TMeta>): LivonMetaOf<
-    SourceUnit<TIdentity, TPayload, RResult, TMeta>
-  >;
-
-  <
-  RResult,
-  TPayload,
-  TMeta = unknown,
-  >(unit: ActionUnit<TPayload, RResult, TMeta>): LivonMetaOf<ActionUnit<TPayload, RResult, TMeta>>;
-
-  <
-  TPayload,
-  RResult,
-  TMeta = unknown,
-  >(unit: StreamUnit<TPayload, RResult, TMeta>): LivonMetaOf<StreamUnit<TPayload, RResult, TMeta>>;
+interface SnapshotWithMeta {
+  meta: unknown;
 }
 
-type AnySourceUnit = SourceUnit<object | undefined, unknown, unknown, unknown>;
-type AnyActionUnit = ActionUnit<unknown, unknown, unknown>;
-type AnyStreamUnit = StreamUnit<unknown, unknown, unknown>;
-type AnyMetaUnit = AnySourceUnit | AnyActionUnit | AnyStreamUnit;
+export interface UseLivonMeta {
+  <TSnapshot extends SnapshotWithMeta>(unit: SubscribableSnapshotUnit<TSnapshot>): TSnapshot['meta'];
+}
 
 interface SelectMeta {
-  <RResult, TMeta>(snapshot: UnitSnapshot<RResult, TMeta | null>): TMeta | null;
+  <TSnapshot extends SnapshotWithMeta>(snapshot: TSnapshot): TSnapshot['meta'];
 }
 
 const selectMeta: SelectMeta = (snapshot) => {
   return snapshot.meta;
 };
 
-const useLivonMetaInternal = <TUnit extends AnyMetaUnit>(
-  unit: TUnit,
-): LivonMetaOf<TUnit> => {
-  const meta = useLivonSelection({
+const useLivonMetaInternal: UseLivonMeta = <TSnapshot extends SnapshotWithMeta>(
+  unit: SubscribableSnapshotUnit<TSnapshot>,
+): TSnapshot['meta'] => {
+  return useLivonSelection({
     unit,
     select: selectMeta,
   });
-
-  return meta as LivonMetaOf<TUnit>;
 };
 
 export const useLivonMeta: UseLivonMeta = useLivonMetaInternal;
