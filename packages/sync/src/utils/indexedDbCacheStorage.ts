@@ -1,4 +1,3 @@
-import { type CacheStorage } from '../entity.js';
 import { scheduleAsync } from './scheduleAsync.js';
 
 interface IndexedDbObjectStore {
@@ -43,6 +42,10 @@ interface IndexedDbRuntime {
   indexedDB?: IndexedDbFactory;
 }
 
+interface TimeoutRuntime {
+  setTimeout: (callback: () => void, delay: number) => unknown;
+}
+
 interface IndexedDbWriteOperationSet {
   type: 'set';
   value: unknown;
@@ -73,16 +76,28 @@ interface CreateIndexedDbCacheStorageInput {
   storeName?: string;
   version?: number;
   runtime?: IndexedDbRuntime;
+  retryDelaysMs?: readonly number[];
 }
 
-export interface IndexedDbCacheStorage extends CacheStorage {
-  supportsStructuredValues: true;
+export interface IndexedDbCacheStorage {
+  getItem: (key: string) => unknown | null;
+  setItem: (key: string, value: unknown) => void;
+  removeItem: (key: string) => void;
   flush: () => Promise<void>;
+  readStatus: () => 'ready' | 'degraded' | 'disabled';
+  isFailed: () => boolean;
+  readFailure: () => unknown;
+}
+
+interface ScheduleWithDelayInput {
+  delay: number;
+  callback: () => void;
 }
 
 const DEFAULT_DB_NAME = 'livon-sync-cache';
 const DEFAULT_STORE_NAME = 'source-cache';
 const DEFAULT_DB_VERSION = 1;
+const DEFAULT_RETRY_DELAYS_MS = [200, 1_000, 5_000, 30_000] as const;
 
 let sharedIndexedDbCacheStorage: IndexedDbCacheStorage | undefined;
 
@@ -92,6 +107,79 @@ const isIndexedDbFactory = (value: unknown): value is IndexedDbFactory => {
   }
 
   return 'open' in value && typeof value.open === 'function';
+};
+
+const hasTimeoutRuntime = (value: unknown): value is TimeoutRuntime => {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  return 'setTimeout' in value && typeof value.setTimeout === 'function';
+};
+
+const readErrorName = (error: unknown): string | undefined => {
+  if (typeof error !== 'object' || error === null) {
+    return undefined;
+  }
+
+  if (!('name' in error)) {
+    return undefined;
+  }
+
+  const name = error.name;
+  if (typeof name !== 'string') {
+    return undefined;
+  }
+
+  return name;
+};
+
+const normalizeError = (error: unknown): unknown => {
+  if (error) {
+    return error;
+  }
+
+  return new Error('IndexedDB cache failed.');
+};
+
+const isPermanentIndexedDbError = (error: unknown): boolean => {
+  const name = readErrorName(error);
+  if (!name) {
+    return false;
+  }
+
+  return name === 'SecurityError'
+    || name === 'NotSupportedError'
+    || name === 'InvalidAccessError';
+};
+
+interface ReadRetryDelayInput {
+  attempt: number;
+  retryDelaysMs: readonly number[];
+}
+
+const readRetryDelay = ({
+  attempt,
+  retryDelaysMs,
+}: ReadRetryDelayInput): number => {
+  const index = Math.max(0, Math.min(attempt - 1, retryDelaysMs.length - 1));
+  const delay = retryDelaysMs[index];
+  return delay ?? retryDelaysMs[retryDelaysMs.length - 1] ?? 30_000;
+};
+
+const scheduleWithDelay = ({
+  delay,
+  callback,
+}: ScheduleWithDelayInput): void => {
+  const runtime = globalThis;
+  if (hasTimeoutRuntime(runtime)) {
+    runtime.setTimeout(callback, delay);
+    return;
+  }
+
+  scheduleAsync({
+    callback,
+  });
 };
 
 const readRuntime = (): IndexedDbRuntime => {
@@ -199,6 +287,7 @@ export const createIndexedDbCacheStorage = ({
   storeName = DEFAULT_STORE_NAME,
   version = DEFAULT_DB_VERSION,
   runtime = readRuntime(),
+  retryDelaysMs = DEFAULT_RETRY_DELAYS_MS,
 }: CreateIndexedDbCacheStorageInput = {}): IndexedDbCacheStorage | undefined => {
   const indexedDbFactory = runtime.indexedDB;
   if (!indexedDbFactory) {
@@ -213,16 +302,33 @@ export const createIndexedDbCacheStorage = ({
   let writesScheduled = false;
   let readsInFlight = false;
   let writesInFlight = false;
+  let reconnectScheduled = false;
+  let reconnectInFlight = false;
+  let transientFailureCount = 0;
+  let failure: unknown = null;
+  let status: 'ready' | 'degraded' | 'disabled' = 'ready';
+  let databasePromise: Promise<IndexedDbDatabase> | null = null;
+  const maxTransientFailures = retryDelaysMs.length;
 
-  const openDatabase = (() => {
-    let databasePromise: Promise<IndexedDbDatabase> | null = null;
+  const readStatus = (): 'ready' | 'degraded' | 'disabled' => {
+    return status;
+  };
 
-    return (): Promise<IndexedDbDatabase> => {
-      if (databasePromise) {
-        return databasePromise;
-      }
+  const isFailed = (): boolean => {
+    return status === 'disabled';
+  };
 
-      databasePromise = new Promise<IndexedDbDatabase>((resolve, reject) => {
+  const resetDatabasePromise = (): void => {
+    databasePromise = null;
+  };
+
+  const openDatabase = (): Promise<IndexedDbDatabase> => {
+    if (databasePromise) {
+      return databasePromise;
+    }
+
+    databasePromise = new Promise<IndexedDbDatabase>((resolve, reject) => {
+      try {
         const openRequest = indexedDbFactory.open(dbName, version);
         openRequest.onupgradeneeded = () => {
           const database = openRequest.result;
@@ -234,15 +340,99 @@ export const createIndexedDbCacheStorage = ({
           resolve(openRequest.result);
         };
         openRequest.onerror = () => {
-          reject(openRequest.error);
+          reject(normalizeError(openRequest.error));
         };
-      });
+      } catch (error) {
+        reject(normalizeError(error));
+      }
+    });
 
-      return databasePromise;
-    };
-  })();
+    return databasePromise;
+  };
+
+  const markDisabled = (error: unknown): void => {
+    status = 'disabled';
+    failure = normalizeError(error);
+    reconnectScheduled = false;
+    valuesByKey.clear();
+    missingKeys.clear();
+    pendingReadKeys.clear();
+    pendingWriteOperationsByKey.clear();
+    resetDatabasePromise();
+  };
+
+  const handleTransientFailure = (error: unknown): void => {
+    status = 'degraded';
+    failure = normalizeError(error);
+    transientFailureCount += 1;
+    resetDatabasePromise();
+  };
+
+  const scheduleReconnect = (): void => {
+    if (status !== 'degraded' || reconnectInFlight || reconnectScheduled) {
+      return;
+    }
+
+    reconnectScheduled = true;
+    const retryDelay = readRetryDelay({
+      attempt: transientFailureCount,
+      retryDelaysMs,
+    });
+    scheduleWithDelay({
+      delay: retryDelay,
+      callback: () => {
+        reconnectScheduled = false;
+        void reconnect();
+      },
+    });
+  };
+
+  const handleStorageFailure = (error: unknown): void => {
+    const normalizedError = normalizeError(error);
+    if (isPermanentIndexedDbError(normalizedError)) {
+      markDisabled(normalizedError);
+      return;
+    }
+
+    if (transientFailureCount + 1 >= maxTransientFailures) {
+      markDisabled(normalizedError);
+      return;
+    }
+
+    handleTransientFailure(normalizedError);
+    scheduleReconnect();
+  };
+
+  const reconnect = async (): Promise<void> => {
+    if (status !== 'degraded' || reconnectInFlight) {
+      return;
+    }
+
+    reconnectInFlight = true;
+    try {
+      resetDatabasePromise();
+      await openDatabase();
+      status = 'ready';
+      failure = null;
+      transientFailureCount = 0;
+      if (pendingReadKeys.size > 0) {
+        scheduleReadFlush();
+      }
+      if (pendingWriteOperationsByKey.size > 0) {
+        scheduleWriteFlush();
+      }
+    } catch (error) {
+      handleStorageFailure(error);
+    } finally {
+      reconnectInFlight = false;
+    }
+  };
 
   const flushReads = async (): Promise<void> => {
+    if (status !== 'ready') {
+      return;
+    }
+
     if (readsInFlight) {
       return;
     }
@@ -280,17 +470,24 @@ export const createIndexedDbCacheStorage = ({
         valuesByKey.delete(key);
         missingKeys.add(key);
       });
-    } catch {
-      // Keep L1-only mode when IndexedDB access fails.
+    } catch (error) {
+      keys.forEach((key) => {
+        pendingReadKeys.add(key);
+      });
+      handleStorageFailure(error);
     } finally {
       readsInFlight = false;
-      if (pendingReadKeys.size > 0) {
+      if (status === 'ready' && pendingReadKeys.size > 0) {
         scheduleReadFlush();
       }
     }
   };
 
   const flushWrites = async (): Promise<void> => {
+    if (status !== 'ready') {
+      return;
+    }
+
     if (writesInFlight) {
       return;
     }
@@ -310,17 +507,29 @@ export const createIndexedDbCacheStorage = ({
         operationsByKey,
         storeName,
       });
-    } catch {
-      // Keep L1-only mode when IndexedDB access fails.
+    } catch (error) {
+      operationsByKey.forEach((operation, key) => {
+        pendingWriteOperationsByKey.set(key, operation);
+      });
+      handleStorageFailure(error);
     } finally {
       writesInFlight = false;
-      if (pendingWriteOperationsByKey.size > 0) {
+      if (status === 'ready' && pendingWriteOperationsByKey.size > 0) {
         scheduleWriteFlush();
       }
     }
   };
 
   const scheduleReadFlush = (): void => {
+    if (status === 'disabled') {
+      return;
+    }
+
+    if (status === 'degraded') {
+      scheduleReconnect();
+      return;
+    }
+
     if (readsScheduled) {
       return;
     }
@@ -335,6 +544,15 @@ export const createIndexedDbCacheStorage = ({
   };
 
   const scheduleWriteFlush = (): void => {
+    if (status === 'disabled') {
+      return;
+    }
+
+    if (status === 'degraded') {
+      scheduleReconnect();
+      return;
+    }
+
     if (writesScheduled) {
       return;
     }
@@ -349,8 +567,15 @@ export const createIndexedDbCacheStorage = ({
   };
 
   return {
-    supportsStructuredValues: true,
     getItem: (key) => {
+      if (status === 'disabled') {
+        return null;
+      }
+
+      if (status === 'degraded') {
+        scheduleReconnect();
+      }
+
       if (valuesByKey.has(key)) {
         return valuesByKey.get(key) ?? null;
       }
@@ -364,6 +589,10 @@ export const createIndexedDbCacheStorage = ({
       return null;
     },
     setItem: (key, value) => {
+      if (status === 'disabled') {
+        return;
+      }
+
       valuesByKey.set(key, value);
       missingKeys.delete(key);
       pendingWriteOperationsByKey.set(key, {
@@ -373,6 +602,10 @@ export const createIndexedDbCacheStorage = ({
       scheduleWriteFlush();
     },
     removeItem: (key) => {
+      if (status === 'disabled') {
+        return;
+      }
+
       valuesByKey.delete(key);
       missingKeys.add(key);
       pendingWriteOperationsByKey.set(key, {
@@ -381,7 +614,21 @@ export const createIndexedDbCacheStorage = ({
       scheduleWriteFlush();
     },
     flush: async () => {
+      if (status === 'disabled') {
+        return;
+      }
+
+      if (status === 'degraded') {
+        scheduleReconnect();
+        return;
+      }
+
       await Promise.all([flushReads(), flushWrites()]);
+    },
+    readStatus,
+    isFailed,
+    readFailure: () => {
+      return failure;
     },
   };
 };

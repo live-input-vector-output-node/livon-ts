@@ -1,6 +1,11 @@
 import type { UnitSnapshot } from '../utils/types.js';
 
-export type { UnitSnapshot, UnitStatus } from '../utils/types.js';
+export type {
+  Snapshot,
+  SnapshotBase,
+  UnitSnapshot,
+  UnitStatus,
+} from '../utils/types.js';
 
 export interface UnitSnapshotListener<
   RResult,

@@ -212,11 +212,12 @@ export const resolveAdaptiveReadWriteByCache = ({
     cacheEnabled,
     lruEnabled,
   });
-  return resolveAdaptiveReadWriteConfig({
+  const matrixStrategy = resolveAdaptiveReadWriteConfig({
     profile,
     operation,
     fallback,
   });
+  return matrixStrategy;
 };
 
 export const resolveAdaptiveReadWriteByIntent = ({

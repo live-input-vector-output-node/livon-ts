@@ -27,6 +27,7 @@ describe('entity()', () => {
 
     it('should allow explicit generic type on entity function', () => {
       const projectEntity = entity<Project>({
+        key: 'entity-spec',
         idOf: (value) => value.id,
         ttl: 30_000,
       });
@@ -36,6 +37,7 @@ describe('entity()', () => {
 
     it('should keep configured ttl when entity is created', () => {
       const usersEntity = entity<User>({
+        key: 'entity-spec',
         idOf: (value) => value.id,
         ttl: 30_000,
       });
@@ -44,18 +46,26 @@ describe('entity()', () => {
     });
 
     it('should expose default readWrite strategy when not configured', () => {
+      const expected = resolveAdaptiveReadWriteByCache({
+        cacheEnabled: false,
+        lruEnabled: false,
+        operation: 'readMany',
+        fallback: {
+          batch: true,
+          subview: true,
+        },
+      });
       const usersEntity = entity<User>({
+        key: 'entity-spec',
         idOf: (value) => value.id,
       });
 
-      expect(usersEntity.readWrite).toEqual({
-        batch: true,
-        subview: true,
-      });
+      expect(usersEntity.readWrite).toEqual(expected);
     });
 
     it('should keep configured readWrite strategy when entity is created', () => {
       const usersEntity = entity<User>({
+        key: 'entity-spec',
         idOf: (value) => value.id,
         readWrite: {
           batch: false,
@@ -69,7 +79,7 @@ describe('entity()', () => {
       });
     });
 
-    it('should resolve adaptive readWrite strategy when adaptive mode is enabled', () => {
+    it('should resolve automatic adaptive readWrite strategy when cache profile changes', () => {
       const expected = resolveAdaptiveReadWriteByCache({
         cacheEnabled: true,
         lruEnabled: true,
@@ -80,14 +90,12 @@ describe('entity()', () => {
         },
       });
       const usersEntity = entity<User>({
+        key: 'entity-spec',
         idOf: (value) => value.id,
         cache: {
           key: 'adaptive-cache',
           ttl: 'infinity',
           lruMaxEntries: 256,
-        },
-        readWrite: {
-          adaptive: true,
         },
       });
 
@@ -105,6 +113,7 @@ describe('entity()', () => {
         },
       });
       const usersEntity = entity<User>({
+        key: 'entity-spec',
         idOf: (value) => value.id,
         cache: {
           key: 'adaptive-cache',
@@ -112,7 +121,6 @@ describe('entity()', () => {
           lruMaxEntries: 256,
         },
         readWrite: {
-          adaptive: true,
           batch: false,
         },
       });
@@ -123,7 +131,7 @@ describe('entity()', () => {
       });
     });
 
-    it('should resolve adaptive strategy from matrix when adaptive is enabled', () => {
+    it('should resolve adaptive strategy from matrix automatically', () => {
       const expected = resolveAdaptiveReadWriteByCache({
         cacheEnabled: false,
         lruEnabled: false,
@@ -134,10 +142,8 @@ describe('entity()', () => {
         },
       });
       const usersEntity = entity<User>({
+        key: 'entity-spec',
         idOf: (value) => value.id,
-        readWrite: {
-          adaptive: true,
-        },
       });
 
       expect(usersEntity.readWrite).toEqual(expected);
@@ -145,6 +151,7 @@ describe('entity()', () => {
 
     it('should expose a shared map when entity is created', () => {
       const usersEntity = entity<User>({
+        key: 'entity-spec',
         idOf: (value) => value.id,
       });
 
@@ -156,6 +163,7 @@ describe('entity()', () => {
       const userName = randomString({ prefix: 'user-name' });
 
       const usersEntity = entity<User>({
+        key: 'entity-spec',
         idOf: (value) => value.id,
       });
 
@@ -170,6 +178,7 @@ describe('entity()', () => {
       const userStatus = randomString({ prefix: 'user-status' });
 
       const usersEntity = entity<User>({
+        key: 'entity-spec',
         idOf: (value) => value.id,
       });
 
@@ -186,6 +195,7 @@ describe('entity()', () => {
     it('should keep current instance on replace upsert when next object is shallow-equivalent', () => {
       const userId = randomString({ prefix: 'user-id' });
       const usersEntity = entity<User>({
+        key: 'entity-spec',
         idOf: (value) => value.id,
       });
       let notifyCount = 0;
@@ -218,6 +228,7 @@ describe('entity()', () => {
     it('should keep current instance on merge upsert when merged shape is unchanged', () => {
       const userId = randomString({ prefix: 'user-id' });
       const usersEntity = entity<User>({
+        key: 'entity-spec',
         idOf: (value) => value.id,
       });
       let notifyCount = 0;
@@ -258,6 +269,7 @@ describe('entity()', () => {
       const userName = randomString({ prefix: 'user-name' });
 
       const usersEntity = entity<User>({
+        key: 'entity-spec',
         idOf: (value) => value.id,
       });
 
@@ -274,6 +286,7 @@ describe('entity()', () => {
       const secondUserName = randomString({ prefix: 'second-user-name' });
 
       const usersEntity = entity<User>({
+        key: 'entity-spec',
         idOf: (value) => value.id,
       });
 
@@ -288,6 +301,7 @@ describe('entity()', () => {
     it('should immediately remove orphaned entities when no ttl is configured', () => {
       const userId = randomString({ prefix: 'user-id' });
       const usersEntity = entity<User>({
+        key: 'entity-spec',
         idOf: (value) => value.id,
       });
 
@@ -316,6 +330,7 @@ describe('entity()', () => {
     it('should keep entities while at least one unit still references the same id', () => {
       const userId = randomString({ prefix: 'shared-user-id' });
       const usersEntity = entity<User>({
+        key: 'entity-spec',
         idOf: (value) => value.id,
       });
 
@@ -360,6 +375,7 @@ describe('entity()', () => {
       try {
         const userId = randomString({ prefix: 'ttl-user-id' });
         const usersEntity = entity<User>({
+          key: 'entity-spec',
           idOf: (value) => value.id,
           ttl: 100,
         });
@@ -394,6 +410,7 @@ describe('entity()', () => {
     it('should keep orphaned entities when cache ttl is infinity', () => {
       const userId = randomString({ prefix: 'infinite-cache-user-id' });
       const usersEntity = entity<User>({
+        key: 'entity-spec',
         idOf: (value) => value.id,
         cache: {
           ttl: 'infinity',
@@ -423,7 +440,11 @@ describe('entity()', () => {
     it('should batch large upsertMany notifications through microtask queue', () => {
       defaultRuntimeQueue.flush('state');
       const usersEntity = entity<User>({
+        key: 'entity-spec',
         idOf: (value) => value.id,
+        readWrite: {
+          batch: true,
+        },
       });
       const ids = Array.from({ length: 40 }, (_unused, index) => {
         return `user-${index}`;
@@ -456,7 +477,11 @@ describe('entity()', () => {
     it('should batch large deleteMany notifications through microtask queue', () => {
       defaultRuntimeQueue.flush('state');
       const usersEntity = entity<User>({
+        key: 'entity-spec',
         idOf: (value) => value.id,
+        readWrite: {
+          batch: true,
+        },
       });
       const ids = Array.from({ length: 40 }, (_unused, index) => {
         return `remove-user-${index}`;
@@ -492,6 +517,7 @@ describe('entity()', () => {
     it('should keep large upsertMany notifications synchronous when batch strategy is disabled', () => {
       defaultRuntimeQueue.flush('state');
       const usersEntity = entity<User>({
+        key: 'entity-spec',
         idOf: (value) => value.id,
         readWrite: {
           batch: false,
@@ -529,6 +555,7 @@ describe('entity()', () => {
     it('should keep large deleteMany notifications synchronous when batch strategy is disabled', () => {
       defaultRuntimeQueue.flush('state');
       const usersEntity = entity<User>({
+        key: 'entity-spec',
         idOf: (value) => value.id,
         readWrite: {
           batch: false,

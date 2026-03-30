@@ -1,135 +1,128 @@
-import { type DraftMode, type EntityId } from '../entity.js';
 import {
+  type Entity,
+  type EntityId,
+} from '../entity.js';
+import {
+  DEFAULT_RUN_CONTEXT_CACHE_LIMIT,
+  DEFAULT_UNIT_DESTROY_DELAY,
   applyEntityRunResult,
   clearEntityMembership,
+  createEntityValueReader,
   createEntityRunContextMethods,
+  createFunctionKeyResolver,
   createRunContextEntryCache,
-  readOrCreateSharedCacheWriteQueue,
   createSerializedKeyCache,
   createUnitSnapshot,
+  invokeCleanup,
+  isCleanup,
+  isUnitSnapshotEqual,
+  isNonEmptyString,
+  isUnitSetAction,
   notifyEffectListeners,
+  resolveEntityFunctionIdentityKey,
+  resolveEntityFunctionKey,
+  resolveDefaultUnitValue,
   resolveInput,
+  resolveUnitRunAsVoid,
+  resolveUnitMode,
   resolveValue,
-  scheduleAsync,
+  type EntityValueOfStore,
+  serializeKey,
   setManyEntityMembership,
   setOneEntityMembership,
-  serializeKey,
   type EffectListener,
+  type UnitDataByEntityMode,
+  type UnitEntityMode,
   type UnitRunPrevious,
-  type UnitDataEntity,
+  type UnitSnapshot,
   type ValueUpdater,
 } from '../utils/index.js';
 
 import {
   getModeValue,
   hasStringKeysArray,
-  invokeSourceCleanup,
   isCacheRecordExpired,
-  isSourceCleanup,
   readSourceCacheRecord,
   resolveCacheLruMaxEntries,
   resolveCacheKey,
   resolveCacheStorage,
   resolveCacheTtl,
-  serializeSourceCacheRecord,
   shouldUseCache,
 } from './helpers.js';
 import type {
   ReadEntityValueById,
   Source,
+  SourceBuilderInput,
+  SourceByEntityModeBuilder,
+  SourceBuilder,
   SourceConfig,
   SourceContext,
   SourceRunConfig,
   SourceRun,
   SourceRunInput,
+  SourceFetchInput,
   SourceRunContext,
   SourceRunContextEntry,
   SourceRunGate,
-  SourceSetAction,
+  SourceSnapshot,
   SourceUnit,
   SourceUnitByKeyMap,
   SourceUnitInternal,
 } from './types.js';
 
-const DEFAULT_DESTROY_DELAY = 250;
-const DEFAULT_DRAFT_MODE: DraftMode = 'global';
-const RUN_CONTEXT_CACHE_LIMIT = 32;
 const SOURCE_CACHE_LRU_STORAGE_KEY_SUFFIX = '__lru__';
 const SOURCE_CACHE_ENTITY_KEY_ERROR = 'entity.key is required when source cache is enabled.';
 const SOURCE_CACHE_SOURCE_KEY_ERROR = 'source.key is required when source cache is enabled.';
 const SOURCE_RUN_RESULT_ERROR = 'source.run() must return void or a cleanup function.';
-const resolveRunAsVoid = (): void => undefined;
-
-interface ReadUnitCacheLruCandidatesInput {
-  excludeUnitCacheKey: string;
-}
+const resolveSourceFunctionKey = createFunctionKeyResolver({
+  prefix: 'source-fallback',
+});
 
 interface HydrateFromUnitCacheKeyInput {
   unitCacheKey: string;
-  cacheStateOnHit: 'hit' | 'stale';
+  cacheStateOnHit: 'hit';
 }
 
-interface ResolveSourceCacheNamespaceKeyInput<
-  TMode extends 'one' | 'many',
+interface CreateSourceFromConfigInput<
+  TEntity extends object,
+  TMode extends UnitEntityMode,
 > {
-  entityKey: string;
-  sourceKey: string;
+  entity: Entity<TEntity, EntityId>;
   mode: TMode;
+  readEntityValueByIdOverride?: ReadEntityValueById<EntityId, TEntity>;
 }
 
 const createInitialSourceContext = (
-  hasCacheStorage: boolean,
+  hasEnabledCache: boolean,
 ): SourceContext => {
   return {
-    cacheState: hasCacheStorage ? 'miss' : 'disabled',
+    cacheState: hasEnabledCache ? 'miss' : 'disabled',
     error: null,
   };
 };
 
-const isSourceSetAction = <
-  TPayload,
-  TData,
-  TMeta,
->(
-  input: unknown,
-): input is SourceSetAction<TPayload, TData, TMeta> => {
-  return typeof input === 'function';
-};
-
-const isNonEmptyString = (input: unknown): input is string => {
-  return typeof input === 'string' && input.trim().length > 0;
-};
-
-const resolveSourceCacheNamespaceKey = <
-  TMode extends 'one' | 'many',
->({
-  entityKey,
-  sourceKey,
-  mode,
-}: ResolveSourceCacheNamespaceKeyInput<TMode>): string => {
-  return serializeKey({
-    entityKey,
-    sourceKey,
-    mode,
-  });
-};
-
-export const source = <
+export const createSourceFromConfig = <
   TIdentity extends object | undefined,
-  TPayload = unknown,
-  TData = unknown,
-  TMeta = unknown,
->({
-  key: sourceKey,
+  TPayload,
+  TMeta,
+  TEntity extends object,
+  TMode extends UnitEntityMode,
+>(
+{
   entity,
+  mode,
+  readEntityValueByIdOverride,
+}: CreateSourceFromConfigInput<TEntity, TMode>,
+{
+  key: sourceKey,
   ttl = entity.ttl ?? 0,
-  draft = entity.draft ?? DEFAULT_DRAFT_MODE,
   cache,
-  destroyDelay = entity.destroyDelay ?? DEFAULT_DESTROY_DELAY,
+  destroyDelay = entity.destroyDelay ?? DEFAULT_UNIT_DESTROY_DELAY,
   run,
   defaultValue,
-}: SourceConfig<TIdentity, TPayload, TData, TMeta>,
-): Source<TIdentity, TPayload, TData, TMeta> => {
+}: SourceConfig<TIdentity, TPayload, TEntity, TMode, TMeta>,
+): Source<TIdentity, TPayload, UnitDataByEntityMode<TEntity, TMode>, TMeta> => {
+  type TData = UnitDataByEntityMode<TEntity, TMode>;
   const cacheTtl = resolveCacheTtl({
     sourceCache: cache,
     entityCache: entity.cache,
@@ -139,69 +132,69 @@ export const source = <
     entityCache: entity.cache,
   });
   const cacheStorage = resolveCacheStorage();
-  const sourceMode: 'one' | 'many' = Array.isArray(defaultValue ?? null) ? 'many' : 'one';
   const normalizedEntityKey = isNonEmptyString(entity.key)
     ? entity.key
-    : (isNonEmptyString(entity.cache?.key) ? entity.cache.key : '');
-  const normalizedSourceKey = isNonEmptyString(sourceKey)
-    ? sourceKey
-    : (isNonEmptyString(cache?.key) ? cache.key : '');
-  const hasEnabledCache = Boolean(
+    : '';
+  const hasValidSourceFunctionKey = isNonEmptyString(sourceKey);
+  const resolvedSourceFunctionKey = resolveSourceFunctionKey(sourceKey);
+  const {
+    mode: resolvedSourceMode,
+    modeLocked: resolvedModeLocked,
+  } = resolveUnitMode({
+    entityMode: mode,
+    defaultValue,
+  });
+  const hasConfiguredCacheEnabled = Boolean(
     cacheStorage
     && (cacheTtl === 'infinity' || cacheTtl > 0),
   );
-  if (hasEnabledCache && normalizedEntityKey.length === 0) {
+  if (hasConfiguredCacheEnabled && normalizedEntityKey.length === 0) {
     throw new Error(SOURCE_CACHE_ENTITY_KEY_ERROR);
   }
-  if (hasEnabledCache && normalizedSourceKey.length === 0) {
+  if (hasConfiguredCacheEnabled && !hasValidSourceFunctionKey) {
     throw new Error(SOURCE_CACHE_SOURCE_KEY_ERROR);
   }
-  const sourceCacheNamespaceKey = resolveSourceCacheNamespaceKey({
+  const sourceEntityFunctionKey = resolveEntityFunctionKey({
     entityKey: normalizedEntityKey,
-    sourceKey: normalizedSourceKey,
-    mode: sourceMode,
+    functionKey: serializeKey({
+      sourceKey: resolvedSourceFunctionKey,
+      entityMode: resolvedSourceMode,
+    }),
   });
-  const cacheWriteQueue = cacheStorage
-    ? readOrCreateSharedCacheWriteQueue({ storage: cacheStorage })
-    : undefined;
   const cacheKeyPrefix = resolveCacheKey({
-    sourceKey: sourceCacheNamespaceKey,
+    sourceKey: sourceEntityFunctionKey,
   });
 
   const unitsByKey: SourceUnitByKeyMap<TIdentity, TPayload, TData, TMeta> =
     new Map<string, SourceUnitInternal<TIdentity, TPayload, TData, TMeta>>();
   const unitKeyCache = createSerializedKeyCache({
-    mode: 'scoped-unit',
+    mode: 'identity-unit',
   });
 
-  const readEntityValueById: ReadEntityValueById<EntityId, UnitDataEntity<TData>> = (id) => {
-    if (draft === 'off') {
-      return entity.getById(id);
-    }
-
-    if (draft === 'global') {
-      const globalDraft = entity.getDraftById(id);
-      if (globalDraft) {
-        return globalDraft;
-      }
-
-      return entity.getById(id);
-    }
-
-    return entity.getById(id);
-  };
-
   const sourceFactory: Source<TIdentity, TPayload, TData, TMeta> = (identity) => {
-    const unitKey = unitKeyCache.getOrCreateKey(identity);
+    const identityKey = unitKeyCache.getOrCreateKey(identity);
+    const unitKey = resolveEntityFunctionIdentityKey({
+      entityFunctionKey: sourceEntityFunctionKey,
+      identityKey,
+    });
+    const readEntityValueById: ReadEntityValueById<EntityId, TEntity> = readEntityValueByIdOverride
+      ?? createEntityValueReader<TEntity, EntityId>({
+        entity,
+        identityKey,
+        localIdentityKey: unitKey,
+      });
     const existingUnit = unitsByKey.get(unitKey);
 
     if (existingUnit) {
       return existingUnit.unit;
     }
 
-    const initialValue = (defaultValue ?? null) as TData;
+    const initialValue = resolveDefaultUnitValue({
+      defaultValue,
+      mode: resolvedSourceMode,
+    }) as TData;
     const initialPayload = undefined as TPayload;
-    const initialMode: 'one' | 'many' = Array.isArray(initialValue) ? 'many' : 'one';
+    const initialMode: 'one' | 'many' = resolvedSourceMode;
 
     const internal: SourceUnitInternal<TIdentity, TPayload, TData, TMeta> = {
       key: unitKey,
@@ -213,16 +206,18 @@ export const source = <
         value: initialValue,
         status: 'idle',
         meta: null,
-        context: createInitialSourceContext(Boolean(cacheStorage)),
+        context: createInitialSourceContext(
+          hasConfiguredCacheEnabled && cacheStorage?.readStatus() !== 'disabled',
+        ),
       },
       mode: initialMode,
-      modeLocked: false,
+      modeLocked: resolvedModeLocked,
       hasEntityValue: false,
       membershipIds: [],
       readWrite: {
         subview: entity.readWrite.subview,
       },
-      listeners: new Set<EffectListener<TData, TMeta | null>>(),
+      listeners: new Set<EffectListener<TData, TMeta | null, SourceContext>>(),
       inFlightByPayload: new Map<string, Promise<TData>>(),
       runSequence: 0,
       latestRunSequence: 0,
@@ -235,36 +230,90 @@ export const source = <
     };
     const payloadKeyCache = createSerializedKeyCache({
       mode: 'payload-hot-path',
-      limit: RUN_CONTEXT_CACHE_LIMIT,
+      limit: DEFAULT_RUN_CONTEXT_CACHE_LIMIT,
     });
+    let isValueDirty = false;
     const refreshValueFromEntity = (): void => {
       internal.state.value = getModeValue(internal, readEntityValueById);
+      isValueDirty = false;
     };
     const setRawValue = (value: TData): void => {
       internal.state.value = value;
+      isValueDirty = false;
+    };
+    const markValueDirty = (): void => {
+      isValueDirty = true;
+    };
+    const ensureValueFresh = (): void => {
+      if (!isValueDirty) {
+        return;
+      }
+
+      refreshValueFromEntity();
+    };
+    let snapshotCache: UnitSnapshot<TData, TMeta | null, SourceContext, TIdentity> = createUnitSnapshot({
+      identity: internal.identity,
+      value: internal.state.value,
+      status: internal.state.status,
+      meta: internal.state.meta,
+      context: internal.state.context,
+    });
+    let lastNotifiedSnapshot = snapshotCache;
+
+    const readSnapshot = (): UnitSnapshot<TData, TMeta | null, SourceContext, TIdentity> => {
+      if (
+        snapshotCache.status === internal.state.status
+        && Object.is(snapshotCache.value, internal.state.value)
+        && Object.is(snapshotCache.meta, internal.state.meta)
+        && Object.is(snapshotCache.context, internal.state.context)
+      ) {
+        return snapshotCache;
+      }
+
+      if (isUnitSnapshotEqual({
+        left: snapshotCache,
+        right: internal.state,
+      })) {
+        return snapshotCache;
+      }
+
+      snapshotCache = createUnitSnapshot({
+        identity: internal.identity,
+        value: internal.state.value,
+        status: internal.state.status,
+        meta: internal.state.meta,
+        context: internal.state.context,
+      });
+      return snapshotCache;
     };
 
     const notifyUnit = (): void => {
-      refreshValueFromEntity();
+      ensureValueFresh();
+      const nextSnapshot = readSnapshot();
+
+      if (internal.listeners.size === 0) {
+        return;
+      }
+
+      if (Object.is(lastNotifiedSnapshot, nextSnapshot)) {
+        return;
+      }
+
+      lastNotifiedSnapshot = nextSnapshot;
       notifyEffectListeners(
         internal.listeners,
-        createUnitSnapshot({
-          value: internal.state.value,
-          status: internal.state.status,
-          meta: internal.state.meta,
-          context: internal.state.context,
-        }),
+        nextSnapshot,
       );
     };
 
     const createRunContextEntry = (
       payload: TPayload,
-    ): SourceRunContextEntry<TIdentity, TPayload, TData, TMeta> => {
+    ): SourceRunContextEntry<TIdentity, TPayload, TData, TMeta, TEntity> => {
       const gate: SourceRunGate = {
         isLatestRun: () => false,
       };
       const runContextMethods = createEntityRunContextMethods<
-        UnitDataEntity<TData>,
+        TEntity,
         TData,
         EntityId
       >({
@@ -273,14 +322,21 @@ export const source = <
         isActive: () => gate.isLatestRun(),
         refreshValue: refreshValueFromEntity,
         readValue: () => internal.state.value,
+        refreshOnGet: true,
+        refreshStrategy: 'lazy',
       });
       const runContextBase: SourceRunContext<
         TIdentity,
         TPayload,
         TData,
-        TMeta
+        TMeta,
+        TEntity
       > = {
         identity: internal.identity,
+        value: internal.state.value,
+        status: internal.state.status,
+        meta: internal.state.meta,
+        context: internal.state.context,
         payload,
         setMeta: (metaInput: TMeta | null | ValueUpdater<TMeta | null, TMeta | null>) => {
           if (!gate.isLatestRun()) {
@@ -296,6 +352,7 @@ export const source = <
           }
 
           internal.state.meta = nextMeta;
+          runContextBase.meta = nextMeta;
           notifyUnit();
         },
         set: (input: TData | ValueUpdater<TData, TData>) => {
@@ -318,8 +375,9 @@ export const source = <
             return;
           }
 
+          runContextBase.value = internal.state.value;
           notifyUnit();
-          syncCacheRecord();
+          requestCacheSync();
         },
         reset: () => {
           if (!gate.isLatestRun()) {
@@ -327,6 +385,10 @@ export const source = <
           }
 
           resetState();
+          runContextBase.value = internal.state.value;
+          runContextBase.status = internal.state.status;
+          runContextBase.meta = internal.state.meta;
+          runContextBase.context = internal.state.context;
         },
         ...runContextMethods,
       };
@@ -338,10 +400,10 @@ export const source = <
     };
     const runContextEntryCache = createRunContextEntryCache<
       TPayload,
-      SourceRunContextEntry<TIdentity, TPayload, TData, TMeta>
+      SourceRunContextEntry<TIdentity, TPayload, TData, TMeta, TEntity>
     >({
       createEntry: createRunContextEntry,
-      limit: RUN_CONTEXT_CACHE_LIMIT,
+      limit: DEFAULT_RUN_CONTEXT_CACHE_LIMIT,
     });
 
     const setContext = (input: Partial<SourceContext>): void => {
@@ -361,24 +423,38 @@ export const source = <
       };
     };
 
-    const cacheEnabled = Boolean(
-      cacheStorage
-      && (cacheTtl === 'infinity' || cacheTtl > 0),
-    );
-    const cacheSupportsStructuredValues = cacheStorage?.supportsStructuredValues === true;
-    const cacheLruEnabled = Boolean(
-      cacheEnabled
-      && cacheLruMaxEntries > 0
-      && cacheStorage
-      && cacheWriteQueue,
-    );
+    const cacheEnabled = hasConfiguredCacheEnabled;
+    const isCacheUnavailable = (): boolean => {
+      if (!cacheStorage) {
+        return true;
+      }
+
+      return cacheStorage.readStatus() === 'disabled';
+    };
+
+    const isCacheLruEnabled = (): boolean => {
+      return cacheEnabled
+        && cacheLruMaxEntries > 0
+        && !isCacheUnavailable();
+    };
     const cacheLruStorageKey = `${cacheKeyPrefix}:${SOURCE_CACHE_LRU_STORAGE_KEY_SUFFIX}`;
     let cacheLruLoaded = false;
     let cacheLruKeyOrderMap = new Map<string, true>();
     let cacheLruNewestKey: string | null = null;
-    let cacheLruPersistScheduled = false;
-    let cacheLruPersistDirty = false;
-    let activePayloadCacheKey: string | null = null;
+    let hasHydratedFromIdentityCache = false;
+    let activeRunCount = 0;
+    let hasPendingCacheSync = false;
+
+    const syncDisabledCacheContext = (): void => {
+      if (!cacheStorage || cacheStorage.readStatus() !== 'disabled') {
+        return;
+      }
+
+      setContext({
+        cacheState: 'disabled',
+        error: cacheStorage.readFailure(),
+      });
+    };
 
     const readNewestCacheLruKey = (): string | null => {
       let nextNewestKey: string | null = null;
@@ -394,99 +470,62 @@ export const source = <
     };
 
     const loadCacheLruState = (): void => {
-      if (!cacheLruEnabled || cacheLruLoaded || !cacheStorage) {
+      if (!isCacheLruEnabled() || cacheLruLoaded || !cacheStorage) {
         return;
       }
 
       cacheLruLoaded = true;
-      const rawLruState = cacheStorage.getItem(cacheLruStorageKey);
+      let rawLruState: unknown | null = null;
+      try {
+        rawLruState = cacheStorage.getItem(cacheLruStorageKey);
+      } catch {
+        syncDisabledCacheContext();
+        return;
+      }
+
       if (!rawLruState) {
         return;
       }
 
-      let parsedLruState: unknown = rawLruState;
-      try {
-        if (typeof rawLruState === 'string') {
-          parsedLruState = JSON.parse(rawLruState);
-        }
-      } catch {
-        return;
-      }
-      if (!hasStringKeysArray(parsedLruState)) {
+      if (!hasStringKeysArray(rawLruState)) {
         return;
       }
 
-      const keysCandidate = parsedLruState.keys;
-      try {
-        const nextKeyOrderMap = new Map<string, true>();
-        keysCandidate
-          .slice()
-          .reverse()
-          .forEach((entry) => {
-            nextKeyOrderMap.set(entry, true);
-          });
+      const keysCandidate = rawLruState.keys;
+      const nextKeyOrderMap = new Map<string, true>();
+      keysCandidate
+        .slice()
+        .reverse()
+        .forEach((entry) => {
+          nextKeyOrderMap.set(entry, true);
+        });
 
-        cacheLruKeyOrderMap = nextKeyOrderMap;
-        cacheLruNewestKey = readNewestCacheLruKey();
-      } catch {
-        return;
-      }
+      cacheLruKeyOrderMap = nextKeyOrderMap;
+      cacheLruNewestKey = readNewestCacheLruKey();
     };
 
     const persistCacheLruState = (): void => {
-      if (!cacheLruEnabled || !cacheWriteQueue) {
+      if (!isCacheLruEnabled() || !cacheStorage) {
         return;
       }
 
-      if (cacheLruKeyOrderMap.size === 0) {
-        cacheWriteQueue.enqueueRemove(cacheLruStorageKey);
-        return;
+      try {
+        if (cacheLruKeyOrderMap.size === 0) {
+          cacheStorage.removeItem(cacheLruStorageKey);
+          return;
+        }
+
+        const persistedKeys = readPersistedCacheLruKeys();
+        cacheStorage.setItem(cacheLruStorageKey, {
+          keys: persistedKeys,
+        });
+      } catch {
+        syncDisabledCacheContext();
       }
-
-      const persistedKeys = readPersistedCacheLruKeys();
-      cacheWriteQueue.enqueueSet(
-        cacheLruStorageKey,
-        () => {
-          if (cacheSupportsStructuredValues) {
-            return {
-              keys: persistedKeys,
-            };
-          }
-
-          return JSON.stringify({
-            keys: persistedKeys,
-          });
-        },
-      );
-    };
-
-    const flushCacheLruPersistence = (): void => {
-      if (!cacheLruPersistDirty) {
-        return;
-      }
-
-      cacheLruPersistDirty = false;
-      persistCacheLruState();
-    };
-
-    const scheduleCacheLruPersistence = (): void => {
-      cacheLruPersistDirty = true;
-
-      if (cacheLruPersistScheduled) {
-        return;
-      }
-
-      cacheLruPersistScheduled = true;
-      scheduleAsync({
-        callback: () => {
-          cacheLruPersistScheduled = false;
-          flushCacheLruPersistence();
-        },
-      });
     };
 
     const touchCacheLruKey = (unitCacheKey: string): void => {
-      if (!cacheLruEnabled || !cacheWriteQueue) {
+      if (!isCacheLruEnabled() || !cacheStorage) {
         return;
       }
 
@@ -499,7 +538,7 @@ export const source = <
         cacheLruKeyOrderMap.delete(unitCacheKey);
         cacheLruKeyOrderMap.set(unitCacheKey, true);
         cacheLruNewestKey = unitCacheKey;
-        scheduleCacheLruPersistence();
+        persistCacheLruState();
         return;
       }
 
@@ -510,14 +549,19 @@ export const source = <
         : undefined;
       if (evictedEntry && evictedEntry !== unitCacheKey) {
         cacheLruKeyOrderMap.delete(evictedEntry);
-        cacheWriteQueue.enqueueRemove(evictedEntry);
+        try {
+          cacheStorage.removeItem(evictedEntry);
+        } catch {
+          syncDisabledCacheContext();
+          return;
+        }
       }
 
-      scheduleCacheLruPersistence();
+      persistCacheLruState();
     };
 
     const removeCacheLruKey = (unitCacheKey: string): void => {
-      if (!cacheLruEnabled) {
+      if (!isCacheLruEnabled()) {
         return;
       }
 
@@ -531,85 +575,87 @@ export const source = <
         cacheLruNewestKey = readNewestCacheLruKey();
       }
 
-      scheduleCacheLruPersistence();
+      persistCacheLruState();
     };
 
-    const resolvePayloadCacheKey = (payload: TPayload): string => {
-      return payloadKeyCache.getOrCreateKey(payload);
-    };
-
-    const resolveUnitCacheKey = (payloadCacheKey: string): string => {
-      return `${cacheKeyPrefix}:${unitKey}:${payloadCacheKey}`;
-    };
-    const resolveUnitCacheKeyPrefix = (): string => {
-      return `${cacheKeyPrefix}:${unitKey}:`;
-    };
-    const readUnitCacheLruCandidates = ({
-      excludeUnitCacheKey,
-    }: ReadUnitCacheLruCandidatesInput): string[] => {
-      if (!cacheLruEnabled) {
-        return [];
-      }
-
-      loadCacheLruState();
-      const unitCacheKeyPrefix = resolveUnitCacheKeyPrefix();
-      return readPersistedCacheLruKeys().filter((entry) => {
-        return entry !== excludeUnitCacheKey
-          && entry.startsWith(unitCacheKeyPrefix);
-      });
+    const resolveUnitCacheKey = (): string => {
+      return `${cacheKeyPrefix}:${unitKey}`;
     };
 
     const syncCacheRecord = (): void => {
-      if (!cacheEnabled || !cacheWriteQueue) {
+      if (!cacheEnabled || !cacheStorage || isCacheUnavailable()) {
+        syncDisabledCacheContext();
         return;
       }
 
-      const payloadCacheKey = resolvePayloadCacheKey(internal.payload);
-      const unitCacheKey = resolveUnitCacheKey(payloadCacheKey);
+      const unitCacheKey = resolveUnitCacheKey();
       if (!internal.hasEntityValue) {
         removeCacheLruKey(unitCacheKey);
-        cacheWriteQueue.enqueueRemove(unitCacheKey);
+        try {
+          cacheStorage.removeItem(unitCacheKey);
+        } catch {
+          syncDisabledCacheContext();
+        }
         return;
       }
 
       touchCacheLruKey(unitCacheKey);
-      cacheWriteQueue.enqueueSet(unitCacheKey, () => {
-        const entities = internal.membershipIds
-          .map((id) => entity.getById(id))
-          .filter((entry): entry is UnitDataEntity<TData> => entry !== undefined);
-        const record = {
-          mode: internal.mode,
-          entities,
-          writtenAt: Date.now(),
-        };
-        if (cacheSupportsStructuredValues) {
-          return record;
-        }
+      if (!cacheEnabled) {
+        return;
+      }
 
-        return serializeSourceCacheRecord(record);
-      });
+      const entities = internal.membershipIds
+        .map((id) => readEntityValueById(id))
+        .filter((entry): entry is TEntity => entry !== undefined);
+      const record = {
+        mode: internal.mode,
+        entities,
+        writtenAt: Date.now(),
+      };
+      try {
+        cacheStorage.setItem(unitCacheKey, record);
+      } catch {
+        syncDisabledCacheContext();
+      }
+    };
+    const requestCacheSync = (): void => {
+      if (activeRunCount > 0) {
+        hasPendingCacheSync = true;
+        return;
+      }
+
+      syncCacheRecord();
+    };
+    const flushPendingCacheSync = (): void => {
+      if (!hasPendingCacheSync || activeRunCount > 0) {
+        return;
+      }
+
+      hasPendingCacheSync = false;
+      syncCacheRecord();
     };
 
     const hydrateFromUnitCacheKey = ({
       unitCacheKey,
       cacheStateOnHit,
     }: HydrateFromUnitCacheKeyInput): boolean => {
-      if (!cacheStorage) {
+      if (!cacheStorage || !cacheEnabled || isCacheUnavailable()) {
         setContext({
           cacheState: 'disabled',
+          error: cacheStorage?.readFailure() ?? null,
         });
         return false;
       }
 
-      if (!cacheEnabled) {
-        setContext({
-          cacheState: 'disabled',
-        });
+      let rawRecord: unknown | null = null;
+      try {
+        rawRecord = cacheStorage.getItem(unitCacheKey);
+      } catch {
+        syncDisabledCacheContext();
         return false;
       }
 
-      const rawRecord = cacheStorage.getItem(unitCacheKey);
-      const parsedRecord = readSourceCacheRecord<UnitDataEntity<TData>>(rawRecord);
+      const parsedRecord = readSourceCacheRecord<TEntity>(rawRecord);
       if (!parsedRecord) {
         setContext({
           cacheState: 'miss',
@@ -619,14 +665,11 @@ export const source = <
 
       if (isCacheRecordExpired({ ttl: cacheTtl, writtenAt: parsedRecord.writtenAt })) {
         removeCacheLruKey(unitCacheKey);
-        if (cacheWriteQueue) {
-          cacheWriteQueue.enqueueRemove(unitCacheKey);
-        } else {
-          try {
-            cacheStorage.removeItem(unitCacheKey);
-          } catch {
-            // Ignore storage write errors and continue with stale cache behavior.
-          }
+        try {
+          cacheStorage.removeItem(unitCacheKey);
+        } catch {
+          syncDisabledCacheContext();
+          return false;
         }
         setContext({
           cacheState: 'stale',
@@ -670,38 +713,18 @@ export const source = <
       });
       return true;
     };
-
-    const hydrateFromPayloadCache = (payload: TPayload): boolean => {
-      const payloadCacheKey = resolvePayloadCacheKey(payload);
-      if (activePayloadCacheKey === payloadCacheKey) {
+    const hydrateFromIdentityCache = (): boolean => {
+      if (hasHydratedFromIdentityCache) {
         return false;
       }
 
-      const unitCacheKey = resolveUnitCacheKey(payloadCacheKey);
-      const didHydrateFromPrimary = hydrateFromUnitCacheKey({
+      const unitCacheKey = resolveUnitCacheKey();
+      const didHydrate = hydrateFromUnitCacheKey({
         unitCacheKey,
         cacheStateOnHit: 'hit',
       });
-      if (didHydrateFromPrimary) {
-        activePayloadCacheKey = payloadCacheKey;
-        return true;
-      }
-
-      const fallbackCandidates = readUnitCacheLruCandidates({
-        excludeUnitCacheKey: unitCacheKey,
-      });
-      let didHydrateFromFallback = false;
-      fallbackCandidates.some((fallbackUnitCacheKey) => {
-        didHydrateFromFallback = hydrateFromUnitCacheKey({
-          unitCacheKey: fallbackUnitCacheKey,
-          cacheStateOnHit: 'stale',
-        });
-        return didHydrateFromFallback;
-      });
-      if (didHydrateFromFallback) {
-        activePayloadCacheKey = payloadCacheKey;
-      }
-      return didHydrateFromFallback;
+      hasHydratedFromIdentityCache = didHydrate;
+      return didHydrate;
     };
 
     entity.registerUnit({
@@ -711,18 +734,21 @@ export const source = <
           return;
         }
 
-        notifyUnit();
-        syncCacheRecord();
+        markValueDirty();
+        if (internal.listeners.size > 0) {
+          notifyUnit();
+        }
+        requestCacheSync();
       },
     });
 
-    hydrateFromPayloadCache(internal.payload);
+    hydrateFromIdentityCache();
 
     let singleInFlightPromise: Promise<TData> | null = null;
-      let hasSingleInFlightPayload = false;
-      let singleInFlightPayload: TPayload | undefined;
-      let singleInFlightPayloadKey: string | null = null;
-      let runConfig: SourceRunConfig | undefined;
+    let hasSingleInFlightPayload = false;
+    let singleInFlightPayload: TPayload | undefined;
+    let singleInFlightPayloadKey: string | null = null;
+    let runConfig: SourceRunConfig | undefined;
 
     const clearInFlightTracking = (): void => {
       internal.inFlightByPayload.clear();
@@ -736,7 +762,7 @@ export const source = <
       internal.runSequence += 1;
       internal.latestRunSequence = internal.runSequence;
       internal.stopped = true;
-      invokeSourceCleanup(internal.cleanup);
+      invokeCleanup(internal.cleanup);
       internal.cleanup = null;
     };
 
@@ -749,20 +775,23 @@ export const source = <
       clearInFlightTracking();
       runContextEntryCache.clear();
       payloadKeyCache.clear();
-      activePayloadCacheKey = null;
+      hasHydratedFromIdentityCache = false;
       internal.payload = initialPayload;
 
       clearEntityMembership(internal, { clearUnitMembership: entity.clearUnitMembership });
       internal.mode = initialMode;
-      internal.modeLocked = false;
+      internal.modeLocked = resolvedModeLocked;
       internal.lastRunAt = null;
       internal.stopped = false;
       internal.state.value = initialValue;
+      isValueDirty = false;
       internal.state.status = 'idle';
       internal.state.meta = null;
-      internal.state.context = createInitialSourceContext(Boolean(cacheStorage));
+      internal.state.context = createInitialSourceContext(
+        cacheEnabled && !isCacheUnavailable(),
+      );
       notifyUnit();
-      syncCacheRecord();
+      requestCacheSync();
     };
 
     const executeRun = (
@@ -810,8 +839,8 @@ export const source = <
         return internal.latestRunSequence === runSequence && !internal.destroyed;
       };
 
-      const didHydrateFromPayloadCache = hydrateFromPayloadCache(internal.payload);
-      if (didHydrateFromPayloadCache && isLatestRun()) {
+      const didHydrateFromIdentityCache = hydrateFromIdentityCache();
+      if (didHydrateFromIdentityCache && isLatestRun()) {
         notifyUnit();
       }
 
@@ -832,24 +861,29 @@ export const source = <
       const runContextEntry = runContextEntryCache.getOrCreate(internal.payload);
       runContextEntry.gate.isLatestRun = isLatestRun;
       runContextEntry.context.payload = internal.payload;
+      runContextEntry.context.value = internal.state.value;
+      runContextEntry.context.status = internal.state.status;
+      runContextEntry.context.meta = internal.state.meta;
+      runContextEntry.context.context = internal.state.context;
 
       const usesSingleInFlight = singleInFlightPromise === null && internal.inFlightByPayload.size === 0;
       const trackedPayloadKey = usesSingleInFlight
         ? null
         : (payloadKey ?? payloadKeyCache.getOrCreateKey(internal.payload));
 
+      activeRunCount += 1;
       const runPromise: Promise<TData> = Promise.resolve(run(runContextEntry.context))
         .then((result) => {
-          if (isSourceCleanup(result)) {
+          if (isCleanup(result)) {
             if (!isLatestRun()) {
-              invokeSourceCleanup(result);
+              invokeCleanup(result);
               return internal.state.value;
             }
 
             if (internal.destroyed || internal.stopped) {
-              invokeSourceCleanup(result);
+              invokeCleanup(result);
             } else {
-              invokeSourceCleanup(internal.cleanup);
+              invokeCleanup(internal.cleanup);
               internal.cleanup = result;
             }
 
@@ -868,7 +902,7 @@ export const source = <
             error: null,
           });
           notifyUnit();
-          syncCacheRecord();
+          requestCacheSync();
 
           return internal.state.value;
         })
@@ -884,6 +918,9 @@ export const source = <
           throw error;
         })
         .finally(() => {
+          activeRunCount = Math.max(0, activeRunCount - 1);
+          flushPendingCacheSync();
+
           if (usesSingleInFlight) {
             if (singleInFlightPromise === runPromise) {
               singleInFlightPromise = null;
@@ -913,15 +950,7 @@ export const source = <
       return runPromise;
     };
 
-    const getSnapshot = () => {
-      return createUnitSnapshot({
-        value: internal.state.value,
-        status: internal.state.status,
-        meta: internal.state.meta,
-        context: internal.state.context,
-      });
-    };
-    const subscribe = (listener: EffectListener<TData, TMeta | null>) => {
+    const subscribe = (listener: EffectListener<TData, TMeta | null, SourceContext, TIdentity>) => {
       if (internal.destroyed) {
         return undefined;
       }
@@ -932,39 +961,105 @@ export const source = <
         internal.listeners.delete(listener);
       };
     };
-    const runUnit: SourceRun<TPayload, TData, TMeta> = (
+    const fetchUnit: SourceRun<TPayload, TData, TMeta> = (
       input?: SourceRunInput<TPayload, TData, TMeta>,
       config?: SourceRunConfig,
     ) => {
-        if (config) {
-          runConfig = config;
-        }
+      if (config) {
+        runConfig = config;
+      }
 
-        let payloadInput: TPayload | undefined;
-        if (isSourceSetAction<TPayload, TData, TMeta>(input)) {
-          const previous: UnitRunPrevious<
-            TPayload,
-            SourceRunConfig,
-            TData,
-            TMeta | null
-          > = {
-            snapshot: getSnapshot(),
-            data: internal.payload,
-            config: runConfig,
-          };
-          payloadInput = input(previous, config);
-        } else {
-          payloadInput = input;
-        }
+      let payloadInput: TPayload | undefined;
+      if (isUnitSetAction<TPayload, SourceRunConfig, TData, TMeta | null, SourceContext>(input)) {
+        const previous: UnitRunPrevious<
+          TPayload,
+          SourceRunConfig,
+          TData,
+          TMeta | null,
+          SourceContext
+        > = {
+          snapshot: getSnapshot(),
+          data: internal.payload,
+          config: runConfig,
+        };
+        payloadInput = input(previous, config);
+      } else {
+        payloadInput = input;
+      }
 
-        if (config?.mode === 'force' || config?.mode === 'refetch') {
-          return executeRun(true, payloadInput).then(resolveRunAsVoid);
-        }
-        return executeRun(false, payloadInput).then(resolveRunAsVoid);
+      if (config?.mode === 'force' || config?.mode === 'refetch') {
+        return executeRun(true, payloadInput).then(resolveUnitRunAsVoid);
+      }
+      return executeRun(false, payloadInput).then(resolveUnitRunAsVoid);
+    };
+    const refetch = (
+      input?: SourceFetchInput<TPayload, TData, TMeta>,
+    ): Promise<void> => {
+      if (input === undefined) {
+        return Promise.resolve(
+          Reflect.apply(fetchUnit, undefined, [
+            undefined,
+            { mode: 'refetch' },
+          ]),
+        );
+      }
+
+      return Promise.resolve(
+        Reflect.apply(fetchUnit, undefined, [
+          input,
+          { mode: 'refetch' },
+        ]),
+      );
+    };
+    const force = (
+      input?: SourceFetchInput<TPayload, TData, TMeta>,
+    ): Promise<void> => {
+      if (input === undefined) {
+        return Promise.resolve(
+          Reflect.apply(fetchUnit, undefined, [
+            undefined,
+            { mode: 'force' },
+          ]),
+        );
+      }
+
+      return Promise.resolve(
+        Reflect.apply(fetchUnit, undefined, [
+          input,
+          { mode: 'force' },
+        ]),
+      );
+    };
+    let baseSnapshotCache = snapshotCache;
+    let sourceSnapshotCache: SourceSnapshot<TIdentity, TPayload, TData, TMeta> | null = null;
+    const resolveSnapshot = (): SourceSnapshot<TIdentity, TPayload, TData, TMeta> => {
+      ensureValueFresh();
+      const baseSnapshot = (
+        snapshotCache.status === internal.state.status
+        && Object.is(snapshotCache.value, internal.state.value)
+        && Object.is(snapshotCache.meta, internal.state.meta)
+        && Object.is(snapshotCache.context, internal.state.context)
+      )
+        ? snapshotCache
+        : readSnapshot();
+
+      if (sourceSnapshotCache && Object.is(baseSnapshotCache, baseSnapshot)) {
+        return sourceSnapshotCache;
+      }
+
+      baseSnapshotCache = baseSnapshot;
+      sourceSnapshotCache = {
+        ...baseSnapshot,
+        load: fetchUnit,
+        refetch,
+        force,
       };
+      return sourceSnapshotCache;
+    };
+    const getSnapshot = (): SourceSnapshot<TIdentity, TPayload, TData, TMeta> => {
+      return resolveSnapshot();
+    };
     const unit: SourceUnit<TIdentity, TPayload, TData, TMeta> = {
-      identity: internal.identity,
-      run: runUnit,
       getSnapshot,
       subscribe,
     };
@@ -976,4 +1071,33 @@ export const source = <
   };
 
   return sourceFactory;
+};
+
+export const source: SourceBuilder = <
+  TEntityStore extends Entity<object, EntityId>,
+  TMode extends UnitEntityMode,
+>({
+  entity,
+  mode,
+}: SourceBuilderInput<TEntityStore, TMode>): SourceByEntityModeBuilder<TEntityStore, TMode> => {
+  const sourceByEntityMode: SourceByEntityModeBuilder<TEntityStore, TMode> = <
+    TIdentity extends object | undefined,
+    TPayload,
+    TMeta,
+  >(
+    config: SourceConfig<
+      TIdentity,
+      TPayload,
+      EntityValueOfStore<TEntityStore>,
+      TMode,
+      TMeta
+    >,
+  ) => {
+    return createSourceFromConfig({
+      entity,
+      mode,
+    }, config);
+  };
+
+  return sourceByEntityMode;
 };

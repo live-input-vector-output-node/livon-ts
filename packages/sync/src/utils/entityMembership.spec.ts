@@ -14,6 +14,7 @@ interface Todo {
 
 describe('entity membership helpers', () => {
   const todosEntity = entity<Todo>({
+    key: 'entity-membership-spec',
     idOf: (value) => value.id,
   });
 

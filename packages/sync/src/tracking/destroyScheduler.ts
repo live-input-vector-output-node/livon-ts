@@ -1,17 +1,11 @@
+import { DEFAULT_UNIT_DESTROY_DELAY } from '../utils/index.js';
 import type { TrackedUnit } from './types.js';
-
-const DEFAULT_DESTROY_DELAY = 250;
 
 type DestroyTimeout = unknown;
 
 interface TimerApi {
   setTimeout: (callback: () => void, delay: number) => DestroyTimeout;
   clearTimeout: (timeout: DestroyTimeout) => void;
-}
-
-interface MaybeTimerApi {
-  setTimeout?: unknown;
-  clearTimeout?: unknown;
 }
 
 interface ScheduleTrackedUnitDestroyInput {
@@ -30,15 +24,20 @@ let destroySweepTimeout: DestroyTimeout | null = null;
 let destroyNextSweepAt: number | null = null;
 
 const hasTimerApi = (
-  input: object,
+  input: unknown,
 ): input is TimerApi => {
-  const timerApi = input as MaybeTimerApi;
+  if (typeof input !== 'object' || input === null) {
+    return false;
+  }
 
-  return typeof timerApi.setTimeout === 'function' && typeof timerApi.clearTimeout === 'function';
+  const setTimeoutValue = Reflect.get(input, 'setTimeout');
+  const clearTimeoutValue = Reflect.get(input, 'clearTimeout');
+
+  return typeof setTimeoutValue === 'function' && typeof clearTimeoutValue === 'function';
 };
 
 const readTimerApi = (): TimerApi => {
-  const root = globalThis as object;
+  const root: unknown = globalThis;
 
   if (hasTimerApi(root)) {
     return root;
@@ -48,10 +47,10 @@ const readTimerApi = (): TimerApi => {
 };
 
 const normalizeDestroyDelay = (
-  input: number | undefined = DEFAULT_DESTROY_DELAY,
+  input: number | undefined = DEFAULT_UNIT_DESTROY_DELAY,
 ): number => {
   if (typeof input !== 'number' || Number.isNaN(input)) {
-    return DEFAULT_DESTROY_DELAY;
+    return DEFAULT_UNIT_DESTROY_DELAY;
   }
 
   return input < 0 ? 0 : input;
@@ -145,7 +144,7 @@ export const clearPendingTrackedUnitDestroy = (
 
 export const scheduleTrackedUnitDestroy = ({
   unit,
-  destroyDelay = DEFAULT_DESTROY_DELAY,
+  destroyDelay = DEFAULT_UNIT_DESTROY_DELAY,
   onDestroy,
 }: ScheduleTrackedUnitDestroyInput): void => {
   const delay = normalizeDestroyDelay(destroyDelay);

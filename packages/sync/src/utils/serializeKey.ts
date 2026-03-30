@@ -7,7 +7,7 @@ export const serializeKey = (input: unknown): string => {
     return encodeLatin1(packed);
   } catch {
     throw new TypeError(
-      'Cannot serialize key input with msgpackr. Scope and payload must be msgpack-serializable.',
+      'Cannot serialize key input with msgpackr. Identity and payload must be msgpack-serializable.',
     );
   }
 };

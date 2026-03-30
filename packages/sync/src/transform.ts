@@ -1,10 +1,13 @@
 import {
+  DEFAULT_UNIT_DESTROY_DELAY,
   createSerializedKeyCache,
   createUnitSnapshot,
+  isUnitSnapshotEqual,
   isUnitLoadingStatus,
   isUnitSettledStatus,
   notifyEffectListeners,
   type EffectListener,
+  type UnitSetAction,
   type UnitSnapshot,
 } from './utils/index.js';
 
@@ -13,8 +16,24 @@ interface DependencyUnit<TValue> {
   subscribe: (listener: (snapshot: UnitSnapshot<TValue>) => void) => (() => void) | void;
 }
 
+interface SettableUnitRun<TPayload> {
+  (): Promise<unknown> | unknown;
+  (payload: TPayload): Promise<unknown> | unknown;
+  (payload: TPayload | undefined, config: unknown): Promise<unknown> | unknown;
+  (
+    setAction: UnitSetAction<TPayload, unknown, unknown, unknown, unknown>,
+    config?: unknown,
+  ): Promise<unknown> | unknown;
+}
+
 interface SettableUnit<TPayload> {
-  run?: (payload: TPayload) => Promise<unknown> | unknown;
+  getSnapshot?: () => {
+    apply?: SettableUnitRun<TPayload>;
+    submit?: SettableUnitRun<TPayload>;
+    load?: SettableUnitRun<TPayload>;
+    start?: SettableUnitRun<TPayload>;
+    set?: (payload: TPayload) => Promise<unknown> | unknown;
+  };
   set?: (payload: TPayload) => Promise<unknown> | unknown;
 }
 
@@ -46,10 +65,13 @@ export interface TransformUnit<
   TPayload,
   RResult,
 > {
-  run: (payload: TPayload) => Promise<UnitSnapshot<RResult>>;
-  getSnapshot: () => UnitSnapshot<RResult>;
+  getSnapshot: () => TransformSnapshot<TPayload, RResult>;
   subscribe: (listener: EffectListener<RResult>) => (() => void) | void;
 }
+
+export type TransformSnapshot<TPayload, RResult> = UnitSnapshot<RResult> & {
+  apply: (payload: TPayload) => Promise<TransformSnapshot<TPayload, RResult>>;
+};
 
 export interface Transform<
   TIdentity extends object | undefined = object | undefined,
@@ -86,8 +108,6 @@ interface TransformUnitInternal<
   destroyed: boolean;
   unit: TransformUnit<TPayload, RResult>;
 }
-
-const DEFAULT_DESTROY_DELAY = 250;
 
 const createErrorContext = (error: unknown): { message: string; cause: unknown } => {
   if (error instanceof Error) {
@@ -160,16 +180,20 @@ const applySnapshot = <
   const nextMeta = getSnapshotMeta(currentSnapshot, next);
   const nextContext = getSnapshotContext(currentSnapshot, next);
 
-  if (
-    Object.is(nextValue, currentSnapshot.value)
-    && nextStatus === currentSnapshot.status
-    && Object.is(nextMeta, currentSnapshot.meta)
-    && Object.is(nextContext, currentSnapshot.context)
-  ) {
+  if (isUnitSnapshotEqual({
+    left: currentSnapshot,
+    right: {
+      value: nextValue,
+      status: nextStatus,
+      meta: nextMeta,
+      context: nextContext,
+    },
+  })) {
     return false;
   }
 
   const nextSnapshot = createUnitSnapshot({
+    identity: internal.identity,
     value: nextValue,
     status: nextStatus,
     meta: nextMeta,
@@ -217,15 +241,28 @@ const executeSetOnUnit = async <TPayload>(
   unit: SettableUnit<TPayload>,
   payload: TPayload,
 ): Promise<unknown> => {
-  if (typeof unit.run === 'function') {
-    return unit.run(payload);
+  const snapshot = unit.getSnapshot?.();
+  if (snapshot && typeof snapshot.apply === 'function') {
+    return snapshot.apply(payload);
+  }
+  if (snapshot && typeof snapshot.submit === 'function') {
+    return snapshot.submit(payload);
+  }
+  if (snapshot && typeof snapshot.load === 'function') {
+    return snapshot.load(payload);
+  }
+  if (snapshot && typeof snapshot.start === 'function') {
+    return snapshot.start(payload);
+  }
+  if (snapshot && typeof snapshot.set === 'function') {
+    return snapshot.set(payload);
   }
 
   if (typeof unit.set === 'function') {
     return unit.set(payload);
   }
 
-  throw new Error('Transform context.set target has no run or set method.');
+  throw new Error('Transform context.set target has no snapshot apply/submit/load/start/set method.');
 };
 
 interface RecomputeInput<TIdentity extends object | undefined, TPayload, RResult> {
@@ -629,11 +666,11 @@ export const transform = <
   out,
   in: setIn,
   defaultValue,
-  destroyDelay: _destroyDelay = DEFAULT_DESTROY_DELAY,
+  destroyDelay: _destroyDelay = DEFAULT_UNIT_DESTROY_DELAY,
 }: TransformConfig<TIdentity, TPayload, RResult>): Transform<TIdentity, TPayload, RResult> => {
   const unitsByKey = new Map<string, TransformUnitInternal<TIdentity, TPayload, RResult>>();
   const unitKeyCache = createSerializedKeyCache({
-    mode: 'scoped-unit',
+    mode: 'identity-unit',
   });
 
   const transformFactory: Transform<TIdentity, TPayload, RResult> = (identity) => {
@@ -644,6 +681,7 @@ export const transform = <
     }
 
     const initialSnapshot = createUnitSnapshot({
+      identity,
       value: (defaultValue ?? null) as RResult,
       status: 'idle',
       meta: null,
@@ -667,18 +705,28 @@ export const transform = <
       unit: {} as TransformUnit<TPayload, RResult>,
     };
 
+    const apply = async (
+      payloadInput: TPayload,
+    ): Promise<TransformSnapshot<TPayload, RResult>> => {
+      await runSet({
+        internal,
+        out,
+        setIn,
+        payload: payloadInput,
+      });
+      return unit.getSnapshot();
+    };
+
+    const resolveTransformSnapshot = (): TransformSnapshot<TPayload, RResult> => {
+      return {
+        ...internal.snapshot,
+        apply,
+      };
+    };
+
     const unit: TransformUnit<TPayload, RResult> = {
-      run: async (payloadInput) => {
-        await runSet({
-          internal,
-          out,
-          setIn,
-          payload: payloadInput,
-        });
-        return internal.snapshot;
-      },
       getSnapshot: () => {
-        return internal.snapshot;
+        return resolveTransformSnapshot();
       },
       subscribe: (listener) => {
         if (internal.destroyed) {

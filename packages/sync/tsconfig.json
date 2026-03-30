@@ -1,5 +1,16 @@
 {
   "extends": "@livon/config/tsconfig/library.json",
   "include": ["src"],
-  "exclude": ["dist", "node_modules"]
+  "exclude": [
+    "dist",
+    "node_modules",
+    "src/**/*.spec.*",
+    "src/**/*.test.*",
+    "src/**/*.bench.*",
+    "src/**/*.benchmark.*",
+    "src/**/__mocks__/**",
+    "src/**/mocks/**",
+    "src/**/testing/**",
+    "src/**/tests/**"
+  ]
 }

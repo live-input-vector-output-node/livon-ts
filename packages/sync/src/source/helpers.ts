@@ -1,12 +1,6 @@
-import { Packr } from 'msgpackr';
-
 import { type CacheTtl } from '../entity.js';
 import {
-  decodeLatin1,
-  deserializeStructuredValue,
-  encodeLatin1,
   readOrCreateSharedIndexedDbCacheStorage,
-  serializeStructuredValue,
 } from '../utils/index.js';
 import type {
   IsCacheRecordExpiredInput,
@@ -14,8 +8,6 @@ import type {
   ResolveCacheKeyInput,
   ResolveCacheTtlInput,
   SourceCacheRecord,
-  SourceCleanup,
-  SourceRunResult,
   SourceUnitInternal,
 } from './types.js';
 export {
@@ -28,12 +20,6 @@ const DEFAULT_CACHE_TTL: CacheTtl = 0;
 const DEFAULT_CACHE_LRU_MAX_ENTRIES = 256;
 const DISABLED_CACHE_LRU_MAX_ENTRIES = 0;
 const DEFAULT_CACHE_KEY_PREFIX = 'livon-sync-source';
-const SOURCE_CACHE_MSGPACK_PREFIX = 'm1:';
-const SOURCE_CACHE_STRUCTURED_PREFIX = 's1:';
-const sourceCachePackr = new Packr({
-  structuredClone: true,
-  moreTypes: true,
-});
 
 const isRecordValue = (value: unknown): value is Record<string, unknown> => {
   return typeof value === 'object' && value !== null;
@@ -75,52 +61,6 @@ const isSourceCacheRecordValue = <TEntity extends object>(
   }
 
   return true;
-};
-
-export const serializeSourceCacheRecord = <TEntity extends object>(
-  record: SourceCacheRecord<TEntity>,
-): string => {
-  try {
-    const packed = sourceCachePackr.pack(record);
-    return `${SOURCE_CACHE_MSGPACK_PREFIX}${encodeLatin1(packed)}`;
-  } catch {
-    const structured = serializeStructuredValue({
-      input: record,
-    });
-    return `${SOURCE_CACHE_STRUCTURED_PREFIX}${structured}`;
-  }
-};
-
-const deserializeSourceCacheRecord = <TEntity extends object>(
-  value: unknown,
-): SourceCacheRecord<TEntity> | undefined => {
-  if (isSourceCacheRecordValue<TEntity>(value)) {
-    return value;
-  }
-
-  if (typeof value !== 'string') {
-    return undefined;
-  }
-
-  try {
-    if (value.startsWith(SOURCE_CACHE_MSGPACK_PREFIX)) {
-      const latin1Payload = value.slice(SOURCE_CACHE_MSGPACK_PREFIX.length);
-      const decoded = sourceCachePackr.unpack(decodeLatin1(latin1Payload));
-      if (decoded && typeof decoded === 'object') {
-        return decoded as SourceCacheRecord<TEntity>;
-      }
-      return undefined;
-    }
-
-    if (value.startsWith(SOURCE_CACHE_STRUCTURED_PREFIX)) {
-      const structuredPayload = value.slice(SOURCE_CACHE_STRUCTURED_PREFIX.length);
-      return deserializeStructuredValue<SourceCacheRecord<TEntity>>(structuredPayload);
-    }
-
-    return deserializeStructuredValue<SourceCacheRecord<TEntity>>(value);
-  } catch {
-    return undefined;
-  }
 };
 
 export const resolveCacheTtl = ({
@@ -195,20 +135,11 @@ export const readSourceCacheRecord = <TEntity extends object>(
     return undefined;
   }
 
-  const parsed = deserializeSourceCacheRecord<TEntity>(value);
-  if (!parsed || typeof parsed !== 'object') {
+  if (!isSourceCacheRecordValue<TEntity>(value)) {
     return undefined;
   }
 
-  if ((parsed.mode !== 'one' && parsed.mode !== 'many') || !Array.isArray(parsed.entities)) {
-    return undefined;
-  }
-
-  if (typeof parsed.writtenAt !== 'number' || Number.isNaN(parsed.writtenAt)) {
-    return undefined;
-  }
-
-  return parsed;
+  return value;
 };
 
 export const shouldUseCache = <
@@ -228,26 +159,6 @@ export const shouldUseCache = <
   }
 
   return Date.now() - internal.lastRunAt < internal.ttl;
-};
-
-export const invokeSourceCleanup = (
-  cleanup: SourceCleanup | null,
-): void => {
-  if (!cleanup) {
-    return;
-  }
-
-  try {
-    cleanup();
-  } catch {
-    return;
-  }
-};
-
-export const isSourceCleanup = (
-  input: SourceRunResult,
-): input is SourceCleanup => {
-  return typeof input === 'function';
 };
 
 export { hasStringKeysArray, isRecordValue };

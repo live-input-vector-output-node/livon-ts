@@ -1,14 +1,24 @@
-export { source } from './source/index.js';
+export { source } from './sourceLazy.js';
 export type {
   Source,
+  SourceBuilderInput,
+  SourceByEntityModeBuilder,
+  SourceBuilder,
   SourceCleanup,
   SourceConfig,
   SourceDestroyContext,
+  SourceFetch,
+  SourceFetchConfig,
+  SourceFetchInput,
+  SourceMetaOfConfig,
+  SourcePayloadOfConfig,
   SourceRun,
   SourceRunConfig,
   SourceRunInput,
   SourceRunContext,
   SourceRunResult,
+  SourceSnapshot,
+  SourceContext,
   SourceUnit,
   SourceUnitByKeyMap,
 } from './source/index.js';

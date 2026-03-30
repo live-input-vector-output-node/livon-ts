@@ -1,6 +1,12 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "concurrency": "100",
+  "globalDependencies": [
+    "package.json",
+    "pnpm-lock.yaml",
+    "turbo.json",
+    "configs/**"
+  ],
   "tasks": {
     "build": {
       "dependsOn": [
@@ -139,16 +145,37 @@
     "gen:readmes": {
       "outputs": []
     },
+    "@livon/readmes#gen:readmes": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "../../configs/docs/readme-sync.json",
+        "../../website/docs/**",
+        "../../packages/*/README.md"
+      ],
+      "outputs": []
+    },
     "check:readmes": {
       "outputs": []
     },
+    "@livon/readmes#check:readmes": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "../../configs/docs/readme-sync.json",
+        "../../website/docs/**",
+        "../../packages/*/README.md"
+      ],
+      "outputs": []
+    },
     "check:policies": {
+      "cache": false,
       "outputs": []
     },
     "check:links": {
+      "cache": false,
       "outputs": []
     },
     "metrics:ai-control": {
+      "cache": false,
       "outputs": []
     },
     "gen": {
@@ -174,6 +201,13 @@
       "outputs": []
     },
     "bench:gate": {
+      "dependsOn": [
+        "build",
+        "^build"
+      ],
+      "outputs": []
+    },
+    "bench:execution-mode": {
       "dependsOn": [
         "build",
         "^build"

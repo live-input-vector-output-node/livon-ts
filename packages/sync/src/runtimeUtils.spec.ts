@@ -34,7 +34,7 @@ describe('runtimeUtils', () => {
       const symbolValue = Symbol(randomString({ prefix: 'symbol' }));
 
       expect(() => serializeKey(symbolValue)).toThrowError(
-        'Cannot serialize key input with msgpackr. Scope and payload must be msgpack-serializable.',
+        'Cannot serialize key input with msgpackr. Identity and payload must be msgpack-serializable.',
       );
     });
   });

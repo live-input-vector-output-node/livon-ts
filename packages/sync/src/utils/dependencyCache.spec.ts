@@ -13,12 +13,12 @@ describe('createDependencyCache()', () => {
       });
 
       const first = cache.getOrCreate({
-        primaryDependencies: ['scope-a'],
+        primaryDependencies: ['identity-a'],
         secondaryDependencies: ['payload-a'],
         build,
       });
       const second = cache.getOrCreate({
-        primaryDependencies: ['scope-a'],
+        primaryDependencies: ['identity-a'],
         secondaryDependencies: ['payload-a'],
         build,
       });
@@ -47,12 +47,12 @@ describe('createDependencyCache()', () => {
         });
 
       const first = cache.getOrCreate({
-        primaryDependencies: ['scope-a'],
+        primaryDependencies: ['identity-a'],
         secondaryDependencies: ['payload-a'],
         build,
       });
       const second = cache.getOrCreate({
-        primaryDependencies: ['scope-a'],
+        primaryDependencies: ['identity-a'],
         secondaryDependencies: ['payload-b'],
         build,
       });
@@ -70,11 +70,11 @@ describe('createDependencyCache()', () => {
       });
 
       const first = cache.getOrCreate({
-        primaryDependencies: ['scope-a'],
+        primaryDependencies: ['identity-a'],
         build,
       });
       const second = cache.getOrCreate({
-        primaryDependencies: ['scope-a'],
+        primaryDependencies: ['identity-a'],
         build,
       });
 
@@ -112,23 +112,23 @@ describe('createDependencyCache()', () => {
         });
 
       cache.getOrCreate({
-        primaryDependencies: ['scope-a'],
+        primaryDependencies: ['identity-a'],
         secondaryDependencies: ['payload-a'],
         build,
       });
       cache.getOrCreate({
-        primaryDependencies: ['scope-a'],
+        primaryDependencies: ['identity-a'],
         secondaryDependencies: ['payload-b'],
         build,
       });
       cache.getOrCreate({
-        primaryDependencies: ['scope-a'],
+        primaryDependencies: ['identity-a'],
         secondaryDependencies: ['payload-c'],
         build,
       });
 
       const payloadAAfterEvict = cache.getOrCreate({
-        primaryDependencies: ['scope-a'],
+        primaryDependencies: ['identity-a'],
         secondaryDependencies: ['payload-a'],
         build,
       });
@@ -161,34 +161,34 @@ describe('createDependencyCache()', () => {
           };
         });
 
-      const scopeAFirst = cache.getOrCreate({
-        primaryDependencies: ['scope-a'],
+      const identityAFirst = cache.getOrCreate({
+        primaryDependencies: ['identity-a'],
         secondaryDependencies: ['payload-a'],
         build,
       });
-      const scopeBFirst = cache.getOrCreate({
-        primaryDependencies: ['scope-b'],
+      const identityBFirst = cache.getOrCreate({
+        primaryDependencies: ['identity-b'],
         secondaryDependencies: ['payload-a'],
         build,
       });
 
       cache.clearPrimary({
-        primaryDependencies: ['scope-a'],
+        primaryDependencies: ['identity-a'],
       });
 
-      const scopeASecond = cache.getOrCreate({
-        primaryDependencies: ['scope-a'],
+      const identityASecond = cache.getOrCreate({
+        primaryDependencies: ['identity-a'],
         secondaryDependencies: ['payload-a'],
         build,
       });
-      const scopeBSecond = cache.getOrCreate({
-        primaryDependencies: ['scope-b'],
+      const identityBSecond = cache.getOrCreate({
+        primaryDependencies: ['identity-b'],
         secondaryDependencies: ['payload-a'],
         build,
       });
 
-      expect(scopeAFirst).not.toBe(scopeASecond);
-      expect(scopeBFirst).toBe(scopeBSecond);
+      expect(identityAFirst).not.toBe(identityASecond);
+      expect(identityBFirst).toBe(identityBSecond);
     });
   });
 
@@ -197,7 +197,7 @@ describe('createDependencyCache()', () => {
       const cache = createDependencyCache<{ value: string }>();
 
       const deleted = cache.delete({
-        primaryDependencies: ['scope-a'],
+        primaryDependencies: ['identity-a'],
         secondaryDependencies: ['payload-a'],
       });
 
@@ -224,7 +224,7 @@ describe('createDependencyCache()', () => {
         });
 
       const first = cache.getOrCreate({
-        primaryDependencies: ['scope-a'],
+        primaryDependencies: ['identity-a'],
         secondaryDependencies: ['payload-a'],
         build,
       });
@@ -232,7 +232,7 @@ describe('createDependencyCache()', () => {
       cache.clear();
 
       const second = cache.getOrCreate({
-        primaryDependencies: ['scope-a'],
+        primaryDependencies: ['identity-a'],
         secondaryDependencies: ['payload-a'],
         build,
       });
@@ -248,12 +248,12 @@ describe('createDependencyCache()', () => {
       });
 
       const first = cache.getOrCreate({
-        primaryDependencies: ['scope-a'],
+        primaryDependencies: ['identity-a'],
         secondaryDependencies: ['payload-a'],
         build,
       });
       const second = cache.getOrCreate({
-        primaryDependencies: ['scope-a'],
+        primaryDependencies: ['identity-a'],
         secondaryDependencies: ['payload-a'],
         build,
       });

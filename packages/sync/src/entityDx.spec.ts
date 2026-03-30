@@ -20,6 +20,7 @@ describe('entity() DX', () => {
   describe('happy', () => {
     it('should expose split one/many mutation methods', () => {
       const todosEntity = entity<Todo>({
+        key: 'entity-dx-spec',
         idOf: (value) => value.id,
       });
       const todoEntityApi = todosEntity as unknown as Record<string, unknown>;
@@ -48,6 +49,7 @@ describe('entity() DX', () => {
       };
 
       const todosEntity = entity<Todo>({
+        key: 'entity-dx-spec',
         idOf: (value) => value.id,
       });
       const todoEntityApi = todosEntity as unknown as EntityDxApi;
@@ -79,6 +81,7 @@ describe('entity() DX', () => {
       };
 
       const todosEntity = entity<Todo>({
+        key: 'entity-dx-spec',
         idOf: (value) => value.id,
       });
       const todoEntityApi = todosEntity as unknown as EntityDxApi;
@@ -97,6 +100,7 @@ describe('entity() DX', () => {
   describe('sad', () => {
     it('should not expose unified mutation methods', () => {
       const todosEntity = entity<Todo>({
+        key: 'entity-dx-spec',
         idOf: (value) => value.id,
       });
       const todoEntityApi = todosEntity as unknown as Record<string, unknown>;
