@@ -1,6 +1,5 @@
 import { type EntityId } from '../entity.js';
 import {
-  applyEntityRunResult,
   createEntityRunContextMethods,
   createRunContextEntryCache,
   createSerializedKeyCache,
@@ -35,6 +34,8 @@ import type {
 
 const DEFAULT_DESTROY_DELAY = 250;
 const RUN_CONTEXT_CACHE_LIMIT = 32;
+const ACTION_RUN_RESULT_ERROR = 'action.run() must return void or a cleanup function.';
+const resolveRunAsVoid = (): void => undefined;
 
 const isActionSetAction = <
   TPayload,
@@ -44,34 +45,6 @@ const isActionSetAction = <
   input: unknown,
 ): input is ActionSetAction<TPayload, TData, TMeta> => {
   return typeof input === 'function';
-};
-
-interface ResolveActionRunInputInput<
-  TPayload,
-  TData,
-  TMeta,
-> {
-  input: ActionRunInput<TPayload, TData, TMeta> | undefined;
-  config: ActionRunConfig | undefined;
-  previous: UnitRunPrevious<TPayload, ActionRunConfig, TData, TMeta | null>;
-}
-
-const resolveActionRunInput = <
-  TPayload,
-  TData,
-  TMeta,
->(
-  {
-    input,
-    config,
-    previous,
-  }: ResolveActionRunInputInput<TPayload, TData, TMeta>,
-): TPayload | undefined => {
-  if (isActionSetAction<TPayload, TData, TMeta>(input)) {
-    return input(previous, config);
-  }
-
-  return input;
 };
 
 export const action = <
@@ -92,22 +65,6 @@ export const action = <
   const unitKeyCache = createSerializedKeyCache({
     mode: 'scoped-unit',
   });
-
-  const notifyUnit = (
-    internal: ActionUnitInternal<TIdentity, TPayload, TData, TMeta>,
-  ): void => {
-    internal.state.value = getModeValue(internal, readEntityValueById);
-
-    notifyEffectListeners(
-      internal.listeners,
-      createUnitSnapshot({
-        value: internal.state.value,
-        status: internal.state.status,
-        meta: internal.state.meta,
-        context: internal.state.context,
-      }),
-    );
-  };
 
   const actionFactory: Action<TIdentity, TPayload, TData, TMeta> = (identity) => {
     const key = unitKeyCache.getOrCreateKey(identity);
@@ -151,6 +108,24 @@ export const action = <
       mode: 'payload-hot-path',
       limit: RUN_CONTEXT_CACHE_LIMIT,
     });
+    const refreshValueFromEntity = (): void => {
+      internal.state.value = getModeValue(internal, readEntityValueById);
+    };
+
+    const notifyUnit = (refreshValue = true): void => {
+      if (refreshValue) {
+        refreshValueFromEntity();
+      }
+      notifyEffectListeners(
+        internal.listeners,
+        createUnitSnapshot({
+          value: internal.state.value,
+          status: internal.state.status,
+          meta: internal.state.meta,
+          context: internal.state.context,
+        }),
+      );
+    };
 
       entity.registerUnit({
         key: internal.key,
@@ -159,7 +134,7 @@ export const action = <
             return;
           }
 
-          notifyUnit(internal);
+          notifyUnit();
         },
       });
 
@@ -177,9 +152,7 @@ export const action = <
           entity,
           state: internal,
           isActive: () => gate.isLatestRun(),
-          refreshValue: () => {
-            internal.state.value = getModeValue(internal, readEntityValueById);
-          },
+          refreshValue: refreshValueFromEntity,
           readValue: () => internal.state.value,
           refreshOnGet: true,
         });
@@ -205,7 +178,7 @@ export const action = <
             }
 
             internal.state.meta = nextMeta;
-            notifyUnit(internal);
+            notifyUnit(false);
           },
           ...runContextMethods,
         };
@@ -272,26 +245,8 @@ export const action = <
         if (isLatestRun()) {
           internal.state.status = 'loading';
           internal.state.context = null;
-          notifyUnit(internal);
+          notifyUnit(false);
         }
-
-        const applyRunValue = (nextValue: TData | void): void => {
-          if (!isLatestRun()) {
-            return;
-          }
-
-          applyEntityRunResult({
-            entity,
-            state: internal,
-            nextValue,
-            refreshValueFromMembership: () => {
-              internal.state.value = getModeValue(internal, readEntityValueById);
-            },
-            setRawValue: (value) => {
-              internal.state.value = value;
-            },
-          });
-        };
 
         const runContextEntry = runContextEntryCache.getOrCreate(internal.payload);
         runContextEntry.gate.isLatestRun = isLatestRun;
@@ -304,12 +259,12 @@ export const action = <
 
         const runPromise: Promise<TData> = Promise.resolve(run(runContextEntry.context))
           .then((result) => {
-            if (!isLatestRun() && isActionCleanup(result)) {
-              invokeActionCleanup(result);
-              return internal.state.value;
-            }
-
             if (isActionCleanup(result)) {
+              if (!isLatestRun()) {
+                invokeActionCleanup(result);
+                return internal.state.value;
+              }
+
               if (internal.destroyed || internal.stopped) {
                 invokeActionCleanup(result);
               } else {
@@ -318,16 +273,16 @@ export const action = <
               }
 
               if (isLatestRun()) {
-                internal.state.value = getModeValue(internal, readEntityValueById);
+                refreshValueFromEntity();
               }
-            } else if (isLatestRun()) {
-              applyRunValue(result);
+            } else if (result !== undefined) {
+              throw new TypeError(ACTION_RUN_RESULT_ERROR);
             }
 
             if (isLatestRun()) {
               internal.state.status = 'success';
               internal.state.context = null;
-              notifyUnit(internal);
+              notifyUnit(false);
             }
 
             return internal.state.value;
@@ -336,7 +291,7 @@ export const action = <
             if (isLatestRun()) {
               internal.state.status = 'error';
               internal.state.context = error;
-              notifyUnit(internal);
+              notifyUnit(false);
             }
             throw error;
           })
@@ -371,7 +326,7 @@ export const action = <
       };
 
     const getSnapshot = () => {
-      internal.state.value = getModeValue(internal, readEntityValueById);
+      refreshValueFromEntity();
       return createUnitSnapshot({
         value: internal.state.value,
         status: internal.state.status,
@@ -398,26 +353,24 @@ export const action = <
           runConfig = config;
         }
 
-        const previous: UnitRunPrevious<
-          TPayload,
-          ActionRunConfig,
-          TData,
-          TMeta | null
-        > = {
-          snapshot: getSnapshot(),
-          data: internal.payload,
-          config: runConfig,
-        };
-        const payloadInput = resolveActionRunInput<
-          TPayload,
-          TData,
-          TMeta
-        >({
-          input,
-          config,
-          previous,
-        });
-        return executeRun(payloadInput).then(() => undefined);
+        let payloadInput: TPayload | undefined;
+        if (isActionSetAction<TPayload, TData, TMeta>(input)) {
+          const previous: UnitRunPrevious<
+            TPayload,
+            ActionRunConfig,
+            TData,
+            TMeta | null
+          > = {
+            snapshot: getSnapshot(),
+            data: internal.payload,
+            config: runConfig,
+          };
+          payloadInput = input(previous, config);
+        } else {
+          payloadInput = input;
+        }
+
+        return executeRun(payloadInput).then(resolveRunAsVoid);
       };
     const unit: ActionUnit<TPayload, TData, TMeta> = {
       run: runUnit,

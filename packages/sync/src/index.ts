@@ -26,11 +26,13 @@ export type {
 } from './entity.js';
 export {
   resolveAdaptiveReadWriteByCache,
+  resolveAdaptiveReadWriteByIntent,
   resolveAdaptiveReadWriteConfig,
   resolveAdaptiveReadWriteDefault,
   resolveAdaptiveReadWriteProfileKey,
 } from './utils/adaptiveReadWrite.js';
 export type {
+  AdaptiveReadWriteIntent,
   AdaptiveReadWriteOperation,
   AdaptiveReadWriteProfileKey,
 } from './utils/adaptiveReadWrite.js';

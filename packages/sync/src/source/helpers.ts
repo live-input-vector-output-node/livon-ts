@@ -2,9 +2,9 @@ import { Packr } from 'msgpackr';
 
 import { type CacheStorage, type CacheTtl } from '../entity.js';
 import {
-  decodeBase64,
+  decodeLatin1,
   deserializeStructuredValue,
-  encodeBase64,
+  encodeLatin1,
   serializeStructuredValue,
 } from '../utils/index.js';
 import type {
@@ -25,7 +25,8 @@ export {
 } from '../utils/entityMode.js';
 
 const DEFAULT_CACHE_TTL: CacheTtl = 0;
-const DEFAULT_CACHE_LRU_MAX_ENTRIES = 0;
+const DEFAULT_CACHE_LRU_MAX_ENTRIES = 256;
+const DISABLED_CACHE_LRU_MAX_ENTRIES = 0;
 const DEFAULT_CACHE_KEY_PREFIX = 'livon-sync-source';
 const SOURCE_CACHE_MSGPACK_PREFIX = 'm1:';
 const SOURCE_CACHE_STRUCTURED_PREFIX = 's1:';
@@ -39,7 +40,7 @@ export const serializeSourceCacheRecord = <TEntity extends object>(
 ): string => {
   try {
     const packed = sourceCachePackr.pack(record);
-    return `${SOURCE_CACHE_MSGPACK_PREFIX}${encodeBase64(packed)}`;
+    return `${SOURCE_CACHE_MSGPACK_PREFIX}${encodeLatin1(packed)}`;
   } catch {
     const structured = serializeStructuredValue({
       input: record,
@@ -53,8 +54,8 @@ const deserializeSourceCacheRecord = <TEntity extends object>(
 ): SourceCacheRecord<TEntity> | undefined => {
   try {
     if (value.startsWith(SOURCE_CACHE_MSGPACK_PREFIX)) {
-      const base64Payload = value.slice(SOURCE_CACHE_MSGPACK_PREFIX.length);
-      const decoded = sourceCachePackr.unpack(decodeBase64(base64Payload));
+      const latin1Payload = value.slice(SOURCE_CACHE_MSGPACK_PREFIX.length);
+      const decoded = sourceCachePackr.unpack(decodeLatin1(latin1Payload));
       if (decoded && typeof decoded === 'object') {
         return decoded as SourceCacheRecord<TEntity>;
       }
@@ -133,7 +134,7 @@ export const resolveCacheLruMaxEntries = ({
       return Math.floor(sourceLruMaxEntries);
     }
 
-    return DEFAULT_CACHE_LRU_MAX_ENTRIES;
+    return DISABLED_CACHE_LRU_MAX_ENTRIES;
   }
 
   if (entityCache && entityCache.lruMaxEntries !== undefined) {
@@ -142,27 +143,15 @@ export const resolveCacheLruMaxEntries = ({
       return Math.floor(entityLruMaxEntries);
     }
 
-    return DEFAULT_CACHE_LRU_MAX_ENTRIES;
+    return DISABLED_CACHE_LRU_MAX_ENTRIES;
   }
 
   return DEFAULT_CACHE_LRU_MAX_ENTRIES;
 };
 
 export const resolveCacheKey = ({
-  sourceCache,
-  entityCache,
   sourceKey,
 }: ResolveCacheKeyInput): string => {
-  const sourceKeyPrefix = sourceCache?.key;
-  if (sourceKeyPrefix) {
-    return `${sourceKeyPrefix}:${sourceKey}`;
-  }
-
-  const entityKeyPrefix = entityCache?.key;
-  if (entityKeyPrefix) {
-    return `${entityKeyPrefix}:${sourceKey}`;
-  }
-
   return `${DEFAULT_CACHE_KEY_PREFIX}:${sourceKey}`;
 };
 
@@ -237,8 +226,8 @@ export const invokeSourceCleanup = (
   }
 };
 
-export const isSourceCleanup = <RResult>(
-  input: SourceRunResult<RResult>,
+export const isSourceCleanup = (
+  input: SourceRunResult,
 ): input is SourceCleanup => {
   return typeof input === 'function';
 };

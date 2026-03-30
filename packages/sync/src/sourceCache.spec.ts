@@ -53,20 +53,22 @@ interface CreateSpyMemoryStorage {
 interface SeedSourceCacheInput<TEntity extends object> {
   storage: MemoryStorage;
   scope: UserSlug;
+  entityKey?: string;
+  sourceKey?: string;
+  sourceCacheKey?: string;
   payload?: unknown;
   mode: 'one' | 'many';
   entities: readonly TEntity[];
   writtenAt: number;
-  sourceCacheKey?: string;
-  entityCacheKey?: string;
 }
 
 interface BuildSourceCacheRecordKeyInput {
   scope: UserSlug;
+  entityKey?: string;
+  sourceKey?: string;
+  sourceCacheKey?: string;
   payload?: unknown;
   mode: 'one' | 'many';
-  sourceCacheKey?: string;
-  entityCacheKey?: string;
 }
 
 const createMemoryStorage: CreateMemoryStorage = () => {
@@ -107,26 +109,21 @@ const createSpyMemoryStorage: CreateSpyMemoryStorage = () => {
 
 const buildSourceCacheRecordKey = ({
   scope,
+  entityKey,
+  sourceKey,
+  sourceCacheKey,
   payload,
   mode,
-  sourceCacheKey,
-  entityCacheKey,
 }: BuildSourceCacheRecordKeyInput): string => {
-  const sourceKey = serializeKey({
+  const resolvedEntityKey = entityKey ?? sourceCacheKey ?? 'entity-key';
+  const resolvedSourceKey = sourceKey ?? sourceCacheKey ?? 'source-key';
+  const sourceModeKey = serializeKey({
+    entityKey: resolvedEntityKey,
+    sourceKey: resolvedSourceKey,
     mode,
   });
   const cachePrefix = resolveCacheKey({
-    sourceCache: sourceCacheKey
-      ? {
-        key: sourceCacheKey,
-      }
-      : undefined,
-    entityCache: entityCacheKey
-      ? {
-        key: entityCacheKey,
-      }
-      : undefined,
-    sourceKey,
+    sourceKey: sourceModeKey,
   });
   const unitKey = serializeKey(scope);
   const payloadKey = serializeKey(payload);
@@ -137,19 +134,21 @@ const buildSourceCacheRecordKey = ({
 const seedSourceCache = <TEntity extends object>({
   storage,
   scope,
+  entityKey,
+  sourceKey,
+  sourceCacheKey,
   payload,
   mode,
   entities,
   writtenAt,
-  sourceCacheKey,
-  entityCacheKey,
 }: SeedSourceCacheInput<TEntity>): void => {
   const sourceCacheRecordKey = buildSourceCacheRecordKey({
     scope,
+    entityKey,
+    sourceKey,
+    sourceCacheKey,
     payload,
     mode,
-    sourceCacheKey,
-    entityCacheKey,
   });
   const cacheRecord = serializeSourceCacheRecord({
     mode,
@@ -645,7 +644,7 @@ describe('source cache', () => {
         mode: 'one',
         entities: [user],
         writtenAt: Date.now(),
-        entityCacheKey: cacheKey,
+        sourceCacheKey: cacheKey,
       });
       vi.advanceTimersByTime(999);
 
@@ -659,6 +658,9 @@ describe('source cache', () => {
       });
       const secondReadUser = source<UserSlug, undefined, User | null>({
         entity: secondEntity,
+        cache: {
+          key: cacheKey,
+        },
         run: runMock,
       });
 
@@ -683,7 +685,7 @@ describe('source cache', () => {
         mode: 'one',
         entities: [user],
         writtenAt: Date.now(),
-        entityCacheKey: cacheKey,
+        sourceCacheKey: cacheKey,
       });
       vi.advanceTimersByTime(1_001);
 
@@ -698,6 +700,7 @@ describe('source cache', () => {
       const secondReadUser = source<UserSlug, undefined, User | null>({
         entity: secondEntity,
         cache: {
+          key: cacheKey,
           ttl: 1_000,
         },
         run: runMock,

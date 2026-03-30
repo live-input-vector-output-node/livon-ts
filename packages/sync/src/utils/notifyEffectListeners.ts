@@ -7,7 +7,7 @@ export const notifyEffectListeners = <
   listeners: Set<EffectListener<RResult, TMeta>>,
   snapshot: UnitSnapshot<RResult, TMeta>,
 ): void => {
-  Array.from(listeners).forEach((listener) => {
+  listeners.forEach((listener) => {
     listener(snapshot);
   });
 };

@@ -26,7 +26,7 @@ export interface SourceCleanup {
   (): void;
 }
 
-export type SourceRunResult<TData> = TData | SourceCleanup | void;
+export type SourceRunResult = SourceCleanup | void;
 
 export interface SourceRunContext<
   TIdentity,
@@ -43,8 +43,8 @@ export interface SourceRunContext<
     input: readonly UnitDataEntity<TData>[],
     options?: UpsertOptions,
   ) => readonly UnitDataEntity<TData>[];
-  removeOne: (id: EntityId) => boolean;
-  removeMany: (ids: readonly EntityId[]) => readonly EntityId[];
+  deleteOne: (id: EntityId) => boolean;
+  deleteMany: (ids: readonly EntityId[]) => readonly EntityId[];
   reset: () => void;
   getValue: () => TData;
 }
@@ -55,6 +55,7 @@ export interface SourceConfig<
   TData,
   TMeta = unknown,
 > {
+  key?: string;
   entity: Entity<UnitDataEntity<TData>, EntityId>;
   ttl?: number;
   draft?: DraftMode;
@@ -62,7 +63,7 @@ export interface SourceConfig<
   destroyDelay?: number;
   run: (
     context: SourceRunContext<TIdentity, TPayload, TData, TMeta>,
-  ) => Promise<SourceRunResult<TData>> | SourceRunResult<TData>;
+  ) => Promise<SourceRunResult> | SourceRunResult;
   defaultValue?: TData;
 }
 
@@ -205,8 +206,6 @@ export interface ResolveCacheStorageInput {
 }
 
 export interface ResolveCacheKeyInput {
-  sourceCache: CacheConfig | undefined;
-  entityCache: CacheConfig | undefined;
   sourceKey: string;
 }
 

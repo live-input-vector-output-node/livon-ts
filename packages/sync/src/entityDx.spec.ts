@@ -12,8 +12,8 @@ interface Todo {
 interface EntityDxApi {
   upsertOne: (input: Todo, options?: UpsertOptions) => Todo;
   upsertMany: (input: readonly Todo[], options?: UpsertOptions) => readonly Todo[];
-  removeOne: (id: string) => boolean;
-  removeMany: (ids: readonly string[]) => readonly string[];
+  deleteOne: (id: string) => boolean;
+  deleteMany: (ids: readonly string[]) => readonly string[];
 }
 
 describe('entity() DX', () => {
@@ -26,8 +26,8 @@ describe('entity() DX', () => {
 
       expect(typeof todoEntityApi.upsertOne).toBe('function');
       expect(typeof todoEntityApi.upsertMany).toBe('function');
-      expect(typeof todoEntityApi.removeOne).toBe('function');
-      expect(typeof todoEntityApi.removeMany).toBe('function');
+      expect(typeof todoEntityApi.deleteOne).toBe('function');
+      expect(typeof todoEntityApi.deleteMany).toBe('function');
     });
 
     it('should upsert one and many with explicit methods', () => {
@@ -84,8 +84,8 @@ describe('entity() DX', () => {
       const todoEntityApi = todosEntity as unknown as EntityDxApi;
 
       todoEntityApi.upsertMany([firstTodo, secondTodo]);
-      const removeOneResult = todoEntityApi.removeOne(firstTodoId);
-      const removeManyResult = todoEntityApi.removeMany([secondTodoId]);
+      const removeOneResult = todoEntityApi.deleteOne(firstTodoId);
+      const removeManyResult = todoEntityApi.deleteMany([secondTodoId]);
 
       expect(removeOneResult).toBe(true);
       expect(removeManyResult).toEqual([secondTodoId]);

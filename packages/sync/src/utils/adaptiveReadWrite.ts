@@ -15,6 +15,8 @@ export type AdaptiveReadWriteProfileKey =
   | 'cache-on-lru-off'
   | 'cache-on-lru-on';
 
+export type AdaptiveReadWriteIntent = 'read' | 'write';
+
 interface AdaptiveReadWriteMatrixEntry {
   batch: boolean;
   subview: boolean;
@@ -53,9 +55,39 @@ interface ResolveAdaptiveReadWriteByCacheInput {
   fallback: EntityReadWriteConfig;
 }
 
+interface ResolveAdaptiveReadWriteByIntentInput {
+  intent: AdaptiveReadWriteIntent;
+  operation: AdaptiveReadWriteOperation;
+  fallback: EntityReadWriteConfig;
+}
+
 const DEFAULT_ADAPTIVE_READ_WRITE_CONFIG: EntityReadWriteConfig = {
   batch: true,
   subview: true,
+};
+const READ_OPTIMIZED_STRATEGY: EntityReadWriteConfig = {
+  batch: true,
+  subview: true,
+};
+const WRITE_OPTIMIZED_STRATEGY: EntityReadWriteConfig = {
+  batch: false,
+  subview: false,
+};
+const WRITE_OPERATION_KEYS: Record<AdaptiveReadWriteOperation, true | undefined> = {
+  readOne: undefined,
+  readMany: undefined,
+  updateOne: true,
+  updateMany: true,
+  setOne: true,
+  setMany: true,
+};
+const cloneReadWriteConfig = (
+  { batch, subview }: EntityReadWriteConfig,
+): EntityReadWriteConfig => {
+  return {
+    batch,
+    subview,
+  };
 };
 
 const isObjectValue = (value: unknown): value is Record<string, unknown> => {
@@ -185,6 +217,26 @@ export const resolveAdaptiveReadWriteByCache = ({
     operation,
     fallback,
   });
+};
+
+export const resolveAdaptiveReadWriteByIntent = ({
+  intent,
+  operation,
+  fallback,
+}: ResolveAdaptiveReadWriteByIntentInput): EntityReadWriteConfig => {
+  if (intent === 'write') {
+    if (!WRITE_OPERATION_KEYS[operation]) {
+      return fallback;
+    }
+
+    return cloneReadWriteConfig(WRITE_OPTIMIZED_STRATEGY);
+  }
+
+  if (WRITE_OPERATION_KEYS[operation]) {
+    return fallback;
+  }
+
+  return cloneReadWriteConfig(READ_OPTIMIZED_STRATEGY);
 };
 
 export const resolveAdaptiveReadWriteDefault = (): EntityReadWriteConfig => {

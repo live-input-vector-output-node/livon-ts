@@ -45,6 +45,7 @@ export interface EntityConfig<
   TInput extends object,
   TId extends EntityId = string,
 > {
+  key?: string;
   idOf: (input: TInput) => TId;
   ttl?: number;
   destroyDelay?: number;
@@ -59,6 +60,7 @@ export interface Entity<
   TInput extends object = object,
   TId extends EntityId = string,
 > {
+  key?: string;
   ttl?: number;
   destroyDelay?: number;
   draft?: DraftMode;
@@ -75,8 +77,8 @@ export interface Entity<
   clearUnitMembership(key: string): void;
   upsertOne(input: TInput, options?: UpsertOptions): TInput;
   upsertMany(input: readonly TInput[], options?: UpsertOptions): readonly TInput[];
-  removeOne(id: TId): boolean;
-  removeMany(ids: readonly TId[]): readonly TId[];
+  deleteOne(id: TId): boolean;
+  deleteMany(ids: readonly TId[]): readonly TId[];
 }
 
 interface MergeEntityInput<TInput extends object> {
@@ -208,7 +210,7 @@ const resolveOrphanRetentionTtl = ({
 };
 
 interface ResolveEntityOperationReadWriteStrategyInput {
-  adaptiveReadWriteEnabled: boolean;
+  adaptiveEnabled: boolean;
   readWriteConfig: EntityReadWriteConfig;
   hasExplicitBatchReadWrite: boolean;
   hasExplicitSubviewReadWrite: boolean;
@@ -221,7 +223,7 @@ interface ResolveEntityOperationReadWriteStrategyInput {
 type EntityReadWriteStrategies = Record<AdaptiveReadWriteOperation, EntityReadWriteConfig>;
 
 const resolveEntityOperationReadWriteStrategy = ({
-  adaptiveReadWriteEnabled,
+  adaptiveEnabled,
   readWriteConfig,
   hasExplicitBatchReadWrite,
   hasExplicitSubviewReadWrite,
@@ -230,7 +232,7 @@ const resolveEntityOperationReadWriteStrategy = ({
   lruEnabled,
   operation,
 }: ResolveEntityOperationReadWriteStrategyInput): EntityReadWriteConfig => {
-  if (!adaptiveReadWriteEnabled) {
+  if (!adaptiveEnabled) {
     return readWriteConfig;
   }
 
@@ -262,7 +264,7 @@ const createEntityReadWriteStrategies = ({
   readWrite,
   cache,
 }: CreateEntityReadWriteStrategiesInput): EntityReadWriteStrategies => {
-  const adaptiveReadWriteEnabled = readWrite?.adaptive ?? false;
+  const adaptiveEnabled = readWrite?.adaptive === true;
   const hasExplicitBatchReadWrite = readWrite?.batch !== undefined;
   const hasExplicitSubviewReadWrite = readWrite?.subview !== undefined;
   const cacheEnabled = Boolean(cache);
@@ -272,7 +274,7 @@ const createEntityReadWriteStrategies = ({
 
   return {
     readOne: resolveEntityOperationReadWriteStrategy({
-      adaptiveReadWriteEnabled,
+      adaptiveEnabled,
       readWriteConfig,
       hasExplicitBatchReadWrite,
       hasExplicitSubviewReadWrite,
@@ -282,7 +284,7 @@ const createEntityReadWriteStrategies = ({
       operation: 'readOne',
     }),
     readMany: resolveEntityOperationReadWriteStrategy({
-      adaptiveReadWriteEnabled,
+      adaptiveEnabled,
       readWriteConfig,
       hasExplicitBatchReadWrite,
       hasExplicitSubviewReadWrite,
@@ -292,7 +294,7 @@ const createEntityReadWriteStrategies = ({
       operation: 'readMany',
     }),
     updateOne: resolveEntityOperationReadWriteStrategy({
-      adaptiveReadWriteEnabled,
+      adaptiveEnabled,
       readWriteConfig,
       hasExplicitBatchReadWrite,
       hasExplicitSubviewReadWrite,
@@ -302,7 +304,7 @@ const createEntityReadWriteStrategies = ({
       operation: 'updateOne',
     }),
     updateMany: resolveEntityOperationReadWriteStrategy({
-      adaptiveReadWriteEnabled,
+      adaptiveEnabled,
       readWriteConfig,
       hasExplicitBatchReadWrite,
       hasExplicitSubviewReadWrite,
@@ -312,7 +314,7 @@ const createEntityReadWriteStrategies = ({
       operation: 'updateMany',
     }),
     setOne: resolveEntityOperationReadWriteStrategy({
-      adaptiveReadWriteEnabled,
+      adaptiveEnabled,
       readWriteConfig,
       hasExplicitBatchReadWrite,
       hasExplicitSubviewReadWrite,
@@ -322,7 +324,7 @@ const createEntityReadWriteStrategies = ({
       operation: 'setOne',
     }),
     setMany: resolveEntityOperationReadWriteStrategy({
-      adaptiveReadWriteEnabled,
+      adaptiveEnabled,
       readWriteConfig,
       hasExplicitBatchReadWrite,
       hasExplicitSubviewReadWrite,
@@ -338,6 +340,7 @@ export const entity = <
   TInput extends object,
   TId extends EntityId = string,
 >({
+  key,
   idOf,
   ttl,
   destroyDelay,
@@ -829,7 +832,7 @@ export const entity = <
     return mergedValues;
   };
 
-  const removeOne = (id: TId): boolean => {
+  const deleteOne = (id: TId): boolean => {
     sweepExpiredOrphans();
     const removedExpiresAt = clearOrphanCleanupSchedule(id);
     const existed = entitiesById.delete(id);
@@ -873,7 +876,7 @@ export const entity = <
     return true;
   };
 
-  const removeMany = (ids: readonly TId[]): readonly TId[] => {
+  const deleteMany = (ids: readonly TId[]): readonly TId[] => {
     sweepExpiredOrphans();
     const removedIds: TId[] = [];
     const affectedKeys = new Set<string>();
@@ -932,6 +935,7 @@ export const entity = <
   };
 
   return {
+    key,
     ttl,
     destroyDelay,
     draft,
@@ -948,7 +952,7 @@ export const entity = <
     clearUnitMembership,
     upsertOne,
     upsertMany,
-    removeOne,
-    removeMany,
+    deleteOne,
+    deleteMany,
   };
 };
