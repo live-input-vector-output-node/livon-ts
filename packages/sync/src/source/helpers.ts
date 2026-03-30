@@ -5,6 +5,7 @@ import {
   decodeLatin1,
   deserializeStructuredValue,
   encodeLatin1,
+  readOrCreateSharedIndexedDbCacheStorage,
   serializeStructuredValue,
 } from '../utils/index.js';
 import type {
@@ -35,6 +36,62 @@ const sourceCachePackr = new Packr({
   moreTypes: true,
 });
 
+const isRecordValue = (value: unknown): value is Record<string, unknown> => {
+  return typeof value === 'object' && value !== null;
+};
+
+const hasStringKeysArray = (value: unknown): value is { keys: readonly string[] } => {
+  if (!isRecordValue(value)) {
+    return false;
+  }
+
+  const keysValue = value.keys;
+  if (!Array.isArray(keysValue)) {
+    return false;
+  }
+
+  return keysValue.every((entry) => typeof entry === 'string');
+};
+
+const isSourceCacheRecordValue = <TEntity extends object>(
+  value: unknown,
+): value is SourceCacheRecord<TEntity> => {
+  if (!isRecordValue(value)) {
+    return false;
+  }
+
+  const mode = value.mode;
+  const entities = value.entities;
+  const writtenAt = value.writtenAt;
+  if (mode !== 'one' && mode !== 'many') {
+    return false;
+  }
+
+  if (!Array.isArray(entities)) {
+    return false;
+  }
+
+  if (typeof writtenAt !== 'number' || Number.isNaN(writtenAt)) {
+    return false;
+  }
+
+  return true;
+};
+
+const hasLocalStorageRuntime = (
+  value: unknown,
+): value is { localStorage: CacheStorage } => {
+  if (!isRecordValue(value)) {
+    return false;
+  }
+
+  if (!('localStorage' in value)) {
+    return false;
+  }
+
+  return isRecordValue(value.localStorage);
+};
+
 export const serializeSourceCacheRecord = <TEntity extends object>(
   record: SourceCacheRecord<TEntity>,
 ): string => {
@@ -50,8 +107,16 @@ export const serializeSourceCacheRecord = <TEntity extends object>(
 };
 
 const deserializeSourceCacheRecord = <TEntity extends object>(
-  value: string,
+  value: unknown,
 ): SourceCacheRecord<TEntity> | undefined => {
+  if (isSourceCacheRecordValue<TEntity>(value)) {
+    return value;
+  }
+
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+
   try {
     if (value.startsWith(SOURCE_CACHE_MSGPACK_PREFIX)) {
       const latin1Payload = value.slice(SOURCE_CACHE_MSGPACK_PREFIX.length);
@@ -74,8 +139,16 @@ const deserializeSourceCacheRecord = <TEntity extends object>(
 };
 
 const resolveGlobalStorage = (): CacheStorage | undefined => {
-  const maybeStorage = globalThis as { localStorage?: CacheStorage };
-  const localStorage = maybeStorage.localStorage;
+  const indexedDbStorage = readOrCreateSharedIndexedDbCacheStorage();
+  if (indexedDbStorage) {
+    return indexedDbStorage;
+  }
+
+  const runtime = globalThis;
+  if (!hasLocalStorageRuntime(runtime)) {
+    return undefined;
+  }
+  const localStorage = runtime.localStorage;
 
   if (!localStorage) {
     return undefined;
@@ -171,7 +244,7 @@ export const isCacheRecordExpired = ({
 };
 
 export const readSourceCacheRecord = <TEntity extends object>(
-  value: string | null,
+  value: unknown | null,
 ): SourceCacheRecord<TEntity> | undefined => {
   if (!value) {
     return undefined;
@@ -232,9 +305,7 @@ export const isSourceCleanup = (
   return typeof input === 'function';
 };
 
-export const isRecordValue = (value: unknown): value is Record<string, unknown> => {
-  return typeof value === 'object' && value !== null;
-};
+export { hasStringKeysArray, isRecordValue };
 
 export const areDraftValuesEqual = (
   previousValue: unknown,

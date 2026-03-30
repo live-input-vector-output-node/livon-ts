@@ -2,12 +2,12 @@ import { type CacheStorage } from '../entity.js';
 import { defaultRuntimeQueue, type RuntimeQueue } from '../runtimeQueue/index.js';
 
 interface BuildCacheValue {
-  (): string;
+  (): unknown;
 }
 
 interface CacheSetOperation {
   type: 'set';
-  value: string | BuildCacheValue;
+  value: unknown | BuildCacheValue;
 }
 
 interface CacheRemoveOperation {
@@ -19,7 +19,7 @@ type CacheOperation =
   | CacheRemoveOperation;
 
 export interface CacheWriteQueue {
-  enqueueSet: (key: string, value: string | BuildCacheValue) => void;
+  enqueueSet: (key: string, value: unknown | BuildCacheValue) => void;
   enqueueRemove: (key: string) => void;
   flush: () => void;
 }
@@ -87,7 +87,7 @@ export const createCacheWriteQueue = ({
     });
   };
 
-  const enqueueSet = (key: string, value: string | BuildCacheValue): void => {
+  const enqueueSet = (key: string, value: unknown | BuildCacheValue): void => {
     operationsByKey.set(key, {
       type: 'set',
       value,

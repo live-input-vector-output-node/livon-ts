@@ -30,7 +30,7 @@ interface RemoveAndRestoreTodoPayload {
 }
 
 interface MemoryStorageState {
-  values: Map<string, string>;
+  values: Map<string, unknown>;
 }
 
 interface CreateMemoryStorage {
@@ -297,7 +297,7 @@ describe('todo performance benchmarks (new dx)', () => {
 
   const todoIdentity: TodoIdentity = { listId: TODO_LIST_ID };
   const memoryStorageState: MemoryStorageState = {
-    values: new Map<string, string>(),
+    values: new Map<string, unknown>(),
   };
   const memoryStorage = createMemoryStorage(memoryStorageState)();
   const benchmarkReadWrite: EntityReadWriteConfig = {

@@ -1,6 +1,10 @@
 export { serializeKey } from './serializeKey.js';
 export { decodeLatin1, encodeLatin1 } from './latin1.js';
 export { createCacheWriteQueue, readOrCreateSharedCacheWriteQueue } from './cacheWriteQueue.js';
+export {
+  createIndexedDbCacheStorage,
+  readOrCreateSharedIndexedDbCacheStorage,
+} from './indexedDbCacheStorage.js';
 export { applyEntityRunResult } from './applyEntityRunResult.js';
 export { createDependencyCache } from './dependencyCache.js';
 export { isUnitLoadingStatus, isUnitSettledStatus, isUnitStatus } from './unitStatus.js';
@@ -85,3 +89,4 @@ export type {
   CreateRunContextEntryCacheInput,
   RunContextEntryCache,
 } from './runContextEntryCache.js';
+export type { IndexedDbCacheStorage } from './indexedDbCacheStorage.js';

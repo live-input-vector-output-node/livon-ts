@@ -26,8 +26,8 @@ interface UpdateTodoPayload {
 }
 
 interface MemoryStorage {
-  getItem: (key: string) => string | null;
-  setItem: (key: string, value: string) => void;
+  getItem: (key: string) => unknown | null;
+  setItem: (key: string, value: unknown) => void;
   removeItem: (key: string) => void;
 }
 
@@ -46,7 +46,7 @@ const createTodoEntity = (key = 'todo-entity') => {
   });
 };
 const createMemoryStorage = (): MemoryStorage => {
-  const values = new Map<string, string>();
+  const values = new Map<string, unknown>();
   return {
     getItem: (key) => {
       return values.get(key) ?? null;

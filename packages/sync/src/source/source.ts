@@ -22,9 +22,9 @@ import {
 
 import {
   getModeValue,
+  hasStringKeysArray,
   invokeSourceCleanup,
   isCacheRecordExpired,
-  isRecordValue,
   isSourceCleanup,
   readSourceCacheRecord,
   resolveCacheLruMaxEntries,
@@ -368,6 +368,7 @@ export const source = <
       cacheStorage
       && (cacheTtl === 'infinity' || cacheTtl > 0),
     );
+    const cacheSupportsStructuredValues = cacheStorage?.supportsStructuredValues === true;
     const cacheLruEnabled = Boolean(
       cacheEnabled
       && cacheLruMaxEntries > 0
@@ -406,21 +407,20 @@ export const source = <
         return;
       }
 
+      let parsedLruState: unknown = rawLruState;
       try {
-        const parsedLruState: unknown = JSON.parse(rawLruState);
-        if (!isRecordValue(parsedLruState)) {
-          return;
+        if (typeof rawLruState === 'string') {
+          parsedLruState = JSON.parse(rawLruState);
         }
+      } catch {
+        return;
+      }
+      if (!hasStringKeysArray(parsedLruState)) {
+        return;
+      }
 
-        const keysCandidate = parsedLruState.keys;
-        if (!Array.isArray(keysCandidate)) {
-          return;
-        }
-
-        if (!keysCandidate.every((entry) => typeof entry === 'string')) {
-          return;
-        }
-
+      const keysCandidate = parsedLruState.keys;
+      try {
         const nextKeyOrderMap = new Map<string, true>();
         keysCandidate
           .slice()
@@ -450,6 +450,12 @@ export const source = <
       cacheWriteQueue.enqueueSet(
         cacheLruStorageKey,
         () => {
+          if (cacheSupportsStructuredValues) {
+            return {
+              keys: persistedKeys,
+            };
+          }
+
           return JSON.stringify({
             keys: persistedKeys,
           });
@@ -574,12 +580,16 @@ export const source = <
         const entities = internal.membershipIds
           .map((id) => entity.getById(id))
           .filter((entry): entry is UnitDataEntity<TData> => entry !== undefined);
-
-        return serializeSourceCacheRecord({
+        const record = {
           mode: internal.mode,
           entities,
           writtenAt: Date.now(),
-        });
+        };
+        if (cacheSupportsStructuredValues) {
+          return record;
+        }
+
+        return serializeSourceCacheRecord(record);
       });
     };
 
@@ -670,12 +680,13 @@ export const source = <
         return false;
       }
 
-      activePayloadCacheKey = payloadCacheKey;
       const unitCacheKey = resolveUnitCacheKey(payloadCacheKey);
-      if (hydrateFromUnitCacheKey({
+      const didHydrateFromPrimary = hydrateFromUnitCacheKey({
         unitCacheKey,
         cacheStateOnHit: 'hit',
-      })) {
+      });
+      if (didHydrateFromPrimary) {
+        activePayloadCacheKey = payloadCacheKey;
         return true;
       }
 
@@ -690,6 +701,9 @@ export const source = <
         });
         return didHydrateFromFallback;
       });
+      if (didHydrateFromFallback) {
+        activePayloadCacheKey = payloadCacheKey;
+      }
       return didHydrateFromFallback;
     };
 

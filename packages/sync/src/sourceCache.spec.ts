@@ -32,8 +32,8 @@ interface StructuredUser {
 }
 
 interface MemoryStorage {
-  getItem: (key: string) => string | null;
-  setItem: (key: string, value: string) => void;
+  getItem: (key: string) => unknown | null;
+  setItem: (key: string, value: unknown) => void;
   removeItem: (key: string) => void;
 }
 
@@ -72,7 +72,7 @@ interface BuildSourceCacheRecordKeyInput {
 }
 
 const createMemoryStorage: CreateMemoryStorage = () => {
-  const values = new Map<string, string>();
+  const values = new Map<string, unknown>();
 
   return {
     getItem: (key) => {
@@ -88,8 +88,8 @@ const createMemoryStorage: CreateMemoryStorage = () => {
 };
 
 const createSpyMemoryStorage: CreateSpyMemoryStorage = () => {
-  const values = new Map<string, string>();
-  const setItemSpy = vi.fn((key: string, value: string) => {
+  const values = new Map<string, unknown>();
+  const setItemSpy = vi.fn((key: string, value: unknown) => {
     values.set(key, value);
   });
   const removeItemSpy = vi.fn((key: string) => {
