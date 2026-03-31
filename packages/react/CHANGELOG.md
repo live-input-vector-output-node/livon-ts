@@ -1,5 +1,12 @@
 # @livon/react
 
+## 0.29.0-rc.11
+
+### Patch Changes
+
+- Updated dependencies
+  - @livon/sync@0.29.0-rc.11
+
 ## 0.29.0-rc.9
 
 ### Patch Changes
