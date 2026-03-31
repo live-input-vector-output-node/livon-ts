@@ -1,5 +1,11 @@
 # @livon/sync
 
+## 0.29.0-rc.11
+
+### Patch Changes
+
+- Prepare 0.29.0-rc.11 release line.
+
 ## 0.29.0-rc.9
 
 ## 0.29.0-rc.8
