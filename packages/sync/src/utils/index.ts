@@ -45,6 +45,7 @@ export {
   DEFAULT_UNIT_DESTROY_DELAY,
 } from './unitRuntime.js';
 export { createSerializedKeyCache } from './serializedKeyCache.js';
+export { createIdentityUnitCache } from './createIdentityUnitCache.js';
 export { createRunContextEntryCache } from './runContextEntryCache.js';
 export { resolveInput } from './resolveInput.js';
 export { resolveValue } from './resolveValue.js';
@@ -86,6 +87,10 @@ export type {
   SerializedKeyCache,
   SerializedKeyCacheMode,
 } from './serializedKeyCache.js';
+export type {
+  CreateIdentityUnitCacheInput,
+  IdentityUnitCache,
+} from './createIdentityUnitCache.js';
 export type {
   CreateUnitSnapshotInput,
   EffectListener,

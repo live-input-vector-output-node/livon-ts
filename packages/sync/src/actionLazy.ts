@@ -13,6 +13,7 @@ import type {
   UnitEntityMode,
 } from './utils/index.js';
 import {
+  createIdentityUnitCache,
   resolveDefaultUnitValue,
 } from './utils/index.js';
 import type {
@@ -52,7 +53,7 @@ const createLazyActionFromConfig = <
   const identityKeyCache = createSerializedKeyCache({
     mode: 'identity-unit',
   });
-  const unitByIdentityKey = new Map<string, ActionUnit<TPayload, TData, TMeta>>();
+  const unitByIdentityKey = createIdentityUnitCache<ActionUnit<TPayload, TData, TMeta>>();
   let actionFactory: Action<TIdentity, TPayload, TData, TMeta> | undefined;
   let actionFactoryPromise: Promise<Action<TIdentity, TPayload, TData, TMeta>> | undefined;
 

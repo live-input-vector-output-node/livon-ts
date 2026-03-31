@@ -37,6 +37,7 @@ const runBenchMode = ({
         ...process.env,
         LIVON_SYNC_BENCH_EXECUTION_MODE: mode,
         LIVON_SYNC_BENCH_EXECUTION_MODE_MATRIX: 'false',
+        LIVON_SYNC_BENCH_TODO_COUNT: String(BENCH_TODO_COUNT),
       },
     },
   );
