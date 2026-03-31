@@ -45,6 +45,11 @@ interface ResolveNumberEnvInput {
   fallback: number;
 }
 
+interface ResolvePositiveIntegerEnvInput {
+  name: string;
+  fallback: number;
+}
+
 interface ResolveStringEnvInput {
   name: string;
   fallback: string;
@@ -156,6 +161,21 @@ const resolveNumberEnv = ({
   }
 
   return parsedValue;
+};
+
+const resolvePositiveIntegerEnv = ({
+  name,
+  fallback,
+}: ResolvePositiveIntegerEnvInput): number => {
+  const parsedValue = resolveNumberEnv({
+    name,
+    fallback,
+  });
+  if (!Number.isFinite(parsedValue) || parsedValue < 1) {
+    return fallback;
+  }
+
+  return Math.floor(parsedValue);
 };
 
 const resolveStringEnv = ({
@@ -396,7 +416,10 @@ const resolveBenchmarkName = ({
 };
 
 describe('todo performance benchmarks (new dx)', () => {
-  const todoCount = TODO_COUNT;
+  const todoCount = resolvePositiveIntegerEnv({
+    name: 'LIVON_SYNC_BENCH_TODO_COUNT',
+    fallback: TODO_COUNT,
+  });
   const todoReadIndex = Math.min(todoCount - 1, Math.floor(todoCount / 2));
   const todos = createTodoDataset({
     todoCount,

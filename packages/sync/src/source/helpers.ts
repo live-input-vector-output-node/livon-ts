@@ -56,6 +56,14 @@ const isSourceCacheRecordValue = <TEntity extends object>(
     return false;
   }
 
+  if (!entities.every((entry) => isRecordValue(entry))) {
+    return false;
+  }
+
+  if (mode === 'one' && entities.length > 1) {
+    return false;
+  }
+
   if (typeof writtenAt !== 'number' || Number.isNaN(writtenAt)) {
     return false;
   }
@@ -86,22 +94,17 @@ export const resolveCacheLruMaxEntries = ({
   sourceCache,
   entityCache,
 }: ResolveCacheLruMaxEntriesInput): number => {
-  if (sourceCache && sourceCache.lruMaxEntries !== undefined) {
-    const sourceLruMaxEntries = sourceCache.lruMaxEntries;
-    if (Number.isFinite(sourceLruMaxEntries) && sourceLruMaxEntries > 0) {
-      return Math.floor(sourceLruMaxEntries);
-    }
+  const lruMaxEntriesCandidate = sourceCache?.lruMaxEntries ?? entityCache?.lruMaxEntries;
+  if (lruMaxEntriesCandidate === undefined) {
+    return DEFAULT_CACHE_LRU_MAX_ENTRIES;
+  }
 
+  if (lruMaxEntriesCandidate === 0) {
     return DISABLED_CACHE_LRU_MAX_ENTRIES;
   }
 
-  if (entityCache && entityCache.lruMaxEntries !== undefined) {
-    const entityLruMaxEntries = entityCache.lruMaxEntries;
-    if (Number.isFinite(entityLruMaxEntries) && entityLruMaxEntries > 0) {
-      return Math.floor(entityLruMaxEntries);
-    }
-
-    return DISABLED_CACHE_LRU_MAX_ENTRIES;
+  if (Number.isFinite(lruMaxEntriesCandidate) && lruMaxEntriesCandidate > 0) {
+    return Math.floor(lruMaxEntriesCandidate);
   }
 
   return DEFAULT_CACHE_LRU_MAX_ENTRIES;

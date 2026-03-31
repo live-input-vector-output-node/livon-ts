@@ -13,6 +13,7 @@ import type {
   UnitEntityMode,
 } from './utils/index.js';
 import {
+  createIdentityUnitCache,
   resolveDefaultUnitValue,
 } from './utils/index.js';
 import type {
@@ -59,7 +60,7 @@ const createLazySourceFromConfig = <
   const identityKeyCache = createSerializedKeyCache({
     mode: 'identity-unit',
   });
-  const unitByIdentityKey = new Map<string, SourceUnit<TIdentity, TPayload, TData, TMeta>>();
+  const unitByIdentityKey = createIdentityUnitCache<SourceUnit<TIdentity, TPayload, TData, TMeta>>();
   let sourceFactory: Source<TIdentity, TPayload, TData, TMeta> | undefined;
   let sourceFactoryPromise: Promise<Source<TIdentity, TPayload, TData, TMeta>> | undefined;
 

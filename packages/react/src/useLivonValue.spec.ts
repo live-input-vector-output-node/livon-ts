@@ -102,13 +102,19 @@ describe('useLivonValue()', () => {
     let releaseRun: (() => void) | undefined;
     const nextId = randomString({ prefix: 'next-todo-id' });
     const nextTitle = randomString({ prefix: 'next-todo-name' });
-    const waitForReleaseRun = async (): Promise<() => void> => {
+    const waitForReleaseRun = async (
+      remainingChecks = 5_000,
+    ): Promise<() => void> => {
       if (releaseRun) {
         return releaseRun;
       }
 
+      if (remainingChecks <= 0) {
+        throw new Error('Timed out waiting for delayed run release.');
+      }
+
       await Promise.resolve();
-      return waitForReleaseRun();
+      return waitForReleaseRun(remainingChecks - 1);
     };
 
     const readTodo = createReadTodoSource({
