@@ -1,5 +1,5 @@
 ---
-title: "fieldResolver"
+title: "fieldOperation"
 sidebar_position: 19
 ---
 
@@ -9,8 +9,6 @@ sidebar_position: 19
 [![package size](https://img.shields.io/npm/unpacked-size/%40livon%2Fschema?label=package%20size)](https://www.npmjs.com/package/@livon/schema)
 [![license](https://img.shields.io/npm/l/%40livon%2Fschema)](https://www.npmjs.com/package/@livon/schema)
 
-
-In LIVON, `fieldResolver` is implemented with `fieldOperation`.
 
 Use `fieldOperation` for type-safe field-level resolvers that depend on an entity schema.
 
@@ -41,7 +39,7 @@ Key points:
 - `api.type` is required when `fieldOperations` are used
 
 `dependsOn`, `input`, and `output` can use any value schema from this section.  
-API schemas (`api`) are not valid as field resolver schemas.
+API schemas (`api`) are not valid as field operation schemas.
 
 ## Parameters
 
@@ -49,7 +47,7 @@ API schemas (`api`) are not valid as field resolver schemas.
 - `input` (`Schema | Shape`, optional): resolver input schema.
 - `output` (`Schema`, optional): resolver output schema.
 - `exec` (`(dependsOn, ctx) => result | Promise<result>` or `(dependsOn, input, ctx) => result | Promise<result>`, required): resolver function.
-- `doc` (`SchemaDoc`, optional): field resolver metadata.
+- `doc` (`SchemaDoc`, optional): field operation metadata.
 
 ## Chain API
 
