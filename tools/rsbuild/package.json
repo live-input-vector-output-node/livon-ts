@@ -18,11 +18,6 @@
     "@rsbuild/core": "^1.7.3",
     "@rsbuild/plugin-react": "^1.4.5"
   },
-  "peerDependenciesMeta": {
-    "@rsbuild/plugin-react": {
-      "optional": true
-    }
-  },
   "scripts": {
     "build": "true",
     "build:watch": "true",

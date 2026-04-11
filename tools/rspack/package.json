@@ -19,11 +19,6 @@
     "@rspack/core": "^1.7.5",
     "@rspack/plugin-react-refresh": "^1.6.0"
   },
-  "peerDependenciesMeta": {
-    "@rspack/plugin-react-refresh": {
-      "optional": true
-    }
-  },
   "scripts": {
     "build": "true",
     "build:watch": "true",
