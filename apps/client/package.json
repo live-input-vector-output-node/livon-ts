@@ -45,7 +45,11 @@
   },
   "devDependencies": {
     "@livon/cli": "workspace:*",
-    "@livon/config": "workspace:*",
+    "@livon/vitest": "workspace:*",
+    "@livon/eslint": "workspace:*",
+    "@livon/rsbuild": "workspace:*",
+    "@livon/rslib": "workspace:*",
+    "@livon/typescript": "workspace:*",
     "@rsbuild/core": "latest",
     "@rsbuild/plugin-react": "latest",
     "@types/react": "latest",

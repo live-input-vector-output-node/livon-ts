@@ -1,6 +1,15 @@
-import { createRslibConfig } from '@livon/config/rslib/base';
+import { base, browser, compose, entry, library } from '@livon/rslib';
 
-export default createRslibConfig({
-  target: 'web',
-  formats: ['esm', 'cjs'],
-});
+export default compose(
+  base(),
+  library(),
+  browser(),
+  entry({
+    entries: {
+      index: './src/index.ts',
+      client: './src/client.ts',
+      generate: './src/generate.ts',
+      typeScriptSurfaceTemplate: './src/typeScriptSurfaceTemplate.ts',
+    },
+  }),
+);

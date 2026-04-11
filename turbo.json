@@ -17,7 +17,43 @@
         "build/**"
       ]
     },
-    "@livon/config#build": {
+    "@livon/typescript#build": {
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": []
+    },
+    "@livon/eslint#build": {
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": []
+    },
+    "@livon/rslib#build": {
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": []
+    },
+    "@livon/rsbuild#build": {
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": []
+    },
+    "@livon/rspack#build": {
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": []
+    },
+    "@livon/vitest#build": {
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": []
+    },
+    "@livon/swc#build": {
       "dependsOn": [
         "^build"
       ],

@@ -1,11 +1,23 @@
 {
-  "extends": "@livon/config/tsconfig/library.json",
+  "extends": [
+    "@livon/typescript/base",
+    "@livon/typescript/library",
+    "@livon/typescript/react"
+  ],
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@livon/sync": ["../sync/src/index.ts"]
+      "@livon/sync": [
+        "../sync/src/index.ts"
+      ]
     }
   },
-  "include": ["src"],
-  "exclude": ["dist", "node_modules"]
+  "include": [
+    "src",
+    "*.config.ts"
+  ],
+  "exclude": [
+    "dist",
+    "node_modules"
+  ]
 }

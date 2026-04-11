@@ -1,6 +1,3 @@
-import { createRslibConfig } from '@livon/config/rslib/base';
+import { base, browser, compose, library } from '@livon/rslib';
 
-export default createRslibConfig({
-  target: 'web',
-  formats: ['esm', 'cjs'],
-});
+export default compose(base(), library(), browser());
