@@ -55,7 +55,7 @@ Each schema/combinator has its own usage page:
 - [api](../schema/api)
 - [operation](../schema/operation)
 - [subscription](../schema/subscription)
-- [fieldResolver](../schema/field-resolver)
+- [fieldOperation](../schema/field-operation)
 - [schemaFactory](../schema/schema-factory)
 - [typeGuards](../schema/type-guards)
 
@@ -145,7 +145,7 @@ For focused usage patterns:
 - [api](../schema/api)
 - [operation](../schema/operation)
 - [subscription](../schema/subscription)
-- [fieldResolver](../schema/field-resolver)
+- [fieldOperation](../schema/field-operation)
 
 ## Mount schema module into runtime
 
