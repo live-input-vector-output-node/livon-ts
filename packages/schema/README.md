@@ -55,7 +55,7 @@ Each schema/combinator has its own usage page:
 - [api](https://livon.tech/docs/schema/api)
 - [operation](https://livon.tech/docs/schema/operation)
 - [subscription](https://livon.tech/docs/schema/subscription)
-- [fieldResolver](https://livon.tech/docs/schema/field-resolver)
+- [fieldOperation](https://livon.tech/docs/schema/field-operation)
 - [schemaFactory](https://livon.tech/docs/schema/schema-factory)
 - [typeGuards](https://livon.tech/docs/schema/type-guards)
 
@@ -145,7 +145,7 @@ For focused usage patterns:
 - [api](https://livon.tech/docs/schema/api)
 - [operation](https://livon.tech/docs/schema/operation)
 - [subscription](https://livon.tech/docs/schema/subscription)
-- [fieldResolver](https://livon.tech/docs/schema/field-resolver)
+- [fieldOperation](https://livon.tech/docs/schema/field-operation)
 
 ## Mount schema module into runtime
 
