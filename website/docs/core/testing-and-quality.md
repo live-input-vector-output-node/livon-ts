@@ -63,6 +63,16 @@ CI caching includes PNPM store and local `.turbo` artifacts.
 pnpm run ci
 ```
 
+## Security analysis in CI
+
+Security-focused automated checks are executed in dedicated workflows:
+
+- `codeql.yml`: static analysis for JavaScript/TypeScript security and quality queries.
+- `snyk.yml`: dependency vulnerability scanning with high-severity gate.
+- `scorecards.yml`: OpenSSF Scorecard analysis with SARIF upload.
+
+These complement repository gates and help identify vulnerabilities before release.
+
 ## Coverage publishing
 
 After CI succeeds on `main`, a separate coverage workflow rebuilds the workspace,
