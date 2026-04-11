@@ -1,0 +1,667 @@
+---
+version: 1
+overlayId: livon
+extends: ai-template-core
+metadata:
+  repository: live-input-vector-output-node/livon
+  description: Livon-specific AI overlay restoring root rules, package routing, and
+    specializations.
+jsonPatches:
+- targetSourceId: root-gate
+  operations:
+  - op: replace
+    path: "/rules"
+    value:
+    - id: typescript-first
+      statement: Prefer TypeScript over JavaScript when technically feasible.
+      humanSources:
+      - website/docs/core/coding-style-guide.md
+      - website/docs/ai/root-gate.md
+      agentSources:
+      - PROMPT.md
+      - AGENTS.md
+    - id: arrow-functions-only
+      statement: Use arrow functions as the default for implementations and exported
+        callable APIs; avoid the function keyword, including overload declarations
+        (use callable interfaces plus const arrow assignments).
+      humanSources:
+      - website/docs/core/coding-style-guide.md
+      - website/docs/ai/root-gate.md
+      agentSources:
+      - PROMPT.md
+      - AGENTS.md
+    - id: destructured-config-defaults
+      statement: When functions accept config objects, destructure parameters directly
+        and set defaults with ES6 parameter defaults; keep property names aligned
+        and avoid config.* access.
+      humanSources:
+      - website/docs/core/coding-style-guide.md
+      - website/docs/ai/root-gate.md
+      agentSources:
+      - PROMPT.md
+      - AGENTS.md
+    - id: no-as-type-assertions
+      statement: Do not use TypeScript `as` type assertions in repository code (except
+        `as const`, which is allowed); design the type contracts (generics, overloads,
+        discriminated unions, type guards) so casts are not required.
+      humanSources:
+      - website/docs/core/coding-style-guide.md
+      - website/docs/ai/root-gate.md
+      agentSources:
+      - PROMPT.md
+      - AGENTS.md
+    - id: prefer-type-inference-minimal-annotations
+      statement: 'Prefer TypeScript inference by default: provide explicit type annotations
+        and generic arguments only when required for correctness, public API clarity,
+        or unresolved inference limits; avoid redundant explicit typing in local implementation
+        and tests.'
+      humanSources:
+      - website/docs/core/coding-style-guide.md
+      - website/docs/ai/root-gate.md
+      agentSources:
+      - PROMPT.md
+      - AGENTS.md
+    - id: reuse-existing-types-first
+      statement: Reuse existing named types/interfaces instead of rebuilding composite
+        inline types. If only a subset is needed, prefer simple Pick/Omit; if that
+        becomes noisy, define a small new named type instead of inline reconstruction.
+      humanSources:
+      - website/docs/core/coding-style-guide.md
+      - website/docs/ai/root-gate.md
+      agentSources:
+      - PROMPT.md
+      - AGENTS.md
+    - id: cross-module-type-reuse
+      statement: When the same type contract is used across modules, define and reuse
+        one shared type instead of duplicating local variants. Compose from existing
+        types with intersections and utility types (for example Pick/Omit/Exclude)
+        when it stays readable, and prefer simpler named types when utility composition
+        becomes noisy.
+      humanSources:
+      - website/docs/core/coding-style-guide.md
+      - website/docs/ai/root-gate.md
+      agentSources:
+      - PROMPT.md
+      - AGENTS.md
+    - id: avoid-circular-import-paths
+      statement: Avoid circular import paths by default. If a circular dependency
+        appears, extract the shared behavior/types into a dedicated module and import
+        that module from both sides instead of importing each other directly.
+      humanSources:
+      - website/docs/core/coding-style-guide.md
+      - website/docs/ai/root-gate.md
+      agentSources:
+      - PROMPT.md
+      - AGENTS.md
+    - id: prefer-flat-control-flow
+      statement: Prefer flat control flow and avoid deeply nested if blocks when feasible.
+        Use guard clauses, extracted helper functions, or table/map-driven branching
+        to keep indentation depth low while preserving readability and avoiding messy
+        abstractions.
+      humanSources:
+      - website/docs/core/coding-style-guide.md
+      - website/docs/ai/root-gate.md
+      agentSources:
+      - PROMPT.md
+      - AGENTS.md
+    - id: stable-reference-rebuild-policy
+      statement: 'Keep object and array references stable by default: rebuild only
+        when relevant values change, compare before building in hot paths, and use
+        explicit invalidation or bounded limits for caches.'
+      humanSources:
+      - website/docs/ai/root-gate.md
+      agentSources:
+      - PROMPT.md
+      - AGENTS.md
+    - id: allocation-stability-root-scope
+      statement: 'Minimize complex allocations on hot paths: define reusable functions,
+        arrays, objects, maps, and other complex values at module/root scope when
+        semantics allow; avoid defining functions inside frequently called functions
+        unless local state is required; and avoid function factories that still allocate
+        new closures per call.'
+      humanSources:
+      - website/docs/core/coding-style-guide.md
+      - website/docs/ai/root-gate.md
+      agentSources:
+      - PROMPT.md
+      - AGENTS.md
+    - id: static-helpers-at-module-root
+      statement: When behavior does not depend on instance-local mutable state, implement
+        helpers as module-root pure functions (input -> output) and move static maps/objects/tables
+        to module scope so they are initialized once instead of rebuilt per instance.
+      humanSources:
+      - website/docs/core/coding-style-guide.md
+      - website/docs/ai/root-gate.md
+      agentSources:
+      - PROMPT.md
+      - AGENTS.md
+    - id: pathfinder-clean-code-refactoring
+      statement: 'Apply the Pathfinder rule on every implementation change: when friction,
+        duplication, mixed concerns, or semantic boundary issues are discovered in
+        touched scope, refactor them immediately so the code becomes cleaner with
+        each change. When files become too large or semantically mixed, split them
+        by semantic slices/domains (for example builder, helper, utils, context, API
+        surface) and expose each split through local barrel files instead of growing
+        one monolithic file.'
+      humanSources:
+      - website/docs/core/coding-style-guide.md
+      - website/docs/ai/root-gate.md
+      agentSources:
+      - PROMPT.md
+      - AGENTS.md
+      - ".github/skills/clean-code-pathfinder/SKILL.md"
+    - id: test-setup-deduplication
+      statement: Before adding new tests, inspect existing tests for similar setup
+        and extract shared setup into beforeEach blocks or reusable test utilities
+        to avoid duplicated entity/source/action/stream scaffolding.
+      humanSources:
+      - website/docs/core/testing-and-quality.md
+      - website/docs/ai/root-gate.md
+      agentSources:
+      - PROMPT.md
+      - AGENTS.md
+    - id: test-structure-and-parametrization
+      statement: Tests must be grouped with describe blocks; shared group test data
+        must be initialized through beforeEach or reusable test utilities when feasible;
+        and tests that validate the same behavior with different data should be consolidated
+        with it.each.
+      humanSources:
+      - website/docs/core/testing-and-quality.md
+      - website/docs/ai/root-gate.md
+      agentSources:
+      - PROMPT.md
+      - AGENTS.md
+    - id: modular-file-structure
+      statement: Keep utilities in scoped utils folders with one utility per file
+        and index barrel exports; split main functionality into focused files and
+        expose public boundaries through package.json exports plus index barrels.
+      humanSources:
+      - website/docs/core/coding-style-guide.md
+      - website/docs/core/testing-and-quality.md
+      - website/docs/ai/root-gate.md
+      agentSources:
+      - PROMPT.md
+      - AGENTS.md
+    - id: reuse-existing-utils-first
+      statement: Before implementing new logic, first check existing utilities/modules
+        for reusable equivalents, including across package boundaries. Treat this
+        lookup as a mandatory first step for each change. If similar logic exists
+        in another package, prefer consolidating it into @livon/utils and introducing
+        that package dependency where needed. When two or more candidate implementations
+        exist, prefer the most performant and cleanest implementation, or merge them
+        into one shared configurable solution (config/options) that combines the best
+        traits instead of parallel helpers.
+      humanSources:
+      - website/docs/core/coding-style-guide.md
+      - website/docs/ai/root-gate.md
+      agentSources:
+      - PROMPT.md
+      - AGENTS.md
+      - ".github/skills/clean-code-pathfinder/SKILL.md"
+    - id: no-wrapper-passthrough-helpers
+      statement: 'Wrapper passthrough helpers are forbidden by default: if a helper
+        only forwards to another function without adding behavior or domain constraints,
+        call the shared utility directly.'
+      humanSources:
+      - website/docs/core/coding-style-guide.md
+      - website/docs/ai/root-gate.md
+      agentSources:
+      - PROMPT.md
+      - AGENTS.md
+    - id: refactor-existing-rule-violations-when-feasible
+      statement: If existing code in touched scope is found to violate active repository
+        rules, refactor it in the same change when feasible and safe, without unnecessary
+        scope expansion.
+      humanSources:
+      - website/docs/core/coding-style-guide.md
+      - website/docs/ai/root-gate.md
+      agentSources:
+      - PROMPT.md
+      - AGENTS.md
+      - ".github/skills/clean-code-pathfinder/SKILL.md"
+    - id: scope-discipline-minimal-expansion
+      statement: 'Enforce strict scope discipline: keep edits within requested/touched
+        scope plus direct correctness/build/test/policy dependencies; expand scope
+        only when explicitly required.'
+      humanSources:
+      - website/docs/core/governance.md
+      - website/docs/ai/root-gate.md
+      agentSources:
+      - PROMPT.md
+      - AGENTS.md
+    - id: package-exports-entry-contract
+      statement: Every public API entrypoint must be declared in package.json exports
+        with types (.d.ts), import (.js), and require (.cjs) mappings to dist for
+        both root and deep import paths.
+      humanSources:
+      - website/docs/ai/root-gate.md
+      agentSources:
+      - PROMPT.md
+      - AGENTS.md
+      - tools/policies/src/checks/project/check-package-exports.ts
+    - id: core-framework-separation
+      statement: When changing framework adapters, evaluate first whether logic is
+        framework-agnostic; shared runtime/state/sync behavior must be implemented
+        in @livon/sync core, while framework packages keep only adapter integration
+        code.
+      humanSources:
+      - website/docs/core/coding-style-guide.md
+      - website/docs/ai/root-gate.md
+      agentSources:
+      - PROMPT.md
+      - AGENTS.md
+      - tools/policies/src/checks/check-core-framework-separation.ts
+    - id: module-responsibility-boundaries
+      statement: 'For every implementation change, enforce package responsibilities
+        at the correct layer: runtime/core/schema/transport/framework modules must
+        not absorb each other''s concerns, and cross-layer coupling must stay within
+        defined architecture boundaries.'
+      humanSources:
+      - website/docs/technical/architecture.mdx
+      - website/docs/technical/runtime-design.md
+      - website/docs/core/coding-style-guide.md
+      - website/docs/ai/root-gate.md
+      agentSources:
+      - PROMPT.md
+      - AGENTS.md
+      - tools/policies/src/checks/check-package-responsibility-boundaries.ts
+    - id: root-turbo-orchestration
+      statement: 'Repository workflow orchestration is Turborepo-only with no exceptions:
+        workflows must be invoked through root scripts (`pnpm run <task>`); direct
+        `pnpm turbo run ...` and manual orchestration scripts/commands are forbidden;
+        workflow tasks must be declared in `turbo.json`; package scripts stay atomic
+        and non-orchestrating.'
+      humanSources:
+      - website/docs/core/governance.md
+      - website/docs/core/contributing.md
+      - website/docs/ai/root-gate.md
+      agentSources:
+      - PROMPT.md
+      - AGENTS.md
+    - id: root-no-hardcoded-filter
+      statement: Root scripts must not hardcode --filter; filters are caller-supplied.
+      humanSources:
+      - website/docs/core/governance.md
+      - website/docs/core/contributing.md
+      - website/docs/ai/root-gate.md
+      agentSources:
+      - PROMPT.md
+      - AGENTS.md
+    - id: workspace-tool-packages
+      statement: Shared automation must live in dedicated workspace packages and be
+        executed via Turbo tasks.
+      humanSources:
+      - website/docs/core/governance.md
+      - website/docs/core/contributing.md
+      - website/docs/ai/root-gate.md
+      agentSources:
+      - PROMPT.md
+      - AGENTS.md
+    - id: dual-track-rule-publication
+      statement: Any new or changed rule must be documented for both humans and agents.
+      humanSources:
+      - website/docs/core/governance.md
+      - website/docs/ai/root-gate.md
+      agentSources:
+      - PROMPT.md
+      - AGENTS.md
+    - id: docs-implementation-sync
+      statement: 'Keep documentation and implementation synchronized in both directions:
+        implementation changes require docs updates, and docs changes that alter contracts
+        or behavior require matching implementation updates.'
+      humanSources:
+      - website/docs/core/definition-of-done.md
+      - website/docs/ai/root-gate.md
+      agentSources:
+      - PROMPT.md
+      - AGENTS.md
+    - id: docs-canonical-source
+      statement: Documentation content must be edited in website/docs only; other
+        documentation artifacts are generated or derived from canonical docs.
+      humanSources:
+      - website/docs/core/governance.md
+      - website/docs/core/contributing.md
+      - website/docs/ai/root-gate.md
+      agentSources:
+      - PROMPT.md
+      - AGENTS.md
+    - id: docs-related-library-links
+      statement: 'Related-library chip rows in docs and overview pages must use linked
+        code chips: internal @livon/* packages link to their package docs page, and
+        external libraries link to their npm package page.'
+      humanSources:
+      - website/docs/core/contributing.md
+      - website/docs/ai/root-gate.md
+      agentSources:
+      - PROMPT.md
+      - AGENTS.md
+      - tools/policies/check.ts
+      - tools/policies/src/checks/check-doc-related-library-links.ts
+    - id: docs-example-domain-todo
+      statement: Repository examples should use the Todo domain as the default use
+        case to keep docs and API examples consistent across packages.
+      humanSources:
+      - website/docs/core/coding-style-guide.md
+      - website/docs/ai/root-gate.md
+      agentSources:
+      - PROMPT.md
+      - AGENTS.md
+    - id: docs-example-destructuring
+      statement: Documentation examples should destructure hook return values with
+        semantic names, but keep unit instances as objects and call unit methods via
+        dot access (for example unit.run(...), unit.refetch(...)).
+      humanSources:
+      - website/docs/core/coding-style-guide.md
+      - website/docs/ai/root-gate.md
+      agentSources:
+      - PROMPT.md
+      - AGENTS.md
+    - id: tests-example-domain-todo
+      statement: Repository tests should use the Todo domain as the default use case
+        when feasible so tests and docs stay aligned in language and intent.
+      humanSources:
+      - website/docs/core/testing-and-quality.md
+      - website/docs/ai/root-gate.md
+      agentSources:
+      - PROMPT.md
+      - AGENTS.md
+    - id: dx-tdd-implementation-flow
+      statement: 'Default delivery flow is DX -> TDD -> implementation: agree API/DX
+        first, cover the full agreed DX in tests second, then implement until all
+        tests are green.'
+      humanSources:
+      - website/docs/core/testing-and-quality.md
+      - website/docs/ai/root-gate.md
+      agentSources:
+      - PROMPT.md
+      - AGENTS.md
+    - id: pre-push-full-gates
+      statement: 'Before every push, run `pnpm qg` (full repository gates: check:readmes,
+        check:policies, lint, typecheck, test, bench:gate, build).'
+      humanSources:
+      - website/docs/core/contributing.md
+      - website/docs/core/governance.md
+      - website/docs/ai/root-gate.md
+      agentSources:
+      - PROMPT.md
+      - AGENTS.md
+    - id: workflow-action-version-consistency
+      statement: GitHub Actions referenced across repository workflows must use one
+        consistent version per action; when updating workflow actions, prefer the
+        newest compatible version and align all workflows.
+      humanSources:
+      - website/docs/core/contributing.md
+      - website/docs/ai/root-gate.md
+      agentSources:
+      - PROMPT.md
+      - AGENTS.md
+    - id: git-conflicts-newest-wins
+      statement: 'When resolving git merge or rebase conflicts, default to newest
+        version wins: keep the newest compatible version and align related files to
+        it unless a higher-priority instruction or explicit correctness/security/build
+        constraint requires otherwise.'
+      humanSources:
+      - website/docs/core/contributing.md
+      - website/docs/ai/root-gate.md
+      agentSources:
+      - PROMPT.md
+      - AGENTS.md
+    - id: concise-check-output
+      statement: 'Root quality-gate and verification commands must prefer concise
+        success output and focused failure output: show task/package summaries when
+        checks pass, and print detailed logs only for failed checks or explicitly
+        requested verbose debugging.'
+      humanSources:
+      - website/docs/core/contributing.md
+      - website/docs/core/testing-and-quality.md
+      - website/docs/ai/root-gate.md
+      agentSources:
+      - PROMPT.md
+      - AGENTS.md
+    - id: lint-warning-no-regressions
+      statement: Lint warning counts are budgeted per package and must not increase
+        without explicitly updating the central budget config.
+      humanSources:
+      - website/docs/core/contributing.md
+      - website/docs/core/testing-and-quality.md
+      - website/docs/ai/root-gate.md
+      - configs/quality/lint-warning-budgets.json
+      agentSources:
+      - PROMPT.md
+      - AGENTS.md
+    - id: package-readmes-from-docs
+      statement: Package README files are generated from website/docs/packages sources
+        and must stay in sync.
+      humanSources:
+      - website/docs/core/contributing.md
+      - website/docs/core/governance.md
+      - website/docs/ai/root-gate.md
+      agentSources:
+      - PROMPT.md
+      - AGENTS.md
+    - id: aggregated-policy-reporting
+      statement: Policy checks must run as a set and report one aggregated result.
+      humanSources:
+      - website/docs/ai/active-rules-and-gates.md
+      - website/docs/ai/context-routing.md
+      - website/docs/ai/root-gate.md
+      agentSources:
+      - AGENTS.md
+    - id: hierarchical-instruction-inheritance
+      statement: 'Instruction files must compose hierarchically: root AGENTS plus
+        nearest parent AGENTS chain for scoped work.'
+      humanSources:
+      - website/docs/ai/context-routing.md
+      - website/docs/ai/root-gate.md
+      agentSources:
+      - AGENTS.md
+      - tools/policies/src/checks/check-ai-instruction-hierarchy.ts
+    - id: centralize-shared-rules
+      statement: Shared recurring rules must be centralized in root gate; scoped deviations
+        must be registered in specializations.
+      humanSources:
+      - website/docs/ai/root-gate.md
+      - website/docs/ai/specializations.md
+      - website/docs/core/governance.md
+      agentSources:
+      - PROMPT.md
+      - AGENTS.md
+- targetSourceId: context-routing
+  operations:
+  - op: replace
+    path: "/routes"
+    value:
+    - id: schema-package
+      patterns:
+      - packages/schema/**
+      load:
+      - packages/schema/PROMPT.md
+      - website/docs/packages/schema.md
+      - website/docs/schema/index.md
+    - id: schema-api
+      patterns:
+      - website/docs/schema/**
+      - packages/schema/src/**
+      load:
+      - website/docs/schema/index.md
+      - website/docs/schema/schema-factory.md
+      - website/docs/schema/type-safety.md
+    - id: client-package
+      patterns:
+      - packages/client/**
+      load:
+      - packages/client/PROMPT.md
+      - website/docs/packages/client.md
+      - website/docs/core/generators.md
+      - website/docs/core/schema-doc-and-generated-jsdoc.md
+    - id: runtime-core
+      patterns:
+      - packages/runtime/**
+      load:
+      - packages/runtime/PROMPT.md
+      - website/docs/technical/runtime-design.md
+      - website/docs/technical/architecture.mdx
+      - website/docs/technical/event-flow.mdx
+      - website/docs/technical/roadmap.mdx
+    - id: sync-and-framework-adapters
+      patterns:
+      - packages/sync/**
+      - packages/react/**
+      - packages/angular/**
+      - packages/svelte/**
+      load:
+      - website/docs/packages/sync.md
+      - website/docs/packages/react.md
+      - website/docs/technical/architecture.mdx
+      - website/docs/core/coding-style-guide.md
+    - id: transport-and-server
+      patterns:
+      - packages/*transport/**
+      - apps/server/**
+      load:
+      - website/docs/technical/runtime-design.md
+      - website/docs/technical/architecture.mdx
+      - website/docs/technical/event-flow.mdx
+      - website/docs/technical/roadmap.mdx
+    - id: testing-quality
+      patterns:
+      - "**/*.spec.ts"
+      - "**/*.test.ts"
+      - vitest*.ts
+      - tools/policies/**
+      load:
+      - website/docs/core/testing-and-quality.md
+    - id: governance-and-workflow
+      patterns:
+      - ".github/**"
+      - tools/**
+      - package.json
+      - turbo.json
+      load:
+      - website/docs/core/governance.md
+      - website/docs/core/contributing.md
+    - id: ai-specializations
+      patterns:
+      - "**/AGENTS.md"
+      - packages/*/AGENTS.md
+      - ".github/instructions/**"
+      - configs/ai/specializations.json
+      - tools/policies/**
+      load:
+      - configs/ai/specializations.json
+      - website/docs/ai/specializations.md
+    - id: ai-multi-agent
+      patterns:
+      - configs/ai/multi-agent-council.json
+      - website/docs/ai/multi-agent-council.md
+      - ".github/skills/**"
+      - tools/policies/src/checks/check-multi-agent-council.ts
+      load:
+      - configs/ai/multi-agent-council.json
+      - website/docs/ai/multi-agent-council.md
+      - website/docs/ai/approach-and-rationale.md
+    - id: project-context
+      patterns:
+      - website/docs/core/project-context.md
+      - website/docs/core/change-history.md
+      - website/docs/technical/roadmap.mdx
+      load:
+      - website/docs/core/project-context.md
+      - website/docs/core/change-history.md
+      - website/docs/technical/roadmap.mdx
+    - id: packages-catalog
+      patterns:
+      - website/sidebars.ts
+      - website/docs/packages/**
+      - packages/**/README.md
+      load:
+      - website/docs/packages/index.md
+  - op: replace
+    path: "/fixtures"
+    value:
+    - path: packages/schema/src/index.ts
+      mustLoad:
+      - packages/schema/PROMPT.md
+      - website/docs/packages/schema.md
+      - website/docs/schema/index.md
+    - path: packages/client/src/generate.ts
+      mustLoad:
+      - packages/client/PROMPT.md
+      - website/docs/core/generators.md
+      - website/docs/core/schema-doc-and-generated-jsdoc.md
+    - path: packages/runtime/src/runtime.ts
+      mustLoad:
+      - packages/runtime/PROMPT.md
+      - website/docs/technical/runtime-design.md
+      - website/docs/technical/event-flow.mdx
+    - path: packages/sync/src/entity.ts
+      mustLoad:
+      - website/docs/packages/sync.md
+      - website/docs/technical/architecture.mdx
+    - path: tools/policies/check.ts
+      mustLoad:
+      - website/docs/core/governance.md
+      - website/docs/core/contributing.md
+      - website/docs/core/testing-and-quality.md
+      - website/docs/ai/root-gate.md
+      - configs/ai/specializations.json
+      - website/docs/ai/specializations.md
+  - op: replace
+    path: "/enforcement"
+    value:
+      maxRootAgentLoads: 6
+      maxActiveRules: 12
+      maxAlwaysLoadItems: 5
+- targetSourceId: specializations
+  operations:
+  - op: replace
+    path: "/specializations"
+    value:
+    - id: client-generator
+      scopePatterns:
+      - packages/client/**
+      instructionFiles:
+      - packages/client/AGENTS.md
+      - ".github/instructions/client.instructions.md"
+      requiredLoad:
+      - packages/client/PROMPT.md
+      - website/docs/packages/client.md
+      - website/docs/core/generators.md
+      - website/docs/core/schema-doc-and-generated-jsdoc.md
+      deltaRules:
+      - Treat generator output behavior changes as doc-sensitive changes.
+      - Run scoped generator tests when generated surface behavior changes.
+    - id: runtime-core
+      scopePatterns:
+      - packages/runtime/**
+      instructionFiles:
+      - packages/runtime/AGENTS.md
+      - ".github/instructions/runtime.instructions.md"
+      requiredLoad:
+      - packages/runtime/PROMPT.md
+      - website/docs/technical/runtime-design.md
+      - website/docs/technical/architecture.mdx
+      - website/docs/technical/event-flow.mdx
+      - website/docs/core/testing-and-quality.md
+      deltaRules:
+      - Preserve deterministic hook order and context boundaries.
+      - Keep runtime concerns separate from transport and schema-specific concerns.
+      - Runtime source code must not import @livon/client, @livon/schema, or transport
+        packages.
+    - id: schema-core
+      scopePatterns:
+      - packages/schema/**
+      instructionFiles:
+      - packages/schema/AGENTS.md
+      - ".github/instructions/schema.instructions.md"
+      requiredLoad:
+      - packages/schema/PROMPT.md
+      - website/docs/packages/schema.md
+      - website/docs/schema/index.md
+      - website/docs/core/testing-and-quality.md
+      deltaRules:
+      - Maintain branch-complete happy/sad coverage for changed schema behavior.
+      - Keep schema runtime behavior and schema docs aligned in the same change.
+notes:
+- Keep testing/code-style/code-quality rules active through root-gate + specializations
+  + policy checks.

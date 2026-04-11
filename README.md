@@ -120,15 +120,6 @@ LIVON (Live Input Vector Output Node) is a TypeScript framework for building API
         <div class="livon-badge-row livon-tech-row"><a href="https://livon.tech/docs/packages/client"><code>@livon/client</code></a> <a href="https://www.npmjs.com/package/@rslib/core"><code>@rslib/core</code></a> <a href="https://www.npmjs.com/package/msgpackr"><code>msgpackr</code></a> <a href="https://www.npmjs.com/package/ws"><code>ws</code></a></div>
       </div>
     </article>
-    <article class="livon-badge-card">
-      <h4 class="livon-badge-card-title"><code>@livon/config</code></h4>
-      <div class="livon-badge-row"><a href="https://www.npmjs.com/package/@livon/config"><img class="livon-badge-image" src="https://img.shields.io/npm/v/%40livon%2Fconfig" alt="@livon/config npm version" /></a> <a href="https://libraries.io/npm/%40livon%2Fconfig"><img class="livon-badge-image" src="https://img.shields.io/librariesio/release/npm/%40livon%2Fconfig?label=dependencies" alt="@livon/config dependencies" /></a> <a href="https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/publish.yml"><img class="livon-badge-image" src="https://img.shields.io/github/actions/workflow/status/live-input-vector-output-node/livon-ts/publish.yml?branch=main&label=npm%20publish" alt="@livon/config npm publish" /></a></div>
-      <div class="livon-badge-row livon-badge-row--secondary"><a href="https://www.npmjs.com/package/@livon/config"><img class="livon-badge-image" src="https://img.shields.io/npm/unpacked-size/%40livon%2Fconfig?label=package%20size" alt="@livon/config package size" /></a> <a href="https://www.npmjs.com/package/@livon/config"><img class="livon-badge-image" src="https://img.shields.io/npm/l/%40livon%2Fconfig" alt="@livon/config license" /></a></div>
-      <div class="livon-tech-meta">
-        <span class="livon-tech-label">Related libraries</span>
-        <div class="livon-badge-row livon-tech-row"><a href="https://www.npmjs.com/package/@rsbuild/core"><code>@rsbuild/core</code></a> <a href="https://www.npmjs.com/package/@rsbuild/plugin-react"><code>@rsbuild/plugin-react</code></a> <a href="https://www.npmjs.com/package/@rslib/core"><code>@rslib/core</code></a> <a href="https://www.npmjs.com/package/@rspack/core"><code>@rspack/core</code></a> <a href="https://www.npmjs.com/package/@rspack/plugin-react-refresh"><code>@rspack/plugin-react-refresh</code></a> <a href="https://www.npmjs.com/package/@typescript-eslint/eslint-plugin"><code>@typescript-eslint/eslint-plugin</code></a> <a href="https://www.npmjs.com/package/@typescript-eslint/parser"><code>@typescript-eslint/parser</code></a> <a href="https://www.npmjs.com/package/eslint"><code>eslint</code></a></div>
-      </div>
-    </article>
   </div>
 </section>
 

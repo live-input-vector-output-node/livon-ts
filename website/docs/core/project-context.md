@@ -23,4 +23,4 @@ For maintainers and contributors, this page summarizes current focus, constraint
 - English-only public surface.
 - Functional, immutable, ES6-first implementation.
 - [Schema-first typing and validation](/docs/schema).
-- Shared configuration from [@livon/config](/docs/packages/config).
+- Shared configuration from `@livon/typescript`, `@livon/eslint`, `@livon/rslib`, `@livon/rsbuild`, `@livon/rspack`, and `@livon/vitest`.

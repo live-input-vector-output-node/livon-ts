@@ -83,7 +83,6 @@ const sidebars: SidebarsConfig = {
         'packages/react',
         'packages/cli',
         'packages/dlq-module',
-        'packages/config',
       ],
     },
     {

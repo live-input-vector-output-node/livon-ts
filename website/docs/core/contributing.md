@@ -11,7 +11,7 @@ For contributors and maintainers, this page defines the local development workfl
 
 ```sh
 git clone <repo-url>
-cd new_livon
+cd livon
 pnpm install
 ```
 
@@ -179,7 +179,7 @@ pnpm run check:readmes
 
 Use default tool configs and standard commands first.
 
-- Prefer native config files such as `rslib.config.ts`, `rsbuild.config.ts`, `vitest.*.config.ts`, `eslint.config.cjs`, and `tsconfig*.json`.
+- Prefer native config files such as `rslib.config.ts`, `rsbuild.config.ts`, `vitest.*.config.ts`, `eslint.config.ts`, and `tsconfig*.json`.
 - Prefer standard tooling commands (`rslib`, `rsbuild`, `vitest`, `eslint`, `tsc`) in package scripts.
 - Avoid custom wrapper scripts for normal build, lint, test, and typecheck flows.
 - Keep package scripts atomic (single-tool command); orchestration belongs to Turborepo.

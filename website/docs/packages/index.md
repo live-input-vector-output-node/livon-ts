@@ -18,8 +18,6 @@ import {runtime} from '@livon/runtime';
 const {runtime: runtimeCjs} = require('@livon/runtime');
 ```
 
-`@livon/config` publishes tooling presets rather than runtime bundle variants.
-
 ## Core runtime stack
 
 1. [@livon/runtime](runtime)
@@ -41,8 +39,7 @@ const {runtime: runtimeCjs} = require('@livon/runtime');
 ## Reliability and tooling
 
 1. [@livon/dlq-module](dlq-module)
-2. [@livon/config](config)
-3. [@livon/cli](cli)
+2. [@livon/cli](cli)
 
 ## Schema API reference
 
