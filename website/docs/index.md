@@ -247,6 +247,7 @@ onMessage?(payload: MessageWithId, ctx: ClientHandlerContext): void;
 - [Technical](/docs/technical/runtime-design): runtime architecture and event flow.
 - [Contribution](/docs/core/contributing): quality gates, workflows, and governance.
 - [Community](/docs/core/support): support channels, conduct policy, and security reporting.
+- [Release Notes](/docs/core/release-notes): human-readable summaries for each release line.
 - [AI Control](/docs/ai): agent routing, scoped context, and gate-based enforcement.
 
 ## Package badges
