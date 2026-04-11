@@ -66,7 +66,7 @@ Tooling policy is defined in [Contributing](https://livon.tech/docs/core/contrib
 - Root scripts must not hardcode `--filter`; callers may pass filters when needed.
 - Shared automation must live in dedicated workspace packages (for example `tools/*`) and run via Turbo tasks.
 - Package README files under `packages/*/README.md` are generated artifacts sourced from `website/docs/packages/*.md`.
-- Root community-health and release-note files (`CONTRIBUTING.md`, `GOVERNANCE.md`, `CODE_OF_CONDUCT.md`, `SUPPORT.md`, `SECURITY.md`, `.github/SECURITY.md`, `CHANGELOG.md`) are generated artifacts sourced from `website/docs/core/*.md`.
+- Root community-health and release-note files (`CONTRIBUTING.md`, `GOVERNANCE.md`, `CODE_OF_CONDUCT.md`, `SUPPORT.md`, `SECURITY.md`, `.github/SECURITY.md`, `CHANGELOG.md`, `BEST_PRACTICES.md`) are generated artifacts sourced from `website/docs/core/*.md`.
 - README sync is executed via `tools/readmes` (`gen:readmes`, `check:readmes`) and is part of CI/publish enforcement.
 - Lint warning budgets are centralized in `configs/quality/lint-warning-budgets.json` and enforced through package `lint` scripts + `check:policies`.
 - Before every push, run `pnpm qg` (full repository gates: `check:readmes`, `check:policies`, `lint`, `typecheck`, `test`, `bench:gate`, `build`).

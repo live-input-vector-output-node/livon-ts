@@ -115,6 +115,7 @@ const sidebars: SidebarsConfig = {
         'core/support',
         'core/security',
         'core/release-notes',
+        'core/openssf-best-practices',
         'core/governance',
         'core/project-context',
         'core/change-history',
