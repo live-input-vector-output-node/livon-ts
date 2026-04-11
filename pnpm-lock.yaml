@@ -45,9 +45,21 @@ importers:
       '@livon/cli':
         specifier: workspace:*
         version: link:../../packages/cli
-      '@livon/config':
+      '@livon/eslint':
         specifier: workspace:*
-        version: link:../../packages/config
+        version: link:../../tools/eslint
+      '@livon/rsbuild':
+        specifier: workspace:*
+        version: link:../../tools/rsbuild
+      '@livon/rslib':
+        specifier: workspace:*
+        version: link:../../tools/rslib
+      '@livon/typescript':
+        specifier: workspace:*
+        version: link:../../tools/typescript
+      '@livon/vitest':
+        specifier: workspace:*
+        version: link:../../tools/vitest
       '@rsbuild/core':
         specifier: latest
         version: 1.7.3
@@ -97,9 +109,18 @@ importers:
         specifier: latest
         version: 8.19.0
     devDependencies:
-      '@livon/config':
+      '@livon/eslint':
         specifier: workspace:*
-        version: link:../../packages/config
+        version: link:../../tools/eslint
+      '@livon/rslib':
+        specifier: workspace:*
+        version: link:../../tools/rslib
+      '@livon/typescript':
+        specifier: workspace:*
+        version: link:../../tools/typescript
+      '@livon/vitest':
+        specifier: workspace:*
+        version: link:../../tools/vitest
       '@rslib/core':
         specifier: latest
         version: 0.19.5(typescript@5.9.3)
@@ -137,9 +158,18 @@ importers:
         specifier: 8.19.0
         version: 8.19.0
     devDependencies:
-      '@livon/config':
+      '@livon/eslint':
         specifier: workspace:*
-        version: link:../config
+        version: link:../../tools/eslint
+      '@livon/rslib':
+        specifier: workspace:*
+        version: link:../../tools/rslib
+      '@livon/typescript':
+        specifier: workspace:*
+        version: link:../../tools/typescript
+      '@livon/vitest':
+        specifier: workspace:*
+        version: link:../../tools/vitest
       '@types/node':
         specifier: latest
         version: 25.2.2
@@ -165,9 +195,18 @@ importers:
         specifier: workspace:*
         version: link:../runtime
     devDependencies:
-      '@livon/config':
+      '@livon/eslint':
         specifier: workspace:*
-        version: link:../config
+        version: link:../../tools/eslint
+      '@livon/rslib':
+        specifier: workspace:*
+        version: link:../../tools/rslib
+      '@livon/typescript':
+        specifier: workspace:*
+        version: link:../../tools/typescript
+      '@livon/vitest':
+        specifier: workspace:*
+        version: link:../../tools/vitest
       '@rslib/core':
         specifier: latest
         version: 0.19.5(typescript@5.9.3)
@@ -199,9 +238,18 @@ importers:
         specifier: 1.11.8
         version: 1.11.8
     devDependencies:
-      '@livon/config':
+      '@livon/eslint':
         specifier: workspace:*
-        version: link:../config
+        version: link:../../tools/eslint
+      '@livon/rslib':
+        specifier: workspace:*
+        version: link:../../tools/rslib
+      '@livon/typescript':
+        specifier: workspace:*
+        version: link:../../tools/typescript
+      '@livon/vitest':
+        specifier: workspace:*
+        version: link:../../tools/vitest
       '@rslib/core':
         specifier: latest
         version: 0.19.5(typescript@5.9.3)
@@ -221,42 +269,24 @@ importers:
         specifier: latest
         version: 4.0.18(@types/node@25.6.0)(jiti@2.6.1)(jsdom@29.0.1)(terser@5.46.0)
 
-  packages/config:
-    dependencies:
-      '@rsbuild/core':
-        specifier: ^1.7.3
-        version: 1.7.3
-      '@rsbuild/plugin-react':
-        specifier: ^1.4.5
-        version: 1.4.6(@rsbuild/core@1.7.3)
-      '@rslib/core':
-        specifier: ^0.19.5 || ^0.20.0
-        version: 0.20.0(@module-federation/runtime-tools@0.22.0)(core-js@3.47.0)(typescript@6.0.2)
-      '@rspack/core':
-        specifier: ^1.7.5
-        version: 1.7.5(@swc/helpers@0.5.18)
-      '@rspack/plugin-react-refresh':
-        specifier: ^1.6.0
-        version: 1.6.0(react-refresh@0.18.0)
-      '@typescript-eslint/eslint-plugin':
-        specifier: ^8.56.1
-        version: 8.56.1(@typescript-eslint/parser@8.56.1(eslint@10.0.2(jiti@2.6.1))(typescript@6.0.2))(eslint@10.0.2(jiti@2.6.1))(typescript@6.0.2)
-      '@typescript-eslint/parser':
-        specifier: ^8.54.0
-        version: 8.56.1(eslint@10.0.2(jiti@2.6.1))(typescript@6.0.2)
-      eslint:
-        specifier: ^10.0.2
-        version: 10.0.2(jiti@2.6.1)
-
   packages/dlq-module:
     dependencies:
       '@livon/runtime':
         specifier: workspace:*
         version: link:../runtime
     devDependencies:
-      '@livon/config':
+      '@livon/eslint':
         specifier: workspace:*
-        version: link:../config
+        version: link:../../tools/eslint
+      '@livon/rslib':
+        specifier: workspace:*
+        version: link:../../tools/rslib
+      '@livon/typescript':
+        specifier: workspace:*
+        version: link:../../tools/typescript
+      '@livon/vitest':
+        specifier: workspace:*
+        version: link:../../tools/vitest
       '@rslib/core':
         specifier: latest
         version: 0.19.6(typescript@5.9.3)
@@ -285,9 +315,18 @@ importers:
         specifier: workspace:*
         version: link:../sync
     devDependencies:
-      '@livon/config':
+      '@livon/eslint':
         specifier: workspace:*
-        version: link:../config
+        version: link:../../tools/eslint
+      '@livon/rslib':
+        specifier: workspace:*
+        version: link:../../tools/rslib
+      '@livon/typescript':
+        specifier: workspace:*
+        version: link:../../tools/typescript
+      '@livon/vitest':
+        specifier: workspace:*
+        version: link:../../tools/vitest
       '@rslib/core':
         specifier: latest
         version: 0.20.0(@module-federation/runtime-tools@0.22.0)(core-js@3.47.0)(typescript@5.9.3)
@@ -327,9 +366,18 @@ importers:
 
   packages/runtime:
     devDependencies:
-      '@livon/config':
+      '@livon/eslint':
         specifier: workspace:*
-        version: link:../config
+        version: link:../../tools/eslint
+      '@livon/rslib':
+        specifier: workspace:*
+        version: link:../../tools/rslib
+      '@livon/typescript':
+        specifier: workspace:*
+        version: link:../../tools/typescript
+      '@livon/vitest':
+        specifier: workspace:*
+        version: link:../../tools/vitest
       '@rslib/core':
         specifier: latest
         version: 0.19.5(typescript@5.9.3)
@@ -358,9 +406,18 @@ importers:
         specifier: 1.11.8
         version: 1.11.8
     devDependencies:
-      '@livon/config':
+      '@livon/eslint':
         specifier: workspace:*
-        version: link:../config
+        version: link:../../tools/eslint
+      '@livon/rslib':
+        specifier: workspace:*
+        version: link:../../tools/rslib
+      '@livon/typescript':
+        specifier: workspace:*
+        version: link:../../tools/typescript
+      '@livon/vitest':
+        specifier: workspace:*
+        version: link:../../tools/vitest
       '@rslib/core':
         specifier: latest
         version: 0.19.5(typescript@5.9.3)
@@ -392,9 +449,18 @@ importers:
         specifier: 8.19.0
         version: 8.19.0
     devDependencies:
-      '@livon/config':
+      '@livon/eslint':
         specifier: workspace:*
-        version: link:../config
+        version: link:../../tools/eslint
+      '@livon/rslib':
+        specifier: workspace:*
+        version: link:../../tools/rslib
+      '@livon/typescript':
+        specifier: workspace:*
+        version: link:../../tools/typescript
+      '@livon/vitest':
+        specifier: workspace:*
+        version: link:../../tools/vitest
       '@rslib/core':
         specifier: latest
         version: 0.19.5(typescript@5.9.3)
@@ -426,9 +492,18 @@ importers:
         specifier: 1.11.8
         version: 1.11.8
     devDependencies:
-      '@livon/config':
+      '@livon/eslint':
         specifier: workspace:*
-        version: link:../config
+        version: link:../../tools/eslint
+      '@livon/rslib':
+        specifier: workspace:*
+        version: link:../../tools/rslib
+      '@livon/typescript':
+        specifier: workspace:*
+        version: link:../../tools/typescript
+      '@livon/vitest':
+        specifier: workspace:*
+        version: link:../../tools/vitest
       '@rslib/core':
         specifier: latest
         version: 0.20.0(@module-federation/runtime-tools@0.22.0)(core-js@3.47.0)(typescript@5.9.3)
@@ -11020,15 +11095,6 @@ snapshots:
     transitivePeerDependencies:
       - webpack-hot-middleware
 
-  '@rsbuild/plugin-react@1.4.6(@rsbuild/core@1.7.3)':
-    dependencies:
-      '@rspack/plugin-react-refresh': 1.6.1(react-refresh@0.18.0)
-      react-refresh: 0.18.0
-    optionalDependencies:
-      '@rsbuild/core': 1.7.3
-    transitivePeerDependencies:
-      - webpack-hot-middleware
-
   '@rsbuild/plugin-react@1.4.6(@rsbuild/core@1.7.5)':
     dependencies:
       '@rspack/plugin-react-refresh': 1.6.1(react-refresh@0.18.0)
@@ -11076,13 +11142,15 @@ snapshots:
       - '@typescript/native-preview'
       - core-js
 
-  '@rslib/core@0.20.0(@module-federation/runtime-tools@0.22.0)(core-js@3.47.0)(typescript@6.0.2)':
+  '@rslib/core@0.21.0(@emnapi/core@1.8.1)(@emnapi/runtime@1.8.1)(@module-federation/runtime-tools@0.22.0)(core-js@3.47.0)(typescript@6.0.2)':
     dependencies:
-      '@rsbuild/core': 2.0.0-beta.8(@module-federation/runtime-tools@0.22.0)(core-js@3.47.0)
-      rsbuild-plugin-dts: 0.20.0(@rsbuild/core@2.0.0-beta.8(@module-federation/runtime-tools@0.22.0)(core-js@3.47.0))(typescript@6.0.2)
+      '@rsbuild/core': 2.0.0-rc.1(@emnapi/core@1.8.1)(@emnapi/runtime@1.8.1)(@module-federation/runtime-tools@0.22.0)(core-js@3.47.0)
+      rsbuild-plugin-dts: 0.21.0(@rsbuild/core@2.0.0-rc.1(@emnapi/core@1.8.1)(@emnapi/runtime@1.8.1)(@module-federation/runtime-tools@0.22.0)(core-js@3.47.0))(typescript@6.0.2)
     optionalDependencies:
       typescript: 6.0.2
     transitivePeerDependencies:
+      - '@emnapi/core'
+      - '@emnapi/runtime'
       - '@module-federation/runtime-tools'
       - '@typescript/native-preview'
       - core-js
@@ -16235,10 +16303,10 @@ snapshots:
     optionalDependencies:
       typescript: 5.9.3
 
-  rsbuild-plugin-dts@0.20.0(@rsbuild/core@2.0.0-beta.8(@module-federation/runtime-tools@0.22.0)(core-js@3.47.0))(typescript@6.0.2):
+  rsbuild-plugin-dts@0.21.0(@rsbuild/core@2.0.0-rc.1(@emnapi/core@1.8.1)(@emnapi/runtime@1.8.1)(@module-federation/runtime-tools@0.22.0)(core-js@3.47.0))(typescript@6.0.2):
     dependencies:
       '@ast-grep/napi': 0.37.0
-      '@rsbuild/core': 2.0.0-beta.8(@module-federation/runtime-tools@0.22.0)(core-js@3.47.0)
+      '@rsbuild/core': 2.0.0-rc.1(@emnapi/core@1.8.1)(@emnapi/runtime@1.8.1)(@module-federation/runtime-tools@0.22.0)(core-js@3.47.0)
     optionalDependencies:
       typescript: 6.0.2
 
