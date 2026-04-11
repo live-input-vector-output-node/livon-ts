@@ -22,6 +22,7 @@ Snapshot date for this checklist: `2026-04-12`.
 - release notes policy and entries: [Release Notes](https://livon.tech/docs/core/release-notes)
 - CI and tests: `.github/workflows/ci.yml`, [Testing and Quality](https://livon.tech/docs/core/testing-and-quality)
 - static analysis: `.github/workflows/codeql.yml`
+- leaked credential scanning: `.github/workflows/secrets.yml`
 - dependency/security scanning: `.github/workflows/snyk.yml`, `.github/workflows/scorecards.yml`
 - build and release workflow: `.github/workflows/publish.yml`
 

@@ -68,6 +68,7 @@ pnpm run ci
 Security-focused automated checks are executed in dedicated workflows:
 
 - `codeql.yml`: static analysis for JavaScript/TypeScript security and quality queries.
+- `secrets.yml`: Gitleaks secret scanning to detect leaked credentials in git history.
 - `snyk.yml`: dependency vulnerability scanning with high-severity gate.
 - `scorecards.yml`: OpenSSF Scorecard analysis with SARIF upload.
 
