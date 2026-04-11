@@ -1,7 +1,7 @@
-<!-- Generated from website/docs/core/security.md. Do not edit directly. -->
-
-# Security and Vulnerability Reporting
-
+---
+title: Security and Vulnerability Reporting
+sidebar_position: 11
+---
 
 This page is the canonical security policy source for LIVON.
 The repository `SECURITY.md` file is generated from this page.

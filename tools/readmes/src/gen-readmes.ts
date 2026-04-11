@@ -12,11 +12,11 @@ const run = async (): Promise<void> => {
   }
 
   if (report.updated.length === 0) {
-    console.log('Package READMEs are already up to date.');
+    console.log('Generated documentation artifacts are already up to date.');
     return;
   }
 
-  console.log(`Updated package READMEs: ${report.updated.length}`);
+  console.log(`Updated generated documentation artifacts: ${report.updated.length}`);
   report.updated.forEach((entry) => {
     console.log(`- ${entry}`);
   });

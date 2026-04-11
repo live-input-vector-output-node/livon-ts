@@ -187,7 +187,13 @@
         "$TURBO_DEFAULT$",
         "../../configs/docs/readme-sync.json",
         "../../website/docs/**",
-        "../../packages/*/README.md"
+        "../../packages/*/README.md",
+        "../../CONTRIBUTING.md",
+        "../../GOVERNANCE.md",
+        "../../CODE_OF_CONDUCT.md",
+        "../../SUPPORT.md",
+        "../../SECURITY.md",
+        "../../.github/SECURITY.md"
       ],
       "outputs": []
     },
@@ -199,7 +205,13 @@
         "$TURBO_DEFAULT$",
         "../../configs/docs/readme-sync.json",
         "../../website/docs/**",
-        "../../packages/*/README.md"
+        "../../packages/*/README.md",
+        "../../CONTRIBUTING.md",
+        "../../GOVERNANCE.md",
+        "../../CODE_OF_CONDUCT.md",
+        "../../SUPPORT.md",
+        "../../SECURITY.md",
+        "../../.github/SECURITY.md"
       ],
       "outputs": []
     },

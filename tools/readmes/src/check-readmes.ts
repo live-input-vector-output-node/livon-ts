@@ -12,15 +12,15 @@ const run = async (): Promise<void> => {
   }
 
   if (report.mismatches.length === 0) {
-    console.log('Package README sync check passed.');
+    console.log('Generated documentation sync check passed.');
     return;
   }
 
-  console.error('Package README sync check failed:');
+  console.error('Generated documentation sync check failed:');
   report.mismatches.forEach((mismatch) => {
     console.error(`- ${mismatch.target}: ${mismatch.reason}`);
   });
-  console.error('Run: pnpm turbo run gen:readmes');
+  console.error('Run: pnpm run gen:readmes');
   process.exit(1);
 };
 

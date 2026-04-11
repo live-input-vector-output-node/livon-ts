@@ -1,7 +1,7 @@
----
-title: Contributing
-sidebar_position: 5
----
+<!-- Generated from website/docs/core/contributing.md. Do not edit directly. -->
+
+# Contributing
+
 
 For contributors and maintainers, this page defines the local development workflow and required quality gates.
 
@@ -268,13 +268,13 @@ to keep links stable against the published docs site.
 
 ## Rule sources
 
-- [Governance and Rule Sources](governance)
-- [Coding Style Guide](coding-style-guide)
-- [Definition of Done](definition-of-done)
-- [Project Context](project-context)
-- [Governance Change History](change-history)
-- [Getting Started](getting-started)
-- [Testing and Quality](testing-and-quality)
+- [Governance and Rule Sources](https://livon.tech/docs/core/governance)
+- [Coding Style Guide](https://livon.tech/docs/core/coding-style-guide)
+- [Definition of Done](https://livon.tech/docs/core/definition-of-done)
+- [Project Context](https://livon.tech/docs/core/project-context)
+- [Governance Change History](https://livon.tech/docs/core/change-history)
+- [Getting Started](https://livon.tech/docs/core/getting-started)
+- [Testing and Quality](https://livon.tech/docs/core/testing-and-quality)
 
 ## GitHub Pages deployment
 
