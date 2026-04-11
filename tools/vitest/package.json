@@ -1,0 +1,29 @@
+{
+  "name": "@livon/vitest",
+  "version": "0.29.0-rc.11",
+  "private": true,
+  "type": "module",
+  "description": "Composable Vitest presets for LIVON workspaces.",
+  "exports": {
+    ".": "./src/index.ts",
+    "./base": "./src/base.ts",
+    "./unit": "./src/unit.ts",
+    "./integration": "./src/integration.ts",
+    "./compose": "./src/compose.ts"
+  },
+  "scripts": {
+    "build": "true",
+    "build:watch": "true",
+    "dev": "true",
+    "lint": "true",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "true",
+    "test:unit": "true",
+    "test:integration": "true"
+  },
+  "devDependencies": {
+    "@livon/typescript": "workspace:*",
+    "@types/node": "latest",
+    "typescript": "latest"
+  }
+}

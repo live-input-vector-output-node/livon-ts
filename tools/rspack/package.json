@@ -1,0 +1,42 @@
+{
+  "name": "@livon/rspack",
+  "version": "0.29.0-rc.11",
+  "private": true,
+  "type": "module",
+  "description": "Composable Rspack presets for LIVON workspaces.",
+  "exports": {
+    ".": "./src/index.ts",
+    "./base": "./src/base.ts",
+    "./browser": "./src/browser.ts",
+    "./node": "./src/node.ts",
+    "./react": "./src/react.ts",
+    "./entry": "./src/entry.ts",
+    "./html": "./src/html.ts",
+    "./dev-server": "./src/dev-server.ts",
+    "./compose": "./src/compose.ts"
+  },
+  "peerDependencies": {
+    "@rspack/core": "^1.7.5",
+    "@rspack/plugin-react-refresh": "^1.6.0"
+  },
+  "peerDependenciesMeta": {
+    "@rspack/plugin-react-refresh": {
+      "optional": true
+    }
+  },
+  "scripts": {
+    "build": "true",
+    "build:watch": "true",
+    "dev": "true",
+    "lint": "true",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "true",
+    "test:unit": "true",
+    "test:integration": "true"
+  },
+  "devDependencies": {
+    "@livon/typescript": "workspace:*",
+    "@types/node": "latest",
+    "typescript": "latest"
+  }
+}
