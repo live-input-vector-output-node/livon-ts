@@ -11,6 +11,9 @@
     "./integration": "./src/integration.ts",
     "./compose": "./src/compose.ts"
   },
+  "peerDependencies": {
+    "vitest": "^4.0.0"
+  },
   "scripts": {
     "build": "true",
     "build:watch": "true",
