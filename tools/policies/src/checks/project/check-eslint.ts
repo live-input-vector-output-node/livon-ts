@@ -15,7 +15,11 @@ export const checkEslint = async (projectPath: string): Promise<string[]> => {
     return [];
   }
 
-  const source = await readFile(tsPath, 'utf8');
+  const source = await readFile(tsPath, 'utf8').catch(() => null);
+  if (source === null) {
+    return [`${projectPath}: unable to read eslint.config.ts`];
+  }
+
   if (!source.includes('@livon/eslint')) {
     return [`${projectPath}: eslint config must import @livon/eslint presets`];
   }
