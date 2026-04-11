@@ -71,7 +71,7 @@ const sidebars: SidebarsConfig = {
             'schema/api',
             'schema/operation',
             'schema/subscription',
-            'schema/field-resolver',
+            'schema/field-operation',
             'schema/schema-factory',
             'schema/type-guards',
           ],
