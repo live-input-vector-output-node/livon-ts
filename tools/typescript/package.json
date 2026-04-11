@@ -1,0 +1,29 @@
+{
+  "name": "@livon/typescript",
+  "version": "0.29.0-rc.11",
+  "private": true,
+  "type": "module",
+  "description": "Composable TypeScript presets for LIVON workspaces.",
+  "exports": {
+    "./base": "./base.json",
+    "./browser": "./browser.json",
+    "./node": "./node.json",
+    "./react": "./react.json",
+    "./library": "./library.json",
+    "./base.json": "./base.json",
+    "./browser.json": "./browser.json",
+    "./node.json": "./node.json",
+    "./react.json": "./react.json",
+    "./library.json": "./library.json"
+  },
+  "scripts": {
+    "build": "true",
+    "build:watch": "true",
+    "dev": "true",
+    "lint": "true",
+    "typecheck": "true",
+    "test": "true",
+    "test:unit": "true",
+    "test:integration": "true"
+  }
+}

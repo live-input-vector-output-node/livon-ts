@@ -1,0 +1,21 @@
+{
+  "name": "@livon/swc",
+  "version": "0.29.0-rc.11",
+  "private": true,
+  "type": "module",
+  "description": "Shared SWC presets for LIVON workspaces.",
+  "exports": {
+    "./base": "./base.json",
+    "./base.json": "./base.json"
+  },
+  "scripts": {
+    "build": "true",
+    "build:watch": "true",
+    "dev": "true",
+    "lint": "true",
+    "typecheck": "true",
+    "test": "true",
+    "test:unit": "true",
+    "test:integration": "true"
+  }
+}

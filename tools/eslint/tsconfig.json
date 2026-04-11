@@ -1,0 +1,16 @@
+{
+  "extends": [
+    "@livon/typescript/base",
+    "@livon/typescript/node"
+  ],
+  "include": [
+    "src"
+  ],
+  "exclude": [
+    "dist",
+    "node_modules"
+  ],
+  "compilerOptions": {
+    "allowImportingTsExtensions": true
+  }
+}
