@@ -114,6 +114,7 @@ const sidebars: SidebarsConfig = {
         'core/code-of-conduct',
         'core/support',
         'core/security',
+        'core/release-notes',
         'core/governance',
         'core/project-context',
         'core/change-history',

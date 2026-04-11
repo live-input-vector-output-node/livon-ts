@@ -161,7 +161,7 @@ pnpm run gen:client:deploy -- --filter=./apps/client
 
 Package READMEs are generated from `website/docs/packages/*.md`.
 Root community-health files are generated from `website/docs/core/*.md`
-(`CONTRIBUTING.md`, `GOVERNANCE.md`, `CODE_OF_CONDUCT.md`, `SUPPORT.md`, `SECURITY.md`, and `.github/SECURITY.md`).
+(`CONTRIBUTING.md`, `GOVERNANCE.md`, `CODE_OF_CONDUCT.md`, `SUPPORT.md`, `SECURITY.md`, `.github/SECURITY.md`, and `CHANGELOG.md`).
 Do not manually maintain duplicated generated content.
 Canonical edits go into `website/docs/**`; generated root/package files are derived artifacts.
 

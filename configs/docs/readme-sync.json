@@ -83,6 +83,12 @@
       "source": "website/docs/core/security.md",
       "target": ".github/SECURITY.md",
       "generatedNotice": "<!-- Generated from website/docs/core/security.md. Do not edit directly. -->"
+    },
+    {
+      "id": "root-changelog",
+      "source": "website/docs/core/release-notes.md",
+      "target": "CHANGELOG.md",
+      "generatedNotice": "<!-- Generated from website/docs/core/release-notes.md. Do not edit directly. -->"
     }
   ]
 }
