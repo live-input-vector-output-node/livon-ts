@@ -1,6 +1,3 @@
-import { createRslibConfig } from '@livon/config/rslib/base';
+import { base, compose, library, node } from '@livon/rslib';
 
-export default createRslibConfig({
-  target: 'node',
-  formats: ['esm', 'cjs'],
-});
+export default compose(base(), library(), node());

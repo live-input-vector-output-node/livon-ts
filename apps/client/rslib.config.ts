@@ -1,5 +1,3 @@
-export default {
-    dev: {
-        clearScreen: false,
-    }
-};
+import { base, browser, compose, library } from '@livon/rslib';
+
+export default compose(base(), library(), browser());

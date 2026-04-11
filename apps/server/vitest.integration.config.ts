@@ -1,9 +1,9 @@
-import { createVitestConfig } from '@livon/config/vitest/base.cjs';
+import { base, compose, integration } from '@livon/vitest';
 
-const base = createVitestConfig({ type: 'integration' });
+const config = compose(base(), integration());
 
 export default {
-  ...base,
+  ...config,
   resolve: {
     conditions: ['development', 'default'],
   },

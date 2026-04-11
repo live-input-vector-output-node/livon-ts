@@ -1,5 +1,3 @@
-import { createVitestConfig } from '@livon/config/vitest/base.cjs';
+import { base, compose, integration } from '@livon/vitest';
 
-export default createVitestConfig({
-  type: 'integration',
-});
+export default compose(base(), integration());
