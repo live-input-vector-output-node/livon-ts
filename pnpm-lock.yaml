@@ -11155,19 +11155,6 @@ snapshots:
       - '@typescript/native-preview'
       - core-js
 
-  '@rslib/core@0.21.0(@emnapi/core@1.8.1)(@emnapi/runtime@1.8.1)(@module-federation/runtime-tools@0.22.0)(core-js@3.47.0)(typescript@6.0.2)':
-    dependencies:
-      '@rsbuild/core': 2.0.0-rc.1(@emnapi/core@1.8.1)(@emnapi/runtime@1.8.1)(@module-federation/runtime-tools@0.22.0)(core-js@3.47.0)
-      rsbuild-plugin-dts: 0.21.0(@rsbuild/core@2.0.0-rc.1(@emnapi/core@1.8.1)(@emnapi/runtime@1.8.1)(@module-federation/runtime-tools@0.22.0)(core-js@3.47.0))(typescript@6.0.2)
-    optionalDependencies:
-      typescript: 6.0.2
-    transitivePeerDependencies:
-      - '@emnapi/core'
-      - '@emnapi/runtime'
-      - '@module-federation/runtime-tools'
-      - '@typescript/native-preview'
-      - core-js
-
   '@rspack/binding-darwin-arm64@1.7.11':
     optional: true
 
@@ -16302,13 +16289,6 @@ snapshots:
       '@rsbuild/core': 2.0.0-beta.8(@module-federation/runtime-tools@0.22.0)(core-js@3.47.0)
     optionalDependencies:
       typescript: 5.9.3
-
-  rsbuild-plugin-dts@0.21.0(@rsbuild/core@2.0.0-rc.1(@emnapi/core@1.8.1)(@emnapi/runtime@1.8.1)(@module-federation/runtime-tools@0.22.0)(core-js@3.47.0))(typescript@6.0.2):
-    dependencies:
-      '@ast-grep/napi': 0.37.0
-      '@rsbuild/core': 2.0.0-rc.1(@emnapi/core@1.8.1)(@emnapi/runtime@1.8.1)(@module-federation/runtime-tools@0.22.0)(core-js@3.47.0)
-    optionalDependencies:
-      typescript: 6.0.2
 
   rsbuild-plugin-dts@0.21.0(@rsbuild/core@2.0.0-rc.1(@emnapi/core@1.8.1)(@emnapi/runtime@1.8.1)(@module-federation/runtime-tools@0.22.0)(core-js@3.47.0))(typescript@6.0.2):
     dependencies:
