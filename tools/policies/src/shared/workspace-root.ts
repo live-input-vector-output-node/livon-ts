@@ -1,8 +1,29 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 
+const findWorkspaceInDirectChildren = (baseDir: string): string | null => {
+  try {
+    const entries = readdirSync(baseDir, { withFileTypes: true });
+    for (const entry of entries) {
+      if (!entry.isDirectory()) {
+        continue;
+      }
+
+      const candidate = path.join(baseDir, entry.name);
+      if (existsSync(path.join(candidate, 'pnpm-workspace.yaml'))) {
+        return candidate;
+      }
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+};
+
 export const resolveWorkspaceBaseDir = (startDir: string = process.cwd()): string => {
-  let currentDir = path.resolve(startDir);
+  const resolvedStartDir = path.resolve(startDir);
+  let currentDir = resolvedStartDir;
 
   while (true) {
     if (existsSync(path.join(currentDir, 'pnpm-workspace.yaml'))) {
@@ -16,6 +37,6 @@ export const resolveWorkspaceBaseDir = (startDir: string = process.cwd()): strin
     currentDir = parentDir;
   }
 
-  const fallback = path.join(path.resolve(startDir), 'livon');
-  return existsSync(fallback) ? fallback : path.resolve(startDir);
+  const fallbackWorkspace = findWorkspaceInDirectChildren(resolvedStartDir);
+  return fallbackWorkspace ?? resolvedStartDir;
 };
