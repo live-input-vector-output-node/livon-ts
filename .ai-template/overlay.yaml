@@ -3,7 +3,7 @@ version: 1
 overlayId: livon
 extends: ai-template-core
 metadata:
-  repository: live-input-vector-output-node/livon
+  repository: live-input-vector-output-node/livon-ts
   description: Livon-specific AI overlay restoring root rules, package routing, and
     specializations.
 jsonPatches:

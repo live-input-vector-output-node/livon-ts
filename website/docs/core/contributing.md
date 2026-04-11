@@ -11,7 +11,7 @@ For contributors and maintainers, this page defines the local development workfl
 
 ```sh
 git clone <repo-url>
-cd livon
+cd <repo-directory>
 pnpm install
 ```
 
