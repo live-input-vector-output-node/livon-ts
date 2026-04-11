@@ -9,6 +9,7 @@
     "lint": "true",
     "typecheck": "true",
     "test": "true",
+    "check:badges": "node --experimental-strip-types check-badges.ts",
     "check:policies": "node --experimental-strip-types check.ts",
     "check:links": "node --experimental-strip-types link-check.ts",
     "metrics:ai-control": "node --experimental-strip-types ai-metrics.ts"

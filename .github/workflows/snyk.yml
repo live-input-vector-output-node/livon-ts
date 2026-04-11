@@ -1,4 +1,4 @@
-name: CI
+name: Snyk
 
 on:
   push:
@@ -12,9 +12,10 @@ permissions:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  SNYK_ORG_ID: 7fbf21c5-d717-474c-b5b3-d403a11d6834
 
 jobs:
-  ci:
+  snyk:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -46,20 +47,20 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
 
-      - name: Cache Turborepo
-        uses: actions/cache@v5.0.4
-        with:
-          path: .turbo
-          key: ${{ runner.os }}-turbo-${{ github.workflow }}-${{ hashFiles('turbo.json', 'pnpm-lock.yaml', '**/package.json') }}
-          restore-keys: |
-            ${{ runner.os }}-turbo-${{ github.workflow }}-
-            ${{ runner.os }}-turbo-
-
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Run monorepo CI
-        run: pnpm run ci
+      - name: Ensure SNYK_TOKEN is configured
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: |
+          if [ -z "$SNYK_TOKEN" ]; then
+            echo "Error: SNYK_TOKEN secret is not configured."
+            echo "Add SNYK_TOKEN in repository secrets to enable the required Snyk gate."
+            exit 1
+          fi
 
-      - name: Check publish artifacts
-        run: pnpm run release:check
+      - name: Run Snyk dependency test
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: pnpm dlx snyk@latest test --org="${SNYK_ORG_ID}" --all-projects --detection-depth=6 --severity-threshold=high
