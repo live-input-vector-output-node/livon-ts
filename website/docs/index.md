@@ -248,6 +248,7 @@ onMessage?(payload: MessageWithId, ctx: ClientHandlerContext): void;
 - [Contribution](/docs/core/contributing): quality gates, workflows, and governance.
 - [Community](/docs/core/support): support channels, conduct policy, and security reporting.
 - [Release Notes](/docs/core/release-notes): human-readable summaries for each release line.
+- [OpenSSF Passing](/docs/core/openssf-best-practices): evidence map for badge criteria.
 - [AI Control](/docs/ai): agent routing, scoped context, and gate-based enforcement.
 
 ## Package badges

@@ -89,6 +89,12 @@
       "source": "website/docs/core/release-notes.md",
       "target": "CHANGELOG.md",
       "generatedNotice": "<!-- Generated from website/docs/core/release-notes.md. Do not edit directly. -->"
+    },
+    {
+      "id": "root-best-practices",
+      "source": "website/docs/core/openssf-best-practices.md",
+      "target": "BEST_PRACTICES.md",
+      "generatedNotice": "<!-- Generated from website/docs/core/openssf-best-practices.md. Do not edit directly. -->"
     }
   ]
 }

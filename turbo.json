@@ -194,6 +194,7 @@
         "../../SUPPORT.md",
         "../../SECURITY.md",
         "../../CHANGELOG.md",
+        "../../BEST_PRACTICES.md",
         "../../.github/SECURITY.md"
       ],
       "outputs": []
@@ -213,6 +214,7 @@
         "../../SUPPORT.md",
         "../../SECURITY.md",
         "../../CHANGELOG.md",
+        "../../BEST_PRACTICES.md",
         "../../.github/SECURITY.md"
       ],
       "outputs": []
