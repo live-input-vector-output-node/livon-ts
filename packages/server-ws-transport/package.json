@@ -74,9 +74,9 @@
     "@rslib/core": "latest",
     "@types/node": "latest",
     "@types/ws": "latest",
-    "@typescript-eslint/eslint-plugin": "8.56.1",
-    "@typescript-eslint/parser": "8.56.1",
-    "eslint": "10.0.2",
+    "@typescript-eslint/eslint-plugin": "8.58.1",
+    "@typescript-eslint/parser": "8.58.1",
+    "eslint": "10.2.0",
     "typescript": "latest",
     "vitest": "latest"
   }
