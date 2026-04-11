@@ -16,6 +16,6 @@ export const resolveWorkspaceBaseDir = (startDir: string = process.cwd()): strin
     currentDir = parentDir;
   }
 
-  const fallback = path.join(path.resolve(startDir), 'new_livon');
+  const fallback = path.join(path.resolve(startDir), 'livon');
   return existsSync(fallback) ? fallback : path.resolve(startDir);
 };
