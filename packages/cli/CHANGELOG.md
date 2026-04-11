@@ -104,7 +104,7 @@
 - Prepare the next prerelease with client generator surface templating and livon CLI rslib build format controls.
 - Updated dependencies
   - @livon/client@0.27.0-rc.5
-  - @livon/vitest@0.27.0-rc.5
+  - @livon/config@0.27.0-rc.5
 
 ## 0.27.0-rc.4
 
@@ -113,4 +113,4 @@
 - Improve schema ergonomics, generated client JSDoc/typing, dual mini build exports, and docs/site structure.
 - Updated dependencies
   - @livon/client@0.27.0-rc.4
-  - @livon/vitest@0.27.0-rc.4
+  - @livon/config@0.27.0-rc.4

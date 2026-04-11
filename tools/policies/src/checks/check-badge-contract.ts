@@ -128,7 +128,7 @@ export const runBadgeContractCheck = async (
     const source = await readFile(contract.filePath, 'utf8').catch(() => null);
     const relativePath = normalizePath(path.relative(context.baseDir, contract.filePath));
 
-    if (!source) {
+    if (source === null) {
       errors.push(`${relativePath}: unable to read file for badge contract checks`);
       continue;
     }
