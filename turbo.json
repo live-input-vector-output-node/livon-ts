@@ -164,6 +164,7 @@
       ],
       "with": [
         "check:readmes",
+        "check:badges",
         "check:policies",
         "lint",
         "typecheck",
@@ -199,6 +200,12 @@
         "../../configs/docs/readme-sync.json",
         "../../website/docs/**",
         "../../packages/*/README.md"
+      ],
+      "outputs": []
+    },
+    "check:badges": {
+      "dependsOn": [
+        "check:readmes"
       ],
       "outputs": []
     },

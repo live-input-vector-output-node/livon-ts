@@ -39,6 +39,7 @@
     "gen:client:watch": "turbo run gen:client:watch",
     "gen:readmes": "turbo run gen:readmes",
     "check:readmes": "turbo run check:readmes --output-logs=errors-only",
+    "check:badges": "turbo run check:badges --output-logs=errors-only",
     "check:links": "turbo run check:links --output-logs=errors-only",
     "release:check": "turbo run release:check --output-logs=errors-only",
     "check:policies": "turbo run check:policies --output-logs=errors-only",

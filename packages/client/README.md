@@ -4,11 +4,11 @@
 
 
 [![npm](https://img.shields.io/npm/v/%40livon%2Fclient)](https://www.npmjs.com/package/@livon/client)
-[![dependencies](https://img.shields.io/librariesio/release/npm/%40livon%2Fclient?label=dependencies)](https://libraries.io/npm/%40livon%2Fclient)
-[![npm publish](https://img.shields.io/github/actions/workflow/status/live-input-vector-output-node/livon-ts/publish.yml?branch=main&label=npm%20publish)](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/publish.yml)
-[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/12249/badge)](https://www.bestpractices.dev/projects/12249)
+[![CI](https://img.shields.io/github/actions/workflow/status/live-input-vector-output-node/livon-ts/ci.yml?branch=main&label=ci)](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml)
 [![Snyk security](https://snyk.io/test/npm/@livon/client/badge.svg)](https://snyk.io/test/npm/@livon/client)
-[![package size](https://img.shields.io/npm/unpacked-size/%40livon%2Fclient?label=package%20size)](https://www.npmjs.com/package/@livon/client)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/live-input-vector-output-node/livon-ts/badge)](https://scorecard.dev/viewer/?uri=github.com/live-input-vector-output-node/livon-ts)
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/12249/badge)](https://www.bestpractices.dev/projects/12249)
+[![REUSE status](https://api.reuse.software/badge/github.com/live-input-vector-output-node/livon-ts)](https://api.reuse.software/info/github.com/live-input-vector-output-node/livon-ts)
 [![license](https://img.shields.io/npm/l/%40livon%2Fclient)](https://www.npmjs.com/package/@livon/client)
 
 ## Purpose
