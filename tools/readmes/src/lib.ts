@@ -6,6 +6,7 @@ export interface ReadmeSyncTarget {
   readonly id: string;
   readonly source: string;
   readonly target: string;
+  readonly generatedNotice?: string;
 }
 
 export interface ReadmeSyncConfig {
@@ -166,7 +167,8 @@ const generateReadme = async (
   const docRoute = toDocRoute(target.source);
   const rewrittenBody = rewriteMarkdownLinks(body, docRoute, config.docsBaseUrl);
   const heading = title.length > 0 ? `# ${title}\n\n` : '';
-  const composed = `${config.generatedNotice}\n\n${heading}${rewrittenBody}`;
+  const generatedNotice = target.generatedNotice ?? config.generatedNotice;
+  const composed = `${generatedNotice}\n\n${heading}${rewrittenBody}`;
   return normalizeOutput(composed);
 };
 
@@ -214,12 +216,24 @@ export const createReadmeSyncReport = async (
       errors.push(`${target.source}: source file does not exist (${target.id})`);
       continue;
     }
-    if (!existsSync(targetPath)) {
-      errors.push(`${target.target}: target file does not exist (${target.id})`);
+    const expected = await generateReadme(baseDir, config, target);
+    const targetExists = existsSync(targetPath);
+
+    if (!targetExists) {
+      if (!options?.write) {
+        mismatches.push({
+          target: target.target,
+          reason: `target file does not exist (${target.id})`,
+        });
+        continue;
+      }
+
+      await mkdir(path.dirname(targetPath), { recursive: true });
+      await writeFile(targetPath, expected, 'utf8');
+      updated.push(target.target);
       continue;
     }
 
-    const expected = await generateReadme(baseDir, config, target);
     const current = normalizeOutput(await readFile(targetPath, 'utf8'));
 
     if (current !== expected) {

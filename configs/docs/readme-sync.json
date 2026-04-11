@@ -47,6 +47,42 @@
       "id": "@livon/react",
       "source": "website/docs/packages/react.md",
       "target": "packages/react/README.md"
+    },
+    {
+      "id": "root-contributing",
+      "source": "website/docs/core/contributing.md",
+      "target": "CONTRIBUTING.md",
+      "generatedNotice": "<!-- Generated from website/docs/core/contributing.md. Do not edit directly. -->"
+    },
+    {
+      "id": "root-governance",
+      "source": "website/docs/core/governance.md",
+      "target": "GOVERNANCE.md",
+      "generatedNotice": "<!-- Generated from website/docs/core/governance.md. Do not edit directly. -->"
+    },
+    {
+      "id": "root-code-of-conduct",
+      "source": "website/docs/core/code-of-conduct.md",
+      "target": "CODE_OF_CONDUCT.md",
+      "generatedNotice": "<!-- Generated from website/docs/core/code-of-conduct.md. Do not edit directly. -->"
+    },
+    {
+      "id": "root-support",
+      "source": "website/docs/core/support.md",
+      "target": "SUPPORT.md",
+      "generatedNotice": "<!-- Generated from website/docs/core/support.md. Do not edit directly. -->"
+    },
+    {
+      "id": "root-security",
+      "source": "website/docs/core/security.md",
+      "target": "SECURITY.md",
+      "generatedNotice": "<!-- Generated from website/docs/core/security.md. Do not edit directly. -->"
+    },
+    {
+      "id": "github-security",
+      "source": "website/docs/core/security.md",
+      "target": ".github/SECURITY.md",
+      "generatedNotice": "<!-- Generated from website/docs/core/security.md. Do not edit directly. -->"
     }
   ]
 }

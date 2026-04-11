@@ -246,6 +246,7 @@ onMessage?(payload: MessageWithId, ctx: ClientHandlerContext): void;
 - [Reference](/docs/packages): package docs and full schema API reference.
 - [Technical](/docs/technical/runtime-design): runtime architecture and event flow.
 - [Contribution](/docs/core/contributing): quality gates, workflows, and governance.
+- [Community](/docs/core/support): support channels, conduct policy, and security reporting.
 - [AI Control](/docs/ai): agent routing, scoped context, and gate-based enforcement.
 
 ## Package badges

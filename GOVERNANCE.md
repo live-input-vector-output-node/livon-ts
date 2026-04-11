@@ -1,7 +1,7 @@
----
-title: Governance and Rule Sources
-sidebar_position: 6
----
+<!-- Generated from website/docs/core/governance.md. Do not edit directly. -->
+
+# Governance and Rule Sources
+
 
 This page defines the documentation single source of truth policy for this repository.
 Use it as the reference when deciding where canonical rules and process docs belong.
@@ -15,18 +15,18 @@ Derived documentation artifacts (for example `packages/*/README.md`) must be gen
 
 ## Rule source map
 
-1. [Why Livon Exists](why-livon-exists)
-2. [Getting Started](getting-started)
-3. [Contributing](contributing)
-4. [Coding Style Guide](coding-style-guide)
-5. [Definition of Done](definition-of-done)
-6. [Testing and Quality](testing-and-quality)
-7. [Project Context](project-context)
-8. [Change History](change-history)
-9. [Architecture](/docs/technical/architecture)
-10. [Runtime Design](/docs/technical/runtime-design)
-11. [Event Flow](/docs/technical/event-flow)
-12. [Roadmap](/docs/technical/roadmap)
+1. [Why Livon Exists](https://livon.tech/docs/core/why-livon-exists)
+2. [Getting Started](https://livon.tech/docs/core/getting-started)
+3. [Contributing](https://livon.tech/docs/core/contributing)
+4. [Coding Style Guide](https://livon.tech/docs/core/coding-style-guide)
+5. [Definition of Done](https://livon.tech/docs/core/definition-of-done)
+6. [Testing and Quality](https://livon.tech/docs/core/testing-and-quality)
+7. [Project Context](https://livon.tech/docs/core/project-context)
+8. [Change History](https://livon.tech/docs/core/change-history)
+9. [Architecture](https://livon.tech/docs/technical/architecture)
+10. [Runtime Design](https://livon.tech/docs/technical/runtime-design)
+11. [Event Flow](https://livon.tech/docs/technical/event-flow)
+12. [Roadmap](https://livon.tech/docs/technical/roadmap)
 
 ## Prompt entrypoint policy
 
@@ -55,7 +55,7 @@ When adding or updating repository documentation:
 
 ## Tooling governance policy
 
-Tooling policy is defined in [Contributing](contributing).
+Tooling policy is defined in [Contributing](https://livon.tech/docs/core/contributing).
 
 - Prefer default configs and standard tool commands over custom wrappers.
 - Use Turborepo (`turbo.json`) as the orchestration layer for monorepo tasks.
