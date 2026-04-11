@@ -1,6 +1,13 @@
 {
-  "extends": "@livon/config/tsconfig/library.json",
-  "include": ["src"],
+  "extends": [
+    "@livon/typescript/base",
+    "@livon/typescript/library",
+    "@livon/typescript/browser"
+  ],
+  "include": [
+    "src",
+    "*.config.ts"
+  ],
   "exclude": [
     "dist",
     "node_modules",

@@ -41,7 +41,10 @@
     "ws": "latest"
   },
   "devDependencies": {
-    "@livon/config": "workspace:*",
+    "@livon/vitest": "workspace:*",
+    "@livon/eslint": "workspace:*",
+    "@livon/rslib": "workspace:*",
+    "@livon/typescript": "workspace:*",
     "@rslib/core": "latest",
     "@types/node": "latest",
     "@types/ws": "latest",

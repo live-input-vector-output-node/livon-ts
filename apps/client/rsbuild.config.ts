@@ -1,23 +1,14 @@
-import { defineConfig } from '@rsbuild/core';
-import { pluginReact } from '@rsbuild/plugin-react';
+import { base, compose, entry, html, react } from '@livon/rsbuild';
 
-export default defineConfig({
-  server: {
-    port: 3001,
-    host: '0.0.0.0',
-  },
-  plugins: [pluginReact()],
-  html: {
-    template: './src/index.html',
-  },
-  source: {
-    entry: {
-      index: './src/index.tsx',
+export default compose(
+  base(),
+  entry('./src/index.tsx'),
+  html('./src/index.html'),
+  react(),
+  () => ({
+    server: {
+      port: 3001,
+      host: '0.0.0.0',
     },
-  },
-  output: {
-    distPath: {
-      root: 'dist',
-    },
-  },
-});
+  }),
+);

@@ -71,12 +71,15 @@
     "ws": "8.19.0"
   },
   "devDependencies": {
+    "@livon/vitest": "workspace:*",
+    "@livon/eslint": "workspace:*",
+    "@livon/rslib": "workspace:*",
+    "@livon/typescript": "workspace:*",
+    "@types/node": "latest",
     "@types/ws": "latest",
     "@typescript-eslint/eslint-plugin": "8.56.1",
     "@typescript-eslint/parser": "8.56.1",
-    "@types/node": "latest",
     "eslint": "10.0.2",
-    "typescript": "latest",
-    "@livon/config": "workspace:*"
+    "typescript": "latest"
   }
 }

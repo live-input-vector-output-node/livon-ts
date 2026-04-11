@@ -1,8 +1,15 @@
 {
-  "extends": "@livon/config/tsconfig/library.json",
-  "compilerOptions": {
-    "types": ["node"]
-  },
-  "include": ["src"],
-  "exclude": ["dist", "node_modules"]
+  "extends": [
+    "@livon/typescript/base",
+    "@livon/typescript/library",
+    "@livon/typescript/node"
+  ],
+  "include": [
+    "src",
+    "*.config.ts"
+  ],
+  "exclude": [
+    "dist",
+    "node_modules"
+  ]
 }

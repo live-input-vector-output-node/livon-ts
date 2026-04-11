@@ -98,7 +98,10 @@
     "react": "^19.0.0"
   },
   "devDependencies": {
-    "@livon/config": "workspace:*",
+    "@livon/vitest": "workspace:*",
+    "@livon/eslint": "workspace:*",
+    "@livon/rslib": "workspace:*",
+    "@livon/typescript": "workspace:*",
     "@rslib/core": "latest",
     "@testing-library/react": "latest",
     "@types/react": "latest",
