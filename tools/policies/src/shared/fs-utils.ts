@@ -13,6 +13,8 @@ export const readJson = async <T>(targetPath: string): Promise<T> => {
 };
 
 const shouldSkipDir = (name: string): boolean => SKIPPED_DIR_NAMES.includes(name as (typeof SKIPPED_DIR_NAMES)[number]);
+const isGeneratedProjectPath = (projectPath: string): boolean =>
+  projectPath.endsWith(path.join('src', 'generated'));
 
 export const collectFiles = async (dirPath: string): Promise<string[]> => {
   if (!(await exists(dirPath))) {
@@ -39,20 +41,38 @@ export const collectFiles = async (dirPath: string): Promise<string[]> => {
   return nested.flat();
 };
 
+const collectProjectsFromDirectory = async (dirPath: string): Promise<string[]> => {
+  const entries = await readdir(dirPath, { withFileTypes: true });
+  const nested = await Promise.all(
+    entries.map(async (entry) => {
+      if (!entry.isDirectory() || shouldSkipDir(entry.name)) {
+        return [];
+      }
+      return collectProjectsFromDirectory(path.join(dirPath, entry.name));
+    }),
+  );
+
+  const hasPackageJson = await exists(path.join(dirPath, 'package.json'));
+  const current = (hasPackageJson && !isGeneratedProjectPath(dirPath)) ? [dirPath] : [];
+  return [...current, ...nested.flat()];
+};
+
 export const collectProjects = async (rootDir: string): Promise<string[]> => {
   if (!(await exists(rootDir))) {
     return [];
   }
 
   const entries = await readdir(rootDir, { withFileTypes: true });
-  const directories = entries.filter((entry) => entry.isDirectory()).map((entry) => path.join(rootDir, entry.name));
-  const checks = await Promise.all(
-    directories.map(async (directoryPath) =>
-      (await exists(path.join(directoryPath, 'package.json'))) ? directoryPath : null,
-    ),
+  const nested = await Promise.all(
+    entries.map(async (entry) => {
+      if (!entry.isDirectory() || shouldSkipDir(entry.name)) {
+        return [];
+      }
+      return collectProjectsFromDirectory(path.join(rootDir, entry.name));
+    }),
   );
 
-  return checks.filter((value): value is string => value !== null);
+  return nested.flat();
 };
 
 const isSourceFile = (filePath: string): boolean =>
