@@ -52,5 +52,5 @@ If declined, we provide a short rationale.
 ## Dependency and Supply Chain Notes
 
 - Dependabot is enabled for dependency updates.
-- CI includes Snyk and Scorecard workflows.
+- CI includes dependency review, Scorecard, and secret-scanning workflows.
 - Root quality gates include policy checks, lint, typecheck, tests, and builds.
