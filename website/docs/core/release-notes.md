@@ -36,7 +36,7 @@ Highlights:
 
 - schema documentation now uses `field-operation` naming consistently,
 - workspace tooling packages were consolidated under `tools/*`,
-- CI/security gates were tightened with pinned action SHAs and Snyk enforcement.
+- CI/security gates were tightened with pinned action SHAs and dependency-security enforcement.
 
 Security notes:
 
