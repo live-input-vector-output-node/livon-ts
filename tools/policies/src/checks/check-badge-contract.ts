@@ -15,16 +15,21 @@ const SCORECARD_BADGE = `https://api.scorecard.dev/projects/github.com/${REPO}/b
 const BEST_PRACTICES_BADGE = 'https://www.bestpractices.dev/projects/12249/badge';
 const REUSE_BADGE = `https://api.reuse.software/badge/github.com/${REPO}`;
 const CI_BADGE = `https://img.shields.io/github/actions/workflow/status/${REPO}/ci.yml?branch=main&label=ci`;
+const VULNERABILITY_SCAN_BADGE = `https://img.shields.io/github/actions/workflow/status/${REPO}/vulnerability-scan.yml?branch=main&label=vulnerability%20scan`;
+const VULNERABILITY_SCAN_WORKFLOW = `https://github.com/${REPO}/actions/workflows/vulnerability-scan.yml`;
 
 const REPO_BADGE_CONTRACT = {
   requiredPatterns: [
     CI_BADGE,
+    VULNERABILITY_SCAN_BADGE,
+    VULNERABILITY_SCAN_WORKFLOW,
     SCORECARD_BADGE,
     BEST_PRACTICES_BADGE,
     REUSE_BADGE,
-    'https://snyk.io/test/github/live-input-vector-output-node/livon-ts/badge.svg',
   ],
   forbiddenPatterns: [
+    'test/github/live-input-vector-output-node/livon-ts/',
+    'test/npm/@livon/',
     'https://img.shields.io/librariesio/github/live-input-vector-output-node/livon-ts',
     'https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/publish.yml',
     'https://img.shields.io/github/actions/workflow/status/live-input-vector-output-node/livon-ts/publish.yml',
@@ -34,14 +39,15 @@ const REPO_BADGE_CONTRACT = {
 const PACKAGE_BADGE_CONTRACT = {
   requiredPatterns: [
     CI_BADGE,
+    `[![Vulnerability scan](${VULNERABILITY_SCAN_BADGE})](${VULNERABILITY_SCAN_WORKFLOW})`,
     SCORECARD_BADGE,
     BEST_PRACTICES_BADGE,
     REUSE_BADGE,
     '[![npm](https://img.shields.io/npm/v/%40livon%2F',
-    '[![Snyk security](https://snyk.io/test/npm/@livon/',
     '[![license](https://img.shields.io/npm/l/%40livon%2F',
   ],
   forbiddenPatterns: [
+    'test/npm/@livon/',
     'libraries.io',
     'sourcerank',
     'img.shields.io/npm/unpacked-size',
@@ -54,13 +60,14 @@ const SCHEMA_BADGE_CONTRACT = {
   requiredPatterns: [
     '[![npm](https://img.shields.io/npm/v/%40livon%2Fschema)](https://www.npmjs.com/package/@livon/schema)',
     CI_BADGE,
-    '[![Snyk security](https://snyk.io/test/npm/@livon/schema/badge.svg)](https://snyk.io/test/npm/@livon/schema)',
+    `[![Vulnerability scan](${VULNERABILITY_SCAN_BADGE})](${VULNERABILITY_SCAN_WORKFLOW})`,
     SCORECARD_BADGE,
     BEST_PRACTICES_BADGE,
     REUSE_BADGE,
     '[![license](https://img.shields.io/npm/l/%40livon%2Fschema)](https://www.npmjs.com/package/@livon/schema)',
   ],
   forbiddenPatterns: [
+    'test/npm/@livon/',
     'libraries.io',
     'sourcerank',
     'img.shields.io/npm/unpacked-size',

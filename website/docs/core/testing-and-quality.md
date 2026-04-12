@@ -69,7 +69,7 @@ Security-focused automated checks are executed in dedicated workflows and reposi
 
 - GitHub CodeQL default setup (Code Scanning): static analysis for JavaScript/TypeScript and workflow files.
 - `secrets.yml`: Gitleaks secret scanning to detect leaked credentials in git history.
-- `snyk.yml`: dependency review gate using GitHub Advisory data (free for public repositories).
+- `vulnerability-scan.yml`: OSV-Scanner dependency vulnerability scan (free for public repositories).
 - `scorecards.yml`: OpenSSF Scorecard analysis with SARIF upload.
 
 These complement repository gates and help identify vulnerabilities before release.
