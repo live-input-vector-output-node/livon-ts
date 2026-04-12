@@ -65,9 +65,9 @@ pnpm run ci
 
 ## Security analysis in CI
 
-Security-focused automated checks are executed in dedicated workflows:
+Security-focused automated checks are executed in dedicated workflows and repository security settings:
 
-- `codeql.yml`: static analysis for JavaScript/TypeScript security and quality queries.
+- GitHub CodeQL default setup (Code Scanning): static analysis for JavaScript/TypeScript and workflow files.
 - `secrets.yml`: Gitleaks secret scanning to detect leaked credentials in git history.
 - `snyk.yml`: dependency vulnerability scanning with high-severity gate.
 - `scorecards.yml`: OpenSSF Scorecard analysis with SARIF upload.
