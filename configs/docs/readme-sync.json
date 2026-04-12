@@ -49,6 +49,12 @@
       "target": "packages/react/README.md"
     },
     {
+      "id": "root-readme",
+      "source": "website/docs/index.md",
+      "target": "README.md",
+      "generatedNotice": "<!-- Generated from website/docs/index.md. Do not edit directly. -->"
+    },
+    {
       "id": "root-contributing",
       "source": "website/docs/core/contributing.md",
       "target": "CONTRIBUTING.md",

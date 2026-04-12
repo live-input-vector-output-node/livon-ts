@@ -5,6 +5,8 @@ slug: /
 
 <p align="center" class="livon-badge-strip">
   <a href="https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/live-input-vector-output-node/livon-ts/ci.yml?branch=main&label=ci" alt="CI" /></a>
+  <a href="https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/code-quality.yml"><img src="https://img.shields.io/github/actions/workflow/status/live-input-vector-output-node/livon-ts/code-quality.yml?branch=main&label=quality" alt="Quality" /></a>
+  <a href="https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/secrets.yml"><img src="https://img.shields.io/github/actions/workflow/status/live-input-vector-output-node/livon-ts/secrets.yml?branch=main&label=gitleaks" alt="Secret Scan" /></a>
 </p>
 <p align="center" class="livon-badge-strip">
   <a href="https://scorecard.dev/viewer/?uri=github.com/live-input-vector-output-node/livon-ts"><img src="https://api.scorecard.dev/projects/github.com/live-input-vector-output-node/livon-ts/badge" alt="OpenSSF Scorecard" /></a>
@@ -251,105 +253,16 @@ onMessage?(payload: MessageWithId, ctx: ClientHandlerContext): void;
 - [OpenSSF Passing](/docs/core/openssf-best-practices): evidence map for badge criteria.
 - [AI Control](/docs/ai): agent routing, scoped context, and gate-based enforcement.
 
-## Package badges
+## Package Overview
 
-### Core
-
-<section className="livon-badge-section">
-  <div className="livon-badge-grid">
-    <article className="livon-badge-card">
-      <h4 className="livon-badge-card-title"><code>@livon/runtime</code></h4>
-      <div className="livon-badge-row"><a href="https://www.npmjs.com/package/@livon/runtime"><img className="livon-badge-image" src="https://img.shields.io/npm/v/%40livon%2Fruntime" alt="@livon/runtime npm version" /></a> <a href="https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/vulnerability-scan.yml"><img className="livon-badge-image" src="https://img.shields.io/github/actions/workflow/status/live-input-vector-output-node/livon-ts/vulnerability-scan.yml?branch=main&label=vulnerability%20scan" alt="@livon/runtime Vulnerability scan" /></a> <a href="https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml"><img className="livon-badge-image" src="https://img.shields.io/github/actions/workflow/status/live-input-vector-output-node/livon-ts/ci.yml?branch=main&label=ci" alt="@livon/runtime CI" /></a></div>
-      <div className="livon-badge-row livon-badge-row--secondary"><a href="https://scorecard.dev/viewer/?uri=github.com/live-input-vector-output-node/livon-ts"><img className="livon-badge-image" src="https://api.scorecard.dev/projects/github.com/live-input-vector-output-node/livon-ts/badge" alt="OpenSSF Scorecard" /></a> <a href="https://www.npmjs.com/package/@livon/runtime"><img className="livon-badge-image" src="https://img.shields.io/npm/l/%40livon%2Fruntime" alt="@livon/runtime license" /></a></div>
-    </article>
-    <article className="livon-badge-card">
-      <h4 className="livon-badge-card-title"><code>@livon/schema</code></h4>
-      <div className="livon-badge-row"><a href="https://www.npmjs.com/package/@livon/schema"><img className="livon-badge-image" src="https://img.shields.io/npm/v/%40livon%2Fschema" alt="@livon/schema npm version" /></a> <a href="https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/vulnerability-scan.yml"><img className="livon-badge-image" src="https://img.shields.io/github/actions/workflow/status/live-input-vector-output-node/livon-ts/vulnerability-scan.yml?branch=main&label=vulnerability%20scan" alt="@livon/schema Vulnerability scan" /></a> <a href="https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml"><img className="livon-badge-image" src="https://img.shields.io/github/actions/workflow/status/live-input-vector-output-node/livon-ts/ci.yml?branch=main&label=ci" alt="@livon/schema CI" /></a></div>
-      <div className="livon-badge-row livon-badge-row--secondary"><a href="https://scorecard.dev/viewer/?uri=github.com/live-input-vector-output-node/livon-ts"><img className="livon-badge-image" src="https://api.scorecard.dev/projects/github.com/live-input-vector-output-node/livon-ts/badge" alt="OpenSSF Scorecard" /></a> <a href="https://www.npmjs.com/package/@livon/schema"><img className="livon-badge-image" src="https://img.shields.io/npm/l/%40livon%2Fschema" alt="@livon/schema license" /></a></div>
-      <div className="livon-tech-meta">
-        <span className="livon-tech-label">Related libraries</span>
-        <div className="livon-badge-row livon-tech-row"><a href="https://www.npmjs.com/package/msgpackr"><code>msgpackr</code></a></div>
-      </div>
-    </article>
-    <article className="livon-badge-card">
-      <h4 className="livon-badge-card-title"><code>@livon/sync</code></h4>
-      <div className="livon-badge-row"><a href="https://www.npmjs.com/package/@livon/sync"><img className="livon-badge-image" src="https://img.shields.io/npm/v/%40livon%2Fsync" alt="@livon/sync npm version" /></a> <a href="https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/vulnerability-scan.yml"><img className="livon-badge-image" src="https://img.shields.io/github/actions/workflow/status/live-input-vector-output-node/livon-ts/vulnerability-scan.yml?branch=main&label=vulnerability%20scan" alt="@livon/sync Vulnerability scan" /></a> <a href="https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml"><img className="livon-badge-image" src="https://img.shields.io/github/actions/workflow/status/live-input-vector-output-node/livon-ts/ci.yml?branch=main&label=ci" alt="@livon/sync CI" /></a></div>
-      <div className="livon-badge-row livon-badge-row--secondary"><a href="https://scorecard.dev/viewer/?uri=github.com/live-input-vector-output-node/livon-ts"><img className="livon-badge-image" src="https://api.scorecard.dev/projects/github.com/live-input-vector-output-node/livon-ts/badge" alt="OpenSSF Scorecard" /></a> <a href="https://www.npmjs.com/package/@livon/sync"><img className="livon-badge-image" src="https://img.shields.io/npm/l/%40livon%2Fsync" alt="@livon/sync license" /></a></div>
-    </article>
-  </div>
-</section>
-
-### Runtime Adapters
-
-<section className="livon-badge-section">
-  <div className="livon-badge-grid">
-    <article className="livon-badge-card">
-      <h4 className="livon-badge-card-title"><code>@livon/client</code></h4>
-      <div className="livon-badge-row"><a href="https://www.npmjs.com/package/@livon/client"><img className="livon-badge-image" src="https://img.shields.io/npm/v/%40livon%2Fclient" alt="@livon/client npm version" /></a> <a href="https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/vulnerability-scan.yml"><img className="livon-badge-image" src="https://img.shields.io/github/actions/workflow/status/live-input-vector-output-node/livon-ts/vulnerability-scan.yml?branch=main&label=vulnerability%20scan" alt="@livon/client Vulnerability scan" /></a> <a href="https://www.bestpractices.dev/projects/12249"><img className="livon-badge-image" src="https://www.bestpractices.dev/projects/12249/badge" alt="OpenSSF Best Practices" /></a> <a href="https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml"><img className="livon-badge-image" src="https://img.shields.io/github/actions/workflow/status/live-input-vector-output-node/livon-ts/ci.yml?branch=main&label=ci" alt="@livon/client CI" /></a></div>
-      <div className="livon-badge-row livon-badge-row--secondary"><a href="https://scorecard.dev/viewer/?uri=github.com/live-input-vector-output-node/livon-ts"><img className="livon-badge-image" src="https://api.scorecard.dev/projects/github.com/live-input-vector-output-node/livon-ts/badge" alt="OpenSSF Scorecard" /></a> <a href="https://www.npmjs.com/package/@livon/client"><img className="livon-badge-image" src="https://img.shields.io/npm/l/%40livon%2Fclient" alt="@livon/client license" /></a></div>
-      <div className="livon-tech-meta">
-        <span className="livon-tech-label">Related libraries</span>
-        <div className="livon-badge-row livon-tech-row"><a href="/docs/packages/runtime"><code>@livon/runtime</code></a></div>
-      </div>
-    </article>
-    <article className="livon-badge-card">
-      <h4 className="livon-badge-card-title"><code>@livon/client-ws-transport</code></h4>
-      <div className="livon-badge-row"><a href="https://www.npmjs.com/package/@livon/client-ws-transport"><img className="livon-badge-image" src="https://img.shields.io/npm/v/%40livon%2Fclient-ws-transport" alt="@livon/client-ws-transport npm version" /></a> <a href="https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/vulnerability-scan.yml"><img className="livon-badge-image" src="https://img.shields.io/github/actions/workflow/status/live-input-vector-output-node/livon-ts/vulnerability-scan.yml?branch=main&label=vulnerability%20scan" alt="@livon/client-ws-transport Vulnerability scan" /></a> <a href="https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml"><img className="livon-badge-image" src="https://img.shields.io/github/actions/workflow/status/live-input-vector-output-node/livon-ts/ci.yml?branch=main&label=ci" alt="@livon/client-ws-transport CI" /></a></div>
-      <div className="livon-badge-row livon-badge-row--secondary"><a href="https://scorecard.dev/viewer/?uri=github.com/live-input-vector-output-node/livon-ts"><img className="livon-badge-image" src="https://api.scorecard.dev/projects/github.com/live-input-vector-output-node/livon-ts/badge" alt="OpenSSF Scorecard" /></a> <a href="https://www.npmjs.com/package/@livon/client-ws-transport"><img className="livon-badge-image" src="https://img.shields.io/npm/l/%40livon%2Fclient-ws-transport" alt="@livon/client-ws-transport license" /></a></div>
-      <div className="livon-tech-meta">
-        <span className="livon-tech-label">Related libraries</span>
-        <div className="livon-badge-row livon-tech-row"><a href="/docs/packages/client"><code>@livon/client</code></a> <a href="/docs/packages/runtime"><code>@livon/runtime</code></a> <a href="https://www.npmjs.com/package/msgpackr"><code>msgpackr</code></a></div>
-      </div>
-    </article>
-    <article className="livon-badge-card">
-      <h4 className="livon-badge-card-title"><code>@livon/node-ws-transport</code></h4>
-      <div className="livon-badge-row"><a href="https://www.npmjs.com/package/@livon/node-ws-transport"><img className="livon-badge-image" src="https://img.shields.io/npm/v/%40livon%2Fnode-ws-transport" alt="@livon/node-ws-transport npm version" /></a> <a href="https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/vulnerability-scan.yml"><img className="livon-badge-image" src="https://img.shields.io/github/actions/workflow/status/live-input-vector-output-node/livon-ts/vulnerability-scan.yml?branch=main&label=vulnerability%20scan" alt="@livon/node-ws-transport Vulnerability scan" /></a> <a href="https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml"><img className="livon-badge-image" src="https://img.shields.io/github/actions/workflow/status/live-input-vector-output-node/livon-ts/ci.yml?branch=main&label=ci" alt="@livon/node-ws-transport CI" /></a></div>
-      <div className="livon-badge-row livon-badge-row--secondary"><a href="https://scorecard.dev/viewer/?uri=github.com/live-input-vector-output-node/livon-ts"><img className="livon-badge-image" src="https://api.scorecard.dev/projects/github.com/live-input-vector-output-node/livon-ts/badge" alt="OpenSSF Scorecard" /></a> <a href="https://www.npmjs.com/package/@livon/node-ws-transport"><img className="livon-badge-image" src="https://img.shields.io/npm/l/%40livon%2Fnode-ws-transport" alt="@livon/node-ws-transport license" /></a></div>
-      <div className="livon-tech-meta">
-        <span className="livon-tech-label">Related libraries</span>
-        <div className="livon-badge-row livon-tech-row"><a href="/docs/packages/runtime"><code>@livon/runtime</code></a> <a href="https://www.npmjs.com/package/msgpackr"><code>msgpackr</code></a> <a href="https://www.npmjs.com/package/ws"><code>ws</code></a></div>
-      </div>
-    </article>
-  </div>
-</section>
-
-### Frontend & Tooling
-
-<section className="livon-badge-section">
-  <div className="livon-badge-grid">
-    <article className="livon-badge-card">
-      <h4 className="livon-badge-card-title"><code>@livon/react</code></h4>
-      <div className="livon-badge-row"><a href="https://www.npmjs.com/package/@livon/react"><img className="livon-badge-image" src="https://img.shields.io/npm/v/%40livon%2Freact" alt="@livon/react npm version" /></a> <a href="https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/vulnerability-scan.yml"><img className="livon-badge-image" src="https://img.shields.io/github/actions/workflow/status/live-input-vector-output-node/livon-ts/vulnerability-scan.yml?branch=main&label=vulnerability%20scan" alt="@livon/react Vulnerability scan" /></a> <a href="https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml"><img className="livon-badge-image" src="https://img.shields.io/github/actions/workflow/status/live-input-vector-output-node/livon-ts/ci.yml?branch=main&label=ci" alt="@livon/react CI" /></a></div>
-      <div className="livon-badge-row livon-badge-row--secondary"><a href="https://scorecard.dev/viewer/?uri=github.com/live-input-vector-output-node/livon-ts"><img className="livon-badge-image" src="https://api.scorecard.dev/projects/github.com/live-input-vector-output-node/livon-ts/badge" alt="OpenSSF Scorecard" /></a> <a href="https://www.npmjs.com/package/@livon/react"><img className="livon-badge-image" src="https://img.shields.io/npm/l/%40livon%2Freact" alt="@livon/react license" /></a></div>
-      <div className="livon-tech-meta">
-        <span className="livon-tech-label">Related libraries</span>
-        <div className="livon-badge-row livon-tech-row"><a href="/docs/packages/sync"><code>@livon/sync</code></a> <a href="https://www.npmjs.com/package/react"><code>react</code></a></div>
-      </div>
-    </article>
-    <article className="livon-badge-card">
-      <h4 className="livon-badge-card-title"><code>@livon/cli</code></h4>
-      <div className="livon-badge-row"><a href="https://www.npmjs.com/package/@livon/cli"><img className="livon-badge-image" src="https://img.shields.io/npm/v/%40livon%2Fcli" alt="@livon/cli npm version" /></a> <a href="https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/vulnerability-scan.yml"><img className="livon-badge-image" src="https://img.shields.io/github/actions/workflow/status/live-input-vector-output-node/livon-ts/vulnerability-scan.yml?branch=main&label=vulnerability%20scan" alt="@livon/cli Vulnerability scan" /></a> <a href="https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml"><img className="livon-badge-image" src="https://img.shields.io/github/actions/workflow/status/live-input-vector-output-node/livon-ts/ci.yml?branch=main&label=ci" alt="@livon/cli CI" /></a></div>
-      <div className="livon-badge-row livon-badge-row--secondary"><a href="https://scorecard.dev/viewer/?uri=github.com/live-input-vector-output-node/livon-ts"><img className="livon-badge-image" src="https://api.scorecard.dev/projects/github.com/live-input-vector-output-node/livon-ts/badge" alt="OpenSSF Scorecard" /></a> <a href="https://www.npmjs.com/package/@livon/cli"><img className="livon-badge-image" src="https://img.shields.io/npm/l/%40livon%2Fcli" alt="@livon/cli license" /></a></div>
-      <div className="livon-tech-meta">
-        <span className="livon-tech-label">Related libraries</span>
-        <div className="livon-badge-row livon-tech-row"><a href="/docs/packages/client"><code>@livon/client</code></a> <a href="https://www.npmjs.com/package/@rslib/core"><code>@rslib/core</code></a> <a href="https://www.npmjs.com/package/msgpackr"><code>msgpackr</code></a> <a href="https://www.npmjs.com/package/ws"><code>ws</code></a></div>
-      </div>
-    </article>
-  </div>
-</section>
-
-### Support
-
-<section className="livon-badge-section">
-  <div className="livon-badge-grid">
-    <article className="livon-badge-card">
-      <h4 className="livon-badge-card-title"><code>@livon/dlq-module</code></h4>
-      <div className="livon-badge-row"><a href="https://www.npmjs.com/package/@livon/dlq-module"><img className="livon-badge-image" src="https://img.shields.io/npm/v/%40livon%2Fdlq-module" alt="@livon/dlq-module npm version" /></a> <a href="https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/vulnerability-scan.yml"><img className="livon-badge-image" src="https://img.shields.io/github/actions/workflow/status/live-input-vector-output-node/livon-ts/vulnerability-scan.yml?branch=main&label=vulnerability%20scan" alt="@livon/dlq-module Vulnerability scan" /></a> <a href="https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml"><img className="livon-badge-image" src="https://img.shields.io/github/actions/workflow/status/live-input-vector-output-node/livon-ts/ci.yml?branch=main&label=ci" alt="@livon/dlq-module CI" /></a></div>
-      <div className="livon-badge-row livon-badge-row--secondary"><a href="https://scorecard.dev/viewer/?uri=github.com/live-input-vector-output-node/livon-ts"><img className="livon-badge-image" src="https://api.scorecard.dev/projects/github.com/live-input-vector-output-node/livon-ts/badge" alt="OpenSSF Scorecard" /></a> <a href="https://www.npmjs.com/package/@livon/dlq-module"><img className="livon-badge-image" src="https://img.shields.io/npm/l/%40livon%2Fdlq-module" alt="@livon/dlq-module license" /></a></div>
-      <div className="livon-tech-meta">
-        <span className="livon-tech-label">Related libraries</span>
-        <div className="livon-badge-row livon-tech-row"><a href="/docs/packages/runtime"><code>@livon/runtime</code></a></div>
-      </div>
-    </article>
-  </div>
-</section>
+| Package | Purpose | Docs |
+| --- | --- | --- |
+| `@livon/runtime` | Runtime module composition and execution boundaries. | [runtime](/docs/packages/runtime) |
+| `@livon/schema` | Schema builders, validation, and type-safe API contracts. | [schema](/docs/packages/schema) |
+| `@livon/sync` | Deterministic sync units (`source` / `action` / `stream`). | [sync](/docs/packages/sync) |
+| `@livon/client` | Generated client API surface for frontend/backend integration. | [client](/docs/packages/client) |
+| `@livon/client-ws-transport` | WebSocket transport adapter for LIVON clients. | [client-ws-transport](/docs/packages/client-ws-transport) |
+| `@livon/node-ws-transport` | WebSocket transport adapter for Node.js servers. | [node-ws-transport](/docs/packages/node-ws-transport) |
+| `@livon/react` | React hooks and adapter utilities for LIVON sync/runtime. | [react](/docs/packages/react) |
+| `@livon/cli` | CLI for schema explain/sync and generated client updates. | [cli](/docs/packages/cli) |
+| `@livon/dlq-module` | Dead-letter queue runtime module for failed processing paths. | [dlq-module](/docs/packages/dlq-module) |
