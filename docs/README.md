@@ -10,6 +10,11 @@ Start here:
 - Getting started: https://livon.tech/docs/core/getting-started
 - Package reference: https://livon.tech/docs/packages
 - Contributing: https://livon.tech/docs/core/contributing
-- Community health: https://livon.tech/docs/core/community-health
+- Community health:
+  - Code of conduct: https://livon.tech/docs/core/code-of-conduct
+  - Support: https://livon.tech/docs/core/support
+  - Security: https://livon.tech/docs/core/security
+  - Release notes: https://livon.tech/docs/core/release-notes
+  - OpenSSF best practices: https://livon.tech/docs/core/openssf-best-practices
 
 This folder exists as a compatibility entry point for tools and checks that expect a root `docs/` path.

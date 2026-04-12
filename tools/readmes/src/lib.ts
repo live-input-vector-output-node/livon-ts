@@ -216,7 +216,6 @@ export const createReadmeSyncReport = async (
       errors.push(`${target.source}: source file does not exist (${target.id})`);
       continue;
     }
-    const expected = await generateReadme(baseDir, config, target);
     const targetExists = existsSync(targetPath);
 
     if (!targetExists) {
@@ -228,12 +227,14 @@ export const createReadmeSyncReport = async (
         continue;
       }
 
+      const expected = await generateReadme(baseDir, config, target);
       await mkdir(path.dirname(targetPath), { recursive: true });
       await writeFile(targetPath, expected, 'utf8');
       updated.push(target.target);
       continue;
     }
 
+    const expected = await generateReadme(baseDir, config, target);
     const current = normalizeOutput(await readFile(targetPath, 'utf8'));
 
     if (current !== expected) {
