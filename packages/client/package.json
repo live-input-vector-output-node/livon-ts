@@ -83,6 +83,6 @@
     "@typescript-eslint/parser": "8.58.1",
     "eslint": "10.2.0",
     "typescript": "latest",
-    "vitest": "latest"
+    "vitest": "^3.0.5"
   }
 }
