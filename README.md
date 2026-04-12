@@ -5,7 +5,6 @@
 
 <p align="center" class="livon-badge-strip">
   <a href="https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/live-input-vector-output-node/livon-ts/ci.yml?branch=main&label=ci" alt="CI" /></a>
-  <a href="https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/code-quality.yml"><img src="https://img.shields.io/github/actions/workflow/status/live-input-vector-output-node/livon-ts/code-quality.yml?branch=main&label=quality" alt="Quality" /></a>
   <a href="https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/secrets.yml"><img src="https://img.shields.io/github/actions/workflow/status/live-input-vector-output-node/livon-ts/secrets.yml?branch=main&label=gitleaks" alt="Secret Scan" /></a>
 </p>
 <p align="center" class="livon-badge-strip">
