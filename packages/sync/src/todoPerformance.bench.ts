@@ -577,6 +577,10 @@ describe('todo performance benchmarks (new dx)', () => {
     const writeTodoUnit = writeTodo(benchmarkIdentity);
     const writeTodosManyUnit = writeTodosMany(benchmarkIdentity);
     const removeTodoUnit = removeTodo(benchmarkIdentity);
+    const readTodosLoad = readTodosUnit.getSnapshot().load;
+    const writeTodoLoad = writeTodoUnit.getSnapshot().load;
+    const writeTodosManyLoad = writeTodosManyUnit.getSnapshot().load;
+    const removeTodoLoad = removeTodoUnit.getSnapshot().load;
 
     const todoCountView = view<TodoIdentity, number>({
       out: async ({ get, identity }) => {
@@ -606,6 +610,7 @@ describe('todo performance benchmarks (new dx)', () => {
 
     const todoCountViewUnit = todoCountView(benchmarkIdentity);
     const todoTitleTransformUnit = todoTitleTransform(benchmarkIdentity);
+    const todoTitleApply = todoTitleTransformUnit.getSnapshot().apply;
     const removeAndRestoreSeedTodos = Array.from(
       { length: ASYNC_BENCH_PARALLELISM },
       (_unused, offset) => {
@@ -625,7 +630,7 @@ describe('todo performance benchmarks (new dx)', () => {
       }
 
       seedPromise = (async () => {
-        await readTodosUnit.getSnapshot().load(benchmarkTodos);
+        await readTodosLoad(benchmarkTodos);
         defaultRuntimeQueue.flush();
         await waitForAsyncWrite();
       })();
@@ -674,7 +679,7 @@ describe('todo performance benchmarks (new dx)', () => {
         executionMode,
         operations: payloads.map((payload) => {
           return async () => {
-            await writeTodoUnit.getSnapshot().load(payload);
+            await writeTodoLoad(payload);
           };
         }),
       });
@@ -697,7 +702,7 @@ describe('todo performance benchmarks (new dx)', () => {
         executionMode,
         operations: payloads.map((payload) => {
           return async () => {
-            await writeTodosManyUnit.getSnapshot().load(payload);
+            await writeTodosManyLoad(payload);
           };
         }),
       });
@@ -709,7 +714,7 @@ describe('todo performance benchmarks (new dx)', () => {
         executionMode,
         operations: removeAndRestoreSeedTodos.map((seedTodo) => {
           return async () => {
-            await removeTodoUnit.getSnapshot().load({
+            await removeTodoLoad({
               id: seedTodo.id,
               restore: seedTodo,
             });
@@ -786,7 +791,7 @@ describe('todo performance benchmarks (new dx)', () => {
         executionMode,
         operations: payloads.map((payload) => {
           return async () => {
-            await todoTitleTransformUnit.getSnapshot().apply(payload);
+            await todoTitleApply(payload);
           };
         }),
       });
@@ -809,7 +814,7 @@ describe('todo performance benchmarks (new dx)', () => {
         executionMode,
         operations: payloads.map((payload) => {
           return async () => {
-            await readTodosUnit.getSnapshot().load(payload);
+            await readTodosLoad(payload);
           };
         }),
       });
