@@ -37,6 +37,7 @@ The repository now provides canonical docs and generated root files for:
 - `SECURITY.md`
 - `.github/SECURITY.md`
 - `CHANGELOG.md`
+- `BEST_PRACTICES.md`
 
 These files are generated from `website/docs/core/*.md` via:
 

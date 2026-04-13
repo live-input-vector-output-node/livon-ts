@@ -4,7 +4,7 @@ sidebar_position: 11
 ---
 
 This page is the canonical security policy source for LIVON.
-The repository `SECURITY.md` file is generated from this page.
+The repository security-policy files `SECURITY.md` and `.github/SECURITY.md` are generated from this page.
 
 ## Supported Versions
 
