@@ -15,10 +15,6 @@
     "./dev-server": "./src/dev-server.ts",
     "./compose": "./src/compose.ts"
   },
-  "peerDependencies": {
-    "@rspack/core": "^1.7.5",
-    "@rspack/plugin-react-refresh": "^1.6.0"
-  },
   "scripts": {
     "build": "true",
     "build:watch": "true",
@@ -33,5 +29,10 @@
     "@livon/typescript": "workspace:*",
     "@types/node": "latest",
     "typescript": "latest"
+  },
+  "dependencies": {
+    "@rspack/cli": "1.7.5",
+    "@rspack/core": "1.7.5",
+    "@rspack/plugin-react-refresh": "1.6.0"
   }
 }

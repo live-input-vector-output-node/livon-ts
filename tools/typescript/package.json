@@ -25,5 +25,8 @@
     "test": "true",
     "test:unit": "true",
     "test:integration": "true"
+  },
+  "dependencies": {
+    "typescript": "latest"
   }
 }

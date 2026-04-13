@@ -50,14 +50,7 @@
     "@livon/rsbuild": "workspace:*",
     "@livon/rslib": "workspace:*",
     "@livon/typescript": "workspace:*",
-    "@rsbuild/core": "latest",
-    "@rsbuild/plugin-react": "latest",
     "@types/react": "latest",
-    "@types/react-dom": "latest",
-    "@typescript-eslint/eslint-plugin": "8.58.1",
-    "@typescript-eslint/parser": "8.58.1",
-    "eslint": "10.2.0",
-    "typescript": "latest",
-    "vitest": "latest"
+    "@types/react-dom": "latest"
   }
 }

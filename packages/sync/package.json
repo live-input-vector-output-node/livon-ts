@@ -3,6 +3,30 @@
   "version": "0.29.0-rc.11",
   "private": false,
   "type": "module",
+  "scripts": {
+    "build": "rslib build",
+    "build:watch": "rslib dev",
+    "dev": "rslib dev",
+    "lint": "eslint . --max-warnings 0",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --passWithNoTests --configLoader runner -c vitest.integration.config.ts",
+    "test:unit": "vitest run --configLoader runner -c vitest.unit.config.ts",
+    "test:integration": "vitest run --passWithNoTests --configLoader runner -c vitest.integration.config.ts",
+    "bench": "vitest bench -c vitest.bench.config.ts",
+    "bench:execution-mode": "node ./scripts/run-bench-execution-mode-compare.mjs",
+    "bench:source-api": "node ./scripts/run-bench-source-api-compare.mjs",
+    "bench:visual:matrix": "node ./scripts/run-bench-visual-matrix.mjs",
+    "bench:matrix": "node ./scripts/run-bench-strategy-matrix.mjs",
+    "bench:matrix:lru-set": "node ./scripts/run-bench-strategy-matrix.mjs",
+    "bench:matrix:adaptive": "node ./scripts/run-bench-adaptive-matrix.mjs",
+    "bench:gate": "node ./scripts/run-bench-gate.mjs"
+  },
+  "devDependencies": {
+    "@livon/vitest": "workspace:*",
+    "@livon/eslint": "workspace:*",
+    "@livon/rslib": "workspace:*",
+    "@livon/typescript": "workspace:*"
+  },
   "description": "Entity-centric sync layer for LIVON sources, actions, and streams.",
   "publishConfig": {
     "access": "public"
@@ -111,37 +135,8 @@
       "require": "./dist/view.cjs"
     }
   },
-  "scripts": {
-    "build": "rslib build",
-    "build:watch": "rslib dev",
-    "dev": "true",
-    "lint": "eslint . --max-warnings 0",
-    "typecheck": "tsc -p tsconfig.build.json --noEmit",
-    "test": "vitest run -c vitest.unit.config.ts",
-    "test:unit": "vitest run -c vitest.unit.config.ts",
-    "test:integration": "true",
-    "bench": "vitest bench -c vitest.bench.config.ts",
-    "bench:execution-mode": "node ./scripts/run-bench-execution-mode-compare.mjs",
-    "bench:source-api": "node ./scripts/run-bench-source-api-compare.mjs",
-    "bench:visual:matrix": "node ./scripts/run-bench-visual-matrix.mjs",
-    "bench:matrix": "node ./scripts/run-bench-strategy-matrix.mjs",
-    "bench:matrix:lru-set": "node ./scripts/run-bench-strategy-matrix.mjs",
-    "bench:matrix:adaptive": "node ./scripts/run-bench-adaptive-matrix.mjs",
-    "bench:gate": "node ./scripts/run-bench-gate.mjs"
-  },
   "dependencies": {
     "msgpackr": "1.11.8"
   },
-  "devDependencies": {
-    "@livon/vitest": "workspace:*",
-    "@livon/eslint": "workspace:*",
-    "@livon/rslib": "workspace:*",
-    "@livon/typescript": "workspace:*",
-    "@rslib/core": "latest",
-    "@typescript-eslint/eslint-plugin": "8.58.1",
-    "@typescript-eslint/parser": "8.58.1",
-    "eslint": "10.2.0",
-    "typescript": "latest",
-    "vitest": "latest"
-  }
+  "peerDependencies": {}
 }

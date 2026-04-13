@@ -17,5 +17,8 @@
     "test": "true",
     "test:unit": "true",
     "test:integration": "true"
+  },
+  "dependencies": {
+    "@swc/core": "latest"
   }
 }

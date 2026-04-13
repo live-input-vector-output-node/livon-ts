@@ -25,29 +25,76 @@ const DEST_PACKAGES = path.join(ROOT, 'packages');
 
 const TEMPLATE_MAP = {
   lib: {
-    template: 'rslib-package',
+    template: 'rslib/templates/package-name',
     destRoot: DEST_PACKAGES,
   },
   node: {
-    template: 'rslib-node',
+    template: 'rslib/templates/node-lib',
     destRoot: DEST_PACKAGES,
   },
   browser: {
-    template: 'rslib-browser',
+    template: 'rslib/templates/browser-lib',
     destRoot: DEST_PACKAGES,
   },
   frontend: {
-    template: 'rsstack-frontend',
+    template: 'rsbuild/templates/frontend-app',
     destRoot: DEST_APPS,
   },
   rsbuild: {
-    template: 'rsstack-app',
+    template: 'rsbuild/templates/app-name',
     destRoot: DEST_APPS,
   },
   rspack: {
-    template: 'rspack-app',
+    template: 'rspack/templates/app',
     destRoot: DEST_APPS,
   },
+};
+
+const EXCLUDED_TEMPLATE_SEGMENTS = new Set(['.turbo', 'coverage', 'dist', 'node_modules']);
+
+const isTemplateManagedPath = (relativePath) => {
+  if (!relativePath) {
+    return true;
+  }
+
+  return !relativePath.split(path.sep).some((segment) => EXCLUDED_TEMPLATE_SEGMENTS.has(segment));
+};
+
+const CONFIG_FILE_PATTERNS = [
+  /^package\.json$/,
+  /^\.npmignore$/,
+  /^tsconfig(\..+)?\.json$/,
+  /^eslint\.config\.(ts|js|mjs|cjs)$/,
+  /^vitest(\..+)?\.config\.(ts|js|mjs|cjs)$/,
+  /^rslib(\..+)?\.config\.(ts|js|mjs|cjs)$/,
+  /^rsbuild(\..+)?\.config\.(ts|js|mjs|cjs)$/,
+  /^rspack(\..+)?\.config\.(ts|js|mjs|cjs)$/,
+];
+
+const isConfigFile = (relativePath) => {
+  const fileName = path.basename(relativePath);
+  return CONFIG_FILE_PATTERNS.some((pattern) => pattern.test(fileName));
+};
+
+const isSourceFile = (relativePath) => {
+  const normalized = relativePath.split(path.sep);
+  return normalized[0] === 'src';
+};
+
+const resolveUpdateMode = (relativePath) => {
+  if (path.basename(relativePath) === 'package.json') {
+    return 'merge-package-json';
+  }
+
+  if (isConfigFile(relativePath)) {
+    return 'overwrite';
+  }
+
+  if (isSourceFile(relativePath)) {
+    return 'copy-if-missing';
+  }
+
+  return 'skip';
 };
 
 const usage = () => {
@@ -71,6 +118,70 @@ const readJson = async (filePath) => {
 const writeJson = async (filePath, data) => {
   const raw = JSON.stringify(data, null, 2) + '\n';
   await writeFile(filePath, raw, 'utf8');
+};
+
+const pathExists = async (targetPath) => {
+  return stat(targetPath)
+    .then(() => true)
+    .catch(() => false);
+};
+
+const collectTemplateFiles = async (dir, parent = '') => {
+  const entries = await readdir(dir, { withFileTypes: true });
+  const files = [];
+
+  await Promise.all(
+    entries.map(async (entry) => {
+      const relativePath = parent ? path.join(parent, entry.name) : entry.name;
+      if (!isTemplateManagedPath(relativePath)) {
+        return;
+      }
+
+      const absolutePath = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        const nested = await collectTemplateFiles(absolutePath, relativePath);
+        files.push(...nested);
+        return;
+      }
+
+      if (entry.isFile()) {
+        files.push(relativePath);
+      }
+    }),
+  );
+
+  return files.sort();
+};
+
+const diffTemplateFiles = async ({ srcDir, destDir }) => {
+  const templateFiles = await collectTemplateFiles(srcDir);
+  let hasDiff = false;
+
+  templateFiles.forEach((relativePath) => {
+    const updateMode = resolveUpdateMode(relativePath);
+    if (updateMode === 'skip') {
+      return;
+    }
+
+    const srcPath = path.join(srcDir, relativePath);
+    const dstPath = path.join(destDir, relativePath);
+    const dstExists = existsSync(dstPath);
+
+    if (updateMode === 'copy-if-missing' && dstExists) {
+      return;
+    }
+
+    const args = dstExists
+      ? ['diff', '--no-index', srcPath, dstPath]
+      : ['diff', '--no-index', '/dev/null', srcPath];
+    const result = spawnSync('git', args, { stdio: 'inherit' });
+
+    if ((result.status ?? 0) !== 0) {
+      hasDiff = true;
+    }
+  });
+
+  return hasDiff ? 1 : 0;
 };
 
 const mergePackageJson = (existing, template) => {
@@ -115,7 +226,7 @@ const mergePackageJson = (existing, template) => {
   return merged;
 };
 
-const copyDir = async (src, dst, { update }) => {
+const copyDir = async (src, dst, { update, parent = '' }) => {
   await ensureDir(dst);
   const entries = await readdir(src, { withFileTypes: true });
 
@@ -123,9 +234,13 @@ const copyDir = async (src, dst, { update }) => {
     entries.map(async (entry) => {
       const srcPath = path.join(src, entry.name);
       const dstPath = path.join(dst, entry.name);
+      const relativePath = parent ? path.join(parent, entry.name) : entry.name;
+      if (!isTemplateManagedPath(relativePath)) {
+        return;
+      }
 
       if (entry.isDirectory()) {
-        await copyDir(srcPath, dstPath, { update });
+        await copyDir(srcPath, dstPath, { update, parent: relativePath });
         return;
       }
 
@@ -141,6 +256,21 @@ const copyDir = async (src, dst, { update }) => {
         const merged = mergePackageJson(existing, template);
         await writeJson(dstPath, merged);
         return;
+      }
+
+      if (update) {
+        const updateMode = resolveUpdateMode(relativePath);
+
+        if (updateMode === 'skip') {
+          return;
+        }
+
+        if (updateMode === 'copy-if-missing') {
+          const exists = await pathExists(dstPath);
+          if (exists) {
+            return;
+          }
+        }
       }
 
       await copyFile(srcPath, dstPath);
@@ -169,7 +299,7 @@ const main = async () => {
   const srcDir = path.join(TEMPLATES_DIR, template);
   const destDir = path.join(destRoot, name);
 
-  const exists = await stat(destDir).then(() => true).catch(() => false);
+  const exists = await pathExists(destDir);
 
   if (!exists && (isUpdate || isDiff)) {
     console.error('Target does not exist:', destDir);
@@ -182,10 +312,8 @@ const main = async () => {
   }
 
   if (isDiff) {
-    const result = spawnSync('git', ['diff', '--no-index', srcDir, destDir], {
-      stdio: 'inherit',
-    });
-    process.exit(result.status ?? 0);
+    const status = await diffTemplateFiles({ srcDir, destDir });
+    process.exit(status);
   }
 
   await copyDir(srcDir, destDir, { update: isUpdate });

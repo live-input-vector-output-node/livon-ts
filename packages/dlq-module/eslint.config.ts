@@ -1,3 +1,3 @@
-import { base, compose, node } from '@livon/eslint';
+import { base, browser, compose } from '@livon/eslint';
 
-export default compose(base(), node());
+export default compose(base(), browser());

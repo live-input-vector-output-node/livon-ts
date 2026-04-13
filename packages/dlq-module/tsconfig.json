@@ -2,7 +2,7 @@
   "extends": [
     "@livon/typescript/base",
     "@livon/typescript/library",
-    "@livon/typescript/node"
+    "@livon/typescript/browser"
   ],
   "include": [
     "src",

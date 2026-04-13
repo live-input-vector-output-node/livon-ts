@@ -12,11 +12,6 @@
     "./react": "./src/react.ts",
     "./compose": "./src/compose.ts"
   },
-  "peerDependencies": {
-    "@typescript-eslint/eslint-plugin": "^8.58.1",
-    "@typescript-eslint/parser": "^8.58.1",
-    "eslint": "^10.2.0"
-  },
   "scripts": {
     "build": "true",
     "build:watch": "true",
@@ -31,5 +26,10 @@
     "@livon/typescript": "workspace:*",
     "@types/node": "latest",
     "typescript": "latest"
+  },
+  "dependencies": {
+    "eslint": "10.2.0",
+    "@typescript-eslint/eslint-plugin": "8.58.1",
+    "@typescript-eslint/parser": "8.58.1"
   }
 }

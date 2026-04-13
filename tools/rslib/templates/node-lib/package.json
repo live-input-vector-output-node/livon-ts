@@ -17,12 +17,6 @@
     "@livon/eslint": "workspace:*",
     "@livon/rslib": "workspace:*",
     "@livon/typescript": "workspace:*",
-    "@rslib/core": "latest",
-    "@types/node": "latest",
-    "@typescript-eslint/eslint-plugin": "8.58.1",
-    "@typescript-eslint/parser": "8.58.1",
-    "eslint": "10.2.0",
-    "typescript": "latest",
-    "vitest": "^4.0.0"
+    "@types/node": "latest"
   }
 }

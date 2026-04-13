@@ -3,6 +3,24 @@
   "version": "0.29.0-rc.11",
   "private": false,
   "type": "module",
+  "scripts": {
+    "build": "rslib build",
+    "build:watch": "rslib dev",
+    "dev": "rslib dev",
+    "lint": "eslint . --max-warnings 0",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --passWithNoTests --configLoader runner -c vitest.integration.config.ts",
+    "test:unit": "vitest run --configLoader runner -c vitest.unit.config.ts",
+    "test:integration": "vitest run --passWithNoTests --configLoader runner -c vitest.integration.config.ts"
+  },
+  "devDependencies": {
+    "@livon/vitest": "workspace:*",
+    "@livon/eslint": "workspace:*",
+    "@livon/rslib": "workspace:*",
+    "@livon/typescript": "workspace:*",
+    "@types/node": "latest",
+    "@types/ws": "latest"
+  },
   "description": "Node.js WebSocket transport for the LIVON runtime.",
   "publishConfig": {
     "access": "public"
@@ -51,33 +69,10 @@
       "require": "./dist/index.cjs"
     }
   },
-  "scripts": {
-    "build": "rslib build",
-    "build:watch": "rslib dev",
-    "dev": "true",
-    "lint": "eslint . --max-warnings 2",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run -c vitest.unit.config.ts",
-    "test:unit": "vitest run -c vitest.unit.config.ts",
-    "test:integration": "vitest run -c vitest.integration.config.ts"
-  },
   "dependencies": {
     "@livon/runtime": "workspace:*",
     "msgpackr": "1.11.8",
     "ws": "8.19.0"
   },
-  "devDependencies": {
-    "@livon/vitest": "workspace:*",
-    "@livon/eslint": "workspace:*",
-    "@livon/rslib": "workspace:*",
-    "@livon/typescript": "workspace:*",
-    "@rslib/core": "latest",
-    "@types/node": "latest",
-    "@types/ws": "latest",
-    "@typescript-eslint/eslint-plugin": "8.58.1",
-    "@typescript-eslint/parser": "8.58.1",
-    "eslint": "10.2.0",
-    "typescript": "latest",
-    "vitest": "latest"
-  }
+  "peerDependencies": {}
 }

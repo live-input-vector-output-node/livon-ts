@@ -22,15 +22,7 @@
     "@livon/eslint": "workspace:*",
     "@livon/rspack": "workspace:*",
     "@livon/typescript": "workspace:*",
-    "@rspack/cli": "1.7.5",
-    "@rspack/core": "1.7.5",
-    "@rspack/plugin-react-refresh": "1.6.0",
     "@types/react": "latest",
-    "@types/react-dom": "latest",
-    "@typescript-eslint/eslint-plugin": "8.58.1",
-    "@typescript-eslint/parser": "8.58.1",
-    "eslint": "10.2.0",
-    "typescript": "latest",
-    "vitest": "^4.0.0"
+    "@types/react-dom": "latest"
   }
 }

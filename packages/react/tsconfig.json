@@ -5,7 +5,6 @@
     "@livon/typescript/react"
   ],
   "compilerOptions": {
-    "baseUrl": ".",
     "paths": {
       "@livon/sync": [
         "../sync/src/index.ts"

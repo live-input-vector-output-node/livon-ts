@@ -102,17 +102,11 @@
     "@livon/eslint": "workspace:*",
     "@livon/rslib": "workspace:*",
     "@livon/typescript": "workspace:*",
-    "@rslib/core": "latest",
     "@testing-library/react": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest",
-    "@typescript-eslint/eslint-plugin": "8.58.1",
-    "@typescript-eslint/parser": "8.58.1",
-    "eslint": "10.2.0",
     "jsdom": "latest",
     "react": "latest",
-    "react-dom": "latest",
-    "typescript": "latest",
-    "vitest": "latest"
+    "react-dom": "latest"
   }
 }

@@ -27,6 +27,12 @@ pnpm gen frontend <name>
 pnpm gen <type> update <name>
 ```
 
+Update mode is safe by default:
+
+- overwrites only template-managed configuration files (`package.json`, `tsconfig*`, `eslint/vitest/rslib/rsbuild/rspack` config files),
+- never overwrites existing `src/**` files,
+- copies missing `src/**` files from the template.
+
 ### Parameters
 
 - `<type>`: generator template family for the target.
