@@ -288,15 +288,14 @@ type ViewUnitHasEffect = 'effect' extends keyof typeof todoCountViewUnit ? true 
 type ViewGetSnapshotIsSnapshot = ReturnType<typeof todoCountViewUnit.getSnapshot> extends UnitSnapshot<number>
   ? true
   : false;
-type ViewRefreshReturnsSnapshot =
-  ReturnType<ReturnType<typeof todoCountViewUnit.getSnapshot>['refresh']> extends Promise<UnitSnapshot<number>>
+type ViewRunReturnsSnapshot = ReturnType<typeof todoCountViewUnit.run> extends Promise<UnitSnapshot<number>>
   ? true
   : false;
 
 type _viewUnitHasSubscribe = AssertTrue<ViewUnitHasSubscribe>;
 type _viewUnitHasNoLegacyEffect = AssertFalse<ViewUnitHasEffect>;
 type _viewGetSnapshotIsSnapshot = AssertTrue<ViewGetSnapshotIsSnapshot>;
-type _viewRefreshReturnsSnapshot = AssertTrue<ViewRefreshReturnsSnapshot>;
+type _viewRunReturnsSnapshot = AssertTrue<ViewRunReturnsSnapshot>;
 
 const todoTitleTransform = transform<TodoIdentity, UpdateTodoPayload, string>({
   out: async ({ get, identity }) => {
@@ -319,13 +318,13 @@ type TransformGetSnapshotIsSnapshot =
   ReturnType<typeof todoTitleTransformUnit.getSnapshot> extends UnitSnapshot<string>
     ? true
     : false;
-type TransformApplyPayload = Parameters<ReturnType<typeof todoTitleTransformUnit.getSnapshot>['apply']>[0];
-type TransformApplyPayloadMatches = IsEqual<TransformApplyPayload, UpdateTodoPayload>;
+type TransformRunPayload = Parameters<typeof todoTitleTransformUnit.run>[0];
+type TransformRunPayloadMatches = IsEqual<TransformRunPayload, UpdateTodoPayload>;
 
 type _transformUnitHasSubscribe = AssertTrue<TransformUnitHasSubscribe>;
 type _transformUnitHasNoLegacySet = AssertFalse<TransformUnitHasLegacySet>;
 type _transformGetSnapshotIsSnapshot = AssertTrue<TransformGetSnapshotIsSnapshot>;
-type _transformApplyPayloadMatches = AssertTrue<TransformApplyPayloadMatches>;
+type _transformRunPayloadMatches = AssertTrue<TransformRunPayloadMatches>;
 
 describe('dx type-level contracts', () => {
   describe('happy', () => {

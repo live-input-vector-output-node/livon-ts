@@ -20,7 +20,6 @@ describe('subscribeTrackedUnit()', () => {
         value: null,
         status: 'idle',
         meta: null,
-        identity: undefined,
         context: null,
       };
     };
@@ -51,7 +50,6 @@ describe('subscribeTrackedUnit()', () => {
         value: null,
         status: 'idle',
         meta: null,
-        identity: undefined,
         context: null,
       });
 
@@ -71,7 +69,6 @@ describe('subscribeTrackedUnit()', () => {
         value: { id: 'user-1' },
         status: 'success',
         meta: 'next-meta',
-        identity: undefined,
         context: { stage: 'done' },
       });
 
@@ -90,7 +87,6 @@ describe('subscribeTrackedUnit()', () => {
         value: null,
         status: 'idle',
         meta: null,
-        identity: undefined,
         context: null,
       });
 
@@ -114,7 +110,6 @@ describe('subscribeTrackedUnit()', () => {
         },
         status: 'success',
         meta: null,
-        identity: undefined,
         context: null,
       });
       onStoreChange.mockClear();
@@ -125,7 +120,6 @@ describe('subscribeTrackedUnit()', () => {
         },
         status: 'success',
         meta: null,
-        identity: undefined,
         context: null,
       });
 
