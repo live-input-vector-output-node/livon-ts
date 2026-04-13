@@ -22,6 +22,7 @@ describe('isUnitSnapshotEqual()', () => {
         meta: {
           severity: 'info',
         },
+        identity: undefined,
         context: {
           cacheState: 'hit',
         },
@@ -35,6 +36,7 @@ describe('isUnitSnapshotEqual()', () => {
         meta: {
           severity: 'info',
         },
+        identity: undefined,
         context: {
           cacheState: 'hit',
         },
@@ -56,6 +58,7 @@ describe('isUnitSnapshotEqual()', () => {
         meta: {
           severity: 'info',
         },
+        identity: undefined,
         context: {
           cacheState: 'hit',
         },
@@ -69,6 +72,7 @@ describe('isUnitSnapshotEqual()', () => {
         meta: {
           severity: 'info',
         },
+        identity: undefined,
         context: {
           cacheState: 'hit',
         },
@@ -85,12 +89,14 @@ describe('isUnitSnapshotEqual()', () => {
         value: ['a', 'b'],
         status: 'success',
         meta: null,
+        identity: undefined,
         context: null,
       };
       const right: UnitSnapshot<readonly string[], null> = {
         value: ['a', 'b'],
         status: 'success',
         meta: null,
+        identity: undefined,
         context: null,
       };
 

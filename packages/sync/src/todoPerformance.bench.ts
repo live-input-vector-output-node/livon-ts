@@ -625,7 +625,7 @@ describe('todo performance benchmarks (new dx)', () => {
       }
 
       seedPromise = (async () => {
-        await readTodosUnit.run(benchmarkTodos);
+        await readTodosUnit.getSnapshot().load(benchmarkTodos);
         defaultRuntimeQueue.flush();
         await waitForAsyncWrite();
       })();
@@ -674,7 +674,7 @@ describe('todo performance benchmarks (new dx)', () => {
         executionMode,
         operations: payloads.map((payload) => {
           return async () => {
-            await writeTodoUnit.run(payload);
+            await writeTodoUnit.getSnapshot().load(payload);
           };
         }),
       });
@@ -697,7 +697,7 @@ describe('todo performance benchmarks (new dx)', () => {
         executionMode,
         operations: payloads.map((payload) => {
           return async () => {
-            await writeTodosManyUnit.run(payload);
+            await writeTodosManyUnit.getSnapshot().load(payload);
           };
         }),
       });
@@ -709,7 +709,7 @@ describe('todo performance benchmarks (new dx)', () => {
         executionMode,
         operations: removeAndRestoreSeedTodos.map((seedTodo) => {
           return async () => {
-            await removeTodoUnit.run({
+            await removeTodoUnit.getSnapshot().load({
               id: seedTodo.id,
               restore: seedTodo,
             });
@@ -786,7 +786,7 @@ describe('todo performance benchmarks (new dx)', () => {
         executionMode,
         operations: payloads.map((payload) => {
           return async () => {
-            await todoTitleTransformUnit.run(payload);
+            await todoTitleTransformUnit.getSnapshot().apply(payload);
           };
         }),
       });
@@ -809,7 +809,7 @@ describe('todo performance benchmarks (new dx)', () => {
         executionMode,
         operations: payloads.map((payload) => {
           return async () => {
-            await readTodosUnit.run(payload);
+            await readTodosUnit.getSnapshot().load(payload);
           };
         }),
       });
