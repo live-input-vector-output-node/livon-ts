@@ -73,7 +73,13 @@
       "qs@6.14.1": "6.14.2",
       "serialize-javascript@6.0.2": "7.0.5",
       "svgo@3.3.2": "3.3.3",
-      "undici@7.22.0": "7.24.0"
+      "undici@7.22.0": "7.24.0",
+      "@easyops-cn/docusaurus-search-local>@docusaurus/plugin-content-docs": "3.9.2",
+      "@easyops-cn/docusaurus-search-local>@docusaurus/theme-common": "3.9.2",
+      "@easyops-cn/docusaurus-search-local>@docusaurus/theme-translations": "3.9.2",
+      "@easyops-cn/docusaurus-search-local>@docusaurus/utils": "3.9.2",
+      "@easyops-cn/docusaurus-search-local>@docusaurus/utils-common": "3.9.2",
+      "@easyops-cn/docusaurus-search-local>@docusaurus/utils-validation": "3.9.2"
     }
   },
   "version": "0.29.0-rc.11"
