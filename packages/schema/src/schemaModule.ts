@@ -52,7 +52,7 @@ const normalizeSchemaModuleInput = (input: SchemaModuleLike): SchemaModuleInput 
   ast: input.ast,
 });
 
-export type SchemaModuleOptions = {
+export interface SchemaModuleOptions {
   explain?: boolean;
   schemaVersion?: string;
   now?: SchemaModuleNow;
@@ -60,7 +60,7 @@ export type SchemaModuleOptions = {
   decoder?: SchemaModuleDecoder;
   logger?: Logger;
   getRequestContext?: SchemaModuleGetRequestContext;
-};
+}
 
 export interface SchemaModuleNow {
   (): number;

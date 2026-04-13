@@ -351,7 +351,7 @@ const logPublishError = (error: unknown, info?: Readonly<Record<string, unknown>
       logger.error('publish failed', info, error);
       return;
     }
-    // eslint-disable-next-line no-console
+
     (globalThis as { console?: { error?: (...args: unknown[]) => void } }).console?.error?.(
       'publish failed',
       info ?? {},

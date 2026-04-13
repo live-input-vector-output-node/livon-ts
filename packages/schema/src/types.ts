@@ -1,22 +1,22 @@
 export type SchemaPath = readonly (string | number)[];
 
-export type SchemaIssue = {
+export interface SchemaIssue {
   path: SchemaPath;
   message: string;
   code?: string;
   context?: Readonly<Record<string, unknown>>;
-};
+}
 
-export type SchemaResultOk<T> = { ok: true; value: T };
-export type SchemaResultFail = { ok: false; issues: readonly SchemaIssue[]; meta?: SchemaErrorMeta };
+export interface SchemaResultOk<T> { ok: true; value: T }
+export interface SchemaResultFail { ok: false; issues: readonly SchemaIssue[]; meta?: SchemaErrorMeta }
 export type SchemaResult<T> = SchemaResultOk<T> | SchemaResultFail;
 
-export type SchemaErrorMeta = {
+export interface SchemaErrorMeta {
   request?: SchemaRequestContext;
   build?: SchemaBuildContext;
   type?: string;
   name?: string;
-};
+}
 
 export interface AstNode {
   type: string;
@@ -92,14 +92,14 @@ export interface AckConfig {
 
 export type PublishAck = boolean | AckConfig;
 
-export type PublishInput = {
+export interface PublishInput {
   topic: string;
   payload: unknown;
   input?: unknown;
   ack?: PublishAck;
   key?: string;
   meta?: Readonly<Record<string, unknown>>;
-};
+}
 
 export interface Publisher {
   (input: PublishInput): void | Promise<void>;

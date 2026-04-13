@@ -165,6 +165,12 @@ interface FieldPayload {
   input?: unknown;
 }
 
+interface ToggleSubscriptionInput {
+  event: string;
+  enabled: boolean;
+  roomId?: string;
+}
+
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
@@ -354,7 +360,7 @@ const normalizeFieldPayload = (payload: unknown): FieldPayload => {
 
 const createClientCore = ({ ast }: ClientOptions): ClientRequestSetter & Record<string, unknown> & {
   __register?: (handlers: Record<string, ClientSubscriptionHandler>, roomId?: string) => void;
-  __toggle?: (event: string, enabled: boolean, roomId?: string) => void;
+  __toggle?: (input: ToggleSubscriptionInput) => void;
   emitEvent: (envelope: ClientEventEnvelope) => void;
 } => {
   const operations = collectOperations(ast);
@@ -396,13 +402,7 @@ const createClientCore = ({ ast }: ClientOptions): ClientRequestSetter & Record<
     roomEnabled.set(roomId, enabledMap);
   };
 
-  interface ToggleHandlerInput {
-    event: string;
-    enabled: boolean;
-    roomId?: string;
-  }
-
-  const toggleHandler = ({ enabled, event, roomId }: ToggleHandlerInput) => {
+  const toggleHandler = ({ enabled, event, roomId }: ToggleSubscriptionInput) => {
     if (!roomId) {
       globalEnabled.set(event, enabled);
       return;
@@ -472,11 +472,11 @@ const createClientCore = ({ ast }: ClientOptions): ClientRequestSetter & Record<
 
   return Object.assign(client, {
     __register: registerHandlers,
-    __toggle: (event: string, enabled: boolean, roomId?: string) => toggleHandler({ event, enabled, roomId }),
+    __toggle: (input: ToggleSubscriptionInput) => toggleHandler(input),
     emitEvent: dispatch,
   }) as ClientRequestSetter & Record<string, unknown> & {
     __register: (handlers: Record<string, ClientSubscriptionHandler>, roomId?: string) => void;
-    __toggle: (event: string, enabled: boolean, roomId?: string) => void;
+    __toggle: (input: ToggleSubscriptionInput) => void;
     emitEvent: (envelope: ClientEventEnvelope) => void;
   };
 };
@@ -494,7 +494,7 @@ const createClientCore = ({ ast }: ClientOptions): ClientRequestSetter & Record<
  */
 export const createClient = (input: ClientModuleInput): ClientModule & Record<string, unknown> & {
   __register: (handlers: Record<string, ClientSubscriptionHandler>, roomId?: string) => void;
-  __toggle: (event: string, enabled: boolean, roomId?: string) => void;
+  __toggle: (input: ToggleSubscriptionInput) => void;
   emitEvent: (envelope: ClientEventEnvelope) => void;
 } => {
   const client = createClientCore({ ast: input.ast });
@@ -512,7 +512,7 @@ export const createClient = (input: ClientModuleInput): ClientModule & Record<st
   };
   const moduleWithClient = Object.assign(moduleBase, client) as ClientModule & Record<string, unknown> & {
     __register: (handlers: Record<string, ClientSubscriptionHandler>, roomId?: string) => void;
-    __toggle: (event: string, enabled: boolean, roomId?: string) => void;
+    __toggle: (input: ToggleSubscriptionInput) => void;
     emitEvent: (envelope: ClientEventEnvelope) => void;
   };
   return moduleWithClient;

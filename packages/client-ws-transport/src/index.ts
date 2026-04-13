@@ -426,7 +426,7 @@ const addListener = ({ socket, event, handler }: AddListenerInput) => {
 const isMessageEvent = (value: unknown): value is WebSocketMessageEvent =>
   typeof value === 'object' && value !== null && 'data' in value;
 
-type ArrayBufferLike = { arrayBuffer: () => Promise<ArrayBuffer> };
+interface ArrayBufferLike { arrayBuffer: () => Promise<ArrayBuffer> }
 
 const isArrayBufferLike = (value: unknown): value is ArrayBufferLike =>
   typeof value === 'object' &&

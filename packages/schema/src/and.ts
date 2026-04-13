@@ -79,7 +79,7 @@ export function and<TSchemas extends VariadicSchemaTuple>(
   input: AndSchemaInput<TSchemas>,
 ): Schema<IntersectTuple<InferSchemasTuple<TSchemas>>>;
 export function and<T, U>(input: AndLegacyInput<T, U>): Schema<T & U>;
-// eslint-disable-next-line func-style -- TypeScript overloads require function declarations.
+
 export function and(
   input: AndLegacyInput<unknown, unknown> | AndSchemaInput<VariadicSchemaTuple>,
 ): Schema<unknown> {

@@ -955,7 +955,7 @@ const startCommandRuntime = ({ command }: StartCommandRuntimeInput): CommandRunt
     child.on('exit', (code, signal) => {
       const exitCode = typeof code === 'number' ? code : signal ? 1 : 0;
       if (exitCode !== 0) {
-        // eslint-disable-next-line no-console
+
         console.error(`livon: linked command exited with code ${exitCode}`);
       }
       resolve(exitCode);
@@ -1007,7 +1007,7 @@ const run = async () => {
     const shouldBuildGeneratedClient = writeResult.updated || packageManifestMissing;
     if (shouldBuildGeneratedClient) {
       const buildResult = await buildGeneratedClient({ options });
-      // eslint-disable-next-line no-console
+
       const details: string[] = [];
       if (writeResult.schemaVersion) {
         details.push(`schema ${writeResult.schemaVersion}`);
@@ -1051,12 +1051,12 @@ const run = async () => {
         const wait = baseDelay * Math.min(nextAttempt, 10);
         if (isConnectionRefusedError(error)) {
           if (!waitingForEndpointLogged) {
-            // eslint-disable-next-line no-console
+
             console.log(`livon: waiting for endpoint ${options.endpoint}...`);
             waitingForEndpointLogged = true;
           }
         } else {
-          // eslint-disable-next-line no-console
+
           console.warn(`livon: attempt ${nextAttempt}/${maxAttempts} failed: ${error instanceof Error ? error.message : String(error)} – retrying in ${wait}ms`);
         }
         await new Promise((resolve) => setTimeout(resolve, wait));
@@ -1078,7 +1078,7 @@ const run = async () => {
         await withRetry(execute);
         ensureCommandRuntime();
       } catch (error) {
-        // eslint-disable-next-line no-console
+
         console.error('livon: poll error', error);
       } finally {
         inFlight = false;
@@ -1098,7 +1098,7 @@ const run = async () => {
 };
 
 run().catch((error) => {
-  // eslint-disable-next-line no-console
+
   console.error(error);
   process.exit(1);
 });

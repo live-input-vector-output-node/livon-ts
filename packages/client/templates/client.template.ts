@@ -10,6 +10,11 @@ export type SubscriptionName = keyof LivonEventMap;
 export type SubscriptionHandler<TName extends SubscriptionName> = (payload: LivonEventMap[TName], ctx: ClientHandlerContext) => void;
 /*__LIVON_CLIENT_SUB_HANDLER_DEFS__*/
 export interface SubscriptionToggleEntry { on(): void; off(): void; }
+export interface SubscriptionToggleInput {
+  event: SubscriptionName;
+  enabled: boolean;
+  roomId?: string;
+}
 export type SubscriptionToggles = { [K in SubscriptionName]: SubscriptionToggleEntry };
 export interface RoomApi extends SubscriptionToggles {
   (handlers: SubscriptionHandlers): void;
@@ -19,7 +24,7 @@ export interface LivonClient extends SubscriptionToggles, ClientModule {
   room(roomId: string): RoomApi;
 /*__LIVON_CLIENT_OP_LINES__*/
   __register?: (handlers: Record<string, SubscriptionHandler<SubscriptionName>>, roomId?: string) => void;
-  __toggle?: (event: SubscriptionName, enabled: boolean, roomId?: string) => void;
+  __toggle?: (input: SubscriptionToggleInput) => void;
 }
 
 const subscriptionNames = [/*__LIVON_CLIENT_SUB_NAMES__*/] as const;
@@ -34,8 +39,8 @@ const createApi = (roomId?: string): LivonClient => {
   }) as LivonClient;
   const toggles = subscriptionNames.reduce<Record<string, SubscriptionToggleEntry>>((acc, name) => {
     acc[name] = {
-      on: () => runtimeClient.__toggle?.(name as SubscriptionName, true, roomId),
-      off: () => runtimeClient.__toggle?.(name as SubscriptionName, false, roomId),
+      on: () => runtimeClient.__toggle?.({ event: name as SubscriptionName, enabled: true, roomId }),
+      off: () => runtimeClient.__toggle?.({ event: name as SubscriptionName, enabled: false, roomId }),
     };
     return acc;
   }, {});
