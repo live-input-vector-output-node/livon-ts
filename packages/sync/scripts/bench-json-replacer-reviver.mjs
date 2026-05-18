@@ -65,31 +65,6 @@ const resolveRawReplacerValue = ({ holder, key, value }) => {
   return holder[key];
 };
 
-const createNumberMarker = (value) => createMarker({
-  type: 'number',
-  value,
-});
-
-const serializeNumber = (value) => {
-  if (Number.isNaN(value)) {
-    return createNumberMarker('NaN');
-  }
-
-  if (value === Number.POSITIVE_INFINITY) {
-    return createNumberMarker('Infinity');
-  }
-
-  if (value === Number.NEGATIVE_INFINITY) {
-    return createNumberMarker('-Infinity');
-  }
-
-  if (Object.is(value, -0)) {
-    return createNumberMarker('-0');
-  }
-
-  return value;
-};
-
 const jsonStructuredReplacer = function (key, value) {
   const rawValue = resolveRawReplacerValue({
     holder: this,
@@ -108,7 +83,35 @@ const jsonStructuredReplacer = function (key, value) {
   }
 
   if (typeof rawValue === 'number') {
-    return serializeNumber(rawValue);
+    if (Number.isNaN(rawValue)) {
+      return createMarker({
+        type: 'number',
+        value: 'NaN',
+      });
+    }
+
+    if (rawValue === Number.POSITIVE_INFINITY) {
+      return createMarker({
+        type: 'number',
+        value: 'Infinity',
+      });
+    }
+
+    if (rawValue === Number.NEGATIVE_INFINITY) {
+      return createMarker({
+        type: 'number',
+        value: '-Infinity',
+      });
+    }
+
+    if (Object.is(rawValue, -0)) {
+      return createMarker({
+        type: 'number',
+        value: '-0',
+      });
+    }
+
+    return rawValue;
   }
 
   if (typeof rawValue === 'bigint') {

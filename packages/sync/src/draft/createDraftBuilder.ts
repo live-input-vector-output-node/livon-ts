@@ -5,6 +5,7 @@ import type {
 } from '../entity.js';
 import type {
   SourceBuilder,
+  SourceByEntityModeBuilder,
   SourceUnit,
 } from '../source/index.js';
 import {
@@ -14,6 +15,7 @@ import type {
   EntityValueOfStore,
   UnitDataByEntityMode,
   UnitEntityMode,
+  SerializedKeyCache,
 } from '../utils/index.js';
 import { createDraftAwareEntity } from './createDraftAwareEntity.js';
 import { resolveDraftOptions } from './resolveDraftOptions.js';
@@ -24,6 +26,7 @@ import type {
   DraftBuilderInput,
   DraftByEntityModeBuilder,
   DraftConfig,
+  DraftEntityMethods,
   DraftSetInput,
   DraftSnapshot,
   DraftSnapshotListener,
@@ -164,6 +167,364 @@ const isDraftSetUpdater = <
   return typeof input === 'function';
 };
 
+interface CreateDraftFromConfigInput<
+  TEntityStore extends Entity<object, EntityId>,
+  TMode extends UnitEntityMode,
+  TIdentity extends object | undefined,
+  TMeta,
+> {
+  config: DraftConfig<TIdentity, EntityValueOfStore<TEntityStore>, TMode, TMeta>;
+  draftAwareEntity: Entity<EntityValueOfStore<TEntityStore>, EntityId>;
+  entity: TEntityStore;
+  identityKeyCache: SerializedKeyCache;
+  methods: DraftEntityMethods<EntityValueOfStore<TEntityStore>>;
+  mode: TMode;
+  sourceByEntityMode: SourceByEntityModeBuilder<Entity<EntityValueOfStore<TEntityStore>, EntityId>, TMode>;
+}
+
+const createDraftFromConfig = <
+  TEntityStore extends Entity<object, EntityId>,
+  TMode extends UnitEntityMode,
+  TIdentity extends object | undefined,
+  TMeta,
+>({
+  config,
+  draftAwareEntity,
+  entity,
+  identityKeyCache,
+  methods,
+  mode,
+  sourceByEntityMode,
+}: CreateDraftFromConfigInput<TEntityStore, TMode, TIdentity, TMeta>): Draft<
+  TIdentity,
+  UnitDataByEntityMode<EntityValueOfStore<TEntityStore>, TMode>,
+  TMeta,
+  EntityValueOfStore<TEntityStore>
+> => {
+  type TEntity = EntityValueOfStore<TEntityStore>;
+  type TData = UnitDataByEntityMode<TEntity, TMode>;
+
+  const sourceUnitByIdentityKey = new Map<string, SourceUnit<TIdentity, undefined, TData, TMeta>>();
+  const trackedIdsByIdentityKey = new Map<string, readonly EntityId[]>();
+  const draftMode = config.mode ?? 'global';
+  const draftOptionsByIdentityKey = new Map<string, EntityDraftOptions>();
+
+  const resolveDraftOptionsByIdentityKey = (identityKey: string): EntityDraftOptions => {
+    const cachedOptions = draftOptionsByIdentityKey.get(identityKey);
+    if (cachedOptions) {
+      return cachedOptions;
+    }
+
+    const createdOptions = resolveDraftOptions({
+      entity: draftAwareEntity,
+      entityMode: mode,
+      config,
+      draftMode,
+      identityKey,
+    });
+    draftOptionsByIdentityKey.set(identityKey, createdOptions);
+    return createdOptions;
+  };
+
+  const readEntityValueForDraftIdentity = (
+    id: EntityId,
+    identityKey: string,
+  ): TEntity | undefined => {
+    const draftOptions = resolveDraftOptionsByIdentityKey(identityKey);
+    if (draftOptions.mode === 'local' && draftOptions.localIdentityKey) {
+      return draftAwareEntity.getByIdForIdentityContext({
+        id,
+        identityKey,
+        localIdentityKey: draftOptions.localIdentityKey,
+      });
+    }
+
+    return draftAwareEntity.getByIdForIdentity(id, identityKey);
+  };
+
+  const resolveManySet = ({
+    draftOptions,
+    identityKey,
+    resolvedInput,
+    sourceValue,
+  }: {
+    draftOptions: EntityDraftOptions | undefined;
+    identityKey: string;
+    resolvedInput: readonly unknown[];
+    sourceValue: unknown;
+  }): void => {
+    const currentValues = Array.isArray(sourceValue) ? sourceValue : [];
+    const resolvedIds: EntityId[] = [];
+    resolvedInput.forEach((entry, index) => {
+      if (!isRecordLike(entry)) {
+        return;
+      }
+
+      const currentValue = currentValues[index];
+      const resolvedId = resolveLooseEntityId(entry) ?? (currentValue ? entity.idOf(currentValue) : undefined);
+      const base = resolvedId === undefined
+        ? undefined
+        : readEntityValueForDraftIdentity(resolvedId, identityKey) ?? currentValue;
+      if (!base || resolvedId === undefined) {
+        return;
+      }
+
+      methods.setDraft(mergeRecordLikeIntoEntity(base, entry), {
+        identityKey,
+        options: draftOptions,
+      });
+      resolvedIds.push(resolvedId);
+    });
+    if (resolvedIds.length > 0) {
+      trackedIdsByIdentityKey.set(identityKey, resolvedIds);
+    }
+  };
+
+  const resolveSingleSet = ({
+    draftOptions,
+    identityKey,
+    resolvedInput,
+    sourceValue,
+  }: {
+    draftOptions: EntityDraftOptions | undefined;
+    identityKey: string;
+    resolvedInput: RecordLike;
+    sourceValue: unknown;
+  }): void => {
+    const currentId = Array.isArray(sourceValue) ? undefined : resolveLooseEntityId(sourceValue);
+    const resolvedId = resolveLooseEntityId(resolvedInput) ?? currentId;
+    const base = resolvedId === undefined ? undefined : readEntityValueForDraftIdentity(resolvedId, identityKey);
+    if (!base || resolvedId === undefined) {
+      return;
+    }
+
+    methods.setDraft(mergeRecordLikeIntoEntity(base, resolvedInput), {
+      identityKey,
+      options: draftOptions,
+    });
+    trackedIdsByIdentityKey.set(identityKey, [resolvedId]);
+  };
+
+  const resolveSet = (
+    identity: TIdentity,
+    input: DraftSetInput<TData, TEntity>,
+  ): void => {
+    const identityKey = identityKeyCache.getOrCreateKey(identity);
+    const draftOptions = resolveDraftOptionsByIdentityKey(identityKey);
+    const sourceUnit = sourceUnitByIdentityKey.get(identityKey);
+    if (!sourceUnit && isDraftSetUpdater(input)) {
+      return;
+    }
+
+    const sourceSnapshot = sourceUnit?.getSnapshot();
+    let resolvedInput: unknown = input;
+    if (isDraftSetUpdater(input)) {
+      if (!sourceSnapshot) {
+        return;
+      }
+      resolvedInput = input(sourceSnapshot.value);
+    }
+    if (resolvedInput === undefined) {
+      return;
+    }
+
+    if (mode === 'many') {
+      if (!Array.isArray(resolvedInput)) {
+        return;
+      }
+
+      resolveManySet({
+        draftOptions,
+        identityKey,
+        resolvedInput,
+        sourceValue: sourceSnapshot?.value,
+      });
+      return;
+    }
+
+    if (!isRecordLike(resolvedInput) || Array.isArray(resolvedInput)) {
+      return;
+    }
+
+    resolveSingleSet({
+      draftOptions,
+      identityKey,
+      resolvedInput,
+      sourceValue: sourceSnapshot?.value,
+    });
+  };
+
+  const resolveClear = (
+    identity: TIdentity,
+  ): void => {
+    const identityKey = identityKeyCache.getOrCreateKey(identity);
+    methods.clearDraftByIdentity(
+      identityKey,
+      resolveDraftOptionsByIdentityKey(identityKey),
+    );
+  };
+
+  const sourceFactory = sourceByEntityMode<TIdentity, undefined, TMeta>(
+    createDraftSourceConfig({
+      config,
+      resolveClear,
+    }),
+  );
+
+  const unitBySourceUnit = new WeakMap<
+    SourceUnit<TIdentity, undefined, TData, TMeta>,
+    DraftUnit<TIdentity, TData, TMeta, TEntity>
+  >();
+
+  const draftFactory: Draft<TIdentity, TData, TMeta, TEntity> = (identity) => {
+    const sourceUnit = sourceFactory(identity);
+    const cachedUnit = unitBySourceUnit.get(sourceUnit);
+    if (cachedUnit) {
+      return cachedUnit;
+    }
+
+    const identityKey = identityKeyCache.getOrCreateKey(identity);
+    sourceUnitByIdentityKey.set(identityKey, sourceUnit);
+
+    let notifyListeners = (): void => undefined;
+    const set = (input: DraftSetInput<TData, TEntity>): void => {
+      resolveSet(identity, input);
+      notifyListeners();
+    };
+
+    const clear = (): void => {
+      resolveClear(identity);
+      notifyListeners();
+    };
+    const reset = (): void => {
+      clear();
+    };
+
+    let snapshotCache: DraftSnapshot<TIdentity, TData, TMeta, TEntity> | null = null;
+    let sourceSnapshotCache = sourceUnit.getSnapshot();
+    let draftStatus: DraftStatus = methods.hasDraftByIdentity(
+      identityKey,
+      resolveDraftOptionsByIdentityKey(identityKey),
+    )
+      ? 'dirty'
+      : 'clear';
+    let trackedIdsCache: readonly EntityId[] = trackedIdsByIdentityKey.get(identityKey) ?? [];
+    const listeners = new Set<DraftSnapshotListener<TIdentity, TData, TMeta, TEntity>>();
+    let removeSourceListener: (() => void) | null = null;
+
+    const getSnapshot = (): DraftSnapshot<TIdentity, TData, TMeta, TEntity> => {
+      const sourceSnapshot = sourceUnit.getSnapshot();
+      const draftOptions = resolveDraftOptionsByIdentityKey(identityKey);
+      const activeDraftIds = methods.getDraftIdsByIdentity(
+        identityKey,
+        draftOptions,
+      );
+      const trackedIds = activeDraftIds.length > 0
+        ? activeDraftIds
+        : (trackedIdsByIdentityKey.get(identityKey) ?? []);
+      const nextDraftStatus: DraftStatus = activeDraftIds.length > 0
+        ? 'dirty'
+        : 'clear';
+      const nextValue = mode === 'many'
+        ? resolveManyDraftValue({
+          identityKey,
+          previousValue: snapshotCache?.value,
+          sourceValue: sourceSnapshot.value,
+          trackedIds,
+          readEntityValueForDraftIdentity,
+        })
+        : resolveSingleDraftValue({
+          identityKey,
+          sourceValue: sourceSnapshot.value,
+          trackedIds,
+          readEntityValueForDraftIdentity,
+        });
+
+      if (
+        snapshotCache
+        && Object.is(sourceSnapshotCache, sourceSnapshot)
+        && draftStatus === nextDraftStatus
+        && isSameEntityIdList(trackedIdsCache, trackedIds)
+        && Object.is(snapshotCache.value, nextValue)
+      ) {
+        return snapshotCache;
+      }
+
+      sourceSnapshotCache = sourceSnapshot;
+      draftStatus = nextDraftStatus;
+      trackedIdsCache = [...trackedIds];
+
+      snapshotCache = {
+        value: nextValue as TData,
+        status: draftStatus,
+        meta: sourceSnapshot.meta,
+        context: sourceSnapshot.context,
+        identity,
+        set,
+        clear,
+        reset,
+      };
+
+      return snapshotCache;
+    };
+
+    notifyListeners = (): void => {
+      if (listeners.size === 0) {
+        return;
+      }
+
+      const snapshot = getSnapshot();
+      listeners.forEach((listener) => {
+        listener(snapshot);
+      });
+    };
+
+    const ensureSourceListener = (): void => {
+      if (removeSourceListener || listeners.size === 0) {
+        return;
+      }
+
+      const remove = sourceUnit.subscribe(() => {
+        notifyListeners();
+      });
+      removeSourceListener = remove ?? null;
+    };
+
+    const releaseSourceListener = (): void => {
+      if (!removeSourceListener) {
+        return;
+      }
+
+      removeSourceListener();
+      removeSourceListener = null;
+    };
+
+    const subscribe: DraftUnit<TIdentity, TData, TMeta, TEntity>['subscribe'] = (
+      listener,
+    ) => {
+      listeners.add(listener);
+      ensureSourceListener();
+
+      return () => {
+        listeners.delete(listener);
+        if (listeners.size === 0) {
+          releaseSourceListener();
+        }
+      };
+    };
+
+    const draftUnit: DraftUnit<TIdentity, TData, TMeta, TEntity> = {
+      getSnapshot,
+      subscribe,
+    };
+
+    unitBySourceUnit.set(sourceUnit, draftUnit);
+    return draftUnit;
+  };
+
+  return draftFactory;
+};
+
 export const createDraftBuilder = (buildSource: SourceBuilder): DraftBuilder => {
   return <
     TEntityStore extends Entity<object, EntityId>,
@@ -172,358 +533,49 @@ export const createDraftBuilder = (buildSource: SourceBuilder): DraftBuilder => 
     entity,
     mode,
   }: DraftBuilderInput<TEntityStore, TMode>): DraftByEntityModeBuilder<TEntityStore, TMode> => {
-  type TEntity = EntityValueOfStore<TEntityStore>;
-  type TData = UnitDataByEntityMode<TEntity, TMode>;
+    type TEntity = EntityValueOfStore<TEntityStore>;
+    type TData = UnitDataByEntityMode<TEntity, TMode>;
 
-  const {
-    entity: draftAwareEntity,
-    methods,
-  } = createDraftAwareEntity<TEntity>({
-    entity,
-  });
-  const identityKeyCache = createIdentityKeyCache({
-    mode: 'identity-unit',
-  });
+    const {
+      entity: draftAwareEntity,
+      methods,
+    } = createDraftAwareEntity<TEntity>({
+      entity,
+    });
+    const identityKeyCache = createIdentityKeyCache({
+      mode: 'identity-unit',
+    });
 
-  const sourceByEntityMode = buildSource<Entity<TEntity, EntityId>, TMode>({
-    entity: draftAwareEntity,
-    mode,
-  });
+    const sourceByEntityMode = buildSource<Entity<TEntity, EntityId>, TMode>({
+      entity: draftAwareEntity,
+      mode,
+    });
 
-  const draftByEntityMode: DraftByEntityModeBuilder<TEntityStore, TMode> = <
-    TIdentity extends object | undefined,
-    TMeta,
-  >(
-    config: DraftConfig<
+    const draftByEntityMode: DraftByEntityModeBuilder<TEntityStore, TMode> = <
+      TIdentity extends object | undefined,
+      TMeta,
+    >(
+      config: DraftConfig<
+        TIdentity,
+        TEntity,
+        TMode,
+        TMeta
+      >,
+    ): Draft<
       TIdentity,
-      TEntity,
-      TMode,
-      TMeta
-    >,
-  ): Draft<
-    TIdentity,
-    TData,
-    TMeta,
-    TEntity
-  > => {
-    const sourceUnitByIdentityKey = new Map<string, SourceUnit<TIdentity, undefined, TData, TMeta>>();
-    const trackedIdsByIdentityKey = new Map<string, readonly EntityId[]>();
-    const draftMode = config.mode ?? 'global';
-    const draftOptionsByIdentityKey = new Map<string, EntityDraftOptions>();
+      TData,
+      TMeta,
+      TEntity
+    > => createDraftFromConfig({
+      config,
+      draftAwareEntity,
+      entity,
+      identityKeyCache,
+      methods,
+      mode,
+      sourceByEntityMode,
+    });
 
-    const resolveDraftOptionsByIdentityKey = (identityKey: string): EntityDraftOptions => {
-      const cachedOptions = draftOptionsByIdentityKey.get(identityKey);
-      if (cachedOptions) {
-        return cachedOptions;
-      }
-
-      const createdOptions = resolveDraftOptions({
-        entity: draftAwareEntity,
-        entityMode: mode,
-        config,
-        draftMode,
-        identityKey,
-      });
-      draftOptionsByIdentityKey.set(identityKey, createdOptions);
-      return createdOptions;
-    };
-
-    const readEntityValueForDraftIdentity = (
-      id: EntityId,
-      identityKey: string,
-    ): TEntity | undefined => {
-      const draftOptions = resolveDraftOptionsByIdentityKey(identityKey);
-      if (draftOptions.mode === 'local' && draftOptions.localIdentityKey) {
-        return draftAwareEntity.getByIdForIdentityContext({
-          id,
-          identityKey,
-          localIdentityKey: draftOptions.localIdentityKey,
-        });
-      }
-
-      return draftAwareEntity.getByIdForIdentity(id, identityKey);
-    };
-
-    const resolveManySet = ({
-      draftOptions,
-      identityKey,
-      resolvedInput,
-      sourceValue,
-    }: {
-      draftOptions: EntityDraftOptions | undefined;
-      identityKey: string;
-      resolvedInput: readonly unknown[];
-      sourceValue: unknown;
-    }): void => {
-      const currentValues = Array.isArray(sourceValue) ? sourceValue : [];
-      const resolvedIds: EntityId[] = [];
-      resolvedInput.forEach((entry, index) => {
-        if (!isRecordLike(entry)) {
-          return;
-        }
-
-        const currentValue = currentValues[index];
-        const resolvedId = resolveLooseEntityId(entry) ?? (currentValue ? entity.idOf(currentValue) : undefined);
-        const base = resolvedId === undefined
-          ? undefined
-          : readEntityValueForDraftIdentity(resolvedId, identityKey) ?? currentValue;
-        if (!base || resolvedId === undefined) {
-          return;
-        }
-
-        methods.setDraft(mergeRecordLikeIntoEntity(base, entry), {
-          identityKey,
-          options: draftOptions,
-        });
-        resolvedIds.push(resolvedId);
-      });
-      if (resolvedIds.length > 0) {
-        trackedIdsByIdentityKey.set(identityKey, resolvedIds);
-      }
-    };
-
-    const resolveSingleSet = ({
-      draftOptions,
-      identityKey,
-      resolvedInput,
-      sourceValue,
-    }: {
-      draftOptions: EntityDraftOptions | undefined;
-      identityKey: string;
-      resolvedInput: RecordLike;
-      sourceValue: unknown;
-    }): void => {
-      const currentId = Array.isArray(sourceValue) ? undefined : resolveLooseEntityId(sourceValue);
-      const resolvedId = resolveLooseEntityId(resolvedInput) ?? currentId;
-      const base = resolvedId === undefined ? undefined : readEntityValueForDraftIdentity(resolvedId, identityKey);
-      if (!base || resolvedId === undefined) {
-        return;
-      }
-
-      methods.setDraft(mergeRecordLikeIntoEntity(base, resolvedInput), {
-        identityKey,
-        options: draftOptions,
-      });
-      trackedIdsByIdentityKey.set(identityKey, [resolvedId]);
-    };
-
-    const resolveSet = (
-      identity: TIdentity,
-      input: DraftSetInput<TData, TEntity>,
-    ): void => {
-      const identityKey = identityKeyCache.getOrCreateKey(identity);
-      const draftOptions = resolveDraftOptionsByIdentityKey(identityKey);
-      const sourceUnit = sourceUnitByIdentityKey.get(identityKey);
-      if (!sourceUnit && isDraftSetUpdater(input)) {
-        return;
-      }
-
-      const sourceSnapshot = sourceUnit?.getSnapshot();
-      const isUpdaterInput = isDraftSetUpdater(input);
-      const resolvedInput = isUpdaterInput
-        ? (sourceSnapshot ? input(sourceSnapshot.value) : undefined)
-        : input;
-      if (resolvedInput === undefined) {
-        return;
-      }
-
-      if (mode === 'many') {
-        if (!Array.isArray(resolvedInput)) {
-          return;
-        }
-
-        resolveManySet({
-          draftOptions,
-          identityKey,
-          resolvedInput,
-          sourceValue: sourceSnapshot?.value,
-        });
-        return;
-      }
-
-      if (!isRecordLike(resolvedInput) || Array.isArray(resolvedInput)) {
-        return;
-      }
-
-      resolveSingleSet({
-        draftOptions,
-        identityKey,
-        resolvedInput,
-        sourceValue: sourceSnapshot?.value,
-      });
-    };
-
-    const resolveClear = (
-      identity: TIdentity,
-    ): void => {
-      const identityKey = identityKeyCache.getOrCreateKey(identity);
-      methods.clearDraftByIdentity(
-        identityKey,
-        resolveDraftOptionsByIdentityKey(identityKey),
-      );
-    };
-
-    const sourceFactory = sourceByEntityMode<TIdentity, undefined, TMeta>(
-      createDraftSourceConfig({
-        config,
-        resolveClear,
-      }),
-    );
-
-    const unitBySourceUnit = new WeakMap<
-      SourceUnit<TIdentity, undefined, TData, TMeta>,
-      DraftUnit<TIdentity, TData, TMeta, TEntity>
-    >();
-
-    const draftFactory: Draft<TIdentity, TData, TMeta, TEntity> = (identity) => {
-      const sourceUnit = sourceFactory(identity);
-      const cachedUnit = unitBySourceUnit.get(sourceUnit);
-      if (cachedUnit) {
-        return cachedUnit;
-      }
-
-      const identityKey = identityKeyCache.getOrCreateKey(identity);
-      sourceUnitByIdentityKey.set(identityKey, sourceUnit);
-
-      let notifyListeners = (): void => undefined;
-      const set = (input: DraftSetInput<TData, TEntity>): void => {
-        resolveSet(identity, input);
-        notifyListeners();
-      };
-
-      const clear = (): void => {
-        resolveClear(identity);
-        notifyListeners();
-      };
-      const reset = (): void => {
-        clear();
-      };
-
-      let snapshotCache: DraftSnapshot<TIdentity, TData, TMeta, TEntity> | null = null;
-      let sourceSnapshotCache = sourceUnit.getSnapshot();
-      let draftStatus: DraftStatus = methods.hasDraftByIdentity(
-        identityKey,
-        resolveDraftOptionsByIdentityKey(identityKey),
-      )
-        ? 'dirty'
-        : 'clear';
-      let trackedIdsCache: readonly EntityId[] = trackedIdsByIdentityKey.get(identityKey) ?? [];
-      const listeners = new Set<DraftSnapshotListener<TIdentity, TData, TMeta, TEntity>>();
-      let removeSourceListener: (() => void) | null = null;
-
-      const getSnapshot = (): DraftSnapshot<TIdentity, TData, TMeta, TEntity> => {
-        const sourceSnapshot = sourceUnit.getSnapshot();
-        const draftOptions = resolveDraftOptionsByIdentityKey(identityKey);
-        const activeDraftIds = methods.getDraftIdsByIdentity(
-          identityKey,
-          draftOptions,
-        );
-        const trackedIds = activeDraftIds.length > 0
-          ? activeDraftIds
-          : (trackedIdsByIdentityKey.get(identityKey) ?? []);
-        const nextDraftStatus: DraftStatus = activeDraftIds.length > 0
-          ? 'dirty'
-          : 'clear';
-        const nextValue = mode === 'many'
-          ? resolveManyDraftValue({
-            identityKey,
-            previousValue: snapshotCache?.value,
-            sourceValue: sourceSnapshot.value,
-            trackedIds,
-            readEntityValueForDraftIdentity,
-          })
-          : resolveSingleDraftValue({
-            identityKey,
-            sourceValue: sourceSnapshot.value,
-            trackedIds,
-            readEntityValueForDraftIdentity,
-          });
-
-        if (
-          snapshotCache
-          && Object.is(sourceSnapshotCache, sourceSnapshot)
-          && draftStatus === nextDraftStatus
-          && isSameEntityIdList(trackedIdsCache, trackedIds)
-          && Object.is(snapshotCache.value, nextValue)
-        ) {
-          return snapshotCache;
-        }
-
-        sourceSnapshotCache = sourceSnapshot;
-        draftStatus = nextDraftStatus;
-        trackedIdsCache = [...trackedIds];
-
-        snapshotCache = {
-          value: nextValue as TData,
-          status: draftStatus,
-          meta: sourceSnapshot.meta,
-          context: sourceSnapshot.context,
-          identity,
-          set,
-          clear,
-          reset,
-        };
-
-        return snapshotCache;
-      };
-
-      notifyListeners = (): void => {
-        if (listeners.size === 0) {
-          return;
-        }
-
-        const snapshot = getSnapshot();
-        listeners.forEach((listener) => {
-          listener(snapshot);
-        });
-      };
-
-      const ensureSourceListener = (): void => {
-        if (removeSourceListener || listeners.size === 0) {
-          return;
-        }
-
-        const remove = sourceUnit.subscribe(() => {
-          notifyListeners();
-        });
-        removeSourceListener = remove ?? null;
-      };
-
-      const releaseSourceListener = (): void => {
-        if (!removeSourceListener) {
-          return;
-        }
-
-        removeSourceListener();
-        removeSourceListener = null;
-      };
-
-      const subscribe: DraftUnit<TIdentity, TData, TMeta, TEntity>['subscribe'] = (
-        listener,
-      ) => {
-        listeners.add(listener);
-        ensureSourceListener();
-
-        return () => {
-          listeners.delete(listener);
-          if (listeners.size === 0) {
-            releaseSourceListener();
-          }
-        };
-      };
-
-      const draftUnit: DraftUnit<TIdentity, TData, TMeta, TEntity> = {
-        getSnapshot,
-        subscribe,
-      };
-
-      unitBySourceUnit.set(sourceUnit, draftUnit);
-      return draftUnit;
-    };
-
-    return draftFactory;
-  };
-
-  return draftByEntityMode;
+    return draftByEntityMode;
   };
 };

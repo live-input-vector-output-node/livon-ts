@@ -66,7 +66,7 @@ const contextRecordFrom = (context?: RuntimeEventContext): RuntimeEventContextRe
   if (!context || !isRecord(context)) {
     return undefined;
   }
-  return context as RuntimeEventContextRecord;
+  return context;
 };
 
 const eventErrorFromError = (error: Error): EventError => ({

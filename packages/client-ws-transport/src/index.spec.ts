@@ -9,8 +9,10 @@ import {
   vi,
 } from 'vitest';
 
+import type { ConfigParams, RslibConfig } from '@rslib/core';
 import type { RuntimeRegistry } from '@livon/runtime';
 
+import rslibConfig from '../rslib.config.ts';
 import {
   clientWsTransport,
   type ClientWebSocketConstructor,
@@ -20,6 +22,14 @@ import {
   type ClientWsTransportOptions,
   type WebSocketData,
 } from './index.js';
+
+const resolveRslibConfig = async (): Promise<RslibConfig> => {
+  const env: ConfigParams = {
+    command: 'build',
+    env: 'test',
+  };
+  return typeof rslibConfig === 'function' ? rslibConfig(env) : rslibConfig;
+};
 
 interface MockClientSocket extends ClientWebSocketLike {
   emit: (event: string, payload?: unknown) => void;
@@ -114,6 +124,29 @@ const createOptions = (
 });
 
 describe('clientWsTransport()', () => {
+  describe('build config', () => {
+    it('should bundle the browser-safe msgpack implementation and externalize workspace packages', async () => {
+      const config = await resolveRslibConfig();
+
+      expect(config.source?.entry).toEqual({
+        index: './src/index.ts',
+      });
+      expect(config.lib).toEqual([
+        expect.objectContaining({
+          autoExternal: false,
+          bundle: true,
+          format: 'esm',
+        }),
+        expect.objectContaining({
+          autoExternal: false,
+          bundle: true,
+          format: 'cjs',
+        }),
+      ]);
+      expect(config.output?.externals).toHaveLength(2);
+    });
+  });
+
   beforeAll(() => {
     vi.useRealTimers();
   });
