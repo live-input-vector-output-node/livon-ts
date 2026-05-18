@@ -1,0 +1,16 @@
+{
+  "name": "@livon/ci",
+  "version": "0.29.0-rc.11",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "true",
+    "dev": "true",
+    "lint": "true",
+    "typecheck": "true",
+    "test": "true"
+  },
+  "dependencies": {
+    "tar": "latest"
+  }
+}

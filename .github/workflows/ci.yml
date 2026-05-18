@@ -53,15 +53,13 @@ jobs:
             ${{ runner.os }}-turbo-
 
       - name: Configure local pnpm store path
-        run: mise run workflow:configure-pnpm-store
+        run: mise run workflow:configure-pnpm-store -- .pnpm-store
 
       - name: Install production dependencies
-        run: mise run workflow:install-prod
+        run: mise run workflow:install-production
 
       - name: Archive production dependency state
-        env:
-          ARCHIVE_NAME: prod-deps.tgz
-        run: mise run workflow:archive-deps
+        run: mise run workflow:archive-deps -- --archive prod-deps.tgz
 
       - name: Upload production dependency artifact
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
@@ -108,20 +106,16 @@ jobs:
           name: prod-deps
 
       - name: Restore production dependency state
-        env:
-          TARBALL: prod-deps.tgz
-        run: mise run workflow:extract-tar
+        run: mise run workflow:extract-tar -- --archive prod-deps.tgz
 
       - name: Configure local pnpm store path
-        run: mise run workflow:configure-pnpm-store
+        run: mise run workflow:configure-pnpm-store -- .pnpm-store
 
       - name: Install development dependencies
-        run: mise run workflow:install-dev
+        run: mise run workflow:install-development
 
       - name: Archive development dependency state
-        env:
-          ARCHIVE_NAME: dev-deps.tgz
-        run: mise run workflow:archive-deps
+        run: mise run workflow:archive-deps -- --archive dev-deps.tgz
 
       - name: Upload development dependency artifact
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
@@ -168,12 +162,10 @@ jobs:
           name: dev-deps
 
       - name: Restore development dependency state
-        env:
-          TARBALL: dev-deps.tgz
-        run: mise run workflow:extract-tar
+        run: mise run workflow:extract-tar -- --archive dev-deps.tgz
 
       - name: Configure local pnpm store path
-        run: mise run workflow:configure-pnpm-store
+        run: mise run workflow:configure-pnpm-store -- .pnpm-store
 
       - name: Run affected monorepo CI (Turbo)
         if: ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' }}
@@ -192,9 +184,7 @@ jobs:
         run: mise run workflow:release-check-full
 
       - name: Archive build outputs
-        env:
-          ARCHIVE_NAME: ci-build-artifacts.tgz
-        run: mise run workflow:archive-build-outputs
+        run: mise run workflow:archive-build-outputs -- --archive ci-build-artifacts.tgz
 
       - name: Upload build outputs
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
@@ -209,7 +199,7 @@ jobs:
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     outputs:
-      run_publish: ${{ steps.changes.outputs.changesets }}
+      run_publish: ${{ steps.gate.outputs.run_publish }}
     permissions:
       contents: read
     steps:
@@ -218,14 +208,14 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Detect changeset file changes
-        id: changes
-        uses: dorny/paths-filter@v3
+      - name: Setup mise
+        uses: jdx/mise-action@v3
         with:
-          filters: |
-            changesets:
-              - '.changeset/*.md'
-              - '!.changeset/README.md'
+          install: true
+
+      - name: Detect changeset file changes
+        id: gate
+        run: mise run workflow:publish-gate -- --before "${{ github.event.before }}" --head "${{ github.sha }}" --outputFile "$GITHUB_OUTPUT"
 
   publish:
     needs:
@@ -268,9 +258,7 @@ jobs:
           name: dev-deps
 
       - name: Restore development dependency state
-        env:
-          TARBALL: dev-deps.tgz
-        run: mise run workflow:extract-tar
+        run: mise run workflow:extract-tar -- --archive dev-deps.tgz
 
       - name: Download CI build artifact
         uses: actions/download-artifact@v5
@@ -278,26 +266,19 @@ jobs:
           name: ci-build-artifacts
 
       - name: Restore CI build artifact
-        env:
-          TARBALL: ci-build-artifacts.tgz
-        run: mise run workflow:extract-tar
+        run: mise run workflow:extract-tar -- --archive ci-build-artifacts.tgz
 
       - name: Configure local pnpm store path
-        run: mise run workflow:configure-pnpm-store
-
-      - name: Validate npm token
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: mise run workflow:validate-npm-token
+        run: mise run workflow:configure-pnpm-store -- .pnpm-store
 
       - name: Configure npm authentication
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: mise run workflow:configure-npm-auth
+        run: >-
+          mise run workflow:npm-set-token -- "${{ secrets.NPM_TOKEN }}"
+          ::: workflow:npm-set-registry
+          ::: workflow:npm-set-always-auth
+          ::: workflow:npm-whoami
 
       - name: Publish packages (changeset semantics)
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: mise run workflow:publish
 
   docs_build:
@@ -325,12 +306,10 @@ jobs:
           name: dev-deps
 
       - name: Restore development dependency state
-        env:
-          TARBALL: dev-deps.tgz
-        run: mise run workflow:extract-tar
+        run: mise run workflow:extract-tar -- --archive dev-deps.tgz
 
       - name: Configure local pnpm store path
-        run: mise run workflow:configure-pnpm-store
+        run: mise run workflow:configure-pnpm-store -- .pnpm-store
 
       - name: Configure Pages
         uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
@@ -381,12 +360,10 @@ jobs:
           name: dev-deps
 
       - name: Restore development dependency state
-        env:
-          TARBALL: dev-deps.tgz
-        run: mise run workflow:extract-tar
+        run: mise run workflow:extract-tar -- --archive dev-deps.tgz
 
       - name: Configure local pnpm store path
-        run: mise run workflow:configure-pnpm-store
+        run: mise run workflow:configure-pnpm-store -- .pnpm-store
 
       - name: Build workspace
         run: mise run workflow:build-workspace
@@ -495,22 +472,23 @@ jobs:
           install: true
 
       - name: Write pipeline summary and mindmap
-        env:
-          RUN_CI: ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
-          RUN_DOCS: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
-          RUN_COVERAGE: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
-          RUN_PUBLISH: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.publish_gate.outputs.run_publish == 'true' }}
-          RUN_SECRET_SCAN: ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'schedule' && github.event.schedule == '0 3 * * 6') }}
-          RUN_VULN_SCAN: ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'schedule' && github.event.schedule == '30 12 * * 1') }}
-          RUN_SCORECARD: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'schedule' && github.event.schedule == '30 1 * * 6') }}
-          STATUS_PROD: ${{ needs.install_production_dependencies.result }}
-          STATUS_DEV: ${{ needs.install_development_dependencies.result }}
-          STATUS_CI: ${{ needs.ci.result }}
-          STATUS_PUBLISH: ${{ needs.publish.result }}
-          STATUS_DOCS_BUILD: ${{ needs.docs_build.result }}
-          STATUS_DOCS_DEPLOY: ${{ needs.docs_deploy.result }}
-          STATUS_COVERAGE: ${{ needs.coverage.result }}
-          STATUS_SECRET_SCAN: ${{ needs.secret_scan.result }}
-          STATUS_VULN_SCAN: ${{ needs.vulnerability_scan.result }}
-          STATUS_SCORECARD: ${{ needs.scorecard.result }}
-        run: mise run workflow:write-summary
+        run: >-
+          mise run workflow:write-summary --
+          --outputFile "$GITHUB_STEP_SUMMARY"
+          --run "ci=${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}"
+          --run "docs=${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}"
+          --run "coverage=${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}"
+          --run "publish=${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.publish_gate.outputs.run_publish == 'true' }}"
+          --run "secret_scan=${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'schedule' && github.event.schedule == '0 3 * * 6') }}"
+          --run "vuln_scan=${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'schedule' && github.event.schedule == '30 12 * * 1') }}"
+          --run "scorecard=${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'schedule' && github.event.schedule == '30 1 * * 6') }}"
+          --status "prod=${{ needs.install_production_dependencies.result }}"
+          --status "dev=${{ needs.install_development_dependencies.result }}"
+          --status "ci=${{ needs.ci.result }}"
+          --status "publish=${{ needs.publish.result }}"
+          --status "docs_build=${{ needs.docs_build.result }}"
+          --status "docs_deploy=${{ needs.docs_deploy.result }}"
+          --status "coverage=${{ needs.coverage.result }}"
+          --status "secret_scan=${{ needs.secret_scan.result }}"
+          --status "vuln_scan=${{ needs.vulnerability_scan.result }}"
+          --status "scorecard=${{ needs.scorecard.result }}"

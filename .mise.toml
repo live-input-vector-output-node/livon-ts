@@ -3,144 +3,99 @@ node = "lts"
 pnpm = "9.0.0"
 
 [tasks."workflow:configure-pnpm-store"]
-description = "Set pnpm store directory for CI"
-run = 'pnpm config set store-dir "${PNPM_STORE_PATH}"'
+description = "Set pnpm store directory"
+raw_args = true
+run = "pnpm config set store-dir"
 
-[tasks."workflow:install-prod"]
+[tasks."workflow:install-production"]
 description = "Install production dependencies"
-run = "pnpm install --prod --frozen-lockfile"
+run = 'pnpm install --prod --frozen-lockfile'
 
-[tasks."workflow:install-dev"]
+[tasks."workflow:install-development"]
 description = "Install development dependencies"
-run = "pnpm install --frozen-lockfile"
+run = 'pnpm install --frozen-lockfile'
 
 [tasks."workflow:archive-deps"]
-description = "Archive dependency state to a tarball"
-run = '''
-set -euo pipefail
-mkdir -p .pnpm-store .turbo
-tar -czf "${ARCHIVE_NAME}" node_modules .pnpm-store .turbo
-'''
+description = "Archive dependency directories"
+raw_args = true
+run = "node tools/ci/steps/archive-deps.mjs"
 
 [tasks."workflow:extract-tar"]
-description = "Extract tarball artifact"
-run = 'tar -xzf "${TARBALL}"'
+description = "Extract a tar archive"
+raw_args = true
+run = "node tools/ci/steps/extract-tar.mjs"
+
+[tasks."workflow:run-ci-affected"]
+description = "Run affected monorepo CI"
+run = 'pnpm run qg:changed'
 
 [tasks."workflow:run-ci-full"]
 description = "Run full monorepo CI"
-run = "pnpm run ci"
-
-[tasks."workflow:run-ci-affected"]
-description = "Run affected-only monorepo CI"
-run = "pnpm run qg:changed"
-
-[tasks."workflow:release-check-full"]
-description = "Run full release artifact checks"
-run = "pnpm run release:check"
+run = 'pnpm run ci'
 
 [tasks."workflow:release-check-affected"]
-description = "Run affected-only release artifact checks"
-run = "pnpm run release:check -- --affected"
+description = "Run affected release checks"
+run = 'pnpm run release:check -- --affected'
+
+[tasks."workflow:release-check-full"]
+description = "Run full release checks"
+run = 'pnpm run release:check'
 
 [tasks."workflow:archive-build-outputs"]
-description = "Archive build output directories"
-run = '''
-set -euo pipefail
-mkdir -p .turbo
-tar -czf "${ARCHIVE_NAME}" .turbo $(find packages apps tools website -type d \( -name dist -o -name build \) -print)
-'''
+description = "Archive dist/build outputs and turbo cache"
+raw_args = true
+run = "node tools/ci/steps/archive-build-outputs.mjs"
 
-[tasks."workflow:validate-npm-token"]
-description = "Validate npm token exists"
-run = 'test -n "${NODE_AUTH_TOKEN}"'
+[tasks."workflow:publish-gate"]
+description = "Evaluate publish gate from changeset file diffs"
+raw_args = true
+run = "node tools/ci/steps/publish-gate.mjs"
 
-[tasks."workflow:configure-npm-auth"]
-description = "Configure npm auth and verify identity"
-run = '''
-set -euo pipefail
-cat <<EONPM > ~/.npmrc
-//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}
-registry=https://registry.npmjs.org/
-always-auth=true
-EONPM
-npm whoami
-'''
+[tasks."workflow:npm-set-token"]
+description = "Set npm auth token"
+raw_args = true
+run = "pnpm config set //registry.npmjs.org/:_authToken"
+
+[tasks."workflow:npm-set-registry"]
+description = "Set npm registry"
+run = 'pnpm config set registry "https://registry.npmjs.org/"'
+
+[tasks."workflow:npm-set-always-auth"]
+description = "Enable npm always-auth"
+run = "pnpm config set always-auth true"
+
+[tasks."workflow:npm-whoami"]
+description = "Verify npm identity"
+run = "npm whoami"
 
 [tasks."workflow:publish"]
 description = "Publish packages via changesets"
-run = "pnpm changeset:publish"
+run = 'pnpm changeset:publish'
 
 [tasks."workflow:build-docs"]
-description = "Build docs for GitHub Pages"
+description = "Build website docs"
 env = { DOCUSAURUS_GITHUB_PAGES = "true" }
-run = "pnpm --filter website build"
+run = 'pnpm --filter website build'
 
 [tasks."workflow:build-workspace"]
 description = "Build workspace"
-run = "pnpm run build"
+run = 'pnpm run build'
 
 [tasks."workflow:run-coverage"]
 description = "Run workspace coverage"
-run = "pnpm exec vitest run --config vitest.workspace.ts --coverage --reporter=dot"
+run = 'pnpm exec vitest run --config vitest.workspace.ts --coverage --reporter=dot'
 
 [tasks."workflow:install-gitleaks"]
-description = "Install gitleaks binary"
-run = '''
-set -euo pipefail
-GITLEAKS_VERSION="8.30.1"
-ARCHIVE="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
-curl -fsSL -o "/tmp/${ARCHIVE}" "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/${ARCHIVE}"
-curl -fsSL -o /tmp/gitleaks_checksums.txt "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_checksums.txt"
-(
-  cd /tmp
-  grep " ${ARCHIVE}$" gitleaks_checksums.txt | sha256sum -c -
-)
-tar -xzf "/tmp/${ARCHIVE}" -C /tmp gitleaks
-sudo install -m 0755 /tmp/gitleaks /usr/local/bin/gitleaks
-gitleaks version
-'''
+description = "Install pinned gitleaks binary"
+raw_args = true
+run = "node tools/ci/steps/install-gitleaks.mjs"
 
 [tasks."workflow:run-gitleaks"]
-description = "Run gitleaks scan"
-run = "gitleaks git --log-opts=\"--all\" --redact --no-banner --exit-code 1 ."
+description = "Run gitleaks"
+raw_args = true
+run = "node tools/ci/steps/run-gitleaks.mjs"
 
 [tasks."workflow:write-summary"]
-description = "Write unified pipeline summary and mindmap"
-run = '''
-cat <<EOF_SUMMARY >> "${GITHUB_STEP_SUMMARY}"
-## Unified Pipeline Summary
-
-| Area | Enabled | Result |
-| --- | --- | --- |
-| Production dependency install | true | ${STATUS_PROD} |
-| Development dependency install | true | ${STATUS_DEV} |
-| Turbo CI (`pnpm run ci`) | ${RUN_CI} | ${STATUS_CI} |
-| Publish (`pnpm changeset:publish`) | ${RUN_PUBLISH} | ${STATUS_PUBLISH} |
-| Docs build | ${RUN_DOCS} | ${STATUS_DOCS_BUILD} |
-| Docs deploy | ${RUN_DOCS} | ${STATUS_DOCS_DEPLOY} |
-| Coverage | ${RUN_COVERAGE} | ${STATUS_COVERAGE} |
-| Secret scan | ${RUN_SECRET_SCAN} | ${STATUS_SECRET_SCAN} |
-| Vulnerability scan | ${RUN_VULN_SCAN} | ${STATUS_VULN_SCAN} |
-| Scorecard | ${RUN_SCORECARD} | ${STATUS_SCORECARD} |
-
-## Pipeline Mindmap
-
-Unified Pipeline
-├─ Dependency bootstrap
-│  ├─ production install artifact (`prod-deps`)
-│  └─ development install artifact (`dev-deps`)
-├─ Quality gates
-│  └─ Turbo CI (`pnpm run ci`) + `release:check`
-├─ Build artifact handover
-│  └─ `ci-build-artifacts`
-├─ Release
-│  └─ publish job (changeset-trigger semantics)
-├─ Documentation
-│  ├─ docs build
-│  └─ pages deploy
-└─ Security & trust
-   ├─ gitleaks
-   ├─ OSV scan
-   └─ OpenSSF scorecard
-EOF_SUMMARY
-'''
+description = "Write job summary and mindmap"
+raw_args = true
+run = 'node tools/ci/steps/write-summary.mjs'
