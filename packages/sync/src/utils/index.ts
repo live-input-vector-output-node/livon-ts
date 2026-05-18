@@ -49,7 +49,6 @@ export { createIdentityUnitCache } from './createIdentityUnitCache.js';
 export { createRunContextEntryCache } from './runContextEntryCache.js';
 export { resolveInput } from './resolveInput.js';
 export { resolveValue } from './resolveValue.js';
-export { resolveSingleInFlight } from './resolveSingleInFlight.js';
 export { scheduleAsync } from './scheduleAsync.js';
 export { isUnitSnapshotEqual } from './isUnitSnapshotEqual.js';
 export {

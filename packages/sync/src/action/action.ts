@@ -21,7 +21,6 @@ import {
   resolveEntityFunctionKey,
   resolveDefaultUnitValue,
   resolveInput,
-  resolveSingleInFlight,
   resolveUnitRunAsVoid,
   resolveUnitMode,
   resolveValue,
@@ -298,18 +297,19 @@ const createActionFromConfig = <
 
         internal.payload = resolveInput(internal.payload, payloadInput);
         let payloadKey: string | null = null;
-        const singleInFlight = resolveSingleInFlight({
-          currentPayload: internal.payload,
-          hasTrackedPayload: hasSingleInFlightPayload,
-          payloadKeyCache,
-          promise: singleInFlightPromise,
-          trackedPayload: singleInFlightPayload,
-          trackedPayloadKey: singleInFlightPayloadKey,
-        });
-        singleInFlightPayloadKey = singleInFlight.trackedPayloadKey;
-        payloadKey = singleInFlight.currentPayloadKey;
-        if (singleInFlight.promise) {
-          return singleInFlight.promise;
+        if (singleInFlightPromise) {
+          if (hasSingleInFlightPayload && Object.is(singleInFlightPayload, internal.payload)) {
+            return singleInFlightPromise;
+          }
+
+          payloadKey = payloadKeyCache.getOrCreateKey(internal.payload);
+          if (singleInFlightPayloadKey === null && hasSingleInFlightPayload) {
+            singleInFlightPayloadKey = payloadKeyCache.getOrCreateKey(singleInFlightPayload);
+          }
+
+          if (singleInFlightPayloadKey === payloadKey) {
+            return singleInFlightPromise;
+          }
         }
 
         if (internal.inFlightByPayload.size > 0) {
