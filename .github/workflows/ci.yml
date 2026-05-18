@@ -213,7 +213,7 @@ jobs:
             ${{ runner.os }}-turbo-
 
       - name: Download CI build artifact
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
         with:
           name: ci-build-artifacts
 
@@ -224,7 +224,9 @@ jobs:
         run: mise run dev-dependencies
 
       - name: Configure npm auth
-        run: mise run publish-auth -- "${{ secrets.NPM_TOKEN }}"
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: mise run publish-auth
 
       - name: Publish packages
         run: mise run publish

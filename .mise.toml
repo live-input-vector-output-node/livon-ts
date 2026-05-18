@@ -50,8 +50,7 @@ run = "node tools/ci/steps/publish-gate.mjs"
 
 [tasks."npm-set-token"]
 description = "Set npm auth token"
-raw_args = true
-run = "pnpm config set //registry.npmjs.org/:_authToken"
+run = 'pnpm config set //registry.npmjs.org/:_authToken "$NODE_AUTH_TOKEN"'
 
 [tasks."npm-set-registry"]
 description = "Set npm registry"
@@ -67,7 +66,6 @@ run = "npm whoami"
 
 [tasks."publish-auth"]
 description = "Configure npm auth for publish"
-raw_args = true
 run = [
   { task = "npm-set-token" },
   { task = "npm-set-registry" },
