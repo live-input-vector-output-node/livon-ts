@@ -11,6 +11,6 @@
     "test": "true"
   },
   "dependencies": {
-    "tar": "latest"
+    "tar": "7.5.15"
   }
 }
