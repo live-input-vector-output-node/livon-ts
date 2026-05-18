@@ -23,7 +23,7 @@ Snapshot date for this checklist: `2026-04-12`.
 - CI and tests: `.github/workflows/ci.yml`, [Testing and Quality](./testing-and-quality)
 - static analysis: GitHub CodeQL default setup (Code Scanning checks on pull requests)
 - leaked credential scanning: `.github/workflows/ci.yml`
-- dependency/security scanning: `.github/workflows/ci.yml` (OSV-Scanner), `.github/workflows/ci.yml`
+- dependency/security scanning: `.github/workflows/ci.yml` (OSV-Scanner and OpenSSF Scorecard jobs)
 - build and release workflow: `.github/workflows/ci.yml`
 
 ## Criteria Mapping Notes
