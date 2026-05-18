@@ -7,18 +7,9 @@ description = "Set pnpm store directory"
 raw_args = true
 run = "pnpm config set store-dir"
 
-[tasks."workflow:install-production"]
-description = "Install production dependencies"
-run = 'pnpm install --prod --frozen-lockfile'
-
 [tasks."workflow:install-development"]
 description = "Install development dependencies"
 run = 'pnpm install --frozen-lockfile'
-
-[tasks."workflow:archive-deps"]
-description = "Archive dependency directories"
-raw_args = true
-run = "node tools/ci/steps/archive-deps.mjs"
 
 [tasks."workflow:extract-tar"]
 description = "Extract a tar archive"
@@ -99,3 +90,65 @@ run = "node tools/ci/steps/run-gitleaks.mjs"
 description = "Write job summary and mindmap"
 raw_args = true
 run = 'node tools/ci/steps/write-summary.mjs'
+
+[tasks."workflow:setup-development"]
+description = "Configure pnpm store and install development dependencies"
+run = [
+  { task = "workflow:configure-pnpm-store", args = [".pnpm-store"] },
+  { task = "workflow:install-development" }
+]
+
+[tasks."workflow:job-ci-affected"]
+description = "Run affected CI job flow"
+run = [
+  { task = "workflow:setup-development" },
+  { task = "workflow:run-ci-affected" },
+  { task = "workflow:release-check-affected" },
+  { task = "workflow:archive-build-outputs", args = ["--archive", "ci-build-artifacts.tgz"] }
+]
+
+[tasks."workflow:job-ci-full"]
+description = "Run full CI job flow"
+run = [
+  { task = "workflow:setup-development" },
+  { task = "workflow:run-ci-full" },
+  { task = "workflow:release-check-full" },
+  { task = "workflow:archive-build-outputs", args = ["--archive", "ci-build-artifacts.tgz"] }
+]
+
+[tasks."workflow:job-docs-build"]
+description = "Run docs build job flow"
+run = [
+  { task = "workflow:setup-development" },
+  { task = "workflow:build-docs" }
+]
+
+[tasks."workflow:job-coverage"]
+description = "Run coverage job flow"
+run = [
+  { task = "workflow:setup-development" },
+  { task = "workflow:build-workspace" },
+  { task = "workflow:run-coverage" }
+]
+
+[tasks."workflow:job-secret-scan"]
+description = "Run secret scan job flow"
+run = [
+  { task = "workflow:run-gitleaks" }
+]
+
+[tasks."workflow:local-affected"]
+description = "Run local affected pipeline equivalent"
+run = [
+  { task = "workflow:job-ci-affected" },
+  { task = "workflow:job-secret-scan" }
+]
+
+[tasks."workflow:local-main"]
+description = "Run local main pipeline equivalent (without publish)"
+run = [
+  { task = "workflow:job-ci-full" },
+  { task = "workflow:job-docs-build" },
+  { task = "workflow:job-coverage" },
+  { task = "workflow:job-secret-scan" }
+]

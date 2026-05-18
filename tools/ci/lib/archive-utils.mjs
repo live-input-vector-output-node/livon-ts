@@ -34,42 +34,6 @@ const collectBuildOutputDirs = async (rootDirs) => {
   return outputDirs;
 };
 
-export const createArchive = async ({ archiveFile, cwd, pathsCsv }) => {
-  const archivePaths = parseCsv(pathsCsv);
-  const ensureIfMissing = new Set(['.pnpm-store', '.turbo']);
-
-  await Promise.all(
-    archivePaths
-      .filter((entry) => ensureIfMissing.has(entry))
-      .map((entry) => ensureDirectory(entry)),
-  );
-
-  const existingPaths = (
-    await Promise.all(
-      archivePaths.map(async (entry) => ({
-        entry,
-        exists: await pathExists(path.join(cwd, entry)),
-      })),
-    )
-  )
-    .filter((entry) => entry.exists)
-    .map((entry) => entry.entry);
-
-  if (existingPaths.length === 0) {
-    throw new Error(`No paths to archive from: ${archivePaths.join(', ')}`);
-  }
-
-  await tar.create(
-    {
-      cwd,
-      file: archiveFile,
-      gzip: true,
-      portable: true,
-    },
-    existingPaths,
-  );
-};
-
 export const extractArchive = async ({ archiveFile, cwd }) => {
   await tar.extract({
     cwd,
