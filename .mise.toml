@@ -75,7 +75,6 @@ run = [
 
 [tasks.publish]
 description = "Publish packages via changesets"
-depends = ["setup"]
 run = "pnpm run changeset:publish"
 
 [tasks."build-docs"]

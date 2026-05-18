@@ -78,8 +78,12 @@ export const installOsvScanner = async ({ version, outputPath }) => {
   }
 };
 
-export const runOsvScanner = async ({ binaryPath }) => {
-  const args = ['scan', 'source', '--recursive', '--licenses=MIT', '.'];
+export const runOsvScanner = async ({ binaryPath, sarifOutput }) => {
+  const args = ['scan', 'source', '--recursive', '--licenses=MIT'];
+  if (sarifOutput) {
+    args.push('--format', 'sarif', '--output', sarifOutput);
+  }
+  args.push('.');
 
   const exitCode = await new Promise((resolve, reject) => {
     const child = spawn(binaryPath, args, {

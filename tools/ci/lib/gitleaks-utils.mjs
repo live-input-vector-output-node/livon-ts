@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
-import { chmod, writeFile } from 'node:fs/promises';
+import { chmod, rename, writeFile } from 'node:fs/promises';
 import process from 'node:process';
 import path from 'node:path';
 import * as tar from 'tar';
@@ -44,6 +44,17 @@ const fetchBinary = async (url) => {
   return Buffer.from(await response.arrayBuffer());
 };
 
+const isSafeArchiveEntry = (entryPath) => {
+  const normalized = path.posix.normalize(entryPath.replaceAll('\\', '/'));
+  if (normalized.startsWith('/')) {
+    return false;
+  }
+  if (normalized.startsWith('../') || normalized.includes('/../') || normalized === '..') {
+    return false;
+  }
+  return normalized === 'gitleaks';
+};
+
 export const installGitleaks = async ({ version, outputPath }) => {
   const { arch, platform } = resolveGitleaksAsset();
   const archiveName = `gitleaks_${version}_${platform}_${arch}.tar.gz`;
@@ -81,29 +92,19 @@ export const installGitleaks = async ({ version, outputPath }) => {
   await tar.extract({
     cwd: outputDirectory,
     file: archivePath,
+    filter: (entryPath) => isSafeArchiveEntry(entryPath),
   });
+
+  const extractedBinaryPath = path.join(outputDirectory, 'gitleaks');
+  if (outputPath !== extractedBinaryPath) {
+    await rename(extractedBinaryPath, outputPath);
+  }
 
   await chmod(outputPath, 0o755);
 };
 
 export const runGitleaks = async ({ binaryPath }) => {
   const scanArgs = ['git', '--log-opts=--all', '--redact', '--no-banner', '--exit-code', '1', '.'];
-
-  const tryCommands = [
-    { command: 'pnpm', args: ['dlx', '@gitleaks/gitleaks', ...scanArgs] },
-    { command: 'pnpm', args: ['dlx', 'gitleaks', ...scanArgs] },
-    { command: 'npx', args: ['--yes', '@gitleaks/gitleaks', ...scanArgs] },
-    { command: 'npx', args: ['--yes', 'gitleaks', ...scanArgs] },
-  ];
-
-  for (const entry of tryCommands) {
-    try {
-      await runCommand(entry);
-      return;
-    } catch {
-      // Continue to the next fallback candidate.
-    }
-  }
 
   if (!existsSync(binaryPath)) {
     await installGitleaks({
