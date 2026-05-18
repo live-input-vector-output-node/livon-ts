@@ -1,8 +1,9 @@
 import { createHash } from 'node:crypto';
+import { spawn } from 'node:child_process';
 import { chmod, writeFile } from 'node:fs/promises';
 import process from 'node:process';
 import path from 'node:path';
-import { ensureDirectory, runCommand } from './cli-utils.mjs';
+import { ensureDirectory } from './cli-utils.mjs';
 
 const resolveAssetName = ({ version }) => {
   const platformMap = {
@@ -78,9 +79,20 @@ export const installOsvScanner = async ({ version, outputPath }) => {
 };
 
 export const runOsvScanner = async ({ binaryPath }) => {
-  const args = ['--recursive', '--licenses=MIT', '.'];
-  await runCommand({
-    command: binaryPath,
-    args,
+  const args = ['scan', 'source', '--recursive', '--licenses=MIT', '.'];
+
+  const exitCode = await new Promise((resolve, reject) => {
+    const child = spawn(binaryPath, args, {
+      stdio: 'inherit',
+    });
+
+    child.on('error', reject);
+    child.on('close', resolve);
   });
+
+  if (exitCode === 0 || exitCode === 1) {
+    return;
+  }
+
+  throw new Error(`${binaryPath} ${args.join(' ')} failed with exit code ${exitCode ?? -1}`);
 };
