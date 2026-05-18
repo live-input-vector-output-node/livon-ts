@@ -548,7 +548,7 @@ importers:
   tools/ci:
     dependencies:
       tar:
-        specifier: latest
+        specifier: 7.5.15
         version: 7.5.15
 
   tools/eslint:
