@@ -64,9 +64,10 @@ const runRuntimeChainOperation = <TValue>({
   return runtimeOperation(value, context)(...args);
 };
 
-type SchemaChainMethod<TChain, TOperation> = TOperation extends {
-  (value: infer _Value, ctx: SchemaContext): (...args: infer TArgs) => infer TNext;
-}
+type SchemaChainMethod<TChain, TOperation> = TOperation extends (
+  value: infer _Value,
+  ctx: SchemaContext
+) => (...args: infer TArgs) => infer TNext
   ? TArgs extends readonly unknown[]
     ? (...args: TArgs) => SchemaWithChain<TNext, TChain>
     : never

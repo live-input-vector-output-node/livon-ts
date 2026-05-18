@@ -185,9 +185,7 @@ interface ContinueCliArgsInput extends ReadCliArgsInput {
   nextOptions: Options;
 }
 
-interface CliArgReader {
-  (input: ReadKnownCliArgInput): ReadCliArgsResult | undefined;
-}
+type CliArgReader = (input: ReadKnownCliArgInput) => ReadCliArgsResult | undefined;
 
 const addBuildFormat = ({ options, format }: AddBuildFormatInput): Options => {
   const nextFormats = options.build.customFormats

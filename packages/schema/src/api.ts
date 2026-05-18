@@ -9,14 +9,13 @@ import {
 } from './operation.js';
 
 type AnySchema = SchemaLike;
-type AnyResult = unknown;
-type AnyOperation = Omit<Operation<AnySchema, AnySchema | undefined, AnyResult>, 'exec' | 'publish' | 'rooms'> & {
-  exec: OperationExecutor<never, AnyResult>;
+type AnyOperation = Omit<Operation<AnySchema, AnySchema | undefined, unknown>, 'exec' | 'publish' | 'rooms'> & {
+  exec: OperationExecutor<never, unknown>;
   publish?: OperationPublishMap<never>;
   rooms?: OperationRooms<never>;
 };
 type AnyFieldOperation = Omit<
-  FieldOperation<AnySchema, AnySchema | Shape | undefined, AnySchema | undefined, AnyResult>,
+  FieldOperation<AnySchema, AnySchema | Shape | undefined, AnySchema | undefined, unknown>,
   'exec'
 > & {
   exec: unknown;

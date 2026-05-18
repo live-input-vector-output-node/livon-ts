@@ -172,9 +172,14 @@ const createLazyStreamFromConfig = <
     ) => {
       const unit = await ensureUnit();
       const startStream = unit.getSnapshot().start;
-      const args = configOrMode === undefined
-        ? (dataOrSetAction === undefined ? [] : [dataOrSetAction])
-        : [dataOrSetAction, configOrMode];
+      const args: unknown[] = [];
+      if (configOrMode === undefined) {
+        if (dataOrSetAction !== undefined) {
+          args.push(dataOrSetAction);
+        }
+      } else {
+        args.push(dataOrSetAction, configOrMode);
+      }
 
       await Reflect.apply(startStream, unit, args);
 

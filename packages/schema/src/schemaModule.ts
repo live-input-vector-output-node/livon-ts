@@ -36,14 +36,13 @@ type RuntimeNext = (update?: PartialEventEnvelope) => Promise<EventEnvelope>;
 
 type AnySchema = SchemaLike;
 type AnyInput = AnySchema | Shape | undefined;
-type AnyResult = unknown;
 
-type AnyOperation = Omit<Operation<AnySchema, AnySchema | undefined, AnyResult>, 'exec' | 'publish' | 'rooms'> & {
-  exec: OperationExecutor<never, AnyResult>;
+type AnyOperation = Omit<Operation<AnySchema, AnySchema | undefined, unknown>, 'exec' | 'publish' | 'rooms'> & {
+  exec: OperationExecutor<never, unknown>;
   publish?: OperationPublishMap<never>;
   rooms?: OperationRooms<never>;
 };
-type AnyFieldOperation = Omit<FieldOperation<AnySchema, AnyInput, AnySchema | undefined, AnyResult>, 'exec'> & {
+type AnyFieldOperation = Omit<FieldOperation<AnySchema, AnyInput, AnySchema | undefined, unknown>, 'exec'> & {
   exec: unknown;
 };
 type AnySubscription = Subscription<AnySchema | undefined, AnySchema, AnySchema | undefined, unknown>;
@@ -134,8 +133,8 @@ interface ResolveFieldOperationInput {
   operation?: AnyOperation;
 }
 
-type RuntimeOperation = Operation<AnySchema, AnySchema | undefined, AnyResult>;
-type RuntimeFieldOperation = FieldOperation<AnySchema, AnyInput, AnySchema | undefined, AnyResult>;
+type RuntimeOperation = Operation<AnySchema, AnySchema | undefined, unknown>;
+type RuntimeFieldOperation = FieldOperation<AnySchema, AnyInput, AnySchema | undefined, unknown>;
 
 export interface EmitErrorEventInput {
   ctx: RuntimeContext;
@@ -283,7 +282,7 @@ const runAnyOperation = (
   operation: AnyOperation,
   input: unknown,
   context: SchemaContext,
-): Promise<AnyResult> =>
+): Promise<unknown> =>
   runOperation(operation as unknown as RuntimeOperation, input, context);
 
 const runAnyFieldOperation = (
@@ -291,7 +290,7 @@ const runAnyFieldOperation = (
   dependsOn: unknown,
   input: unknown,
   context: SchemaContext,
-): Promise<AnyResult> =>
+): Promise<unknown> =>
   runFieldOperation(operation as unknown as RuntimeFieldOperation, dependsOn, input, context);
 
 const eventErrorFromUnknown = (error: unknown, info?: Readonly<Record<string, unknown>>): EventError => {

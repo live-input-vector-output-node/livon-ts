@@ -170,9 +170,14 @@ const createLazyActionFromConfig = <
     ) => {
       const unit = await ensureUnit();
       const submit = unit.getSnapshot().submit;
-      const args = configOrMode === undefined
-        ? (dataOrSetAction === undefined ? [] : [dataOrSetAction])
-        : [dataOrSetAction, configOrMode];
+      const args: unknown[] = [];
+      if (configOrMode === undefined) {
+        if (dataOrSetAction !== undefined) {
+          args.push(dataOrSetAction);
+        }
+      } else {
+        args.push(dataOrSetAction, configOrMode);
+      }
 
       await Reflect.apply(submit, unit, args);
 

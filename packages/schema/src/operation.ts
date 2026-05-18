@@ -3,7 +3,6 @@ import { createSchemaContext } from './context.js';
 import { object } from './object.js';
 
 type AnySchema = SchemaLike;
-type AnyResult = unknown;
 type AnyFieldOperationExecutor = FieldOperationExecutor<unknown, unknown, unknown>;
 
 type InputSource = AnySchema | Shape | undefined;
@@ -209,7 +208,7 @@ export function operation<TInputSchema extends AnySchema, TResult>(
 ): Operation<TInputSchema, undefined, TResult>;
 export function operation<TInputSchema extends AnySchema, TResult>(
   input: OperationInputWithOptionalOutput<TInputSchema, TResult>,
-): Operation<TInputSchema, AnySchema | undefined, AnyResult> {
+): Operation<TInputSchema, AnySchema | undefined, unknown> {
   const output = 'output' in input ? input.output : undefined;
   const publish = input.publish as OperationPublishMap<OperationResult<AnySchema | undefined, TResult>> | undefined;
   return {
@@ -286,7 +285,7 @@ export function fieldOperation<TDependsOnSchema extends AnySchema, TResult>(
     | FieldOperationInputShapeWithOutput<Shape, AnySchema, InputSource>
     | FieldOperationInputWithOptionalOutput<TDependsOnSchema, TResult>
     | FieldOperationInputShapeWithOptionalOutput<TResult>,
-): FieldOperation<AnySchema, InputSource, AnySchema | undefined, AnyResult> {
+): FieldOperation<AnySchema, InputSource, AnySchema | undefined, unknown> {
   const dependsOnSchema = normalizeDependsOn(input.dependsOn, 'dependsOn');
   const inputSchema = input.input
     ? normalizeDependsOn(input.input as AnySchema | Shape, 'input')

@@ -21,6 +21,7 @@ import {
   resolveEntityFunctionKey,
   resolveDefaultUnitValue,
   resolveInput,
+  resolveSingleInFlight,
   resolveUnitRunAsVoid,
   resolveUnitMode,
   resolveValue,
@@ -288,23 +289,6 @@ const createActionFromConfig = <
       let singleInFlightPayloadKey: string | null = null;
       let runConfig: ActionRunConfig | undefined;
 
-      const resolveSingleInFlightPromise = (): Promise<TData> | null => {
-        if (!singleInFlightPromise) {
-          return null;
-        }
-
-        if (hasSingleInFlightPayload && Object.is(singleInFlightPayload, internal.payload)) {
-          return singleInFlightPromise;
-        }
-
-        const payloadKey = payloadKeyCache.getOrCreateKey(internal.payload);
-        if (singleInFlightPayloadKey === null && hasSingleInFlightPayload) {
-          singleInFlightPayloadKey = payloadKeyCache.getOrCreateKey(singleInFlightPayload);
-        }
-
-        return singleInFlightPayloadKey === payloadKey ? singleInFlightPromise : null;
-      };
-
       const executeRun = (
         payloadInput?: TPayload,
       ): Promise<TData> => {
@@ -314,9 +298,18 @@ const createActionFromConfig = <
 
         internal.payload = resolveInput(internal.payload, payloadInput);
         let payloadKey: string | null = null;
-        const matchingSingleInFlightPromise = resolveSingleInFlightPromise();
-        if (matchingSingleInFlightPromise) {
-          return matchingSingleInFlightPromise;
+        const singleInFlight = resolveSingleInFlight({
+          currentPayload: internal.payload,
+          hasTrackedPayload: hasSingleInFlightPayload,
+          payloadKeyCache,
+          promise: singleInFlightPromise,
+          trackedPayload: singleInFlightPayload,
+          trackedPayloadKey: singleInFlightPayloadKey,
+        });
+        singleInFlightPayloadKey = singleInFlight.trackedPayloadKey;
+        payloadKey = singleInFlight.currentPayloadKey;
+        if (singleInFlight.promise) {
+          return singleInFlight.promise;
         }
 
         if (internal.inFlightByPayload.size > 0) {
