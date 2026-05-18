@@ -57,6 +57,6 @@ Security notes:
 ## Artifact Links
 
 - Changesets source: https://github.com/live-input-vector-output-node/livon-ts/tree/main/.changeset
-- Root release workflow: https://github.com/live-input-vector-output-node/livon-ts/blob/main/.github/workflows/publish.yml
+- Root release workflow: https://github.com/live-input-vector-output-node/livon-ts/blob/main/.github/workflows/ci.yml
 - Package changelogs:
   - https://github.com/live-input-vector-output-node/livon-ts/tree/main/packages
