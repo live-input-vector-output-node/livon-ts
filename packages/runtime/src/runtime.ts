@@ -91,9 +91,11 @@ const contextRecordFrom = (value?: RuntimeEventContext): RuntimeEventContextReco
 const errorContextFrom = (error: ErrorLike): RuntimeEventContextRecord | undefined =>
   isContextRecord(error.context) ? error.context : undefined;
 
+const isErrorLike = (error: unknown): error is ErrorLike =>
+  typeof error === 'object' && error !== null;
+
 const eventErrorFromError = (error: Error): EventError => {
-  const errorLike = error as ErrorLike;
-  const context = errorContextFrom(errorLike);
+  const context = errorContextFrom(error);
   return {
     message: error.message,
     ...(error.name ? { name: error.name } : {}),
@@ -122,8 +124,8 @@ const errorFromUnknown = (error: unknown): EventError => {
   if (typeof error === 'string') {
     return { message: error };
   }
-  if (typeof error === 'object' && error !== null) {
-    return eventErrorFromRecord(error as ErrorLike);
+  if (isErrorLike(error)) {
+    return eventErrorFromRecord(error);
   }
   return { message: 'Unknown error' };
 };

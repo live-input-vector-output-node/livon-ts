@@ -85,7 +85,7 @@ run = "pnpm --filter website build"
 [tasks.coverage]
 description = "Run workspace coverage"
 depends = ["setup", "build"]
-run = "pnpm exec vitest run --config vitest.workspace.ts --coverage --reporter=dot"
+run = "pnpm exec vitest run --config vitest.workspace.ts --coverage --coverage.reportsDirectory coverage --coverage.reporter=text-summary --coverage.reporter=html --coverage.reporter=lcovonly --reporter=dot"
 
 [tasks."secret-scan"]
 description = "Run gitleaks"

@@ -379,17 +379,19 @@ const resolveNamedExample = ({
   node,
   visited,
 }: ResolveNamedExampleInput): string | undefined => {
-  if (!node.name || !namedNodes.has(node.name) || !isTypeDefinitionNode(node)) {
-    return undefined;
+  const nodeName = node.name;
+  const namedNode = nodeName ? namedNodes.get(nodeName) : undefined;
+  if (nodeName && namedNode && isTypeDefinitionNode(node)) {
+    const named = namedNode.node;
+    if (visited.has(nodeName)) {
+      return '...';
+    }
+
+    visited.add(nodeName);
+    return named !== node ? buildExample(named, namedNodes, depth + 1, visited) : undefined;
   }
 
-  const named = namedNodes.get(node.name)!.node;
-  if (visited.has(node.name)) {
-    return '...';
-  }
-
-  visited.add(node.name);
-  return named !== node ? buildExample(named, namedNodes, depth + 1, visited) : undefined;
+  return undefined;
 };
 
 const buildExample = (
