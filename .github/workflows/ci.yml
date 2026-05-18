@@ -18,8 +18,6 @@ permissions: read-all
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-  NODE_VERSION: lts/*
-  PNPM_VERSION: 9.0.0
   PNPM_STORE_PATH: .pnpm-store
   TURBO_CACHE_PATH: .turbo
 
@@ -41,6 +39,11 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Setup mise
+        uses: jdx/mise-action@v3
+        with:
+          install: true
+
       - name: Compute pipeline flags
         id: flags
         env:
@@ -49,71 +52,7 @@ jobs:
           BEFORE_SHA: ${{ github.event.before }}
           HEAD_SHA: ${{ github.sha }}
           SCHEDULE_EXPR: ${{ github.event.schedule || '' }}
-        run: |
-          set -euo pipefail
-
-          run_ci=false
-          run_docs=false
-          run_coverage=false
-          run_publish=false
-          run_secret_scan=false
-          run_vulnerability_scan=false
-          run_scorecard=false
-          turbo_filter=
-
-          if [[ "$EVENT_NAME" == "pull_request" || "$EVENT_NAME" == "merge_group" ]]; then
-            run_ci=true
-            run_secret_scan=true
-            run_vulnerability_scan=true
-            turbo_filter='[main...HEAD]'
-          fi
-
-          if [[ "$EVENT_NAME" == "push" && "$REF" == "refs/heads/main" ]]; then
-            run_ci=true
-            run_docs=true
-            run_coverage=true
-            run_secret_scan=true
-            run_vulnerability_scan=true
-            run_scorecard=true
-
-            if [[ -n "$BEFORE_SHA" && "$BEFORE_SHA" != "0000000000000000000000000000000000000000" ]]; then
-              if git diff --name-only "$BEFORE_SHA" "$HEAD_SHA" -- .changeset | grep -E '^\.changeset/.+\.md$' >/dev/null; then
-                run_publish=true
-              fi
-            fi
-          fi
-
-          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
-            run_ci=true
-            run_docs=true
-            run_coverage=true
-            run_secret_scan=true
-            run_vulnerability_scan=true
-            run_scorecard=true
-          fi
-
-          if [[ "$EVENT_NAME" == "schedule" ]]; then
-            if [[ "$SCHEDULE_EXPR" == "0 3 * * 6" ]]; then
-              run_secret_scan=true
-            fi
-            if [[ "$SCHEDULE_EXPR" == "30 12 * * 1" ]]; then
-              run_vulnerability_scan=true
-            fi
-            if [[ "$SCHEDULE_EXPR" == "30 1 * * 6" ]]; then
-              run_scorecard=true
-            fi
-          fi
-
-          {
-            echo "run_ci=$run_ci"
-            echo "run_docs=$run_docs"
-            echo "run_coverage=$run_coverage"
-            echo "run_publish=$run_publish"
-            echo "run_secret_scan=$run_secret_scan"
-            echo "run_vulnerability_scan=$run_vulnerability_scan"
-            echo "run_scorecard=$run_scorecard"
-            echo "turbo_filter=$turbo_filter"
-          } >> "$GITHUB_OUTPUT"
+        run: mise run workflow:plan-flags
 
   install_production_dependencies:
     needs: plan
@@ -125,15 +64,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
+      - name: Setup mise
+        uses: jdx/mise-action@v3
         with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
-        with:
-          node-version: ${{ env.NODE_VERSION }}
+          install: true
 
       - name: Restore pnpm store cache
         uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
@@ -152,26 +86,15 @@ jobs:
             ${{ runner.os }}-turbo-
 
       - name: Configure local pnpm store path
-        run: pnpm config set store-dir "${{ env.PNPM_STORE_PATH }}"
+        run: mise run workflow:configure-pnpm-store
 
       - name: Install production dependencies
-        run: pnpm install --prod --frozen-lockfile
+        run: mise run workflow:install-prod
 
       - name: Archive production dependency state
-        run: |
-          set -euo pipefail
-          paths=(node_modules .pnpm-store .turbo)
-          existing_paths=()
-          for path in "${paths[@]}"; do
-            if [[ -e "$path" ]]; then
-              existing_paths+=("$path")
-            fi
-          done
-          if [[ "${#existing_paths[@]}" -eq 0 ]]; then
-            echo "::error::No dependency paths found to archive."
-            exit 1
-          fi
-          tar -czf prod-deps.tgz "${existing_paths[@]}"
+        env:
+          ARCHIVE_NAME: prod-deps.tgz
+        run: mise run workflow:archive-deps
 
       - name: Upload production dependency artifact
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
@@ -192,15 +115,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
+      - name: Setup mise
+        uses: jdx/mise-action@v3
         with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
-        with:
-          node-version: ${{ env.NODE_VERSION }}
+          install: true
 
       - name: Restore pnpm store cache
         uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
@@ -224,29 +142,20 @@ jobs:
           name: prod-deps
 
       - name: Restore production dependency state
-        run: tar -xzf prod-deps.tgz
+        env:
+          TARBALL: prod-deps.tgz
+        run: mise run workflow:extract-tar
 
       - name: Configure local pnpm store path
-        run: pnpm config set store-dir "${{ env.PNPM_STORE_PATH }}"
+        run: mise run workflow:configure-pnpm-store
 
       - name: Install development dependencies
-        run: pnpm install --frozen-lockfile
+        run: mise run workflow:install-dev
 
       - name: Archive development dependency state
-        run: |
-          set -euo pipefail
-          paths=(node_modules .pnpm-store .turbo)
-          existing_paths=()
-          for path in "${paths[@]}"; do
-            if [[ -e "$path" ]]; then
-              existing_paths+=("$path")
-            fi
-          done
-          if [[ "${#existing_paths[@]}" -eq 0 ]]; then
-            echo "::error::No dependency paths found to archive."
-            exit 1
-          fi
-          tar -czf dev-deps.tgz "${existing_paths[@]}"
+        env:
+          ARCHIVE_NAME: dev-deps.tgz
+        run: mise run workflow:archive-deps
 
       - name: Upload development dependency artifact
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
@@ -267,15 +176,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
+      - name: Setup mise
+        uses: jdx/mise-action@v3
         with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
-        with:
-          node-version: ${{ env.NODE_VERSION }}
+          install: true
 
       - name: Restore pnpm store cache
         uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
@@ -299,36 +203,27 @@ jobs:
           name: dev-deps
 
       - name: Restore development dependency state
-        run: tar -xzf dev-deps.tgz
+        env:
+          TARBALL: dev-deps.tgz
+        run: mise run workflow:extract-tar
 
       - name: Configure local pnpm store path
-        run: pnpm config set store-dir "${{ env.PNPM_STORE_PATH }}"
+        run: mise run workflow:configure-pnpm-store
 
       - name: Run monorepo CI (Turbo)
-        if: ${{ needs.plan.outputs.turbo_filter == '' }}
-        run: pnpm run ci
-
-      - name: Run monorepo CI (Turbo, affected filter)
-        if: ${{ needs.plan.outputs.turbo_filter != '' }}
-        run: pnpm run ci -- --filter=${{ needs.plan.outputs.turbo_filter }}
+        env:
+          TURBO_FILTER: ${{ needs.plan.outputs.turbo_filter }}
+        run: mise run workflow:run-ci
 
       - name: Check publish artifacts
-        if: ${{ needs.plan.outputs.turbo_filter == '' }}
-        run: pnpm run release:check
-
-      - name: Check publish artifacts (affected filter)
-        if: ${{ needs.plan.outputs.turbo_filter != '' }}
-        run: pnpm run release:check -- --filter=${{ needs.plan.outputs.turbo_filter }}
+        env:
+          TURBO_FILTER: ${{ needs.plan.outputs.turbo_filter }}
+        run: mise run workflow:release-check
 
       - name: Archive build outputs
-        run: |
-          set -euo pipefail
-          mapfile -t build_paths < <(find packages apps tools website -type d \( -name dist -o -name build \) -print || true)
-          if [[ "${#build_paths[@]}" -eq 0 ]]; then
-            echo "::error::No build output directories found to archive."
-            exit 1
-          fi
-          tar -czf ci-build-artifacts.tgz "${build_paths[@]}"
+        env:
+          ARCHIVE_NAME: ci-build-artifacts.tgz
+        run: mise run workflow:archive-build-outputs
 
       - name: Upload build outputs
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
@@ -351,16 +246,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
+      - name: Setup mise
+        uses: jdx/mise-action@v3
         with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          registry-url: https://registry.npmjs.org
+          install: true
 
       - name: Restore pnpm store cache
         uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
@@ -384,7 +273,9 @@ jobs:
           name: dev-deps
 
       - name: Restore development dependency state
-        run: tar -xzf dev-deps.tgz
+        env:
+          TARBALL: dev-deps.tgz
+        run: mise run workflow:extract-tar
 
       - name: Download CI build artifact
         uses: actions/download-artifact@v5
@@ -392,35 +283,27 @@ jobs:
           name: ci-build-artifacts
 
       - name: Restore CI build artifact
-        run: tar -xzf ci-build-artifacts.tgz
+        env:
+          TARBALL: ci-build-artifacts.tgz
+        run: mise run workflow:extract-tar
 
       - name: Configure local pnpm store path
-        run: pnpm config set store-dir "${{ env.PNPM_STORE_PATH }}"
+        run: mise run workflow:configure-pnpm-store
 
       - name: Validate npm token
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          if [ -z "${NODE_AUTH_TOKEN}" ]; then
-            echo "::error::NPM_TOKEN secret is missing. Add it in repository Settings > Secrets and variables > Actions."
-            exit 1
-          fi
+        run: mise run workflow:validate-npm-token
 
       - name: Configure npm authentication
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          cat <<EOF > ~/.npmrc
-          //registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}
-          registry=https://registry.npmjs.org/
-          always-auth=true
-          EOF
-          npm whoami
+        run: mise run workflow:configure-npm-auth
 
       - name: Publish packages (changeset semantics)
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: pnpm changeset:publish
+        run: mise run workflow:publish
 
   docs_build:
     needs:
@@ -437,15 +320,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
+      - name: Setup mise
+        uses: jdx/mise-action@v3
         with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
-        with:
-          node-version: ${{ env.NODE_VERSION }}
+          install: true
 
       - name: Download development dependency artifact
         uses: actions/download-artifact@v5
@@ -453,18 +331,18 @@ jobs:
           name: dev-deps
 
       - name: Restore development dependency state
-        run: tar -xzf dev-deps.tgz
+        env:
+          TARBALL: dev-deps.tgz
+        run: mise run workflow:extract-tar
 
       - name: Configure local pnpm store path
-        run: pnpm config set store-dir "${{ env.PNPM_STORE_PATH }}"
+        run: mise run workflow:configure-pnpm-store
 
       - name: Configure Pages
         uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
 
       - name: Build Docusaurus
-        env:
-          DOCUSAURUS_GITHUB_PAGES: true
-        run: pnpm --filter website build
+        run: mise run workflow:build-docs
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4.0.0
@@ -499,15 +377,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
+      - name: Setup mise
+        uses: jdx/mise-action@v3
         with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
-        with:
-          node-version: ${{ env.NODE_VERSION }}
+          install: true
 
       - name: Download development dependency artifact
         uses: actions/download-artifact@v5
@@ -515,16 +388,18 @@ jobs:
           name: dev-deps
 
       - name: Restore development dependency state
-        run: tar -xzf dev-deps.tgz
+        env:
+          TARBALL: dev-deps.tgz
+        run: mise run workflow:extract-tar
 
       - name: Configure local pnpm store path
-        run: pnpm config set store-dir "${{ env.PNPM_STORE_PATH }}"
+        run: mise run workflow:configure-pnpm-store
 
       - name: Build workspace
-        run: pnpm run build
+        run: mise run workflow:build-workspace
 
       - name: Run workspace coverage
-        run: pnpm exec vitest run --config vitest.workspace.ts --coverage --reporter=dot
+        run: mise run workflow:run-coverage
 
       - name: Upload coverage to Coveralls
         uses: coverallsapp/github-action@648a8eb78e6d50909eff900e4ec85cab4524a45b # v2.3.6
@@ -545,23 +420,16 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Setup mise
+        uses: jdx/mise-action@v3
+        with:
+          install: true
+
       - name: Install Gitleaks
-        run: |
-          set -euo pipefail
-          GITLEAKS_VERSION="8.30.1"
-          ARCHIVE="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
-          curl -fsSL -o "/tmp/${ARCHIVE}" "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/${ARCHIVE}"
-          curl -fsSL -o /tmp/gitleaks_checksums.txt "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_checksums.txt"
-          (
-            cd /tmp
-            grep " ${ARCHIVE}$" gitleaks_checksums.txt | sha256sum -c -
-          )
-          tar -xzf "/tmp/${ARCHIVE}" -C /tmp gitleaks
-          sudo install -m 0755 /tmp/gitleaks /usr/local/bin/gitleaks
-          gitleaks version
+        run: mise run workflow:install-gitleaks
 
       - name: Run Gitleaks
-        run: gitleaks git --log-opts="--all" --redact --no-banner --exit-code 1 .
+        run: mise run workflow:run-gitleaks
 
   vulnerability_scan:
     needs: plan
@@ -628,6 +496,14 @@ jobs:
     if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup mise
+        uses: jdx/mise-action@v3
+        with:
+          install: true
+
       - name: Write pipeline summary and mindmap
         env:
           RUN_CI: ${{ needs.plan.outputs.run_ci }}
@@ -647,41 +523,4 @@ jobs:
           STATUS_SECRET_SCAN: ${{ needs.secret_scan.result }}
           STATUS_VULN_SCAN: ${{ needs.vulnerability_scan.result }}
           STATUS_SCORECARD: ${{ needs.scorecard.result }}
-        run: |
-          cat <<EOF >> "$GITHUB_STEP_SUMMARY"
-          ## Unified Pipeline Summary
-
-          | Area | Enabled | Result |
-          | --- | --- | --- |
-          | Production dependency install | true | ${STATUS_PROD} |
-          | Development dependency install | true | ${STATUS_DEV} |
-          | Turbo CI (`pnpm run ci`) | ${RUN_CI} | ${STATUS_CI} |
-          | Publish (`pnpm changeset:publish`) | ${RUN_PUBLISH} | ${STATUS_PUBLISH} |
-          | Docs build | ${RUN_DOCS} | ${STATUS_DOCS_BUILD} |
-          | Docs deploy | ${RUN_DOCS} | ${STATUS_DOCS_DEPLOY} |
-          | Coverage | ${RUN_COVERAGE} | ${STATUS_COVERAGE} |
-          | Secret scan | ${RUN_SECRET_SCAN} | ${STATUS_SECRET_SCAN} |
-          | Vulnerability scan | ${RUN_VULN_SCAN} | ${STATUS_VULN_SCAN} |
-          | Scorecard | ${RUN_SCORECARD} | ${STATUS_SCORECARD} |
-
-          ## Pipeline Mindmap
-
-          \
-          Unified Pipeline
-          ├─ Dependency bootstrap
-          │  ├─ production install artifact (`prod-deps`)
-          │  └─ development install artifact (`dev-deps`)
-          ├─ Quality gates
-          │  └─ Turbo CI (`pnpm run ci`) + `release:check`
-          ├─ Build artifact handover
-          │  └─ `ci-build-artifacts`
-          ├─ Release
-          │  └─ publish job (changeset-trigger semantics)
-          ├─ Documentation
-          │  ├─ docs build
-          │  └─ pages deploy
-          └─ Security & trust
-             ├─ gitleaks
-             ├─ OSV scan
-             └─ OpenSSF scorecard
-          EOF
+        run: mise run workflow:write-summary

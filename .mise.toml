@@ -1,0 +1,241 @@
+[tools]
+node = "lts"
+pnpm = "9.0.0"
+
+[tasks."workflow:plan-flags"]
+description = "Compute pipeline flags and write them to GITHUB_OUTPUT"
+run = '''
+set -euo pipefail
+
+run_ci=false
+run_docs=false
+run_coverage=false
+run_publish=false
+run_secret_scan=false
+run_vulnerability_scan=false
+run_scorecard=false
+turbo_filter=
+
+if [[ "${EVENT_NAME}" == "pull_request" || "${EVENT_NAME}" == "merge_group" ]]; then
+  run_ci=true
+  run_secret_scan=true
+  run_vulnerability_scan=true
+  turbo_filter='[main...HEAD]'
+fi
+
+if [[ "${EVENT_NAME}" == "push" && "${REF}" == "refs/heads/main" ]]; then
+  run_ci=true
+  run_docs=true
+  run_coverage=true
+  run_secret_scan=true
+  run_vulnerability_scan=true
+  run_scorecard=true
+
+  if [[ -n "${BEFORE_SHA:-}" && "${BEFORE_SHA}" != "0000000000000000000000000000000000000000" ]]; then
+    if git diff --name-only "${BEFORE_SHA}" "${HEAD_SHA}" -- .changeset | grep -E '^\.changeset/.+\.md$' >/dev/null; then
+      run_publish=true
+    fi
+  fi
+fi
+
+if [[ "${EVENT_NAME}" == "workflow_dispatch" ]]; then
+  run_ci=true
+  run_docs=true
+  run_coverage=true
+  run_secret_scan=true
+  run_vulnerability_scan=true
+  run_scorecard=true
+fi
+
+if [[ "${EVENT_NAME}" == "schedule" ]]; then
+  if [[ "${SCHEDULE_EXPR:-}" == "0 3 * * 6" ]]; then
+    run_secret_scan=true
+  fi
+  if [[ "${SCHEDULE_EXPR:-}" == "30 12 * * 1" ]]; then
+    run_vulnerability_scan=true
+  fi
+  if [[ "${SCHEDULE_EXPR:-}" == "30 1 * * 6" ]]; then
+    run_scorecard=true
+  fi
+fi
+
+{
+  echo "run_ci=${run_ci}"
+  echo "run_docs=${run_docs}"
+  echo "run_coverage=${run_coverage}"
+  echo "run_publish=${run_publish}"
+  echo "run_secret_scan=${run_secret_scan}"
+  echo "run_vulnerability_scan=${run_vulnerability_scan}"
+  echo "run_scorecard=${run_scorecard}"
+  echo "turbo_filter=${turbo_filter}"
+} >> "${GITHUB_OUTPUT}"
+'''
+
+[tasks."workflow:configure-pnpm-store"]
+description = "Set pnpm store directory for CI"
+run = 'pnpm config set store-dir "${PNPM_STORE_PATH}"'
+
+[tasks."workflow:install-prod"]
+description = "Install production dependencies"
+run = "pnpm install --prod --frozen-lockfile"
+
+[tasks."workflow:install-dev"]
+description = "Install development dependencies"
+run = "pnpm install --frozen-lockfile"
+
+[tasks."workflow:archive-deps"]
+description = "Archive dependency state to a tarball"
+run = '''
+set -euo pipefail
+paths=(node_modules .pnpm-store .turbo)
+existing_paths=()
+for path in "${paths[@]}"; do
+  if [[ -e "${path}" ]]; then
+    existing_paths+=("${path}")
+  fi
+done
+if [[ "${#existing_paths[@]}" -eq 0 ]]; then
+  echo "No dependency paths found to archive." >&2
+  exit 1
+fi
+tar -czf "${ARCHIVE_NAME}" "${existing_paths[@]}"
+'''
+
+[tasks."workflow:extract-tar"]
+description = "Extract tarball artifact"
+run = 'tar -xzf "${TARBALL}"'
+
+[tasks."workflow:run-ci"]
+description = "Run monorepo CI with optional turbo filter"
+run = '''
+set -euo pipefail
+if [[ -n "${TURBO_FILTER:-}" ]]; then
+  pnpm run ci -- --filter="${TURBO_FILTER}"
+else
+  pnpm run ci
+fi
+'''
+
+[tasks."workflow:release-check"]
+description = "Run release artifact checks with optional turbo filter"
+run = '''
+set -euo pipefail
+if [[ -n "${TURBO_FILTER:-}" ]]; then
+  pnpm run release:check -- --filter="${TURBO_FILTER}"
+else
+  pnpm run release:check
+fi
+'''
+
+[tasks."workflow:archive-build-outputs"]
+description = "Archive build output directories"
+run = '''
+set -euo pipefail
+mapfile -t build_paths < <(find packages apps tools website -type d \( -name dist -o -name build \) -print || true)
+if [[ "${#build_paths[@]}" -eq 0 ]]; then
+  echo "No build output directories found to archive." >&2
+  exit 1
+fi
+tar -czf "${ARCHIVE_NAME}" "${build_paths[@]}"
+'''
+
+[tasks."workflow:validate-npm-token"]
+description = "Validate npm token exists"
+run = '''
+set -euo pipefail
+if [[ -z "${NODE_AUTH_TOKEN:-}" ]]; then
+  echo "NPM_TOKEN is missing." >&2
+  exit 1
+fi
+'''
+
+[tasks."workflow:configure-npm-auth"]
+description = "Configure npm auth and verify identity"
+run = '''
+set -euo pipefail
+cat <<EONPM > ~/.npmrc
+//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}
+registry=https://registry.npmjs.org/
+always-auth=true
+EONPM
+npm whoami
+'''
+
+[tasks."workflow:publish"]
+description = "Publish packages via changesets"
+run = "pnpm changeset:publish"
+
+[tasks."workflow:build-docs"]
+description = "Build docs for GitHub Pages"
+env = { DOCUSAURUS_GITHUB_PAGES = "true" }
+run = "pnpm --filter website build"
+
+[tasks."workflow:build-workspace"]
+description = "Build workspace"
+run = "pnpm run build"
+
+[tasks."workflow:run-coverage"]
+description = "Run workspace coverage"
+run = "pnpm exec vitest run --config vitest.workspace.ts --coverage --reporter=dot"
+
+[tasks."workflow:install-gitleaks"]
+description = "Install gitleaks binary"
+run = '''
+set -euo pipefail
+GITLEAKS_VERSION="8.30.1"
+ARCHIVE="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+curl -fsSL -o "/tmp/${ARCHIVE}" "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/${ARCHIVE}"
+curl -fsSL -o /tmp/gitleaks_checksums.txt "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_checksums.txt"
+(
+  cd /tmp
+  grep " ${ARCHIVE}$" gitleaks_checksums.txt | sha256sum -c -
+)
+tar -xzf "/tmp/${ARCHIVE}" -C /tmp gitleaks
+sudo install -m 0755 /tmp/gitleaks /usr/local/bin/gitleaks
+gitleaks version
+'''
+
+[tasks."workflow:run-gitleaks"]
+description = "Run gitleaks scan"
+run = "gitleaks git --log-opts=\"--all\" --redact --no-banner --exit-code 1 ."
+
+[tasks."workflow:write-summary"]
+description = "Write unified pipeline summary and mindmap"
+run = '''
+cat <<EOF_SUMMARY >> "${GITHUB_STEP_SUMMARY}"
+## Unified Pipeline Summary
+
+| Area | Enabled | Result |
+| --- | --- | --- |
+| Production dependency install | true | ${STATUS_PROD} |
+| Development dependency install | true | ${STATUS_DEV} |
+| Turbo CI (`pnpm run ci`) | ${RUN_CI} | ${STATUS_CI} |
+| Publish (`pnpm changeset:publish`) | ${RUN_PUBLISH} | ${STATUS_PUBLISH} |
+| Docs build | ${RUN_DOCS} | ${STATUS_DOCS_BUILD} |
+| Docs deploy | ${RUN_DOCS} | ${STATUS_DOCS_DEPLOY} |
+| Coverage | ${RUN_COVERAGE} | ${STATUS_COVERAGE} |
+| Secret scan | ${RUN_SECRET_SCAN} | ${STATUS_SECRET_SCAN} |
+| Vulnerability scan | ${RUN_VULN_SCAN} | ${STATUS_VULN_SCAN} |
+| Scorecard | ${RUN_SCORECARD} | ${STATUS_SCORECARD} |
+
+## Pipeline Mindmap
+
+Unified Pipeline
+├─ Dependency bootstrap
+│  ├─ production install artifact (`prod-deps`)
+│  └─ development install artifact (`dev-deps`)
+├─ Quality gates
+│  └─ Turbo CI (`pnpm run ci`) + `release:check`
+├─ Build artifact handover
+│  └─ `ci-build-artifacts`
+├─ Release
+│  └─ publish job (changeset-trigger semantics)
+├─ Documentation
+│  ├─ docs build
+│  └─ pages deploy
+└─ Security & trust
+   ├─ gitleaks
+   ├─ OSV scan
+   └─ OpenSSF scorecard
+EOF_SUMMARY
+'''
