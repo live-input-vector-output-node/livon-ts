@@ -388,7 +388,11 @@ const resolveNamedExample = ({
     }
 
     visited.add(nodeName);
-    return named !== node ? buildExample(named, namedNodes, depth + 1, visited) : undefined;
+    if (named === node) {
+      return undefined;
+    }
+
+    return buildExample(named, namedNodes, depth + 1, visited);
   }
 
   return undefined;

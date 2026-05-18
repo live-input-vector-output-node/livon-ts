@@ -67,25 +67,6 @@ interface BuildGeneratedClientResult {
   outputPath: string;
 }
 
-interface WriteClientFilesInput {
-  ast: unknown;
-  options: Options;
-  meta?: Pick<FetchResult, 'checksum' | 'etag' | 'schemaVersion' | 'generatedAt'>;
-  config?: { forceWrite?: boolean };
-}
-
-interface LogClientUpdateInput {
-  buildResult: BuildGeneratedClientResult;
-  packageManifestMissing: boolean;
-  writeResult: Awaited<ReturnType<typeof writeClientFiles>>;
-}
-
-interface LogRetryInput {
-  error: unknown;
-  nextAttempt: number;
-  wait: number;
-}
-
 interface GeneratedPackageManifest {
   type: 'module';
   sideEffects: boolean;
@@ -176,17 +157,6 @@ interface AddBuildFormatInput {
   format: BuildFormat;
 }
 
-interface ReadKnownCliArgInput extends ReadCliArgsInput {
-  arg: string;
-}
-
-interface ContinueCliArgsInput extends ReadCliArgsInput {
-  nextIndex: number;
-  nextOptions: Options;
-}
-
-type CliArgReader = (input: ReadKnownCliArgInput) => ReadCliArgsResult | undefined;
-
 const addBuildFormat = ({ options, format }: AddBuildFormatInput): Options => {
   const nextFormats = options.build.customFormats
     ? [...new Set([...options.build.formats, format])]
@@ -229,189 +199,6 @@ const readOptionValue = ({ argv, index, arg }: ReadOptionValueInput): ReadOption
   return { nextIndex: index + 2, value };
 };
 
-const continueCliArgs = ({
-  argv,
-  nextIndex,
-  nextOptions,
-}: ContinueCliArgsInput): ReadCliArgsResult =>
-  readCliArgs({
-    argv,
-    index: nextIndex,
-    options: nextOptions,
-  });
-
-const readFlagCliArg = ({ arg, argv, index, options }: ReadKnownCliArgInput): ReadCliArgsResult | undefined => {
-  if (arg === '--no-event') {
-    return continueCliArgs({
-      argv,
-      index,
-      nextIndex: index + 1,
-      options,
-      nextOptions: {
-        ...options,
-        event: undefined,
-        method: 'GET',
-      },
-    });
-  }
-
-  if (arg === '--js') {
-    return continueCliArgs({
-      argv,
-      index,
-      nextIndex: index + 1,
-      options,
-      nextOptions: {
-        ...options,
-        build: {
-          ...options.build,
-          dts: false,
-        },
-      },
-    });
-  }
-
-  if (arg === '--esm' || arg === '--cjs') {
-    return continueCliArgs({
-      argv,
-      index,
-      nextIndex: index + 1,
-      options,
-      nextOptions: addBuildFormat({ options, format: arg === '--esm' ? 'esm' : 'cjs' }),
-    });
-  }
-
-  return undefined;
-};
-
-const readStringCliArg = ({ arg, argv, index, options }: ReadKnownCliArgInput): ReadCliArgsResult | undefined => {
-  const { value, nextIndex } = readOptionValue({ argv, index, arg });
-  if (arg.startsWith('--endpoint')) {
-    return continueCliArgs({ argv, index, nextIndex, options, nextOptions: { ...options, endpoint: value ?? '' } });
-  }
-
-  if (arg.startsWith('--out')) {
-    return continueCliArgs({ argv, index, nextIndex, options, nextOptions: { ...options, out: value ?? '' } });
-  }
-
-  if (arg.startsWith('--event')) {
-    return continueCliArgs({
-      argv,
-      index,
-      nextIndex,
-      options,
-      nextOptions: {
-        ...options,
-        event: value,
-        method: 'POST',
-      },
-    });
-  }
-
-  if (arg.startsWith('--method')) {
-    return continueCliArgs({
-      argv,
-      index,
-      nextIndex,
-      options,
-      nextOptions: {
-        ...options,
-        method: value && value.toUpperCase() === 'GET' ? 'GET' : 'POST',
-      },
-    });
-  }
-
-  return undefined;
-};
-
-const readNumericCliArg = ({ arg, argv, index, options }: ReadKnownCliArgInput): ReadCliArgsResult | undefined => {
-  const { value, nextIndex } = readOptionValue({ argv, index, arg });
-  const isPoll = arg.startsWith('--poll');
-  const isTimeout = arg.startsWith('--timeout');
-  const isPort = arg.startsWith('--port');
-  if (!isPoll && !isTimeout && !isPort) {
-    return undefined;
-  }
-
-  const parsed = value ? Number(value) : undefined;
-  if (parsed !== undefined && (!Number.isFinite(parsed) || parsed <= 0)) {
-    throw new Error(`Invalid ${arg.split('=')[0]} value: ${value}`);
-  }
-
-  return continueCliArgs({
-    argv,
-    index,
-    nextIndex,
-    options,
-    nextOptions: {
-      ...options,
-      ...(isPoll ? { poll: parsed } : {}),
-      ...(isTimeout ? { timeout: parsed } : {}),
-      ...(isPort ? { port: parsed } : {}),
-    },
-  });
-};
-
-const readHeaderCliArg = ({ arg, argv, index, options }: ReadKnownCliArgInput): ReadCliArgsResult | undefined => {
-  if (!arg.startsWith('--header')) {
-    return undefined;
-  }
-
-  const { value, nextIndex } = readOptionValue({ argv, index, arg });
-  const [key, ...rest] = value ? value.split(':') : [];
-  const nextHeaders = key && rest.length > 0
-    ? { ...options.headers, [key.trim()]: rest.join(':').trim() }
-    : options.headers;
-
-  return continueCliArgs({
-    argv,
-    index,
-    nextIndex,
-    options,
-    nextOptions: { ...options, headers: nextHeaders },
-  });
-};
-
-const readPayloadCliArg = ({ arg, argv, index, options }: ReadKnownCliArgInput): ReadCliArgsResult | undefined => {
-  if (!arg.startsWith('--payload')) {
-    return undefined;
-  }
-
-  const { value, nextIndex } = readOptionValue({ argv, index, arg });
-  if (!value) {
-    return continueCliArgs({ argv, index, nextIndex, options, nextOptions: options });
-  }
-
-  try {
-    return continueCliArgs({
-      argv,
-      index,
-      nextIndex,
-      options,
-      nextOptions: {
-        ...options,
-        payload: JSON.parse(value),
-      },
-    });
-  } catch (error) {
-    throw new Error(`Invalid JSON for --payload: ${error instanceof Error ? error.message : String(error)}`);
-  }
-};
-
-const CLI_ARG_READERS: readonly CliArgReader[] = [
-  readFlagCliArg,
-  readStringCliArg,
-  readNumericCliArg,
-  readHeaderCliArg,
-  readPayloadCliArg,
-];
-
-const readKnownCliArg = (input: ReadKnownCliArgInput): ReadCliArgsResult | undefined =>
-  CLI_ARG_READERS.reduce<ReadCliArgsResult | undefined>(
-    (result, read) => result ?? read(input),
-    undefined,
-  );
-
 const readCliArgs = ({ argv, index, options }: ReadCliArgsInput): ReadCliArgsResult => {
   const arg = argv[index];
   if (!arg) {
@@ -426,9 +213,179 @@ const readCliArgs = ({ argv, index, options }: ReadCliArgsInput): ReadCliArgsRes
     return { options, command: argv.slice(index) };
   }
 
-  const knownResult = readKnownCliArg({ arg, argv, index, options });
-  if (knownResult) {
-    return knownResult;
+  if (arg === '--no-event') {
+    return readCliArgs({
+      argv,
+      index: index + 1,
+      options: {
+        ...options,
+        event: undefined,
+        method: 'GET',
+      },
+    });
+  }
+
+  if (arg === '--js') {
+    return readCliArgs({
+      argv,
+      index: index + 1,
+      options: {
+        ...options,
+        build: {
+          ...options.build,
+          dts: false,
+        },
+      },
+    });
+  }
+
+  if (arg === '--esm') {
+    return readCliArgs({
+      argv,
+      index: index + 1,
+      options: addBuildFormat({ options, format: 'esm' }),
+    });
+  }
+
+  if (arg === '--cjs') {
+    return readCliArgs({
+      argv,
+      index: index + 1,
+      options: addBuildFormat({ options, format: 'cjs' }),
+    });
+  }
+
+  if (arg.startsWith('--endpoint')) {
+    const { value, nextIndex } = readOptionValue({ argv, index, arg });
+    return readCliArgs({
+      argv,
+      index: nextIndex,
+      options: { ...options, endpoint: value ?? '' },
+    });
+  }
+
+  if (arg.startsWith('--out')) {
+    const { value, nextIndex } = readOptionValue({ argv, index, arg });
+    return readCliArgs({
+      argv,
+      index: nextIndex,
+      options: { ...options, out: value ?? '' },
+    });
+  }
+
+  if (arg.startsWith('--poll')) {
+    const { value, nextIndex } = readOptionValue({ argv, index, arg });
+    return readCliArgs({
+      argv,
+      index: nextIndex,
+      options: {
+        ...options,
+        poll: value ? Number(value) : undefined,
+      },
+    });
+  }
+
+  if (arg.startsWith('--timeout')) {
+    const { value, nextIndex } = readOptionValue({ argv, index, arg });
+    if (value) {
+      const parsed = Number(value);
+      if (!Number.isFinite(parsed) || parsed <= 0) {
+        throw new Error(`Invalid --timeout value: ${value}`);
+      }
+      return readCliArgs({
+        argv,
+        index: nextIndex,
+        options: {
+          ...options,
+          timeout: parsed,
+        },
+      });
+    }
+    return readCliArgs({ argv, index: nextIndex, options });
+  }
+
+  if (arg.startsWith('--port')) {
+    const { value, nextIndex } = readOptionValue({ argv, index, arg });
+    if (value) {
+      const parsed = Number(value);
+      if (!Number.isFinite(parsed) || parsed <= 0) {
+        throw new Error(`Invalid --port value: ${value}`);
+      }
+      return readCliArgs({
+        argv,
+        index: nextIndex,
+        options: {
+          ...options,
+          port: parsed,
+        },
+      });
+    }
+    return readCliArgs({ argv, index: nextIndex, options });
+  }
+
+  if (arg.startsWith('--event')) {
+    const { value, nextIndex } = readOptionValue({ argv, index, arg });
+    return readCliArgs({
+      argv,
+      index: nextIndex,
+      options: {
+        ...options,
+        event: value,
+        method: 'POST',
+      },
+    });
+  }
+
+  if (arg.startsWith('--method')) {
+    const { value, nextIndex } = readOptionValue({ argv, index, arg });
+    return readCliArgs({
+      argv,
+      index: nextIndex,
+      options: {
+        ...options,
+        method: value && value.toUpperCase() === 'GET' ? 'GET' : 'POST',
+      },
+    });
+  }
+
+  if (arg.startsWith('--header')) {
+    const { value, nextIndex } = readOptionValue({ argv, index, arg });
+    if (value) {
+      const [key, ...rest] = value.split(':');
+      if (key && rest.length > 0) {
+        return readCliArgs({
+          argv,
+          index: nextIndex,
+          options: {
+            ...options,
+            headers: {
+              ...options.headers,
+              [key.trim()]: rest.join(':').trim(),
+            },
+          },
+        });
+      }
+    }
+    return readCliArgs({ argv, index: nextIndex, options });
+  }
+
+  if (arg.startsWith('--payload')) {
+    const { value, nextIndex } = readOptionValue({ argv, index, arg });
+    if (value) {
+      try {
+        return readCliArgs({
+          argv,
+          index: nextIndex,
+          options: {
+            ...options,
+            payload: JSON.parse(value),
+          },
+        });
+      } catch (error) {
+        throw new Error(`Invalid JSON for --payload: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
+    return readCliArgs({ argv, index: nextIndex, options });
   }
 
   return readCliArgs({ argv, index: index + 1, options });
@@ -893,12 +850,12 @@ const readCachedChecksum = async (checksumFile: string): Promise<CachedClientChe
   return { etag: raw };
 };
 
-const writeClientFiles = async ({
-  ast,
-  options,
-  meta,
-  config,
-}: WriteClientFilesInput) => {
+const writeClientFiles = async (
+  ast: unknown,
+  options: Options,
+  meta?: Pick<FetchResult, 'checksum' | 'etag' | 'schemaVersion' | 'generatedAt'>,
+  config?: { forceWrite?: boolean },
+) => {
   const { outDir, astFile, clientFile, indexFile, checksumFile } = resolveOutputPaths(options.out);
   await fs.mkdir(outDir, { recursive: true });
   const previous = await readCachedChecksum(checksumFile);
@@ -954,33 +911,6 @@ const writeClientFiles = async ({
   };
 };
 
-const logClientUpdate = ({
-  buildResult,
-  packageManifestMissing,
-  writeResult,
-}: LogClientUpdateInput): void => {
-  const details: string[] = [];
-  if (writeResult.schemaVersion) {
-    details.push(`schema ${writeResult.schemaVersion}`);
-  }
-  if (writeResult.generatedAt) {
-    details.push(`generated ${writeResult.generatedAt}`);
-  }
-  if (writeResult.summary) {
-    details.push(`${writeResult.summary.subscriptions} subscriptions`);
-    details.push(`${writeResult.summary.fieldResolvers} fieldResolvers`);
-    details.push(`${writeResult.summary.inputs} inputs`);
-    details.push(`${writeResult.summary.outputs} outputs`);
-  }
-  if (!writeResult.updated && packageManifestMissing) {
-    details.push('package manifest emitted');
-  }
-  details.push(`build ${buildResult.formats.join('+')}${buildResult.dts ? '+dts' : ''}`);
-  details.push(`dist ${buildResult.outputPath}`);
-  const detailsInfo = details.length > 0 ? `, ${details.join(', ')}` : '';
-  console.log(`livon: client updated (checksum ${writeResult.checksum}${detailsInfo})`);
-};
-
 interface CommandRuntime {
   waitForExit: Promise<number>;
 }
@@ -1025,6 +955,7 @@ const startCommandRuntime = ({ command }: StartCommandRuntimeInput): CommandRunt
     child.on('exit', (code, signal) => {
       const exitCode = typeof code === 'number' ? code : signal ? 1 : 0;
       if (exitCode !== 0) {
+        // eslint-disable-next-line no-console
         console.error(`livon: linked command exited with code ${exitCode}`);
       }
       resolve(exitCode);
@@ -1063,17 +994,12 @@ const run = async () => {
       throw new Error('Explain response missing AST.');
     }
 
-    const writeResult = await writeClientFiles({
-      ast: result.ast,
-      options,
-      meta: {
-        checksum: result.checksum,
-        etag: result.etag,
-        schemaVersion: result.schemaVersion,
-        generatedAt: result.generatedAt,
-      },
-      config: { forceWrite: initialSyncPending },
-    });
+    const writeResult = await writeClientFiles(result.ast, options, {
+      checksum: result.checksum,
+      etag: result.etag,
+      schemaVersion: result.schemaVersion,
+      generatedAt: result.generatedAt,
+    }, { forceWrite: initialSyncPending });
     initialSyncPending = false;
     const packageManifestMissing = await fs.access(packageJsonFile)
       .then(() => false)
@@ -1081,11 +1007,27 @@ const run = async () => {
     const shouldBuildGeneratedClient = writeResult.updated || packageManifestMissing;
     if (shouldBuildGeneratedClient) {
       const buildResult = await buildGeneratedClient({ options });
-      logClientUpdate({
-        buildResult,
-        packageManifestMissing,
-        writeResult,
-      });
+      // eslint-disable-next-line no-console
+      const details: string[] = [];
+      if (writeResult.schemaVersion) {
+        details.push(`schema ${writeResult.schemaVersion}`);
+      }
+      if (writeResult.generatedAt) {
+        details.push(`generated ${writeResult.generatedAt}`);
+      }
+      if (writeResult.summary) {
+        details.push(`${writeResult.summary.subscriptions} subscriptions`);
+        details.push(`${writeResult.summary.fieldResolvers} fieldResolvers`);
+        details.push(`${writeResult.summary.inputs} inputs`);
+        details.push(`${writeResult.summary.outputs} outputs`);
+      }
+      if (!writeResult.updated && packageManifestMissing) {
+        details.push('package manifest emitted');
+      }
+      details.push(`build ${buildResult.formats.join('+')}${buildResult.dts ? '+dts' : ''}`);
+      details.push(`dist ${buildResult.outputPath}`);
+      const detailsInfo = details.length > 0 ? `, ${details.join(', ')}` : '';
+      console.log(`livon: client updated (checksum ${writeResult.checksum}${detailsInfo})`);
     }
   };
 
@@ -1093,18 +1035,6 @@ const run = async () => {
     const maxAttempts = 20;
     const baseDelay = 250;
     let waitingForEndpointLogged = false;
-    const logRetry = ({ error, nextAttempt, wait }: LogRetryInput): void => {
-      if (isConnectionRefusedError(error)) {
-        if (!waitingForEndpointLogged) {
-          console.log(`livon: waiting for endpoint ${options.endpoint}...`);
-          waitingForEndpointLogged = true;
-        }
-        return;
-      }
-
-      console.warn(`livon: attempt ${nextAttempt}/${maxAttempts} failed: ${error instanceof Error ? error.message : String(error)} – retrying in ${wait}ms`);
-    };
-
     const runAttempt = async (attempt: number, resetApplied: boolean): Promise<void> => {
       try {
         await action();
@@ -1119,7 +1049,16 @@ const run = async () => {
           throw new Error('livon: giving up after repeated retries');
         }
         const wait = baseDelay * Math.min(nextAttempt, 10);
-        logRetry({ error, nextAttempt, wait });
+        if (isConnectionRefusedError(error)) {
+          if (!waitingForEndpointLogged) {
+            // eslint-disable-next-line no-console
+            console.log(`livon: waiting for endpoint ${options.endpoint}...`);
+            waitingForEndpointLogged = true;
+          }
+        } else {
+          // eslint-disable-next-line no-console
+          console.warn(`livon: attempt ${nextAttempt}/${maxAttempts} failed: ${error instanceof Error ? error.message : String(error)} – retrying in ${wait}ms`);
+        }
         await new Promise((resolve) => setTimeout(resolve, wait));
         await runAttempt(nextAttempt, nextResetApplied);
       }
@@ -1139,6 +1078,7 @@ const run = async () => {
         await withRetry(execute);
         ensureCommandRuntime();
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.error('livon: poll error', error);
       } finally {
         inFlight = false;
@@ -1158,6 +1098,7 @@ const run = async () => {
 };
 
 run().catch((error) => {
+  // eslint-disable-next-line no-console
   console.error(error);
   process.exit(1);
 });

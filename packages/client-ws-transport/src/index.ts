@@ -255,7 +255,7 @@ const decodeContext = (payload?: Uint8Array): RuntimeEventContext | undefined =>
     return undefined;
   }
   const decoded = decodeMsgpack(payload);
-  return isRecord(decoded) ? (decoded as RuntimeEventContext) : undefined;
+  return isRecord(decoded) ? decoded : undefined;
 };
 
 const encodeEventError = (error: EventError): Uint8Array =>
@@ -329,17 +329,17 @@ const defaultEncode: WireEncode = (envelope) => {
       ...base,
       payload: envelope.payload,
     };
-    return pack(wire);
+    return encodeMsgpack(wire);
   }
   const wire: WireEventError = {
     ...base,
     error: encodeEventError(envelope.error),
   };
-  return pack(wire);
+  return encodeMsgpack(wire);
 };
 
 const defaultDecode: WireDecode = (data) => {
-  const parsed = unpack(binaryFromSocketData(data)) as WireEvent;
+  const parsed = decodeMsgpack(binaryFromSocketData(data)) as WireEvent;
   if (
     !isRecord(parsed)
     || typeof parsed.id !== 'string'
@@ -426,13 +426,16 @@ const addListener = ({ socket, event, handler }: AddListenerInput) => {
 const isMessageEvent = (value: unknown): value is WebSocketMessageEvent =>
   typeof value === 'object' && value !== null && 'data' in value;
 
-type ArrayBufferLike = { arrayBuffer: () => Promise<ArrayBuffer> };
+interface ArrayBufferLike {
+  arrayBuffer: () => Promise<ArrayBuffer>;
+}
 
-const isArrayBufferLike = (value: unknown): value is ArrayBufferLike =>
-  typeof value === 'object' &&
-  value !== null &&
-  'arrayBuffer' in value &&
-  typeof (value as ArrayBufferLike).arrayBuffer === 'function';
+const isArrayBufferLike = (value: unknown): value is ArrayBufferLike => {
+  if (typeof value !== 'object' || value === null || !('arrayBuffer' in value)) {
+    return false;
+  }
+  return typeof value.arrayBuffer === 'function';
+};
 
 interface BuildReceiveEmitInput {
   envelope: EventEnvelope;

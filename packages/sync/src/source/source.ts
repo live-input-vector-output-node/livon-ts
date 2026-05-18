@@ -810,12 +810,12 @@ export const createSourceFromConfig = <
       }
       let payloadKey: string | null = null;
       const singleInFlight = resolveSingleInFlight({
-        currentPayload: internal.payload,
-        hasTrackedPayload: hasSingleInFlightPayload,
-        payloadKeyCache,
         promise: singleInFlightPromise,
+        currentPayload: internal.payload,
         trackedPayload: singleInFlightPayload,
         trackedPayloadKey: singleInFlightPayloadKey,
+        hasTrackedPayload: hasSingleInFlightPayload,
+        payloadKeyCache,
       });
       singleInFlightPayloadKey = singleInFlight.trackedPayloadKey;
       payloadKey = singleInFlight.currentPayloadKey;
