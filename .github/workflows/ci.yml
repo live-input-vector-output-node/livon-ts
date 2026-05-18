@@ -8,16 +8,116 @@ on:
   merge_group:
     branches:
       - main
+  schedule:
+    - cron: '0 3 * * 6'
+    - cron: '30 12 * * 1'
+    - cron: '30 1 * * 6'
   workflow_dispatch:
 
-permissions:
-  contents: read
+permissions: read-all
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  NODE_VERSION: lts/*
+  PNPM_VERSION: 9.0.0
+  PNPM_STORE_PATH: .pnpm-store
+  TURBO_CACHE_PATH: .turbo
 
 jobs:
-  ci:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      run_ci: ${{ steps.flags.outputs.run_ci }}
+      run_docs: ${{ steps.flags.outputs.run_docs }}
+      run_coverage: ${{ steps.flags.outputs.run_coverage }}
+      run_publish: ${{ steps.flags.outputs.run_publish }}
+      run_secret_scan: ${{ steps.flags.outputs.run_secret_scan }}
+      run_vulnerability_scan: ${{ steps.flags.outputs.run_vulnerability_scan }}
+      run_scorecard: ${{ steps.flags.outputs.run_scorecard }}
+      turbo_filter: ${{ steps.flags.outputs.turbo_filter }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Compute pipeline flags
+        id: flags
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REF: ${{ github.ref }}
+          BEFORE_SHA: ${{ github.event.before }}
+          HEAD_SHA: ${{ github.sha }}
+          SCHEDULE_EXPR: ${{ github.event.schedule || '' }}
+        run: |
+          set -euo pipefail
+
+          run_ci=false
+          run_docs=false
+          run_coverage=false
+          run_publish=false
+          run_secret_scan=false
+          run_vulnerability_scan=false
+          run_scorecard=false
+          turbo_filter=
+
+          if [[ "$EVENT_NAME" == "pull_request" || "$EVENT_NAME" == "merge_group" ]]; then
+            run_ci=true
+            run_secret_scan=true
+            run_vulnerability_scan=true
+            turbo_filter='[main...HEAD]'
+          fi
+
+          if [[ "$EVENT_NAME" == "push" && "$REF" == "refs/heads/main" ]]; then
+            run_ci=true
+            run_docs=true
+            run_coverage=true
+            run_secret_scan=true
+            run_vulnerability_scan=true
+            run_scorecard=true
+
+            if [[ -n "$BEFORE_SHA" && "$BEFORE_SHA" != "0000000000000000000000000000000000000000" ]]; then
+              if git diff --name-only "$BEFORE_SHA" "$HEAD_SHA" -- .changeset | grep -E '^\.changeset/.+\.md$' >/dev/null; then
+                run_publish=true
+              fi
+            fi
+          fi
+
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            run_ci=true
+            run_docs=true
+            run_coverage=true
+            run_secret_scan=true
+            run_vulnerability_scan=true
+            run_scorecard=true
+          fi
+
+          if [[ "$EVENT_NAME" == "schedule" ]]; then
+            if [[ "$SCHEDULE_EXPR" == "0 3 * * 6" ]]; then
+              run_secret_scan=true
+            fi
+            if [[ "$SCHEDULE_EXPR" == "30 12 * * 1" ]]; then
+              run_vulnerability_scan=true
+            fi
+            if [[ "$SCHEDULE_EXPR" == "30 1 * * 6" ]]; then
+              run_scorecard=true
+            fi
+          fi
+
+          {
+            echo "run_ci=$run_ci"
+            echo "run_docs=$run_docs"
+            echo "run_coverage=$run_coverage"
+            echo "run_publish=$run_publish"
+            echo "run_secret_scan=$run_secret_scan"
+            echo "run_vulnerability_scan=$run_vulnerability_scan"
+            echo "run_scorecard=$run_scorecard"
+            echo "turbo_filter=$turbo_filter"
+          } >> "$GITHUB_OUTPUT"
+
+  install_production_dependencies:
+    needs: plan
+    if: ${{ needs.plan.outputs.run_ci == 'true' || needs.plan.outputs.run_docs == 'true' || needs.plan.outputs.run_coverage == 'true' || needs.plan.outputs.run_publish == 'true' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -28,41 +128,534 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
         with:
-          version: 9.0.0
+          version: ${{ env.PNPM_VERSION }}
 
       - name: Setup Node.js
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
-          node-version: lts/*
-          cache: pnpm
-          cache-dependency-path: pnpm-lock.yaml
+          node-version: ${{ env.NODE_VERSION }}
 
-      - name: Resolve pnpm store path
-        id: pnpm-store
-        run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
-
-      - name: Cache pnpm store
+      - name: Restore pnpm store cache
         uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
         with:
-          path: ${{ steps.pnpm-store.outputs.path }}
+          path: ${{ env.PNPM_STORE_PATH }}
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
 
-      - name: Cache Turborepo
+      - name: Restore Turborepo cache
         uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
         with:
-          path: .turbo
-          key: ${{ runner.os }}-turbo-${{ github.workflow }}-${{ hashFiles('turbo.json', 'pnpm-lock.yaml', '**/package.json') }}
+          path: ${{ env.TURBO_CACHE_PATH }}
+          key: ${{ runner.os }}-turbo-${{ hashFiles('turbo.json', 'pnpm-lock.yaml', '**/package.json') }}
           restore-keys: |
-            ${{ runner.os }}-turbo-${{ github.workflow }}-
             ${{ runner.os }}-turbo-
 
-      - name: Install dependencies
+      - name: Configure local pnpm store path
+        run: pnpm config set store-dir "${{ env.PNPM_STORE_PATH }}"
+
+      - name: Install production dependencies
+        run: pnpm install --prod --frozen-lockfile
+
+      - name: Archive production dependency state
+        run: tar -czf prod-deps.tgz node_modules .pnpm-store .turbo
+
+      - name: Upload production dependency artifact
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: prod-deps
+          path: prod-deps.tgz
+          retention-days: 1
+
+  install_development_dependencies:
+    needs:
+      - plan
+      - install_production_dependencies
+    if: ${{ needs.plan.outputs.run_ci == 'true' || needs.plan.outputs.run_docs == 'true' || needs.plan.outputs.run_coverage == 'true' || needs.plan.outputs.run_publish == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Restore pnpm store cache
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+        with:
+          path: ${{ env.PNPM_STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Restore Turborepo cache
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+        with:
+          path: ${{ env.TURBO_CACHE_PATH }}
+          key: ${{ runner.os }}-turbo-${{ hashFiles('turbo.json', 'pnpm-lock.yaml', '**/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-turbo-
+
+      - name: Download production dependency artifact
+        uses: actions/download-artifact@v5
+        with:
+          name: prod-deps
+
+      - name: Restore production dependency state
+        run: tar -xzf prod-deps.tgz
+
+      - name: Configure local pnpm store path
+        run: pnpm config set store-dir "${{ env.PNPM_STORE_PATH }}"
+
+      - name: Install development dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Run monorepo CI
+      - name: Archive development dependency state
+        run: tar -czf dev-deps.tgz node_modules .pnpm-store .turbo
+
+      - name: Upload development dependency artifact
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: dev-deps
+          path: dev-deps.tgz
+          retention-days: 1
+
+  ci:
+    needs:
+      - plan
+      - install_development_dependencies
+    if: ${{ needs.plan.outputs.run_ci == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Restore pnpm store cache
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+        with:
+          path: ${{ env.PNPM_STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Restore Turborepo cache
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+        with:
+          path: ${{ env.TURBO_CACHE_PATH }}
+          key: ${{ runner.os }}-turbo-${{ hashFiles('turbo.json', 'pnpm-lock.yaml', '**/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-turbo-
+
+      - name: Download development dependency artifact
+        uses: actions/download-artifact@v5
+        with:
+          name: dev-deps
+
+      - name: Restore development dependency state
+        run: tar -xzf dev-deps.tgz
+
+      - name: Configure local pnpm store path
+        run: pnpm config set store-dir "${{ env.PNPM_STORE_PATH }}"
+
+      - name: Run monorepo CI (Turbo)
+        if: ${{ needs.plan.outputs.turbo_filter == '' }}
         run: pnpm run ci
 
+      - name: Run monorepo CI (Turbo, affected filter)
+        if: ${{ needs.plan.outputs.turbo_filter != '' }}
+        run: pnpm run ci -- --filter=${{ needs.plan.outputs.turbo_filter }}
+
       - name: Check publish artifacts
+        if: ${{ needs.plan.outputs.turbo_filter == '' }}
         run: pnpm run release:check
+
+      - name: Check publish artifacts (affected filter)
+        if: ${{ needs.plan.outputs.turbo_filter != '' }}
+        run: pnpm run release:check -- --filter=${{ needs.plan.outputs.turbo_filter }}
+
+      - name: Archive build outputs
+        run: |
+          set -euo pipefail
+          mapfile -t build_paths < <(find packages apps tools website -type d \( -name dist -o -name build \) -print || true)
+          if [[ "${#build_paths[@]}" -eq 0 ]]; then
+            echo "::error::No build output directories found to archive."
+            exit 1
+          fi
+          tar -czf ci-build-artifacts.tgz "${build_paths[@]}"
+
+      - name: Upload build outputs
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: ci-build-artifacts
+          path: ci-build-artifacts.tgz
+          retention-days: 2
+
+  publish:
+    needs:
+      - plan
+      - ci
+      - install_development_dependencies
+    if: ${{ needs.plan.outputs.run_publish == 'true' && needs.plan.outputs.run_ci == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          registry-url: https://registry.npmjs.org
+
+      - name: Restore pnpm store cache
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+        with:
+          path: ${{ env.PNPM_STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Restore Turborepo cache
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+        with:
+          path: ${{ env.TURBO_CACHE_PATH }}
+          key: ${{ runner.os }}-turbo-${{ hashFiles('turbo.json', 'pnpm-lock.yaml', '**/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-turbo-
+
+      - name: Download development dependency artifact
+        uses: actions/download-artifact@v5
+        with:
+          name: dev-deps
+
+      - name: Restore development dependency state
+        run: tar -xzf dev-deps.tgz
+
+      - name: Download CI build artifact
+        uses: actions/download-artifact@v5
+        with:
+          name: ci-build-artifacts
+
+      - name: Restore CI build artifact
+        run: tar -xzf ci-build-artifacts.tgz
+
+      - name: Configure local pnpm store path
+        run: pnpm config set store-dir "${{ env.PNPM_STORE_PATH }}"
+
+      - name: Validate npm token
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -z "${NODE_AUTH_TOKEN}" ]; then
+            echo "::error::NPM_TOKEN secret is missing. Add it in repository Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+
+      - name: Configure npm authentication
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          cat <<EOF > ~/.npmrc
+          //registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}
+          registry=https://registry.npmjs.org/
+          always-auth=true
+          EOF
+          npm whoami
+
+      - name: Publish packages (changeset semantics)
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: pnpm changeset:publish
+
+  docs_build:
+    needs:
+      - plan
+      - install_development_dependencies
+      - ci
+    if: ${{ needs.plan.outputs.run_docs == 'true' && needs.plan.outputs.run_ci == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Download development dependency artifact
+        uses: actions/download-artifact@v5
+        with:
+          name: dev-deps
+
+      - name: Restore development dependency state
+        run: tar -xzf dev-deps.tgz
+
+      - name: Configure local pnpm store path
+        run: pnpm config set store-dir "${{ env.PNPM_STORE_PATH }}"
+
+      - name: Configure Pages
+        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+
+      - name: Build Docusaurus
+        env:
+          DOCUSAURUS_GITHUB_PAGES: true
+        run: pnpm --filter website build
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4.0.0
+        with:
+          path: website/build
+
+  docs_deploy:
+    needs: docs_build
+    if: ${{ needs.docs_build.result == 'success' }}
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      pages: write
+      id-token: write
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0
+
+  coverage:
+    needs:
+      - plan
+      - install_development_dependencies
+      - ci
+    if: ${{ needs.plan.outputs.run_coverage == 'true' && needs.plan.outputs.run_ci == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Download development dependency artifact
+        uses: actions/download-artifact@v5
+        with:
+          name: dev-deps
+
+      - name: Restore development dependency state
+        run: tar -xzf dev-deps.tgz
+
+      - name: Configure local pnpm store path
+        run: pnpm config set store-dir "${{ env.PNPM_STORE_PATH }}"
+
+      - name: Build workspace
+        run: pnpm run build
+
+      - name: Run workspace coverage
+        run: pnpm exec vitest run --config vitest.workspace.ts --coverage --reporter=dot
+
+      - name: Upload coverage to Coveralls
+        uses: coverallsapp/github-action@648a8eb78e6d50909eff900e4ec85cab4524a45b # v2.3.6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          base-path: .
+          fail-on-error: true
+
+  secret_scan:
+    needs: plan
+    if: ${{ needs.plan.outputs.run_secret_scan == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Install Gitleaks
+        run: |
+          set -euo pipefail
+          GITLEAKS_VERSION="8.30.1"
+          ARCHIVE="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          curl -fsSL -o "/tmp/${ARCHIVE}" "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/${ARCHIVE}"
+          curl -fsSL -o /tmp/gitleaks_checksums.txt "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_checksums.txt"
+          (
+            cd /tmp
+            grep " ${ARCHIVE}$" gitleaks_checksums.txt | sha256sum -c -
+          )
+          tar -xzf "/tmp/${ARCHIVE}" -C /tmp gitleaks
+          sudo install -m 0755 /tmp/gitleaks /usr/local/bin/gitleaks
+          gitleaks version
+
+      - name: Run Gitleaks
+        run: gitleaks git --log-opts="--all" --redact --no-banner --exit-code 1 .
+
+  vulnerability_scan:
+    needs: plan
+    if: ${{ needs.plan.outputs.run_vulnerability_scan == 'true' }}
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@c51854704019a247608d928f370c98740469d4b5 # v2.3.5
+    with:
+      scan-args: |-
+        --recursive
+        --licenses="MIT"
+        ./
+
+  scorecard:
+    needs: plan
+    if: ${{ needs.plan.outputs.run_scorecard == 'true' }}
+    name: Scorecard analysis
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+      id-token: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Run analysis
+        uses: ossf/scorecard-action@4eaacf0543bb3f2c246792bd56e8cdeffafb205a # v2.4.3
+        with:
+          results_file: results.sarif
+          results_format: sarif
+          publish_results: true
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: scorecard-sarif
+          path: results.sarif
+          retention-days: 5
+
+      - name: Upload to code-scanning
+        uses: github/codeql-action/upload-sarif@c10b8064de6f491fea524254123dbe5e09572f13 # v4.35.1
+        with:
+          sarif_file: results.sarif
+
+  summary:
+    needs:
+      - plan
+      - install_production_dependencies
+      - install_development_dependencies
+      - ci
+      - publish
+      - docs_build
+      - docs_deploy
+      - coverage
+      - secret_scan
+      - vulnerability_scan
+      - scorecard
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Write pipeline summary and mindmap
+        env:
+          RUN_CI: ${{ needs.plan.outputs.run_ci }}
+          RUN_DOCS: ${{ needs.plan.outputs.run_docs }}
+          RUN_COVERAGE: ${{ needs.plan.outputs.run_coverage }}
+          RUN_PUBLISH: ${{ needs.plan.outputs.run_publish }}
+          RUN_SECRET_SCAN: ${{ needs.plan.outputs.run_secret_scan }}
+          RUN_VULN_SCAN: ${{ needs.plan.outputs.run_vulnerability_scan }}
+          RUN_SCORECARD: ${{ needs.plan.outputs.run_scorecard }}
+          STATUS_PROD: ${{ needs.install_production_dependencies.result }}
+          STATUS_DEV: ${{ needs.install_development_dependencies.result }}
+          STATUS_CI: ${{ needs.ci.result }}
+          STATUS_PUBLISH: ${{ needs.publish.result }}
+          STATUS_DOCS_BUILD: ${{ needs.docs_build.result }}
+          STATUS_DOCS_DEPLOY: ${{ needs.docs_deploy.result }}
+          STATUS_COVERAGE: ${{ needs.coverage.result }}
+          STATUS_SECRET_SCAN: ${{ needs.secret_scan.result }}
+          STATUS_VULN_SCAN: ${{ needs.vulnerability_scan.result }}
+          STATUS_SCORECARD: ${{ needs.scorecard.result }}
+        run: |
+          cat <<EOF >> "$GITHUB_STEP_SUMMARY"
+          ## Unified Pipeline Summary
+
+          | Area | Enabled | Result |
+          | --- | --- | --- |
+          | Production dependency install | true | ${STATUS_PROD} |
+          | Development dependency install | true | ${STATUS_DEV} |
+          | Turbo CI (`pnpm run ci`) | ${RUN_CI} | ${STATUS_CI} |
+          | Publish (`pnpm changeset:publish`) | ${RUN_PUBLISH} | ${STATUS_PUBLISH} |
+          | Docs build | ${RUN_DOCS} | ${STATUS_DOCS_BUILD} |
+          | Docs deploy | ${RUN_DOCS} | ${STATUS_DOCS_DEPLOY} |
+          | Coverage | ${RUN_COVERAGE} | ${STATUS_COVERAGE} |
+          | Secret scan | ${RUN_SECRET_SCAN} | ${STATUS_SECRET_SCAN} |
+          | Vulnerability scan | ${RUN_VULN_SCAN} | ${STATUS_VULN_SCAN} |
+          | Scorecard | ${RUN_SCORECARD} | ${STATUS_SCORECARD} |
+
+          ## Pipeline Mindmap
+
+          \
+          Unified Pipeline
+          ├─ Dependency bootstrap
+          │  ├─ production install artifact (`prod-deps`)
+          │  └─ development install artifact (`dev-deps`)
+          ├─ Quality gates
+          │  └─ Turbo CI (`pnpm run ci`) + `release:check`
+          ├─ Build artifact handover
+          │  └─ `ci-build-artifacts`
+          ├─ Release
+          │  └─ publish job (changeset-trigger semantics)
+          ├─ Documentation
+          │  ├─ docs build
+          │  └─ pages deploy
+          └─ Security & trust
+             ├─ gitleaks
+             ├─ OSV scan
+             └─ OpenSSF scorecard
+          EOF

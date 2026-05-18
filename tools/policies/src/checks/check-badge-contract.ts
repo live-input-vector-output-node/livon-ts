@@ -15,8 +15,8 @@ const SCORECARD_BADGE = `https://api.scorecard.dev/projects/github.com/${REPO}/b
 const BEST_PRACTICES_BADGE = 'https://www.bestpractices.dev/projects/12249/badge';
 const REUSE_BADGE = `https://api.reuse.software/badge/github.com/${REPO}`;
 const CI_BADGE = `https://img.shields.io/github/actions/workflow/status/${REPO}/ci.yml?branch=main&label=ci`;
-const VULNERABILITY_SCAN_BADGE = `https://img.shields.io/github/actions/workflow/status/${REPO}/vulnerability-scan.yml?branch=main&label=vulnerability%20scan`;
-const VULNERABILITY_SCAN_WORKFLOW = `https://github.com/${REPO}/actions/workflows/vulnerability-scan.yml`;
+const VULNERABILITY_SCAN_BADGE = `https://img.shields.io/github/actions/workflow/status/${REPO}/ci.yml?branch=main&label=vulnerability%20scan`;
+const VULNERABILITY_SCAN_WORKFLOW = `https://github.com/${REPO}/actions/workflows/ci.yml`;
 
 const REPO_BADGE_CONTRACT = {
   requiredPatterns: [

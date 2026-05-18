@@ -56,8 +56,9 @@ pnpm --filter <package-name> test:integration
 
 ## CI scope
 
-The CI workflow runs one root command and delegates orchestration to Turborepo.
-CI caching includes PNPM store and local `.turbo` artifacts.
+The unified pipeline workflow runs one root command and delegates orchestration to Turborepo.
+PR and merge-group runs use affected filtering (`--filter=[main...HEAD]`) for CI and release checks, while pushes to `main` use full runs.
+The pipeline shares PNPM store and local `.turbo` cache across jobs, and reuses dependency-install artifacts between stages.
 
 ```sh
 pnpm run ci
@@ -65,18 +66,18 @@ pnpm run ci
 
 ## Security analysis in CI
 
-Security-focused automated checks are executed in dedicated workflows and repository security settings:
+Security-focused automated checks are executed as dedicated jobs in the unified pipeline:
 
 - GitHub CodeQL default setup (Code Scanning): static analysis for JavaScript/TypeScript and workflow files.
-- `secrets.yml`: Gitleaks secret scanning to detect leaked credentials in git history.
-- `vulnerability-scan.yml`: OSV-Scanner dependency vulnerability scan and license policy check (`--licenses="MIT"`).
-- `scorecards.yml`: OpenSSF Scorecard analysis with SARIF upload.
+- Secret scan job: Gitleaks secret scanning to detect leaked credentials in git history.
+- Vulnerability scan job: OSV-Scanner dependency vulnerability scan and license policy check (`--licenses="MIT"`).
+- Scorecard job: OpenSSF Scorecard analysis with SARIF upload.
 
 These complement repository gates and help identify vulnerabilities before release.
 
 ## Coverage publishing
 
-After CI succeeds on `main`, a separate coverage workflow rebuilds the workspace,
+After the CI job succeeds in the unified pipeline on `main`, the coverage job rebuilds the workspace,
 runs the Vitest workspace with coverage enabled, and uploads the resulting
 `lcov.info` reports to Coveralls.
 

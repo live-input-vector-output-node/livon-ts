@@ -278,7 +278,7 @@ to keep links stable against the published docs site.
 
 ## GitHub Pages deployment
 
-The docs site deploy pipeline is in `.github/workflows/docs-pages.yml`.
+The docs site deploy pipeline is in `.github/workflows/ci.yml`.
 
 It:
 
@@ -291,7 +291,7 @@ It:
 
 ## Package publishing
 
-Publishing is handled by `.github/workflows/publish.yml`.
+Publishing is handled by `.github/workflows/ci.yml`.
 
 Requirements:
 
