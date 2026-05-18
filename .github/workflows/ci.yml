@@ -23,6 +23,28 @@ env:
   TURBO_CACHE_PATH: .turbo
 
 jobs:
+  copilot_review:
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup mise
+        uses: jdx/mise-action@5228313ee0372e111a38da051671ca30fc5a96db # v3
+        with:
+          install: true
+          cache: true
+
+      - name: Request Copilot review
+        run: >-
+          mise run copilot-review --
+          --repo "${{ github.repository }}"
+          --pr "${{ github.event.pull_request.number }}"
+
   prod_dependencies:
     if: ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
     runs-on: ubuntu-latest
@@ -357,16 +379,39 @@ jobs:
 
   vulnerability_scan:
     if: ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'schedule' && github.event.schedule == '30 12 * * 1') }}
+    runs-on: ubuntu-latest
     permissions:
       actions: read
       contents: read
       security-events: write
-    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@c51854704019a247608d928f370c98740469d4b5 # v2.3.5
-    with:
-      scan-args: |-
-        --recursive
-        --licenses="MIT"
-        ./
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup mise
+        uses: jdx/mise-action@5228313ee0372e111a38da051671ca30fc5a96db # v3
+        with:
+          install: true
+          cache: true
+
+      - name: Restore pnpm store cache
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+        with:
+          path: ${{ env.PNPM_STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Restore Turborepo cache
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+        with:
+          path: ${{ env.TURBO_CACHE_PATH }}
+          key: ${{ runner.os }}-turbo-${{ hashFiles('turbo.json', 'pnpm-lock.yaml', '**/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-turbo-
+
+      - name: Run vulnerability scan
+        run: mise run vulnerability-scan
 
   scorecard:
     if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'schedule' && github.event.schedule == '30 1 * * 6') }}
@@ -404,6 +449,7 @@ jobs:
 
   summary:
     needs:
+      - copilot_review
       - prod_dependencies
       - dev_dependencies
       - ci
@@ -432,6 +478,7 @@ jobs:
           mise run write-summary --
           --outputFile "$GITHUB_STEP_SUMMARY"
           --run "prod_dependencies=${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}"
+          --run "copilot_review=${{ github.event_name == 'pull_request' }}"
           --run "dev_dependencies=${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}"
           --run "ci=${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}"
           --run "docs=${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}"
@@ -441,6 +488,7 @@ jobs:
           --run "vuln_scan=${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'schedule' && github.event.schedule == '30 12 * * 1') }}"
           --run "scorecard=${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'schedule' && github.event.schedule == '30 1 * * 6') }}"
           --status "prod_dependencies=${{ needs.prod_dependencies.result }}"
+          --status "copilot_review=${{ needs.copilot_review.result }}"
           --status "dev_dependencies=${{ needs.dev_dependencies.result }}"
           --status "ci=${{ needs.ci.result }}"
           --status "publish=${{ needs.publish.result }}"

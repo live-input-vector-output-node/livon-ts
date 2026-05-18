@@ -90,8 +90,19 @@ run = "pnpm exec vitest run --config vitest.workspace.ts --coverage --reporter=d
 
 [tasks."secret-scan"]
 description = "Run gitleaks"
+depends = ["setup"]
 raw_args = true
 run = "node tools/ci/steps/run-gitleaks.mjs"
+
+[tasks."vulnerability-scan"]
+description = "Run OSV vulnerability scan"
+depends = ["setup"]
+run = 'pnpm dlx osv-scanner --recursive --licenses="MIT" ./'
+
+[tasks."copilot-review"]
+description = "Request Copilot code review for a pull request"
+raw_args = true
+run = "node tools/ci/steps/request-copilot-review.mjs"
 
 [tasks."write-summary"]
 description = "Write job summary and mindmap"
