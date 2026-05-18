@@ -22,41 +22,8 @@ env:
   TURBO_CACHE_PATH: .turbo
 
 jobs:
-  plan:
-    runs-on: ubuntu-latest
-    outputs:
-      run_ci: ${{ steps.flags.outputs.run_ci }}
-      run_docs: ${{ steps.flags.outputs.run_docs }}
-      run_coverage: ${{ steps.flags.outputs.run_coverage }}
-      run_publish: ${{ steps.flags.outputs.run_publish }}
-      run_secret_scan: ${{ steps.flags.outputs.run_secret_scan }}
-      run_vulnerability_scan: ${{ steps.flags.outputs.run_vulnerability_scan }}
-      run_scorecard: ${{ steps.flags.outputs.run_scorecard }}
-      turbo_filter: ${{ steps.flags.outputs.turbo_filter }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          fetch-depth: 0
-
-      - name: Setup mise
-        uses: jdx/mise-action@v3
-        with:
-          install: true
-
-      - name: Compute pipeline flags
-        id: flags
-        env:
-          EVENT_NAME: ${{ github.event_name }}
-          REF: ${{ github.ref }}
-          BEFORE_SHA: ${{ github.event.before }}
-          HEAD_SHA: ${{ github.sha }}
-          SCHEDULE_EXPR: ${{ github.event.schedule || '' }}
-        run: mise run workflow:plan-flags
-
   install_production_dependencies:
-    needs: plan
-    if: ${{ needs.plan.outputs.run_ci == 'true' || needs.plan.outputs.run_docs == 'true' || needs.plan.outputs.run_coverage == 'true' || needs.plan.outputs.run_publish == 'true' }}
+    if: ${{ github.event_name != 'schedule' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -105,9 +72,8 @@ jobs:
 
   install_development_dependencies:
     needs:
-      - plan
       - install_production_dependencies
-    if: ${{ needs.plan.outputs.run_ci == 'true' || needs.plan.outputs.run_docs == 'true' || needs.plan.outputs.run_coverage == 'true' || needs.plan.outputs.run_publish == 'true' }}
+    if: ${{ github.event_name != 'schedule' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -166,9 +132,8 @@ jobs:
 
   ci:
     needs:
-      - plan
       - install_development_dependencies
-    if: ${{ needs.plan.outputs.run_ci == 'true' }}
+    if: ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -210,15 +175,21 @@ jobs:
       - name: Configure local pnpm store path
         run: mise run workflow:configure-pnpm-store
 
-      - name: Run monorepo CI (Turbo)
-        env:
-          TURBO_FILTER: ${{ needs.plan.outputs.turbo_filter }}
-        run: mise run workflow:run-ci
+      - name: Run affected monorepo CI (Turbo)
+        if: ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' }}
+        run: mise run workflow:run-ci-affected
 
-      - name: Check publish artifacts
-        env:
-          TURBO_FILTER: ${{ needs.plan.outputs.turbo_filter }}
-        run: mise run workflow:release-check
+      - name: Run full monorepo CI (Turbo)
+        if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
+        run: mise run workflow:run-ci-full
+
+      - name: Check affected publish artifacts
+        if: ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' }}
+        run: mise run workflow:release-check-affected
+
+      - name: Check full publish artifacts
+        if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
+        run: mise run workflow:release-check-full
 
       - name: Archive build outputs
         env:
@@ -234,10 +205,9 @@ jobs:
 
   publish:
     needs:
-      - plan
       - ci
       - install_development_dependencies
-    if: ${{ needs.plan.outputs.run_publish == 'true' && needs.plan.outputs.run_ci == 'true' }}
+    if: ${{ (github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')) && needs.ci.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -307,10 +277,9 @@ jobs:
 
   docs_build:
     needs:
-      - plan
       - install_development_dependencies
       - ci
-    if: ${{ needs.plan.outputs.run_docs == 'true' && needs.plan.outputs.run_ci == 'true' }}
+    if: ${{ (github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')) && needs.ci.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -366,10 +335,9 @@ jobs:
 
   coverage:
     needs:
-      - plan
       - install_development_dependencies
       - ci
-    if: ${{ needs.plan.outputs.run_coverage == 'true' && needs.plan.outputs.run_ci == 'true' }}
+    if: ${{ (github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')) && needs.ci.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -409,8 +377,7 @@ jobs:
           fail-on-error: true
 
   secret_scan:
-    needs: plan
-    if: ${{ needs.plan.outputs.run_secret_scan == 'true' }}
+    if: ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'schedule' && github.event.schedule == '0 3 * * 6') }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -432,8 +399,7 @@ jobs:
         run: mise run workflow:run-gitleaks
 
   vulnerability_scan:
-    needs: plan
-    if: ${{ needs.plan.outputs.run_vulnerability_scan == 'true' }}
+    if: ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'schedule' && github.event.schedule == '30 12 * * 1') }}
     permissions:
       actions: read
       contents: read
@@ -446,8 +412,7 @@ jobs:
         ./
 
   scorecard:
-    needs: plan
-    if: ${{ needs.plan.outputs.run_scorecard == 'true' }}
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'schedule' && github.event.schedule == '30 1 * * 6') }}
     name: Scorecard analysis
     runs-on: ubuntu-latest
     permissions:
@@ -482,7 +447,6 @@ jobs:
 
   summary:
     needs:
-      - plan
       - install_production_dependencies
       - install_development_dependencies
       - ci
@@ -506,13 +470,13 @@ jobs:
 
       - name: Write pipeline summary and mindmap
         env:
-          RUN_CI: ${{ needs.plan.outputs.run_ci }}
-          RUN_DOCS: ${{ needs.plan.outputs.run_docs }}
-          RUN_COVERAGE: ${{ needs.plan.outputs.run_coverage }}
-          RUN_PUBLISH: ${{ needs.plan.outputs.run_publish }}
-          RUN_SECRET_SCAN: ${{ needs.plan.outputs.run_secret_scan }}
-          RUN_VULN_SCAN: ${{ needs.plan.outputs.run_vulnerability_scan }}
-          RUN_SCORECARD: ${{ needs.plan.outputs.run_scorecard }}
+          RUN_CI: ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
+          RUN_DOCS: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
+          RUN_COVERAGE: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
+          RUN_PUBLISH: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
+          RUN_SECRET_SCAN: ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'schedule' && github.event.schedule == '0 3 * * 6') }}
+          RUN_VULN_SCAN: ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'schedule' && github.event.schedule == '30 12 * * 1') }}
+          RUN_SCORECARD: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'schedule' && github.event.schedule == '30 1 * * 6') }}
           STATUS_PROD: ${{ needs.install_production_dependencies.result }}
           STATUS_DEV: ${{ needs.install_development_dependencies.result }}
           STATUS_CI: ${{ needs.ci.result }}

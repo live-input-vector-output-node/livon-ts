@@ -2,75 +2,6 @@
 node = "lts"
 pnpm = "9.0.0"
 
-[tasks."workflow:plan-flags"]
-description = "Compute pipeline flags and write them to GITHUB_OUTPUT"
-run = '''
-set -euo pipefail
-
-run_ci=false
-run_docs=false
-run_coverage=false
-run_publish=false
-run_secret_scan=false
-run_vulnerability_scan=false
-run_scorecard=false
-turbo_filter=
-
-if [[ "${EVENT_NAME}" == "pull_request" || "${EVENT_NAME}" == "merge_group" ]]; then
-  run_ci=true
-  run_secret_scan=true
-  run_vulnerability_scan=true
-  turbo_filter='[main...HEAD]'
-fi
-
-if [[ "${EVENT_NAME}" == "push" && "${REF}" == "refs/heads/main" ]]; then
-  run_ci=true
-  run_docs=true
-  run_coverage=true
-  run_secret_scan=true
-  run_vulnerability_scan=true
-  run_scorecard=true
-
-  if [[ -n "${BEFORE_SHA:-}" && "${BEFORE_SHA}" != "0000000000000000000000000000000000000000" ]]; then
-    if git diff --name-only "${BEFORE_SHA}" "${HEAD_SHA}" -- .changeset | grep -E '^\.changeset/.+\.md$' >/dev/null; then
-      run_publish=true
-    fi
-  fi
-fi
-
-if [[ "${EVENT_NAME}" == "workflow_dispatch" ]]; then
-  run_ci=true
-  run_docs=true
-  run_coverage=true
-  run_secret_scan=true
-  run_vulnerability_scan=true
-  run_scorecard=true
-fi
-
-if [[ "${EVENT_NAME}" == "schedule" ]]; then
-  if [[ "${SCHEDULE_EXPR:-}" == "0 3 * * 6" ]]; then
-    run_secret_scan=true
-  fi
-  if [[ "${SCHEDULE_EXPR:-}" == "30 12 * * 1" ]]; then
-    run_vulnerability_scan=true
-  fi
-  if [[ "${SCHEDULE_EXPR:-}" == "30 1 * * 6" ]]; then
-    run_scorecard=true
-  fi
-fi
-
-{
-  echo "run_ci=${run_ci}"
-  echo "run_docs=${run_docs}"
-  echo "run_coverage=${run_coverage}"
-  echo "run_publish=${run_publish}"
-  echo "run_secret_scan=${run_secret_scan}"
-  echo "run_vulnerability_scan=${run_vulnerability_scan}"
-  echo "run_scorecard=${run_scorecard}"
-  echo "turbo_filter=${turbo_filter}"
-} >> "${GITHUB_OUTPUT}"
-'''
-
 [tasks."workflow:configure-pnpm-store"]
 description = "Set pnpm store directory for CI"
 run = 'pnpm config set store-dir "${PNPM_STORE_PATH}"'
@@ -87,67 +18,41 @@ run = "pnpm install --frozen-lockfile"
 description = "Archive dependency state to a tarball"
 run = '''
 set -euo pipefail
-paths=(node_modules .pnpm-store .turbo)
-existing_paths=()
-for path in "${paths[@]}"; do
-  if [[ -e "${path}" ]]; then
-    existing_paths+=("${path}")
-  fi
-done
-if [[ "${#existing_paths[@]}" -eq 0 ]]; then
-  echo "No dependency paths found to archive." >&2
-  exit 1
-fi
-tar -czf "${ARCHIVE_NAME}" "${existing_paths[@]}"
+mkdir -p .pnpm-store .turbo
+tar -czf "${ARCHIVE_NAME}" node_modules .pnpm-store .turbo
 '''
 
 [tasks."workflow:extract-tar"]
 description = "Extract tarball artifact"
 run = 'tar -xzf "${TARBALL}"'
 
-[tasks."workflow:run-ci"]
-description = "Run monorepo CI with optional turbo filter"
-run = '''
-set -euo pipefail
-if [[ -n "${TURBO_FILTER:-}" ]]; then
-  pnpm run ci -- --filter="${TURBO_FILTER}"
-else
-  pnpm run ci
-fi
-'''
+[tasks."workflow:run-ci-full"]
+description = "Run full monorepo CI"
+run = "pnpm run ci"
 
-[tasks."workflow:release-check"]
-description = "Run release artifact checks with optional turbo filter"
-run = '''
-set -euo pipefail
-if [[ -n "${TURBO_FILTER:-}" ]]; then
-  pnpm run release:check -- --filter="${TURBO_FILTER}"
-else
-  pnpm run release:check
-fi
-'''
+[tasks."workflow:run-ci-affected"]
+description = "Run affected-only monorepo CI"
+run = "pnpm run qg:changed"
+
+[tasks."workflow:release-check-full"]
+description = "Run full release artifact checks"
+run = "pnpm run release:check"
+
+[tasks."workflow:release-check-affected"]
+description = "Run affected-only release artifact checks"
+run = "pnpm run release:check -- --affected"
 
 [tasks."workflow:archive-build-outputs"]
 description = "Archive build output directories"
 run = '''
 set -euo pipefail
-mapfile -t build_paths < <(find packages apps tools website -type d \( -name dist -o -name build \) -print || true)
-if [[ "${#build_paths[@]}" -eq 0 ]]; then
-  echo "No build output directories found to archive." >&2
-  exit 1
-fi
-tar -czf "${ARCHIVE_NAME}" "${build_paths[@]}"
+mkdir -p .turbo
+tar -czf "${ARCHIVE_NAME}" .turbo $(find packages apps tools website -type d \( -name dist -o -name build \) -print)
 '''
 
 [tasks."workflow:validate-npm-token"]
 description = "Validate npm token exists"
-run = '''
-set -euo pipefail
-if [[ -z "${NODE_AUTH_TOKEN:-}" ]]; then
-  echo "NPM_TOKEN is missing." >&2
-  exit 1
-fi
-'''
+run = 'test -n "${NODE_AUTH_TOKEN}"'
 
 [tasks."workflow:configure-npm-auth"]
 description = "Configure npm auth and verify identity"

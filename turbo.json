@@ -226,15 +226,54 @@
       "outputs": []
     },
     "check:policies": {
-      "cache": false,
       "outputs": []
     },
     "check:links": {
-      "cache": false,
       "outputs": []
     },
     "metrics:ai-control": {
-      "cache": false,
+      "outputs": []
+    },
+    "@livon/policies#check:policies": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/AGENTS.md",
+        "$TURBO_ROOT$/PROMPT.md",
+        "$TURBO_ROOT$/PROMPTS.md",
+        "$TURBO_ROOT$/configs/**",
+        "$TURBO_ROOT$/.github/workflows/**",
+        "$TURBO_ROOT$/website/docs/**",
+        "$TURBO_ROOT$/apps/**",
+        "$TURBO_ROOT$/packages/**",
+        "$TURBO_ROOT$/tools/**"
+      ],
+      "outputs": []
+    },
+    "@livon/policies#check:links": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/AGENTS.md",
+        "$TURBO_ROOT$/PROMPT.md",
+        "$TURBO_ROOT$/PROMPTS.md",
+        "$TURBO_ROOT$/README.md",
+        "$TURBO_ROOT$/configs/**",
+        "$TURBO_ROOT$/.github/**",
+        "$TURBO_ROOT$/website/docs/**",
+        "$TURBO_ROOT$/apps/**",
+        "$TURBO_ROOT$/packages/**",
+        "$TURBO_ROOT$/tools/**"
+      ],
+      "outputs": []
+    },
+    "@livon/policies#metrics:ai-control": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/AGENTS.md",
+        "$TURBO_ROOT$/PROMPT.md",
+        "$TURBO_ROOT$/PROMPTS.md",
+        "$TURBO_ROOT$/configs/ai/**",
+        "$TURBO_ROOT$/website/docs/ai/**"
+      ],
       "outputs": []
     },
     "gen": {
@@ -288,6 +327,22 @@
       "outputs": []
     },
     "release:check": {
+      "outputs": []
+    },
+    "@livon/release#release:check": {
+      "dependsOn": [
+        "build",
+        "^build"
+      ],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/pnpm-lock.yaml",
+        "$TURBO_ROOT$/.changeset/**",
+        "$TURBO_ROOT$/packages/**/package.json",
+        "$TURBO_ROOT$/packages/**/dist/**",
+        "$TURBO_ROOT$/apps/**/package.json",
+        "$TURBO_ROOT$/tools/**/package.json"
+      ],
       "outputs": []
     },
     "changeset": {
