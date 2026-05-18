@@ -17,7 +17,7 @@ const runRequest = (reviewer) =>
     stdio: 'inherit',
   });
 
-const primary = runRequest('@copilot');
+const primary = runRequest('copilot-pull-request-reviewer[bot]');
 if (primary.status === 0) {
   process.exit(0);
 }

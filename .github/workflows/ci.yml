@@ -47,43 +47,7 @@ jobs:
           --repo "${{ github.repository }}"
           --pr "${{ github.event.pull_request.number }}"
 
-  prod_dependencies:
-    if: ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-
-      - name: Setup mise
-        uses: jdx/mise-action@5228313ee0372e111a38da051671ca30fc5a96db # v3
-        with:
-          install: true
-          cache: true
-
-      - name: Restore pnpm store cache
-        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
-        with:
-          path: ${{ env.PNPM_STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-
-      - name: Restore Turborepo cache
-        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
-        with:
-          path: ${{ env.TURBO_CACHE_PATH }}
-          key: ${{ runner.os }}-turbo-${{ hashFiles('turbo.json', 'pnpm-lock.yaml', '**/package.json') }}
-          restore-keys: |
-            ${{ runner.os }}-turbo-
-
-      - name: Install production dependencies
-        run: mise run prod-dependencies
-
   dev_dependencies:
-    needs:
-      - prod_dependencies
     if: ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
     runs-on: ubuntu-latest
     permissions:
@@ -176,6 +140,25 @@ jobs:
           path: ci-build-artifacts.tgz
           retention-days: 2
 
+  sonarcloud:
+    needs:
+      - ci
+    if: ${{ (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) || github.event_name == 'merge_group' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Run SonarQube Cloud scan
+        uses: SonarSource/sonarqube-scan-action@c7ee0f9df90b7aa20e8dcf9695dcfe2e7da5b4f2 # v7
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
   publish_gate:
     needs:
       - ci
@@ -204,8 +187,11 @@ jobs:
   publish:
     needs:
       - ci
+      - sonarcloud
       - publish_gate
-    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.publish_gate.outputs.run_publish == 'true' && needs.ci.result == 'success' }}
+      - secret_scan
+      - vulnerability_scan
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.publish_gate.outputs.run_publish == 'true' && needs.ci.result == 'success' && needs.sonarcloud.result == 'success' && needs.secret_scan.result == 'success' && needs.vulnerability_scan.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -241,11 +227,11 @@ jobs:
         with:
           name: ci-build-artifacts
 
-      - name: Restore CI build artifact
-        run: mise run extract-tar -- --archive ci-build-artifacts.tgz
-
       - name: Install development dependencies
         run: mise run dev-dependencies
+
+      - name: Restore CI build artifact
+        run: mise run extract-tar -- --archive ci-build-artifacts.tgz
 
       - name: Configure npm auth
         env:
@@ -262,8 +248,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      pages: write
-      id-token: write
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -413,7 +397,13 @@ jobs:
             ${{ runner.os }}-turbo-
 
       - name: Run vulnerability scan
-        run: mise run vulnerability-scan
+        run: mise run vulnerability-scan -- --sarifOutput results.sarif
+
+      - name: Upload vulnerability SARIF
+        if: ${{ always() && hashFiles('results.sarif') != '' }}
+        uses: github/codeql-action/upload-sarif@c10b8064de6f491fea524254123dbe5e09572f13 # v4.35.1
+        with:
+          sarif_file: results.sarif
 
   scorecard:
     if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'schedule' && github.event.schedule == '30 1 * * 6') }}
@@ -452,9 +442,9 @@ jobs:
   summary:
     needs:
       - copilot_review
-      - prod_dependencies
       - dev_dependencies
       - ci
+      - sonarcloud
       - publish_gate
       - publish
       - docs_build
@@ -479,20 +469,21 @@ jobs:
         run: >-
           mise run write-summary --
           --outputFile "$GITHUB_STEP_SUMMARY"
-          --run "prod_dependencies=${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}"
+          --failOnEnabledFailure
           --run "copilot_review=${{ github.event_name == 'pull_request' }}"
           --run "dev_dependencies=${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}"
           --run "ci=${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}"
+          --run "sonarcloud=${{ (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) || github.event_name == 'merge_group' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}"
           --run "docs=${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}"
           --run "coverage=${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}"
           --run "publish=${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.publish_gate.outputs.run_publish == 'true' }}"
           --run "secret_scan=${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'schedule' && github.event.schedule == '0 3 * * 6') }}"
           --run "vuln_scan=${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'schedule' && github.event.schedule == '30 12 * * 1') }}"
           --run "scorecard=${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'schedule' && github.event.schedule == '30 1 * * 6') }}"
-          --status "prod_dependencies=${{ needs.prod_dependencies.result }}"
           --status "copilot_review=${{ needs.copilot_review.result }}"
           --status "dev_dependencies=${{ needs.dev_dependencies.result }}"
           --status "ci=${{ needs.ci.result }}"
+          --status "sonarcloud=${{ needs.sonarcloud.result }}"
           --status "publish=${{ needs.publish.result }}"
           --status "docs_build=${{ needs.docs_build.result }}"
           --status "docs_deploy=${{ needs.docs_deploy.result }}"

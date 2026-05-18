@@ -15,14 +15,16 @@ const SCORECARD_BADGE = `https://api.scorecard.dev/projects/github.com/${REPO}/b
 const BEST_PRACTICES_BADGE = 'https://www.bestpractices.dev/projects/12249/badge';
 const REUSE_BADGE = `https://api.reuse.software/badge/github.com/${REPO}`;
 const CI_BADGE = `https://img.shields.io/github/actions/workflow/status/${REPO}/ci.yml?branch=main&label=ci`;
-const VULNERABILITY_SCAN_BADGE = `https://img.shields.io/github/actions/workflow/status/${REPO}/ci.yml?branch=main&label=vulnerability%20scan`;
-const VULNERABILITY_SCAN_WORKFLOW = `https://github.com/${REPO}/actions/workflows/ci.yml`;
+const SECRET_SCAN_BADGE = `https://img.shields.io/github/check-runs/${REPO}/main?nameFilter=secret_scan&label=secret%20scan`;
+const VULNERABILITY_SCAN_BADGE = `https://img.shields.io/github/check-runs/${REPO}/main?nameFilter=vulnerability_scan&label=vulnerability%20scan`;
+const SECURITY_CHECKS_WORKFLOW = `https://github.com/${REPO}/actions/workflows/ci.yml`;
 
 const REPO_BADGE_CONTRACT = {
   requiredPatterns: [
     CI_BADGE,
+    SECRET_SCAN_BADGE,
     VULNERABILITY_SCAN_BADGE,
-    VULNERABILITY_SCAN_WORKFLOW,
+    SECURITY_CHECKS_WORKFLOW,
     SCORECARD_BADGE,
     BEST_PRACTICES_BADGE,
     REUSE_BADGE,
@@ -31,6 +33,8 @@ const REPO_BADGE_CONTRACT = {
     'test/github/live-input-vector-output-node/livon-ts/',
     'test/npm/@livon/',
     'https://img.shields.io/librariesio/github/live-input-vector-output-node/livon-ts',
+    `https://img.shields.io/github/actions/workflow/status/${REPO}/ci.yml?branch=main&label=gitleaks`,
+    `https://img.shields.io/github/actions/workflow/status/${REPO}/ci.yml?branch=main&label=vulnerability%20scan`,
     'https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/publish.yml',
     'https://img.shields.io/github/actions/workflow/status/live-input-vector-output-node/livon-ts/publish.yml',
   ],
@@ -39,7 +43,7 @@ const REPO_BADGE_CONTRACT = {
 const PACKAGE_BADGE_CONTRACT = {
   requiredPatterns: [
     CI_BADGE,
-    `[![Vulnerability scan](${VULNERABILITY_SCAN_BADGE})](${VULNERABILITY_SCAN_WORKFLOW})`,
+    `[![Vulnerability scan](${VULNERABILITY_SCAN_BADGE})](${SECURITY_CHECKS_WORKFLOW})`,
     SCORECARD_BADGE,
     BEST_PRACTICES_BADGE,
     REUSE_BADGE,
@@ -60,7 +64,7 @@ const SCHEMA_BADGE_CONTRACT = {
   requiredPatterns: [
     '[![npm](https://img.shields.io/npm/v/%40livon%2Fschema)](https://www.npmjs.com/package/@livon/schema)',
     CI_BADGE,
-    `[![Vulnerability scan](${VULNERABILITY_SCAN_BADGE})](${VULNERABILITY_SCAN_WORKFLOW})`,
+    `[![Vulnerability scan](${VULNERABILITY_SCAN_BADGE})](${SECURITY_CHECKS_WORKFLOW})`,
     SCORECARD_BADGE,
     BEST_PRACTICES_BADGE,
     REUSE_BADGE,

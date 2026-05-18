@@ -1,5 +1,6 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { parseArgs } from 'node:util';
 import { installOsvScanner, runOsvScanner } from '../lib/osv-utils.mjs';
 import { pathExists } from '../lib/cli-utils.mjs';
 
@@ -7,6 +8,11 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = path.resolve(currentDir, '../../..');
 const defaultBinaryName = process.platform === 'win32' ? 'osv-scanner.exe' : 'osv-scanner';
 const binaryPath = path.resolve(repositoryRoot, '.ci/bin', defaultBinaryName);
+const parsed = parseArgs({
+  options: {
+    sarifOutput: { type: 'string' },
+  },
+});
 
 if (!(await pathExists(binaryPath))) {
   await installOsvScanner({
@@ -15,4 +21,7 @@ if (!(await pathExists(binaryPath))) {
   });
 }
 
-await runOsvScanner({ binaryPath });
+await runOsvScanner({
+  binaryPath,
+  sarifOutput: parsed.values.sarifOutput,
+});
