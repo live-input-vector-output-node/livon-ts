@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { existsSync } from 'node:fs';
 import { chmod, writeFile } from 'node:fs/promises';
 import process from 'node:process';
 import path from 'node:path';
@@ -102,6 +103,13 @@ export const runGitleaks = async ({ binaryPath }) => {
     } catch {
       // Continue to the next fallback candidate.
     }
+  }
+
+  if (!existsSync(binaryPath)) {
+    await installGitleaks({
+      version: '8.30.1',
+      outputPath: binaryPath,
+    });
   }
 
   await runCommand({

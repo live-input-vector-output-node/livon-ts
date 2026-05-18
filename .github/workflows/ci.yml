@@ -22,111 +22,7 @@ env:
   TURBO_CACHE_PATH: .turbo
 
 jobs:
-  install_production_dependencies:
-    if: ${{ github.event_name != 'schedule' }}
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-
-      - name: Setup mise
-        uses: jdx/mise-action@v3
-        with:
-          install: true
-
-      - name: Restore pnpm store cache
-        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
-        with:
-          path: ${{ env.PNPM_STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-
-      - name: Restore Turborepo cache
-        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
-        with:
-          path: ${{ env.TURBO_CACHE_PATH }}
-          key: ${{ runner.os }}-turbo-${{ hashFiles('turbo.json', 'pnpm-lock.yaml', '**/package.json') }}
-          restore-keys: |
-            ${{ runner.os }}-turbo-
-
-      - name: Configure local pnpm store path
-        run: mise run workflow:configure-pnpm-store -- .pnpm-store
-
-      - name: Install production dependencies
-        run: mise run workflow:install-production
-
-      - name: Archive production dependency state
-        run: mise run workflow:archive-deps -- --archive prod-deps.tgz
-
-      - name: Upload production dependency artifact
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
-        with:
-          name: prod-deps
-          path: prod-deps.tgz
-          retention-days: 1
-
-  install_development_dependencies:
-    needs:
-      - install_production_dependencies
-    if: ${{ github.event_name != 'schedule' }}
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-
-      - name: Setup mise
-        uses: jdx/mise-action@v3
-        with:
-          install: true
-
-      - name: Restore pnpm store cache
-        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
-        with:
-          path: ${{ env.PNPM_STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-
-      - name: Restore Turborepo cache
-        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
-        with:
-          path: ${{ env.TURBO_CACHE_PATH }}
-          key: ${{ runner.os }}-turbo-${{ hashFiles('turbo.json', 'pnpm-lock.yaml', '**/package.json') }}
-          restore-keys: |
-            ${{ runner.os }}-turbo-
-
-      - name: Download production dependency artifact
-        uses: actions/download-artifact@v5
-        with:
-          name: prod-deps
-
-      - name: Restore production dependency state
-        run: mise run workflow:extract-tar -- --archive prod-deps.tgz
-
-      - name: Configure local pnpm store path
-        run: mise run workflow:configure-pnpm-store -- .pnpm-store
-
-      - name: Install development dependencies
-        run: mise run workflow:install-development
-
-      - name: Archive development dependency state
-        run: mise run workflow:archive-deps -- --archive dev-deps.tgz
-
-      - name: Upload development dependency artifact
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
-        with:
-          name: dev-deps
-          path: dev-deps.tgz
-          retention-days: 1
-
   ci:
-    needs:
-      - install_development_dependencies
     if: ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
     runs-on: ubuntu-latest
     permissions:
@@ -156,35 +52,13 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-turbo-
 
-      - name: Download development dependency artifact
-        uses: actions/download-artifact@v5
-        with:
-          name: dev-deps
-
-      - name: Restore development dependency state
-        run: mise run workflow:extract-tar -- --archive dev-deps.tgz
-
-      - name: Configure local pnpm store path
-        run: mise run workflow:configure-pnpm-store -- .pnpm-store
-
-      - name: Run affected monorepo CI (Turbo)
+      - name: Run affected CI job flow
         if: ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' }}
-        run: mise run workflow:run-ci-affected
+        run: mise run workflow:job-ci-affected
 
-      - name: Run full monorepo CI (Turbo)
+      - name: Run full CI job flow
         if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
-        run: mise run workflow:run-ci-full
-
-      - name: Check affected publish artifacts
-        if: ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' }}
-        run: mise run workflow:release-check-affected
-
-      - name: Check full publish artifacts
-        if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
-        run: mise run workflow:release-check-full
-
-      - name: Archive build outputs
-        run: mise run workflow:archive-build-outputs -- --archive ci-build-artifacts.tgz
+        run: mise run workflow:job-ci-full
 
       - name: Upload build outputs
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
@@ -221,7 +95,6 @@ jobs:
     needs:
       - ci
       - publish_gate
-      - install_development_dependencies
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.publish_gate.outputs.run_publish == 'true' && needs.ci.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
@@ -252,14 +125,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-turbo-
 
-      - name: Download development dependency artifact
-        uses: actions/download-artifact@v5
-        with:
-          name: dev-deps
-
-      - name: Restore development dependency state
-        run: mise run workflow:extract-tar -- --archive dev-deps.tgz
-
       - name: Download CI build artifact
         uses: actions/download-artifact@v5
         with:
@@ -271,19 +136,26 @@ jobs:
       - name: Configure local pnpm store path
         run: mise run workflow:configure-pnpm-store -- .pnpm-store
 
-      - name: Configure npm authentication
-        run: >-
-          mise run workflow:npm-set-token -- "${{ secrets.NPM_TOKEN }}"
-          ::: workflow:npm-set-registry
-          ::: workflow:npm-set-always-auth
-          ::: workflow:npm-whoami
+      - name: Install development dependencies
+        run: mise run workflow:install-development
+
+      - name: Set npm token
+        run: mise run workflow:npm-set-token -- "${{ secrets.NPM_TOKEN }}"
+
+      - name: Set npm registry
+        run: mise run workflow:npm-set-registry
+
+      - name: Enable npm always-auth
+        run: mise run workflow:npm-set-always-auth
+
+      - name: Verify npm identity
+        run: mise run workflow:npm-whoami
 
       - name: Publish packages (changeset semantics)
         run: mise run workflow:publish
 
   docs_build:
     needs:
-      - install_development_dependencies
       - ci
     if: ${{ (github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')) && needs.ci.result == 'success' }}
     runs-on: ubuntu-latest
@@ -300,22 +172,27 @@ jobs:
         with:
           install: true
 
-      - name: Download development dependency artifact
-        uses: actions/download-artifact@v5
+      - name: Restore pnpm store cache
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
         with:
-          name: dev-deps
+          path: ${{ env.PNPM_STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
 
-      - name: Restore development dependency state
-        run: mise run workflow:extract-tar -- --archive dev-deps.tgz
+      - name: Restore Turborepo cache
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+        with:
+          path: ${{ env.TURBO_CACHE_PATH }}
+          key: ${{ runner.os }}-turbo-${{ hashFiles('turbo.json', 'pnpm-lock.yaml', '**/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-turbo-
 
-      - name: Configure local pnpm store path
-        run: mise run workflow:configure-pnpm-store -- .pnpm-store
+      - name: Run docs build job flow
+        run: mise run workflow:job-docs-build
 
       - name: Configure Pages
         uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
-
-      - name: Build Docusaurus
-        run: mise run workflow:build-docs
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4.0.0
@@ -339,7 +216,6 @@ jobs:
 
   coverage:
     needs:
-      - install_development_dependencies
       - ci
     if: ${{ (github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')) && needs.ci.result == 'success' }}
     runs-on: ubuntu-latest
@@ -354,22 +230,24 @@ jobs:
         with:
           install: true
 
-      - name: Download development dependency artifact
-        uses: actions/download-artifact@v5
+      - name: Restore pnpm store cache
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
         with:
-          name: dev-deps
+          path: ${{ env.PNPM_STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
 
-      - name: Restore development dependency state
-        run: mise run workflow:extract-tar -- --archive dev-deps.tgz
+      - name: Restore Turborepo cache
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+        with:
+          path: ${{ env.TURBO_CACHE_PATH }}
+          key: ${{ runner.os }}-turbo-${{ hashFiles('turbo.json', 'pnpm-lock.yaml', '**/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-turbo-
 
-      - name: Configure local pnpm store path
-        run: mise run workflow:configure-pnpm-store -- .pnpm-store
-
-      - name: Build workspace
-        run: mise run workflow:build-workspace
-
-      - name: Run workspace coverage
-        run: mise run workflow:run-coverage
+      - name: Run coverage job flow
+        run: mise run workflow:job-coverage
 
       - name: Upload coverage to Coveralls
         uses: coverallsapp/github-action@648a8eb78e6d50909eff900e4ec85cab4524a45b # v2.3.6
@@ -394,11 +272,8 @@ jobs:
         with:
           install: true
 
-      - name: Install Gitleaks
-        run: mise run workflow:install-gitleaks
-
-      - name: Run Gitleaks
-        run: mise run workflow:run-gitleaks
+      - name: Run secret scan job flow
+        run: mise run workflow:job-secret-scan
 
   vulnerability_scan:
     if: ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'schedule' && github.event.schedule == '30 12 * * 1') }}
@@ -449,8 +324,6 @@ jobs:
 
   summary:
     needs:
-      - install_production_dependencies
-      - install_development_dependencies
       - ci
       - publish_gate
       - publish
@@ -482,8 +355,8 @@ jobs:
           --run "secret_scan=${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'schedule' && github.event.schedule == '0 3 * * 6') }}"
           --run "vuln_scan=${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'schedule' && github.event.schedule == '30 12 * * 1') }}"
           --run "scorecard=${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'schedule' && github.event.schedule == '30 1 * * 6') }}"
-          --status "prod=${{ needs.install_production_dependencies.result }}"
-          --status "dev=${{ needs.install_development_dependencies.result }}"
+          --status "prod=cache-based"
+          --status "dev=cache-based"
           --status "ci=${{ needs.ci.result }}"
           --status "publish=${{ needs.publish.result }}"
           --status "docs_build=${{ needs.docs_build.result }}"

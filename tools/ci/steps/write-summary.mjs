@@ -21,7 +21,7 @@ const summary = `## Unified Pipeline Summary
 
 | Area | Enabled | Result |
 | --- | --- | --- |
-| Production dependency install | true | ${statuses.prod ?? 'skipped'} |
+| Shared dependency caches | true | ${statuses.prod ?? 'skipped'} |
 | Development dependency install | true | ${statuses.dev ?? 'skipped'} |
 | Turbo CI (\`pnpm run ci\`) | ${runs.ci ?? 'false'} | ${statuses.ci ?? 'skipped'} |
 | Publish (\`pnpm changeset:publish\`) | ${runs.publish ?? 'false'} | ${statuses.publish ?? 'skipped'} |
@@ -36,8 +36,8 @@ const summary = `## Unified Pipeline Summary
 
 Unified Pipeline
 ├─ Dependency bootstrap
-│  ├─ production install artifact (\`prod-deps\`)
-│  └─ development install artifact (\`dev-deps\`)
+│  ├─ shared pnpm store cache
+│  └─ shared turborepo cache
 ├─ Quality gates
 │  └─ Turbo CI (\`pnpm run ci\`) + \`release:check\`
 ├─ Build artifact handover
