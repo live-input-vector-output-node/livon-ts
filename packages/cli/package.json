@@ -69,8 +69,12 @@
     "sync",
     "typescript"
   ],
+  "bin": {
+    "livon": "bin/livon.js"
+  },
   "dependencies": {
     "@livon/client": "workspace:*",
+    "@rslib/core": "latest",
     "msgpackr": "1.11.8",
     "ws": "8.19.0"
   },

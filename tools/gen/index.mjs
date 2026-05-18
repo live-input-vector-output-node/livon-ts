@@ -22,6 +22,7 @@ const ROOT = resolveWorkspaceRoot();
 const TEMPLATES_DIR = path.join(ROOT, 'tools');
 const DEST_APPS = path.join(ROOT, 'apps');
 const DEST_PACKAGES = path.join(ROOT, 'packages');
+const NULL_DEVICE_PATH = process.platform === 'win32' ? 'NUL' : '/dev/null';
 
 const TEMPLATE_MAP = {
   lib: {
@@ -173,7 +174,7 @@ const diffTemplateFiles = async ({ srcDir, destDir }) => {
 
     const args = dstExists
       ? ['diff', '--no-index', srcPath, dstPath]
-      : ['diff', '--no-index', '/dev/null', srcPath];
+      : ['diff', '--no-index', NULL_DEVICE_PATH, srcPath];
     const result = spawnSync('git', args, { stdio: 'inherit' });
 
     if ((result.status ?? 0) !== 0) {

@@ -1,7 +1,7 @@
 {
   "name": "@livon/rslib",
   "version": "0.29.0-rc.11",
-  "private": false,
+  "private": true,
   "type": "module",
   "description": "Composable Rslib presets for LIVON workspaces.",
   "exports": {
@@ -17,10 +17,12 @@
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
+  "dependencies": {
+    "@rslib/core": "latest"
+  },
   "devDependencies": {
     "@livon/typescript": "workspace:*",
     "@types/node": "latest",
-    "typescript": "latest",
-    "@rslib/core": "latest"
+    "typescript": "latest"
   }
 }
