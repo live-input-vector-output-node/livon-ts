@@ -250,12 +250,18 @@ const encodeContext = (context: unknown): Uint8Array | undefined => {
   return encodeMsgpack(context);
 };
 
+const contextFromDecodedValue = (decoded: unknown): RuntimeEventContext | undefined => {
+  if (!isRecord(decoded)) {
+    return undefined;
+  }
+  return decoded;
+};
+
 const decodeContext = (payload?: Uint8Array): RuntimeEventContext | undefined => {
   if (!payload) {
     return undefined;
   }
-  const decoded = decodeMsgpack(payload);
-  return isRecord(decoded) ? decoded : undefined;
+  return contextFromDecodedValue(decodeMsgpack(payload));
 };
 
 const encodeEventError = (error: EventError): Uint8Array =>
@@ -329,13 +335,13 @@ const defaultEncode: WireEncode = (envelope) => {
       ...base,
       payload: envelope.payload,
     };
-    return encodeMsgpack(wire);
+    return pack(wire);
   }
   const wire: WireEventError = {
     ...base,
     error: encodeEventError(envelope.error),
   };
-  return encodeMsgpack(wire);
+  return pack(wire);
 };
 
 const defaultDecode: WireDecode = (data) => {
