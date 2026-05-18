@@ -85,7 +85,7 @@ export const runWorkflowActionVersionConsistencyCheck = async (
 
   const workflowFiles = (await collectFiles(workflowsDir))
     .filter((filePath) => WORKFLOW_FILE_PATTERN.test(filePath))
-    .sort();
+    .sort((left, right) => left.localeCompare(right));
 
   const usagesByAction = new Map<string, WorkflowActionUsage[]>();
 
@@ -126,10 +126,12 @@ export const runWorkflowActionVersionConsistencyCheck = async (
 
       const variantSummary = [...variants.entries()]
         .map(([normalizedRef, variantUsages]) => {
-          const refs = [...new Set(variantUsages.map((entry) => entry.ref))].sort().join(', ');
+          const refs = [...new Set(variantUsages.map((entry) => entry.ref))]
+            .sort((left, right) => left.localeCompare(right))
+            .join(', ');
           const locations = variantUsages
             .map((entry) => `${entry.workflowPath}:${entry.lineNumber}`)
-            .sort()
+            .sort((left, right) => left.localeCompare(right))
             .join(', ');
           return `${normalizedRef} (raw: ${refs}) [${locations}]`;
         })

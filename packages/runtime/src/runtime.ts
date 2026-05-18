@@ -88,33 +88,42 @@ const contextRecordFrom = (value?: RuntimeEventContext): RuntimeEventContextReco
   return value;
 };
 
+const errorContextFrom = (error: ErrorLike): RuntimeEventContextRecord | undefined =>
+  isContextRecord(error.context) ? error.context : undefined;
+
+const eventErrorFromError = (error: Error): EventError => {
+  const errorLike = error as ErrorLike;
+  const context = errorContextFrom(errorLike);
+  return {
+    message: error.message,
+    ...(error.name ? { name: error.name } : {}),
+    ...(error.stack ? { stack: error.stack } : {}),
+    ...(context ? { context } : {}),
+  };
+};
+
+const eventErrorFromRecord = (error: ErrorLike): EventError => {
+  const message = typeof error.message === 'string' ? error.message : 'Unknown error';
+  const name = typeof error.name === 'string' ? error.name : undefined;
+  const stack = typeof error.stack === 'string' ? error.stack : undefined;
+  const context = errorContextFrom(error);
+  return {
+    message,
+    ...(name ? { name } : {}),
+    ...(stack ? { stack } : {}),
+    ...(context ? { context } : {}),
+  };
+};
+
 const errorFromUnknown = (error: unknown): EventError => {
   if (error instanceof Error) {
-    const context = isContextRecord((error as ErrorLike).context)
-      ? ((error as ErrorLike).context as RuntimeEventContextRecord)
-      : undefined;
-    return {
-      message: error.message,
-      ...(error.name ? { name: error.name } : {}),
-      ...(error.stack ? { stack: error.stack } : {}),
-      ...(context ? { context } : {}),
-    };
+    return eventErrorFromError(error);
   }
   if (typeof error === 'string') {
     return { message: error };
   }
   if (typeof error === 'object' && error !== null) {
-    const value = error as ErrorLike;
-    const message = typeof value.message === 'string' ? value.message : 'Unknown error';
-    const name = typeof value.name === 'string' ? value.name : undefined;
-    const stack = typeof value.stack === 'string' ? value.stack : undefined;
-    const context = isContextRecord(value.context) ? value.context : undefined;
-    return {
-      message,
-      ...(name ? { name } : {}),
-      ...(stack ? { stack } : {}),
-      ...(context ? { context } : {}),
-    };
+    return eventErrorFromRecord(error as ErrorLike);
   }
   return { message: 'Unknown error' };
 };

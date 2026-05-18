@@ -1,7 +1,7 @@
-import { Schema } from './types.js';
+import { Infer, Schema, SchemaLike } from './types.js';
 
-type InferSchemasTuple<T extends readonly Schema<unknown>[]> = {
-  [K in keyof T]: T[K] extends Schema<infer U> ? U : never;
+type InferSchemasTuple<T extends readonly SchemaLike[]> = {
+  [K in keyof T]: Infer<T[K]>;
 };
 
 type IntersectTuple<T extends readonly unknown[]> = T extends readonly [infer Head, ...infer Tail]
@@ -13,7 +13,7 @@ interface AndReduceState {
   index: number;
 }
 
-export interface AndSchemaInput<TSchemas extends readonly Schema<unknown>[]> {
+export interface AndSchemaInput<TSchemas extends readonly SchemaLike[]> {
   name?: string;
   schemas: TSchemas;
 }
@@ -24,11 +24,15 @@ export interface AndLegacyInput<T, U> {
   name?: string;
 }
 
-type VariadicSchemaTuple = readonly [Schema<any>, Schema<any>, ...Schema<any>[]]; // eslint-disable-line @typescript-eslint/no-explicit-any -- Schema<T> is invariant; this tuple supports heterogeneous schema chaining while enforcing at least two schemas.
+type VariadicSchemaTuple = readonly [SchemaLike, SchemaLike, ...SchemaLike[]];
+type RuntimeAndSchema = Schema<unknown>;
 
 const isLegacyInput = (
   input: AndLegacyInput<unknown, unknown> | AndSchemaInput<VariadicSchemaTuple>,
 ): input is AndLegacyInput<unknown, unknown> => 'left' in input && 'right' in input;
+
+const runtimeAndSchema = (schema: SchemaLike): RuntimeAndSchema =>
+  schema as unknown as RuntimeAndSchema;
 
 /**
  * and is part of the public LIVON API.
@@ -79,7 +83,6 @@ export function and<TSchemas extends VariadicSchemaTuple>(
   input: AndSchemaInput<TSchemas>,
 ): Schema<IntersectTuple<InferSchemasTuple<TSchemas>>>;
 export function and<T, U>(input: AndLegacyInput<T, U>): Schema<T & U>;
-// eslint-disable-next-line func-style -- TypeScript overloads require function declarations.
 export function and(
   input: AndLegacyInput<unknown, unknown> | AndSchemaInput<VariadicSchemaTuple>,
 ): Schema<unknown> {
@@ -95,14 +98,14 @@ export function and(
   }
 
   const [first, ...rest] = schemas;
-  const initial = first as Schema<unknown>;
+  const initial = runtimeAndSchema(first);
   const lastIndex = rest.length - 1;
   const reduced = rest.reduce<AndReduceState>(
     (state, schema) => ({
       schema:
         name !== undefined && state.index === lastIndex
-          ? state.schema.and(schema, { name })
-          : state.schema.and(schema),
+          ? state.schema.and(runtimeAndSchema(schema), { name })
+          : state.schema.and(runtimeAndSchema(schema)),
       index: state.index + 1,
     }),
     { schema: initial, index: 0 },

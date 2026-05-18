@@ -135,7 +135,15 @@ const App = () => {
               />
               <div className="composer-footer">
                 <span className="muted">{activeChatMode === 'direct' ? 'Direct message room' : 'Global room'}</span>
-                <button type="button" disabled={!canSend} onClick={() => void submitMessage()}>
+                <button
+                  type="button"
+                  disabled={!canSend}
+                  onClick={() => {
+                    submitMessage().catch((error) => {
+                      console.warn('livon: message submit skipped', error);
+                    });
+                  }}
+                >
                   Send
                 </button>
               </div>

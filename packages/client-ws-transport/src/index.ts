@@ -585,12 +585,14 @@ export const clientWsTransport = (options: ClientWsTransportOptions): ClientWsTr
       }
     }
     if (registry) {
-      void registry.emitReceive(
+      registry.emitReceive(
         buildReceiveEmitInput({
           envelope,
           decodePayload,
         }),
-      );
+      ).catch((error) => {
+        reportError(error, { stage: 'receive' });
+      });
     }
     if (onEvent) {
       onEvent(envelope);
@@ -619,6 +621,11 @@ export const clientWsTransport = (options: ClientWsTransportOptions): ClientWsTr
       return;
     }
     handleBinary(data);
+  };
+
+  const reportSocketError = (error: unknown) => {
+    const err = error instanceof Error ? error : new Error('WebSocket error');
+    reportError(err, { stage: 'connection' });
   };
 
   const ensureSocket = async () => {
@@ -653,10 +660,7 @@ export const clientWsTransport = (options: ClientWsTransportOptions): ClientWsTr
         addListener({
           socket: ws,
           event: 'error',
-          handler: (error) => {
-          const err = error instanceof Error ? error : new Error('WebSocket error');
-          reportError(err, { stage: 'connection' });
-          },
+          handler: reportSocketError,
         });
         clearReconnectPoll();
         resolve(ws);

@@ -166,48 +166,21 @@ const createLazyStreamFromConfig = <
       return resolvedUnitPromise;
     };
 
-    const start: StreamRun<TPayload, TData, TMeta> = (
+    const start: StreamRun<TPayload, TData, TMeta> = async (
       dataOrSetAction?: StreamRunInput<TPayload, TData, TMeta>,
       configOrMode?: object,
     ) => {
-      return ensureUnit()
-        .then((unit) => {
-          const startStream = unit.getSnapshot().start;
-          if (dataOrSetAction === undefined && configOrMode === undefined) {
-            return Promise.resolve(
-              Reflect.apply(
-                startStream,
-                unit,
-                [],
-              ),
-            ).then(() => undefined);
-          }
+      const unit = await ensureUnit();
+      const startStream = unit.getSnapshot().start;
+      const args = configOrMode === undefined
+        ? (dataOrSetAction === undefined ? [] : [dataOrSetAction])
+        : [dataOrSetAction, configOrMode];
 
-          if (configOrMode === undefined) {
-            return Promise.resolve(
-              Reflect.apply(
-                startStream,
-                unit,
-                [dataOrSetAction],
-              ),
-            ).then(() => undefined);
-          }
+      await Reflect.apply(startStream, unit, args);
 
-          return Promise.resolve(
-            Reflect.apply(
-              startStream,
-              unit,
-              [dataOrSetAction, configOrMode],
-            ),
-          ).then(() => undefined);
-        })
-        .then(() => {
-          if (!resolvedUnit) {
-            return;
-          }
-
-          snapshot = resolvedUnit.getSnapshot();
-        });
+      if (resolvedUnit) {
+        snapshot = resolvedUnit.getSnapshot();
+      }
     };
     const stop = (): void => {
       if (!resolvedUnit) {

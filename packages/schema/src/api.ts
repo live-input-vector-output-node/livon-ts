@@ -1,15 +1,29 @@
-import { AstNode, Infer, Schema, SchemaContext, SchemaDoc } from './types.js';
+import { AstNode, Infer, SchemaLike, SchemaContext, SchemaDoc, Shape } from './types.js';
 import { normalizeDoc } from './doc.js';
-import { FieldOperation, Operation, withFieldOperationName, withOperationName } from './operation.js';
+import {
+  FieldOperation,
+  Operation,
+  OperationExecutor,
+  OperationPublishMap,
+  OperationRooms,
+} from './operation.js';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- schema generic must stay permissive for covariance/contravariance across composed APIs.
-type AnySchema = Schema<any>;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- field input schema accepts shape/schema variants and is normalized at runtime.
-type AnyFieldOperation = FieldOperation<AnySchema, any, AnySchema | undefined, unknown>;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- operation results are heterogeneous across API shape entries.
-type AnyResult = any;
+type AnySchema = SchemaLike;
+type AnyResult = unknown;
+type AnyOperation = Omit<Operation<AnySchema, AnySchema | undefined, AnyResult>, 'exec' | 'publish' | 'rooms'> & {
+  exec: OperationExecutor<never, AnyResult>;
+  publish?: OperationPublishMap<never>;
+  rooms?: OperationRooms<never>;
+};
+type AnyFieldOperation = Omit<
+  FieldOperation<AnySchema, AnySchema | Shape | undefined, AnySchema | undefined, AnyResult>,
+  'exec'
+> & {
+  exec: unknown;
+};
 type AnySubscription = Subscription<AnySchema | undefined, AnySchema, AnySchema | undefined, unknown>;
 type InputInfer<TInputSchema extends AnySchema | undefined> = TInputSchema extends AnySchema ? Infer<TInputSchema> : undefined;
+type ValueOf<T> = T[keyof T];
 
 export interface SubscriptionFilter<TInput, TPayload> {
   (input: TInput, payload: TPayload, ctx: SchemaContext): boolean | Promise<boolean>;
@@ -20,7 +34,7 @@ export interface SubscriptionExecutor<TInput, TPayload, TResult> {
 }
 
 export interface ApiShape {
-  [key: string]: Operation<AnySchema, AnySchema | undefined, AnyResult>;
+  [key: string]: AnyOperation;
 }
 
 export interface ApiFieldShape {
@@ -66,6 +80,19 @@ export interface SubscriptionInputShape {
   [key: string]: AnySubscription | SubscriptionInput | AnySchema;
 }
 
+type SubscriptionFromInput<TInput> =
+  TInput extends Subscription<infer TInputSchema, infer TPayloadSchema, infer TOutputSchema, infer TResult>
+    ? Subscription<TInputSchema, TPayloadSchema, TOutputSchema, TResult>
+    : TInput extends SubscriptionInput<infer TInputSchema, infer TPayloadSchema, infer TOutputSchema, infer TResult>
+      ? Subscription<TInputSchema, TPayloadSchema, TOutputSchema, TResult>
+      : TInput extends AnySchema
+        ? Subscription<undefined, TInput, undefined, unknown>
+        : never;
+
+export type SubscriptionShapeFromInput<TInput extends SubscriptionInputShape> = {
+  [K in keyof TInput]: SubscriptionFromInput<TInput[K]>;
+};
+
 /**
  * subscription is part of the public LIVON API.
  *
@@ -75,7 +102,7 @@ export interface SubscriptionInputShape {
  * @see https://livon.tech/docs/schema/api
  *
  * @example
- * const result = subscription(undefined as never);
+ * const result = subscription({ payload: UserCreated });
  */
 export const subscription = <
   TInputSchema extends AnySchema | undefined = AnySchema | undefined,
@@ -103,12 +130,13 @@ export interface Api<
   TType extends AnySchema | undefined,
   TShape extends ApiShape,
   TFieldShape extends ApiFieldShape,
+  TSubscriptionShape extends SubscriptionShape = SubscriptionShape,
 > {
   type: 'api';
   entity?: TType;
   operations: TShape;
   fieldOperations: TFieldShape;
-  subscriptions: SubscriptionShape;
+  subscriptions: TSubscriptionShape;
   ast: ApiAst;
 }
 
@@ -116,16 +144,14 @@ export type ApiInput<
   TType extends AnySchema | undefined,
   TShape extends ApiShape,
   TFieldShape extends ApiFieldShape,
+  TSubscriptionInputShape extends SubscriptionInputShape = SubscriptionInputShape,
 > = {
   type?: TType;
   operations?: TShape;
   fieldOperations?: TFieldShape;
-  subscriptions?: SubscriptionInputShape;
+  subscriptions?: TSubscriptionInputShape;
   doc?: SchemaDoc;
 } & Partial<TShape>;
-
-const isOperation = (value: unknown): value is Operation<AnySchema, AnySchema | undefined, unknown> =>
-  typeof value === 'object' && value !== null && 'type' in value && (value as { type?: string }).type === 'operation';
 
 const isSchema = (value: unknown): value is AnySchema =>
   typeof value === 'object' && value !== null && 'parse' in value && 'ast' in value;
@@ -133,7 +159,29 @@ const isSchema = (value: unknown): value is AnySchema =>
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
-const mergeOperations = (input: Record<string, unknown>, explicit?: ApiShape): ApiShape => {
+const isOperation = (value: unknown): value is Operation<AnySchema, AnySchema | undefined, unknown> =>
+  isRecord(value) && value.type === 'operation';
+
+interface SubscriptionInputRecord extends Record<string, unknown> {
+  doc?: SchemaDoc;
+  exec?: AnySubscription['exec'];
+  filter?: AnySubscription['filter'];
+  input?: unknown;
+  name?: string;
+  output?: unknown;
+  payload: AnySchema;
+}
+
+const isSubscriptionInputRecord = (value: unknown): value is SubscriptionInputRecord =>
+  isRecord(value) && 'payload' in value && isSchema(value.payload);
+
+const subscriptionFilterFromInput = (value: SubscriptionInputRecord): AnySubscription['filter'] | undefined =>
+  typeof value.filter === 'function' ? value.filter : undefined;
+
+const subscriptionExecFromInput = (value: SubscriptionInputRecord): AnySubscription['exec'] | undefined =>
+  typeof value.exec === 'function' ? value.exec : undefined;
+
+const mergeOperations = (input: object, explicit?: ApiShape): ApiShape => {
   const ops: ApiShape = { ...(explicit ?? {}) };
   Object.entries(input).forEach(([key, value]) => {
     if (!ops[key] && isOperation(value)) {
@@ -145,21 +193,21 @@ const mergeOperations = (input: Record<string, unknown>, explicit?: ApiShape): A
 
 const mergeFieldOperations = (input?: ApiFieldShape): ApiFieldShape => ({ ...(input ?? {}) });
 
+const nameOperation = (name: string, op: AnyOperation): AnyOperation =>
+  op.name ? op : { ...op, name };
+
+const nameFieldOperation = (name: string, op: AnyFieldOperation): AnyFieldOperation =>
+  op.name ? op : { ...op, name };
+
 const subscriptionFromInput = (name: string, value: unknown): AnySubscription | undefined => {
-  if (isRecord(value) && 'payload' in value && isSchema((value as { payload?: unknown }).payload)) {
-    const payload = (value as { payload: AnySchema }).payload;
-    const input = isSchema((value as { input?: unknown }).input) ? (value as { input: AnySchema }).input : undefined;
-    const output = isSchema((value as { output?: unknown }).output)
-      ? (value as { output: AnySchema }).output
-      : undefined;
-    const filter = typeof (value as { filter?: unknown }).filter === 'function'
-      ? ((value as { filter: AnySubscription['filter'] }).filter)
-      : undefined;
-    const exec = typeof (value as { exec?: unknown }).exec === 'function'
-      ? ((value as { exec: AnySubscription['exec'] }).exec)
-      : undefined;
-    const doc = (value as { doc?: SchemaDoc }).doc;
-    const normalized = (value as { name?: string }).name;
+  if (isSubscriptionInputRecord(value)) {
+    const payload = value.payload;
+    const input = isSchema(value.input) ? value.input : undefined;
+    const output = isSchema(value.output) ? value.output : undefined;
+    const filter = subscriptionFilterFromInput(value);
+    const exec = subscriptionExecFromInput(value);
+    const doc = value.doc;
+    const normalized = value.name;
     return {
       type: 'subscription',
       payload,
@@ -200,21 +248,20 @@ const mergeSubscriptions = (input?: SubscriptionInputShape): SubscriptionShape =
  * @see https://livon.tech/docs/schema/api
  *
  * @example
- * const result = api(undefined as never);
+ * const result = api({ operations: { createUser } });
  */
-export const api = <
+export function api<
   TType extends AnySchema | undefined,
   TShape extends ApiShape,
   TFieldShape extends ApiFieldShape,
+  TSubscriptionInputShape extends SubscriptionInputShape = SubscriptionInputShape,
 >(
-  input: ApiInput<TType, TShape, TFieldShape>,
-): Api<TType, TShape, TFieldShape> => {
-  const { type, operations, fieldOperations, subscriptions, ...rest } = input as ApiInput<
-    TType,
-    ApiShape,
-    ApiFieldShape
-  > & Record<string, unknown>;
-
+  input: ApiInput<TType, TShape, TFieldShape, TSubscriptionInputShape>,
+): Api<TType, TShape, TFieldShape, SubscriptionShapeFromInput<TSubscriptionInputShape>>;
+export function api(
+  input: ApiInput<AnySchema | undefined, ApiShape, ApiFieldShape, SubscriptionInputShape>,
+): Api<AnySchema | undefined, ApiShape, ApiFieldShape, SubscriptionShape> {
+  const { type, operations, fieldOperations, subscriptions, doc, ...rest } = input;
   const mergedOperations = mergeOperations(rest, operations);
   const mergedFieldOperations = mergeFieldOperations(fieldOperations);
   const mergedSubscriptions = mergeSubscriptions(subscriptions);
@@ -224,12 +271,12 @@ export const api = <
   }
 
   const namedOperations = Object.entries(mergedOperations).reduce<ApiShape>((acc, [key, op]) => {
-    acc[key] = op.name ? op : withOperationName({ name: key, operation: op });
+    acc[key] = nameOperation(key, op);
     return acc;
   }, {});
 
   const namedFieldOperations = Object.entries(mergedFieldOperations).reduce<ApiFieldShape>((acc, [key, op]) => {
-    acc[key] = op.name ? op : withFieldOperationName({ name: key, operation: op });
+    acc[key] = nameFieldOperation(key, op);
     return acc;
   }, {});
 
@@ -249,13 +296,13 @@ export const api = <
     });
   });
 
-  const apiDoc = normalizeDoc(input.doc);
+  const apiDoc = normalizeDoc(doc);
 
   return {
     type: 'api',
     entity: type,
-    operations: namedOperations as TShape,
-    fieldOperations: namedFieldOperations as TFieldShape,
+    operations: namedOperations,
+    fieldOperations: namedFieldOperations,
     subscriptions: namedSubscriptions,
     ast: () => ({
       type: 'api',
@@ -335,16 +382,16 @@ export const api = <
       ],
     }),
   };
-};
+}
 
 export interface ComposedApi<
-  TApis extends Record<string, Api<AnySchema | undefined, ApiShape, ApiFieldShape>>,
+  TApis extends Record<string, Api<AnySchema | undefined, ApiShape, ApiFieldShape, SubscriptionShape>>,
 > {
   type: 'api-composed';
   apis: TApis;
-  operations: ApiShape;
+  operations: ValueOf<{ [K in keyof TApis]: TApis[K]['operations'] }>;
   fieldOperations: ApiFieldShape;
-  subscriptions: SubscriptionShape;
+  subscriptions: ValueOf<{ [K in keyof TApis]: TApis[K]['subscriptions'] }>;
   ast: ApiAst;
 }
 
@@ -357,23 +404,31 @@ export interface ComposedApi<
  * @see https://livon.tech/docs/schema/api
  *
  * @example
- * const result = composeApi(undefined as never);
+ * const result = composeApi({ users: usersApi });
  */
 export const composeApi = <
-  TApis extends Record<string, Api<AnySchema | undefined, ApiShape, ApiFieldShape>>,
+  TApis extends Record<string, Api<AnySchema | undefined, ApiShape, ApiFieldShape, SubscriptionShape>>,
 >(
   apis: TApis,
 ): ComposedApi<TApis> => {
-  const operations: ApiShape = {};
+  const operations = Object.assign(
+    {},
+    ...Object.values(apis).map((apiInstance) => apiInstance.operations),
+  );
   const fieldOperations: ApiFieldShape = {};
-  const subscriptions: SubscriptionShape = {};
+  const subscriptions = Object.assign(
+    {},
+    ...Object.values(apis).map((apiInstance) => apiInstance.subscriptions),
+  );
+  const operationNames = new Set<string>();
+  const subscriptionNames = new Set<string>();
 
   Object.values(apis).forEach((apiInstance) => {
-    Object.entries(apiInstance.operations).forEach(([name, op]) => {
-      if (operations[name]) {
+    Object.keys(apiInstance.operations).forEach((name) => {
+      if (operationNames.has(name)) {
         throw new Error(`composeApi: duplicate operation name \"${name}\"`);
       }
-      operations[name] = op;
+      operationNames.add(name);
     });
 
     Object.entries(apiInstance.fieldOperations).forEach(([name, op]) => {
@@ -385,11 +440,11 @@ export const composeApi = <
       fieldOperations[key] = op;
     });
 
-    Object.entries(apiInstance.subscriptions ?? {}).forEach(([name, sub]) => {
-      if (subscriptions[name]) {
+    Object.keys(apiInstance.subscriptions ?? {}).forEach((name) => {
+      if (subscriptionNames.has(name)) {
         throw new Error(`composeApi: duplicate subscription name "${name}"`);
       }
-      subscriptions[name] = sub;
+      subscriptionNames.add(name);
     });
   });
 
@@ -406,5 +461,5 @@ export const composeApi = <
         return { ...node, name };
       }),
     }),
-  };
+  } satisfies ComposedApi<TApis>;
 };

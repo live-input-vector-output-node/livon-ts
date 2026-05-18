@@ -106,6 +106,41 @@ if (allBenchmarksMissingNumericMetrics && allBenchmarksMissingSamples) {
   process.exit(0);
 }
 
+const checkMaximumMetric = ({ benchmark, failures, metric, thresholdName, value, unit }) => {
+  const actual = benchmark[metric];
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    return;
+  }
+
+  if (typeof actual !== 'number' || !Number.isFinite(actual)) {
+    failures.push(`benchmark '${thresholdName}' missing numeric ${metric} result`);
+    return;
+  }
+
+  if (actual > value) {
+    failures.push(
+      `benchmark '${thresholdName}' exceeded ${metric} budget (${actual.toFixed(4)}${unit} > ${value.toFixed(4)}${unit})`,
+    );
+  }
+};
+
+const checkMinimumHz = ({ benchmark, failures, thresholdName, value }) => {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    return;
+  }
+
+  if (typeof benchmark.hz !== 'number' || !Number.isFinite(benchmark.hz)) {
+    failures.push(`benchmark '${thresholdName}' missing numeric hz result`);
+    return;
+  }
+
+  if (benchmark.hz < value) {
+    failures.push(
+      `benchmark '${thresholdName}' below throughput budget (${benchmark.hz.toFixed(2)}hz < ${value.toFixed(2)}hz)`,
+    );
+  }
+};
+
 thresholdNames.forEach((thresholdName) => {
   const benchmark = benchmarkByName.get(thresholdName);
   if (!benchmark || Array.isArray(benchmark)) {
@@ -118,35 +153,9 @@ thresholdNames.forEach((thresholdName) => {
   const minHz = threshold.minHz;
   const maxMeanMs = threshold.maxMeanMs;
 
-  if (typeof maxP99Ms === 'number' && Number.isFinite(maxP99Ms)) {
-    if (typeof benchmark.p99 !== 'number' || !Number.isFinite(benchmark.p99)) {
-      failures.push(`benchmark '${thresholdName}' missing numeric p99 result`);
-    } else if (benchmark.p99 > maxP99Ms) {
-      failures.push(
-        `benchmark '${thresholdName}' exceeded p99 budget (${benchmark.p99.toFixed(4)}ms > ${maxP99Ms.toFixed(4)}ms)`,
-      );
-    }
-  }
-
-  if (typeof maxMeanMs === 'number' && Number.isFinite(maxMeanMs)) {
-    if (typeof benchmark.mean !== 'number' || !Number.isFinite(benchmark.mean)) {
-      failures.push(`benchmark '${thresholdName}' missing numeric mean result`);
-    } else if (benchmark.mean > maxMeanMs) {
-      failures.push(
-        `benchmark '${thresholdName}' exceeded mean budget (${benchmark.mean.toFixed(4)}ms > ${maxMeanMs.toFixed(4)}ms)`,
-      );
-    }
-  }
-
-  if (typeof minHz === 'number' && Number.isFinite(minHz)) {
-    if (typeof benchmark.hz !== 'number' || !Number.isFinite(benchmark.hz)) {
-      failures.push(`benchmark '${thresholdName}' missing numeric hz result`);
-    } else if (benchmark.hz < minHz) {
-      failures.push(
-        `benchmark '${thresholdName}' below throughput budget (${benchmark.hz.toFixed(2)}hz < ${minHz.toFixed(2)}hz)`,
-      );
-    }
-  }
+  checkMaximumMetric({ benchmark, failures, metric: 'p99', thresholdName, value: maxP99Ms, unit: 'ms' });
+  checkMaximumMetric({ benchmark, failures, metric: 'mean', thresholdName, value: maxMeanMs, unit: 'ms' });
+  checkMinimumHz({ benchmark, failures, thresholdName, value: minHz });
 });
 
 const unknownBenchmarks = benchmarkEntries

@@ -88,6 +88,13 @@ interface BuildSerializedValueInput {
   parents: WeakSet<object>;
 }
 
+interface BuildSerializedArrayInput {
+  input: readonly unknown[];
+  unsupportedValueBehavior: UnsupportedValueBehavior;
+  sortCollections: boolean;
+  parents: WeakSet<object>;
+}
+
 interface BuildSerializedObjectInput extends BuildSerializedValueInput {
   input: object;
 }
@@ -179,7 +186,7 @@ const stableStringifySerializedValue = (input: SerializedValue): string => {
   }
 
   const recordInput = input as SerializedRecord;
-  const keys = Object.keys(recordInput).sort();
+  const keys = Object.keys(recordInput).sort((left, right) => left.localeCompare(right));
   const serializedEntries = keys
     .map((key) => {
       const value = recordInput[key] as SerializedValue;
@@ -334,6 +341,55 @@ const buildSerializedObject = ({
   });
 };
 
+const buildSerializedNumber = (input: number): SerializedValue => {
+  if (Number.isNaN(input)) {
+    return createMarker<SerializedSpecialNumber>({
+      __livonType__: 'number',
+      value: 'NaN',
+    });
+  }
+
+  if (input === Number.POSITIVE_INFINITY) {
+    return createMarker<SerializedSpecialNumber>({
+      __livonType__: 'number',
+      value: 'Infinity',
+    });
+  }
+
+  if (input === Number.NEGATIVE_INFINITY) {
+    return createMarker<SerializedSpecialNumber>({
+      __livonType__: 'number',
+      value: '-Infinity',
+    });
+  }
+
+  if (Object.is(input, -0)) {
+    return createMarker<SerializedSpecialNumber>({
+      __livonType__: 'number',
+      value: '-0',
+    });
+  }
+
+  return input;
+};
+
+const buildSerializedArray = ({
+  input,
+  unsupportedValueBehavior,
+  sortCollections,
+  parents,
+}: BuildSerializedArrayInput): SerializedValue =>
+  withParentTracking({
+    input,
+    parents,
+    run: () => input.map((entry) => buildSerializedValue({
+      input: entry,
+      unsupportedValueBehavior,
+      sortCollections,
+      parents,
+    })),
+  });
+
 const buildSerializedValue = ({
   input,
   unsupportedValueBehavior,
@@ -355,35 +411,7 @@ const buildSerializedValue = ({
   }
 
   if (typeof input === 'number') {
-    if (Number.isNaN(input)) {
-      return createMarker<SerializedSpecialNumber>({
-        __livonType__: 'number',
-        value: 'NaN',
-      });
-    }
-
-    if (input === Number.POSITIVE_INFINITY) {
-      return createMarker<SerializedSpecialNumber>({
-        __livonType__: 'number',
-        value: 'Infinity',
-      });
-    }
-
-    if (input === Number.NEGATIVE_INFINITY) {
-      return createMarker<SerializedSpecialNumber>({
-        __livonType__: 'number',
-        value: '-Infinity',
-      });
-    }
-
-    if (Object.is(input, -0)) {
-      return createMarker<SerializedSpecialNumber>({
-        __livonType__: 'number',
-        value: '-0',
-      });
-    }
-
-    return input;
+    return buildSerializedNumber(input);
   }
 
   if (typeof input === 'bigint') {
@@ -410,19 +438,11 @@ const buildSerializedValue = ({
   }
 
   if (Array.isArray(input)) {
-    return withParentTracking({
+    return buildSerializedArray({
       input,
+      unsupportedValueBehavior,
+      sortCollections,
       parents,
-      run: () => {
-        return input.map((entry) => {
-          return buildSerializedValue({
-            input: entry,
-            unsupportedValueBehavior,
-            sortCollections,
-            parents,
-          });
-        });
-      },
     });
   }
 

@@ -53,6 +53,101 @@ const isAllowedExternalHref = (href: string, packageName: string): boolean => {
   }
 };
 
+interface RelatedLibraryChip {
+  href: string;
+  label: string;
+}
+
+interface ValidateRelatedLibraryChipInput {
+  context: PolicyContext;
+  errors: string[];
+  href: string;
+  label: string;
+  line: number;
+  relativePath: string;
+}
+
+interface ValidateRelatedLibraryRowInput {
+  context: PolicyContext;
+  errors: string[];
+  line: number;
+  relativePath: string;
+  rowSource: string;
+}
+
+const validateRelatedLibraryChip = async ({
+  context,
+  errors,
+  href,
+  label,
+  line,
+  relativePath,
+}: ValidateRelatedLibraryChipInput): Promise<void> => {
+  if (!label.startsWith(INTERNAL_PACKAGE_PREFIX)) {
+    if (!isAllowedExternalHref(href, label)) {
+      errors.push(
+        `${relativePath}:${line} [docs-related-library-links] external library "${label}" must link to https://www.npmjs.com/package/${label}`,
+      );
+    }
+    return;
+  }
+
+  const packageName = label.slice(INTERNAL_PACKAGE_PREFIX.length);
+  if (packageName.length === 0 || packageName.includes('/')) {
+    errors.push(`${relativePath}:${line} [docs-related-library-links] invalid internal package label "${label}"`);
+    return;
+  }
+
+  if (!isAllowedInternalHref(href, packageName)) {
+    errors.push(
+      `${relativePath}:${line} [docs-related-library-links] internal library "${label}" must link to /docs/packages/${packageName} or ${DOCS_BASE_URL}/docs/packages/${packageName}`,
+    );
+    return;
+  }
+
+  const docsPath = path.join(context.websiteDir, 'docs', 'packages', packageName);
+  const docExists = (await exists(`${docsPath}.md`)) || (await exists(`${docsPath}.mdx`));
+  if (!docExists) {
+    errors.push(`${relativePath}:${line} [docs-related-library-links] missing docs page for internal library "${label}"`);
+  }
+};
+
+const validateRelatedLibraryRow = async ({
+  context,
+  errors,
+  line,
+  relativePath,
+  rowSource,
+}: ValidateRelatedLibraryRowInput): Promise<number> => {
+  const chips: RelatedLibraryChip[] = [...rowSource.matchAll(RELATED_LIBRARY_CHIP_PATTERN)].map((match) => {
+    return {
+      href: match[1],
+      label: match[2],
+    };
+  });
+  const codes = [...rowSource.matchAll(RELATED_LIBRARY_CODE_PATTERN)].map((match) => match[1]);
+
+  if (chips.length === 0) {
+    errors.push(`${relativePath}:${line} [docs-related-library-links] related library chips must be linked code chips`);
+    return 0;
+  }
+
+  if (chips.length !== codes.length) {
+    errors.push(`${relativePath}:${line} [docs-related-library-links] every related library code chip must be wrapped in an anchor`);
+  }
+
+  await Promise.all(chips.map(({ href, label }) => validateRelatedLibraryChip({
+    context,
+    errors,
+    href,
+    label,
+    line,
+    relativePath,
+  })));
+
+  return chips.length;
+};
+
 export const runDocRelatedLibraryLinksCheck = async (
   context: PolicyContext,
 ): Promise<PolicyCheckResult> => {
@@ -76,57 +171,15 @@ export const runDocRelatedLibraryLinksCheck = async (
       const rowIndex = row.index ?? 0;
       const line = countLineNumber(source, rowIndex);
       const rowSource = row[1];
-      const chips = [...rowSource.matchAll(RELATED_LIBRARY_CHIP_PATTERN)].map((match) => {
-        return {
-          href: match[1],
-          label: match[2],
-        };
-      });
-      const codes = [...rowSource.matchAll(RELATED_LIBRARY_CODE_PATTERN)].map((match) => match[1]);
 
       checkedRows += 1;
-      checkedChips += chips.length;
-
-      if (chips.length === 0) {
-        errors.push(`${relativePath}:${line} [docs-related-library-links] related library chips must be linked code chips`);
-        continue;
-      }
-
-      if (chips.length !== codes.length) {
-        errors.push(`${relativePath}:${line} [docs-related-library-links] every related library code chip must be wrapped in an anchor`);
-      }
-
-      for (const { href, label } of chips) {
-        if (label.startsWith(INTERNAL_PACKAGE_PREFIX)) {
-          const packageName = label.slice(INTERNAL_PACKAGE_PREFIX.length);
-          if (packageName.length === 0 || packageName.includes('/')) {
-            errors.push(`${relativePath}:${line} [docs-related-library-links] invalid internal package label "${label}"`);
-            continue;
-          }
-
-          if (!isAllowedInternalHref(href, packageName)) {
-            errors.push(
-              `${relativePath}:${line} [docs-related-library-links] internal library "${label}" must link to /docs/packages/${packageName} or ${DOCS_BASE_URL}/docs/packages/${packageName}`,
-            );
-            continue;
-          }
-
-          const docExists = (await exists(path.join(context.websiteDir, 'docs', 'packages', `${packageName}.md`)))
-            || (await exists(path.join(context.websiteDir, 'docs', 'packages', `${packageName}.mdx`)));
-
-          if (!docExists) {
-            errors.push(`${relativePath}:${line} [docs-related-library-links] missing docs page for internal library "${label}"`);
-          }
-
-          continue;
-        }
-
-        if (!isAllowedExternalHref(href, label)) {
-          errors.push(
-            `${relativePath}:${line} [docs-related-library-links] external library "${label}" must link to https://www.npmjs.com/package/${label}`,
-          );
-        }
-      }
+      checkedChips += await validateRelatedLibraryRow({
+        context,
+        errors,
+        line,
+        relativePath,
+        rowSource,
+      });
     }
   }
 

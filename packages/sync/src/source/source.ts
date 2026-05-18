@@ -750,6 +750,23 @@ export const createSourceFromConfig = <
     let singleInFlightPayloadKey: string | null = null;
     let runConfig: SourceRunConfig | undefined;
 
+    const resolveSingleInFlightPromise = (): Promise<TData> | null => {
+      if (!singleInFlightPromise) {
+        return null;
+      }
+
+      if (hasSingleInFlightPayload && Object.is(singleInFlightPayload, internal.payload)) {
+        return singleInFlightPromise;
+      }
+
+      const payloadKey = payloadKeyCache.getOrCreateKey(internal.payload);
+      if (singleInFlightPayloadKey === null && hasSingleInFlightPayload) {
+        singleInFlightPayloadKey = payloadKeyCache.getOrCreateKey(singleInFlightPayload);
+      }
+
+      return singleInFlightPayloadKey === payloadKey ? singleInFlightPromise : null;
+    };
+
     const clearInFlightTracking = (): void => {
       internal.inFlightByPayload.clear();
       singleInFlightPromise = null;
@@ -808,19 +825,9 @@ export const createSourceFromConfig = <
         internal.payload = nextPayload;
       }
       let payloadKey: string | null = null;
-      if (singleInFlightPromise) {
-        if (hasSingleInFlightPayload && Object.is(singleInFlightPayload, internal.payload)) {
-          return singleInFlightPromise;
-        }
-
-        payloadKey = payloadKeyCache.getOrCreateKey(internal.payload);
-        if (singleInFlightPayloadKey === null && hasSingleInFlightPayload) {
-          singleInFlightPayloadKey = payloadKeyCache.getOrCreateKey(singleInFlightPayload);
-        }
-
-        if (singleInFlightPayloadKey === payloadKey) {
-          return singleInFlightPromise;
-        }
+      const matchingSingleInFlightPromise = resolveSingleInFlightPromise();
+      if (matchingSingleInFlightPromise) {
+        return matchingSingleInFlightPromise;
       }
 
       if (internal.inFlightByPayload.size > 0) {
