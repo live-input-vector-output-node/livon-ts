@@ -26,7 +26,6 @@ if (!sonarToken) {
 
 const sonarBase = 'https://sonarcloud.io';
 const sonarDashboardUrl = `${sonarBase}/dashboard?id=${encodeURIComponent(projectKey)}&pullRequest=${encodeURIComponent(parsed.values.pr)}`;
-
 const authHeader = `Basic ${Buffer.from(`${sonarToken}:`, 'utf8').toString('base64')}`;
 
 const [projectStatus, measures, issues, hotspots] = await Promise.all([
@@ -58,12 +57,12 @@ const [projectStatus, measures, issues, hotspots] = await Promise.all([
     types: 'BUG,VULNERABILITY,CODE_SMELL',
     statuses: 'OPEN,REOPENED,CONFIRMED',
     s: 'SEVERITY',
-    ps: '20',
+    ps: '100',
   }),
   fetchSonarJson('/api/hotspots/search', {
     projectKey,
     pullRequest: parsed.values.pr,
-    ps: '20',
+    ps: '100',
   }),
 ]);
 
@@ -71,6 +70,29 @@ const measuresByKey = new Map((measures.component?.measures ?? []).map((item) =>
 const qualityGate = projectStatus.projectStatus ?? { status: 'UNKNOWN', conditions: [] };
 const issueComponents = new Map((issues.components ?? []).map((item) => [item.key, item.path ?? item.longName ?? item.name]));
 const hotspotComponents = new Map((hotspots.components ?? []).map((item) => [item.key, item.path ?? item.longName ?? item.name]));
+
+const findings = [
+  ...(issues.issues ?? []).map((item) => ({
+    findingKey: `issue:${item.key}`,
+    kind: item.type ?? 'ISSUE',
+    severity: item.severity ?? '-',
+    message: item.message ?? '-',
+    path: issueComponents.get(item.component) ?? item.component ?? '-',
+    startLine: item.textRange?.startLine ?? item.line ?? null,
+    endLine: item.textRange?.endLine ?? item.textRange?.startLine ?? item.line ?? null,
+    sonarUrl: `${sonarBase}/project/issues?id=${encodeURIComponent(projectKey)}&pullRequest=${encodeURIComponent(parsed.values.pr)}&open=${encodeURIComponent(item.key)}`,
+  })),
+  ...(hotspots.hotspots ?? []).map((item) => ({
+    findingKey: `hotspot:${item.key}`,
+    kind: 'SECURITY_HOTSPOT',
+    severity: item.vulnerabilityProbability ?? '-',
+    message: item.message ?? '-',
+    path: hotspotComponents.get(item.component) ?? item.component ?? '-',
+    startLine: item.textRange?.startLine ?? item.line ?? null,
+    endLine: item.textRange?.endLine ?? item.textRange?.startLine ?? item.line ?? null,
+    sonarUrl: `${sonarBase}/security_hotspots?id=${encodeURIComponent(projectKey)}&pullRequest=${encodeURIComponent(parsed.values.pr)}&hotspots=${encodeURIComponent(item.key)}`,
+  })),
+];
 
 const summarySection = [
   '## SonarCloud PR Summary',
@@ -99,39 +121,28 @@ const summarySection = [
       `| ${condition.metricKey ?? '-'} | ${condition.status ?? '-'} | ${condition.actualValue ?? '-'} | ${condition.errorThreshold ?? '-'} |`,
   )),
   '',
-  `### Open Sonar Issues (${issues.total ?? 0})`,
+  `### Open Sonar Findings (${findings.length})`,
   '',
   '| Type | Severity | File | Line | Message |',
   '| --- | --- | --- | --- | --- |',
-  ...(issues.issues?.length
-    ? issues.issues.map((item) => {
-        const path = issueComponents.get(item.component) ?? item.component ?? '-';
-        const startLine = item.textRange?.startLine ?? item.line ?? '-';
-        const endLine = item.textRange?.endLine ?? startLine;
-        const lineRange = startLine === endLine ? `${startLine}` : `${startLine}-${endLine}`;
-        return `| ${item.type ?? '-'} | ${item.severity ?? '-'} | \`${path}\` | ${lineRange} | ${escapeMd(item.message ?? '-')} |`;
+  ...(findings.length
+    ? findings.slice(0, 100).map((item) => {
+        const lineRange = renderLineRange(item.startLine, item.endLine);
+        return `| ${item.kind} | ${item.severity} | \`${item.path}\` | ${lineRange} | ${escapeMd(item.message)} |`;
       })
-    : ['| - | - | - | - | Keine offenen Sonar Issues auf diesem PR |']),
-  '',
-  `### Open Security Hotspots (${hotspots.paging?.total ?? 0})`,
-  '',
-  '| Risk | File | Line | Status | Message |',
-  '| --- | --- | --- | --- | --- |',
-  ...(hotspots.hotspots?.length
-    ? hotspots.hotspots.map((item) => {
-        const path = hotspotComponents.get(item.component) ?? item.component ?? '-';
-        const startLine = item.textRange?.startLine ?? item.line ?? '-';
-        const endLine = item.textRange?.endLine ?? startLine;
-        const lineRange = startLine === endLine ? `${startLine}` : `${startLine}-${endLine}`;
-        return `| ${item.vulnerabilityProbability ?? '-'} | \`${path}\` | ${lineRange} | ${item.status ?? '-'} | ${escapeMd(item.message ?? '-')} |`;
-      })
-    : ['| - | - | - | - | Keine offenen Security Hotspots auf diesem PR |']),
+    : ['| - | - | - | - | Keine offenen Sonar Findings auf diesem PR |']),
   '',
 ].join('\n');
 
 await writeFile(parsed.values.outputFile, `${summarySection}\n`, { encoding: 'utf8', flag: 'a' });
 
 if (process.env.GITHUB_TOKEN) {
+  const inlineResult = await publishInlineReviewComments({
+    repo: parsed.values.repo,
+    pr: parsed.values.pr,
+    findings,
+  });
+
   await upsertPrComment({
     repo: parsed.values.repo,
     pr: parsed.values.pr,
@@ -150,7 +161,19 @@ if (process.env.GITHUB_TOKEN) {
       `| New Vulnerabilities | ${formatMetric(measuresByKey.get('new_vulnerabilities'))} |`,
       `| New Security Hotspots Reviewed | ${formatMetric(measuresByKey.get('new_security_hotspots_reviewed'), '%')} |`,
       '',
-      `_Top issues/hotspots mit Datei + Zeilenbereich stehen in der Action Summary._`,
+      `Inline review comments erstellt: **${inlineResult.created}**`,
+      `Nicht platzierbar im PR-Diff (Fallback in Summary): **${inlineResult.unplaced.length}**`,
+      '',
+      ...(inlineResult.unplaced.length
+        ? [
+            '### Unplaced Findings',
+            '',
+            ...inlineResult.unplaced.slice(0, 30).map((item) => {
+              const lineRange = renderLineRange(item.startLine, item.endLine);
+              return `- ${item.kind} ${item.severity} in \`${item.path}:${lineRange}\` - ${item.message}`;
+            }),
+          ]
+        : []),
     ].join('\n'),
   });
 }
@@ -198,57 +221,246 @@ function formatMetric(value, suffix = '') {
   return `${value}${suffix}`;
 }
 
-async function upsertPrComment({ repo, pr, body }) {
-  const [owner, name] = repo.split('/');
-  if (!owner || !name) {
-    throw new Error(`invalid --repo value: ${repo}`);
+function renderLineRange(startLine, endLine) {
+  if (!Number.isInteger(startLine)) {
+    return '-';
   }
+  if (!Number.isInteger(endLine) || endLine === startLine) {
+    return `${startLine}`;
+  }
+  return `${startLine}-${endLine}`;
+}
+
+async function githubApi(path, { method = 'GET', body } = {}) {
   const headers = {
     Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
     Accept: 'application/vnd.github+json',
     'X-GitHub-Api-Version': '2022-11-28',
   };
 
-  const listResponse = await fetch(
-    `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/issues/${encodeURIComponent(pr)}/comments?per_page=100`,
-    { headers },
-  );
-  if (!listResponse.ok) {
-    const text = await listResponse.text();
-    throw new Error(`github comments list failed (${listResponse.status}): ${text}`);
+  const response = await fetch(`https://api.github.com${path}`, {
+    method,
+    headers,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`github api ${method} ${path} failed (${response.status}): ${text}`);
   }
 
-  const comments = await listResponse.json();
+  if (response.status === 204) {
+    return null;
+  }
+  return response.json();
+}
+
+async function upsertPrComment({ repo, pr, body }) {
+  const [owner, name] = repo.split('/');
+  if (!owner || !name) {
+    throw new Error(`invalid --repo value: ${repo}`);
+  }
+
+  const comments = await githubApi(
+    `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/issues/${encodeURIComponent(pr)}/comments?per_page=100`,
+  );
+
   const existing = comments.find(
     (comment) => typeof comment?.body === 'string' && comment.body.includes('<!-- sonar-pr-summary -->'),
   );
 
   if (existing) {
-    const updateResponse = await fetch(
-      `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/issues/comments/${existing.id}`,
+    await githubApi(
+      `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/issues/comments/${existing.id}`,
       {
         method: 'PATCH',
-        headers,
-        body: JSON.stringify({ body }),
+        body: { body },
       },
     );
-    if (!updateResponse.ok) {
-      const text = await updateResponse.text();
-      throw new Error(`github comment update failed (${updateResponse.status}): ${text}`);
-    }
     return;
   }
 
-  const createResponse = await fetch(
-    `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/issues/${encodeURIComponent(pr)}/comments`,
-    {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ body }),
-    },
-  );
-  if (!createResponse.ok) {
-    const text = await createResponse.text();
-    throw new Error(`github comment create failed (${createResponse.status}): ${text}`);
+  await githubApi(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/issues/${encodeURIComponent(pr)}/comments`, {
+    method: 'POST',
+    body: { body },
+  });
+}
+
+async function publishInlineReviewComments({ repo, pr, findings }) {
+  const [owner, name] = repo.split('/');
+  if (!owner || !name) {
+    throw new Error(`invalid --repo value: ${repo}`);
   }
+
+  const prData = await githubApi(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/pulls/${encodeURIComponent(pr)}`);
+  const headSha = prData?.head?.sha;
+  if (!headSha) {
+    return { created: 0, unplaced: findings };
+  }
+
+  const files = await listPrFiles({ owner, name, pr });
+  const fileMap = new Map(files.map((file) => [file.filename, parseAddedLines(file.patch ?? '')]));
+
+  const existingComments = await listReviewComments({ owner, name, pr });
+  const markerPrefix = '<!-- sonar-inline:';
+  for (const comment of existingComments) {
+    if (comment?.user?.login === 'github-actions[bot]' && typeof comment.body === 'string' && comment.body.includes(markerPrefix)) {
+      await githubApi(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/pulls/comments/${comment.id}`, {
+        method: 'DELETE',
+      });
+    }
+  }
+
+  let created = 0;
+  const unplaced = [];
+
+  for (const item of findings) {
+    const diffLines = fileMap.get(item.path);
+    if (!diffLines || diffLines.size === 0) {
+      unplaced.push(item);
+      continue;
+    }
+
+    const placement = resolvePlacement({
+      startLine: item.startLine,
+      endLine: item.endLine,
+      diffLines,
+    });
+
+    if (!placement) {
+      unplaced.push(item);
+      continue;
+    }
+
+    const marker = `<!-- sonar-inline:${item.findingKey}:${headSha} -->`;
+    const body = [
+      marker,
+      `Sonar ${item.kind} (${item.severity})`,
+      '',
+      item.message,
+      '',
+      `Source: ${item.sonarUrl}`,
+    ].join('\n');
+
+    const payload = {
+      body,
+      commit_id: headSha,
+      path: item.path,
+      side: 'RIGHT',
+      line: placement.line,
+    };
+
+    if (placement.startLine && placement.startLine < placement.line) {
+      payload.start_line = placement.startLine;
+      payload.start_side = 'RIGHT';
+    }
+
+    try {
+      await githubApi(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/pulls/${encodeURIComponent(pr)}/comments`, {
+        method: 'POST',
+        body: payload,
+      });
+      created += 1;
+    } catch {
+      unplaced.push(item);
+    }
+  }
+
+  return { created, unplaced };
+}
+
+async function listPrFiles({ owner, name, pr }) {
+  const files = [];
+  let page = 1;
+  while (true) {
+    const pageData = await githubApi(
+      `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/pulls/${encodeURIComponent(pr)}/files?per_page=100&page=${page}`,
+    );
+    files.push(...pageData);
+    if (pageData.length < 100) {
+      break;
+    }
+    page += 1;
+  }
+  return files;
+}
+
+async function listReviewComments({ owner, name, pr }) {
+  const comments = [];
+  let page = 1;
+  while (true) {
+    const pageData = await githubApi(
+      `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/pulls/${encodeURIComponent(pr)}/comments?per_page=100&page=${page}`,
+    );
+    comments.push(...pageData);
+    if (pageData.length < 100) {
+      break;
+    }
+    page += 1;
+  }
+  return comments;
+}
+
+function parseAddedLines(patch) {
+  const added = new Set();
+  if (!patch) {
+    return added;
+  }
+
+  const lines = patch.split('\n');
+  let newLine = null;
+
+  for (const line of lines) {
+    const hunkMatch = /^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@/.exec(line);
+    if (hunkMatch) {
+      newLine = Number.parseInt(hunkMatch[1], 10);
+      continue;
+    }
+
+    if (newLine === null) {
+      continue;
+    }
+
+    if (line.startsWith('+') && !line.startsWith('+++')) {
+      added.add(newLine);
+      newLine += 1;
+      continue;
+    }
+
+    if (line.startsWith('-') && !line.startsWith('---')) {
+      continue;
+    }
+
+    if (line.startsWith(' ')) {
+      newLine += 1;
+    }
+  }
+
+  return added;
+}
+
+function resolvePlacement({ startLine, endLine, diffLines }) {
+  const sortedLines = Array.from(diffLines).sort((a, b) => a - b);
+  if (sortedLines.length === 0) {
+    return null;
+  }
+
+  if (!Number.isInteger(startLine)) {
+    return { line: sortedLines[0] };
+  }
+
+  const safeEnd = Number.isInteger(endLine) ? Math.max(endLine, startLine) : startLine;
+  const inRange = sortedLines.filter((line) => line >= startLine && line <= safeEnd);
+  if (inRange.length >= 2) {
+    return { startLine: inRange[0], line: inRange[inRange.length - 1] };
+  }
+  if (inRange.length === 1) {
+    return { line: inRange[0] };
+  }
+
+  if (diffLines.has(startLine)) {
+    return { line: startLine };
+  }
+
+  return null;
 }
