@@ -158,7 +158,20 @@ jobs:
         run: pnpm install --prod --frozen-lockfile
 
       - name: Archive production dependency state
-        run: tar -czf prod-deps.tgz node_modules .pnpm-store .turbo
+        run: |
+          set -euo pipefail
+          paths=(node_modules .pnpm-store .turbo)
+          existing_paths=()
+          for path in "${paths[@]}"; do
+            if [[ -e "$path" ]]; then
+              existing_paths+=("$path")
+            fi
+          done
+          if [[ "${#existing_paths[@]}" -eq 0 ]]; then
+            echo "::error::No dependency paths found to archive."
+            exit 1
+          fi
+          tar -czf prod-deps.tgz "${existing_paths[@]}"
 
       - name: Upload production dependency artifact
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
@@ -220,7 +233,20 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Archive development dependency state
-        run: tar -czf dev-deps.tgz node_modules .pnpm-store .turbo
+        run: |
+          set -euo pipefail
+          paths=(node_modules .pnpm-store .turbo)
+          existing_paths=()
+          for path in "${paths[@]}"; do
+            if [[ -e "$path" ]]; then
+              existing_paths+=("$path")
+            fi
+          done
+          if [[ "${#existing_paths[@]}" -eq 0 ]]; then
+            echo "::error::No dependency paths found to archive."
+            exit 1
+          fi
+          tar -czf dev-deps.tgz "${existing_paths[@]}"
 
       - name: Upload development dependency artifact
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
