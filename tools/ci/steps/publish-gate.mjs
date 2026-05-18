@@ -1,5 +1,6 @@
 import { parseArgs } from 'node:util';
 import { spawn } from 'node:child_process';
+import { existsSync } from 'node:fs';
 import { writeFile } from 'node:fs/promises';
 
 const parsed = parseArgs({
@@ -17,9 +18,15 @@ if (!parsed.values.outputFile) {
   throw new Error('--outputFile is required');
 }
 
+const GIT_BIN_CANDIDATES = ['/usr/bin/git', '/usr/local/bin/git', '/opt/homebrew/bin/git'];
+const gitBinary = GIT_BIN_CANDIDATES.find((candidate) => existsSync(candidate));
+if (!gitBinary) {
+  throw new Error(`unable to locate git binary in known locations: ${GIT_BIN_CANDIDATES.join(', ')}`);
+}
+
 const runGitDiff = ({ from, to }) =>
   new Promise((resolve, reject) => {
-    const child = spawn('git', ['diff', '--name-only', from, to, '--', '.changeset'], {
+    const child = spawn(gitBinary, ['diff', '--name-only', from, to, '--', '.changeset'], {
       stdio: ['ignore', 'pipe', 'inherit'],
     });
 
