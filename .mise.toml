@@ -2,153 +2,285 @@
 node = "lts"
 pnpm = "9.0.0"
 
-[tasks."workflow:configure-pnpm-store"]
+[tasks."setup-pnpm-store"]
 description = "Set pnpm store directory"
 raw_args = true
 run = "pnpm config set store-dir"
 
-[tasks."workflow:install-development"]
-description = "Install development dependencies"
-run = 'pnpm install --frozen-lockfile'
+[tasks."install-prod"]
+description = "Install production dependencies"
+run = "pnpm install --prod --frozen-lockfile"
 
-[tasks."workflow:extract-tar"]
+[tasks."install-dev"]
+description = "Install development dependencies"
+run = "pnpm install --frozen-lockfile"
+
+[tasks."prod-dependencies"]
+description = "Configure and install production dependencies"
+run = [
+  { task = "setup-pnpm-store", args = [".pnpm-store"] },
+  { task = "install-prod" }
+]
+
+[tasks."dev-dependencies"]
+description = "Configure and install development dependencies"
+run = [
+  { task = "setup-pnpm-store", args = [".pnpm-store"] },
+  { task = "install-dev" }
+]
+
+[tasks.setup]
+description = "Project setup chain"
+depends = ["dev-dependencies"]
+
+[tasks."extract-tar"]
 description = "Extract a tar archive"
 raw_args = true
 run = "node tools/ci/steps/extract-tar.mjs"
 
-[tasks."workflow:run-ci-affected"]
-description = "Run affected monorepo CI"
-run = 'pnpm run qg:changed'
-
-[tasks."workflow:run-ci-full"]
-description = "Run full monorepo CI"
-run = 'pnpm run ci'
-
-[tasks."workflow:release-check-affected"]
-description = "Run affected release checks"
-run = 'pnpm run release:check -- --affected'
-
-[tasks."workflow:release-check-full"]
-description = "Run full release checks"
-run = 'pnpm run release:check'
-
-[tasks."workflow:archive-build-outputs"]
+[tasks."archive-build-outputs"]
 description = "Archive dist/build outputs and turbo cache"
 raw_args = true
 run = "node tools/ci/steps/archive-build-outputs.mjs"
 
-[tasks."workflow:publish-gate"]
+[tasks."publish-gate"]
 description = "Evaluate publish gate from changeset file diffs"
 raw_args = true
 run = "node tools/ci/steps/publish-gate.mjs"
 
-[tasks."workflow:npm-set-token"]
+[tasks."npm-set-token"]
 description = "Set npm auth token"
 raw_args = true
 run = "pnpm config set //registry.npmjs.org/:_authToken"
 
-[tasks."workflow:npm-set-registry"]
+[tasks."npm-set-registry"]
 description = "Set npm registry"
 run = 'pnpm config set registry "https://registry.npmjs.org/"'
 
-[tasks."workflow:npm-set-always-auth"]
+[tasks."npm-set-always-auth"]
 description = "Enable npm always-auth"
 run = "pnpm config set always-auth true"
 
-[tasks."workflow:npm-whoami"]
+[tasks."npm-whoami"]
 description = "Verify npm identity"
 run = "npm whoami"
 
-[tasks."workflow:publish"]
-description = "Publish packages via changesets"
-run = 'pnpm changeset:publish'
-
-[tasks."workflow:build-docs"]
-description = "Build website docs"
-env = { DOCUSAURUS_GITHUB_PAGES = "true" }
-run = 'pnpm --filter website build'
-
-[tasks."workflow:build-workspace"]
-description = "Build workspace"
-run = 'pnpm run build'
-
-[tasks."workflow:run-coverage"]
-description = "Run workspace coverage"
-run = 'pnpm exec vitest run --config vitest.workspace.ts --coverage --reporter=dot'
-
-[tasks."workflow:install-gitleaks"]
-description = "Install pinned gitleaks binary"
+[tasks."publish-auth"]
+description = "Configure npm auth for publish"
 raw_args = true
-run = "node tools/ci/steps/install-gitleaks.mjs"
+run = [
+  { task = "npm-set-token" },
+  { task = "npm-set-registry" },
+  { task = "npm-set-always-auth" },
+  { task = "npm-whoami" }
+]
 
-[tasks."workflow:run-gitleaks"]
+[tasks.publish]
+description = "Publish packages via changesets"
+depends = ["setup"]
+run = "pnpm run changeset:publish"
+
+[tasks."build-docs"]
+description = "Build website docs"
+depends = ["setup"]
+run = "pnpm --filter website build"
+
+[tasks.coverage]
+description = "Run workspace coverage"
+depends = ["setup", "build"]
+run = "pnpm exec vitest run --config vitest.workspace.ts --coverage --reporter=dot"
+
+[tasks."secret-scan"]
 description = "Run gitleaks"
 raw_args = true
 run = "node tools/ci/steps/run-gitleaks.mjs"
 
-[tasks."workflow:write-summary"]
+[tasks."write-summary"]
 description = "Write job summary and mindmap"
 raw_args = true
-run = 'node tools/ci/steps/write-summary.mjs'
+run = "node tools/ci/steps/write-summary.mjs"
 
-[tasks."workflow:setup-development"]
-description = "Configure pnpm store and install development dependencies"
-run = [
-  { task = "workflow:configure-pnpm-store", args = [".pnpm-store"] },
-  { task = "workflow:install-development" }
-]
+[tasks."ci:affected"]
+description = "Run affected monorepo CI"
+depends = ["setup"]
+run = "pnpm run qg:changed"
 
-[tasks."workflow:job-ci-affected"]
-description = "Run affected CI job flow"
-run = [
-  { task = "workflow:setup-development" },
-  { task = "workflow:run-ci-affected" },
-  { task = "workflow:release-check-affected" },
-  { task = "workflow:archive-build-outputs", args = ["--archive", "ci-build-artifacts.tgz"] }
-]
+[tasks."release-check:affected"]
+description = "Run affected release checks"
+depends = ["setup"]
+run = "pnpm run release:check -- --affected"
 
-[tasks."workflow:job-ci-full"]
-description = "Run full CI job flow"
-run = [
-  { task = "workflow:setup-development" },
-  { task = "workflow:run-ci-full" },
-  { task = "workflow:release-check-full" },
-  { task = "workflow:archive-build-outputs", args = ["--archive", "ci-build-artifacts.tgz"] }
-]
+[tasks."release-check"]
+description = "Run full release checks"
+depends = ["setup"]
+run = "pnpm run release:check"
 
-[tasks."workflow:job-docs-build"]
-description = "Run docs build job flow"
-run = [
-  { task = "workflow:setup-development" },
-  { task = "workflow:build-docs" }
-]
+[tasks.build]
+description = "Run root build task"
+depends = ["setup"]
+run = "pnpm run build"
 
-[tasks."workflow:job-coverage"]
-description = "Run coverage job flow"
-run = [
-  { task = "workflow:setup-development" },
-  { task = "workflow:build-workspace" },
-  { task = "workflow:run-coverage" }
-]
+[tasks."build:watch"]
+description = "Run root build:watch task"
+depends = ["setup"]
+run = "pnpm run build:watch"
 
-[tasks."workflow:job-secret-scan"]
-description = "Run secret scan job flow"
-run = [
-  { task = "workflow:run-gitleaks" }
-]
+[tasks.ci]
+description = "Run root ci task"
+depends = ["setup"]
+run = "pnpm run ci"
 
-[tasks."workflow:local-affected"]
-description = "Run local affected pipeline equivalent"
-run = [
-  { task = "workflow:job-ci-affected" },
-  { task = "workflow:job-secret-scan" }
-]
+[tasks.qg]
+description = "Run root qg task"
+depends = ["setup"]
+run = "pnpm run qg"
 
-[tasks."workflow:local-main"]
-description = "Run local main pipeline equivalent (without publish)"
-run = [
-  { task = "workflow:job-ci-full" },
-  { task = "workflow:job-docs-build" },
-  { task = "workflow:job-coverage" },
-  { task = "workflow:job-secret-scan" }
-]
+[tasks."qg:changed"]
+description = "Run root qg:changed task"
+depends = ["setup"]
+run = "pnpm run qg:changed"
+
+[tasks.dev]
+description = "Run root dev task"
+depends = ["setup"]
+run = "pnpm run dev"
+
+[tasks.docs]
+description = "Run root docs task"
+depends = ["setup"]
+run = "pnpm run docs"
+
+[tasks.bench]
+description = "Run root bench task"
+depends = ["setup"]
+run = "pnpm run bench"
+
+[tasks."bench:gate"]
+description = "Run root bench:gate task"
+depends = ["setup"]
+run = "pnpm run bench:gate"
+
+[tasks."bench:execution-mode"]
+description = "Run root bench:execution-mode task"
+depends = ["setup"]
+run = "pnpm run bench:execution-mode"
+
+[tasks."bench:matrix:adaptive"]
+description = "Run root bench:matrix:adaptive task"
+depends = ["setup"]
+run = "pnpm run bench:matrix:adaptive"
+
+[tasks."bench:matrix:lru-set"]
+description = "Run root bench:matrix:lru-set task"
+depends = ["setup"]
+run = "pnpm run bench:matrix:lru-set"
+
+[tasks."bench:ui"]
+description = "Run root bench:ui task"
+depends = ["setup"]
+run = "pnpm run bench:ui"
+
+[tasks.test]
+description = "Run root test task"
+depends = ["setup"]
+run = "pnpm run test"
+
+[tasks.lint]
+description = "Run root lint task"
+depends = ["setup"]
+run = "pnpm run lint"
+
+[tasks.format]
+description = "Run root format task"
+depends = ["setup"]
+run = "pnpm run format"
+
+[tasks.typecheck]
+description = "Run root typecheck task"
+depends = ["setup"]
+run = "pnpm run typecheck"
+
+[tasks."test:unit"]
+description = "Run root test:unit task"
+depends = ["setup"]
+run = "pnpm run test:unit"
+
+[tasks."test:integration"]
+description = "Run root test:integration task"
+depends = ["setup"]
+run = "pnpm run test:integration"
+
+[tasks.gen]
+description = "Run root gen task"
+depends = ["setup"]
+run = "pnpm run gen"
+
+[tasks."gen:client"]
+description = "Run root gen:client task"
+depends = ["setup"]
+run = "pnpm run gen:client"
+
+[tasks."gen:client:deploy"]
+description = "Run root gen:client:deploy task"
+depends = ["setup"]
+run = "pnpm run gen:client:deploy"
+
+[tasks."gen:client:watch"]
+description = "Run root gen:client:watch task"
+depends = ["setup"]
+run = "pnpm run gen:client:watch"
+
+[tasks."gen:readmes"]
+description = "Run root gen:readmes task"
+depends = ["setup"]
+run = "pnpm run gen:readmes"
+
+[tasks."check:readmes"]
+description = "Run root check:readmes task"
+depends = ["setup"]
+run = "pnpm run check:readmes"
+
+[tasks."check:badges"]
+description = "Run root check:badges task"
+depends = ["setup"]
+run = "pnpm run check:badges"
+
+[tasks."check:links"]
+description = "Run root check:links task"
+depends = ["setup"]
+run = "pnpm run check:links"
+
+[tasks."release:check"]
+description = "Run root release:check task"
+depends = ["setup"]
+run = "pnpm run release:check"
+
+[tasks."check:policies"]
+description = "Run root check:policies task"
+depends = ["setup"]
+run = "pnpm run check:policies"
+
+[tasks."metrics:ai-control"]
+description = "Run root metrics:ai-control task"
+depends = ["setup"]
+run = "pnpm run metrics:ai-control"
+
+[tasks.changeset]
+description = "Run root changeset task"
+depends = ["setup"]
+run = "pnpm run changeset"
+
+[tasks."changeset:version"]
+description = "Run root changeset:version task"
+depends = ["setup"]
+run = "pnpm run changeset:version"
+
+[tasks."changeset:sync-root-version"]
+description = "Run root changeset:sync-root-version task"
+depends = ["setup"]
+run = "pnpm run changeset:sync-root-version"
+
+[tasks."changeset:publish"]
+description = "Run root changeset:publish task"
+depends = ["setup"]
+run = "pnpm run changeset:publish"

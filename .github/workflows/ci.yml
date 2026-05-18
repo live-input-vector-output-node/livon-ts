@@ -22,7 +22,7 @@ env:
   TURBO_CACHE_PATH: .turbo
 
 jobs:
-  ci:
+  prod_dependencies:
     if: ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
     runs-on: ubuntu-latest
     permissions:
@@ -35,6 +35,7 @@ jobs:
         uses: jdx/mise-action@v3
         with:
           install: true
+          cache: true
 
       - name: Restore pnpm store cache
         uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
@@ -52,13 +53,96 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-turbo-
 
-      - name: Run affected CI job flow
-        if: ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' }}
-        run: mise run workflow:job-ci-affected
+      - name: Install production dependencies
+        run: mise run prod-dependencies
 
-      - name: Run full CI job flow
+  dev_dependencies:
+    needs:
+      - prod_dependencies
+    if: ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup mise
+        uses: jdx/mise-action@v3
+        with:
+          install: true
+          cache: true
+
+      - name: Restore pnpm store cache
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+        with:
+          path: ${{ env.PNPM_STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Restore Turborepo cache
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+        with:
+          path: ${{ env.TURBO_CACHE_PATH }}
+          key: ${{ runner.os }}-turbo-${{ hashFiles('turbo.json', 'pnpm-lock.yaml', '**/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-turbo-
+
+      - name: Install development dependencies
+        run: mise run dev-dependencies
+
+  ci:
+    needs:
+      - dev_dependencies
+    if: ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup mise
+        uses: jdx/mise-action@v3
+        with:
+          install: true
+          cache: true
+
+      - name: Restore pnpm store cache
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+        with:
+          path: ${{ env.PNPM_STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Restore Turborepo cache
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+        with:
+          path: ${{ env.TURBO_CACHE_PATH }}
+          key: ${{ runner.os }}-turbo-${{ hashFiles('turbo.json', 'pnpm-lock.yaml', '**/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-turbo-
+
+      - name: Run affected CI
+        if: ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' }}
+        run: mise run ci:affected
+
+      - name: Run affected release checks
+        if: ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' }}
+        run: mise run release-check:affected
+
+      - name: Run full CI
         if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
-        run: mise run workflow:job-ci-full
+        run: mise run ci
+
+      - name: Run full release checks
+        if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
+        run: mise run release-check
+
+      - name: Archive build outputs
+        run: mise run archive-build-outputs -- --archive ci-build-artifacts.tgz
 
       - name: Upload build outputs
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
@@ -86,10 +170,11 @@ jobs:
         uses: jdx/mise-action@v3
         with:
           install: true
+          cache: true
 
       - name: Detect changeset file changes
         id: gate
-        run: mise run workflow:publish-gate -- --before "${{ github.event.before }}" --head "${{ github.sha }}" --outputFile "$GITHUB_OUTPUT"
+        run: mise run publish-gate -- --before "${{ github.event.before }}" --head "${{ github.sha }}" --outputFile "$GITHUB_OUTPUT"
 
   publish:
     needs:
@@ -108,6 +193,7 @@ jobs:
         uses: jdx/mise-action@v3
         with:
           install: true
+          cache: true
 
       - name: Restore pnpm store cache
         uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
@@ -131,28 +217,16 @@ jobs:
           name: ci-build-artifacts
 
       - name: Restore CI build artifact
-        run: mise run workflow:extract-tar -- --archive ci-build-artifacts.tgz
-
-      - name: Configure local pnpm store path
-        run: mise run workflow:configure-pnpm-store -- .pnpm-store
+        run: mise run extract-tar -- --archive ci-build-artifacts.tgz
 
       - name: Install development dependencies
-        run: mise run workflow:install-development
+        run: mise run dev-dependencies
 
-      - name: Set npm token
-        run: mise run workflow:npm-set-token -- "${{ secrets.NPM_TOKEN }}"
+      - name: Configure npm auth
+        run: mise run publish-auth -- "${{ secrets.NPM_TOKEN }}"
 
-      - name: Set npm registry
-        run: mise run workflow:npm-set-registry
-
-      - name: Enable npm always-auth
-        run: mise run workflow:npm-set-always-auth
-
-      - name: Verify npm identity
-        run: mise run workflow:npm-whoami
-
-      - name: Publish packages (changeset semantics)
-        run: mise run workflow:publish
+      - name: Publish packages
+        run: mise run publish
 
   docs_build:
     needs:
@@ -171,6 +245,7 @@ jobs:
         uses: jdx/mise-action@v3
         with:
           install: true
+          cache: true
 
       - name: Restore pnpm store cache
         uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
@@ -188,8 +263,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-turbo-
 
-      - name: Run docs build job flow
-        run: mise run workflow:job-docs-build
+      - name: Build docs
+        run: mise run build-docs
 
       - name: Configure Pages
         uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
@@ -229,6 +304,7 @@ jobs:
         uses: jdx/mise-action@v3
         with:
           install: true
+          cache: true
 
       - name: Restore pnpm store cache
         uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
@@ -246,8 +322,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-turbo-
 
-      - name: Run coverage job flow
-        run: mise run workflow:job-coverage
+      - name: Run coverage
+        run: mise run coverage
 
       - name: Upload coverage to Coveralls
         uses: coverallsapp/github-action@648a8eb78e6d50909eff900e4ec85cab4524a45b # v2.3.6
@@ -271,9 +347,10 @@ jobs:
         uses: jdx/mise-action@v3
         with:
           install: true
+          cache: true
 
-      - name: Run secret scan job flow
-        run: mise run workflow:job-secret-scan
+      - name: Run secret scan
+        run: mise run secret-scan
 
   vulnerability_scan:
     if: ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'schedule' && github.event.schedule == '30 12 * * 1') }}
@@ -324,6 +401,8 @@ jobs:
 
   summary:
     needs:
+      - prod_dependencies
+      - dev_dependencies
       - ci
       - publish_gate
       - publish
@@ -343,11 +422,14 @@ jobs:
         uses: jdx/mise-action@v3
         with:
           install: true
+          cache: true
 
       - name: Write pipeline summary and mindmap
         run: >-
-          mise run workflow:write-summary --
+          mise run write-summary --
           --outputFile "$GITHUB_STEP_SUMMARY"
+          --run "prod_dependencies=${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}"
+          --run "dev_dependencies=${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}"
           --run "ci=${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}"
           --run "docs=${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}"
           --run "coverage=${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}"
@@ -355,8 +437,8 @@ jobs:
           --run "secret_scan=${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'schedule' && github.event.schedule == '0 3 * * 6') }}"
           --run "vuln_scan=${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'schedule' && github.event.schedule == '30 12 * * 1') }}"
           --run "scorecard=${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'schedule' && github.event.schedule == '30 1 * * 6') }}"
-          --status "prod=cache-based"
-          --status "dev=cache-based"
+          --status "prod_dependencies=${{ needs.prod_dependencies.result }}"
+          --status "dev_dependencies=${{ needs.dev_dependencies.result }}"
           --status "ci=${{ needs.ci.result }}"
           --status "publish=${{ needs.publish.result }}"
           --status "docs_build=${{ needs.docs_build.result }}"
