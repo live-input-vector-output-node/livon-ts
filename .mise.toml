@@ -108,11 +108,6 @@ description = "Write job summary and mindmap"
 raw_args = true
 run = "node tools/ci/steps/write-summary.mjs"
 
-[tasks."sonar-pr-summary"]
-description = "Append Sonar PR metrics to summary and PR comment"
-raw_args = true
-run = "node tools/ci/steps/sonar-pr-summary.mjs"
-
 [tasks."ci:affected"]
 description = "Run affected monorepo CI"
 depends = ["setup"]
