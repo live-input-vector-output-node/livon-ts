@@ -1,10 +1,10 @@
-import { createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { chmod, rename, writeFile } from 'node:fs/promises';
 import process from 'node:process';
 import path from 'node:path';
 import * as tar from 'tar';
 import { ensureDirectory, runCommand } from './cli-utils.mjs';
+import { downloadVerifiedAsset } from './download-utils.mjs';
 
 const resolveGitleaksAsset = () => {
   const platformMap = {
@@ -26,22 +26,6 @@ const resolveGitleaksAsset = () => {
   }
 
   return { arch, platform };
-};
-
-const fetchText = async (url) => {
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`Failed to fetch ${url}: ${response.status} ${response.statusText}`);
-  }
-  return response.text();
-};
-
-const fetchBinary = async (url) => {
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`Failed to fetch ${url}: ${response.status} ${response.statusText}`);
-  }
-  return Buffer.from(await response.arrayBuffer());
 };
 
 const isSafeArchiveEntry = (entryPath) => {
@@ -69,24 +53,11 @@ export const installGitleaks = async ({ version, outputPath }) => {
   await ensureDirectory(outputDirectory);
   await ensureDirectory(downloadDirectory);
 
-  const checksumsContent = await fetchText(checksumUrl);
-  const expectedLine = checksumsContent
-    .split('\n')
-    .map((line) => line.trim())
-    .find((line) => line.endsWith(` ${archiveName}`));
-
-  if (!expectedLine) {
-    throw new Error(`Checksum for ${archiveName} not found in ${checksumUrl}`);
-  }
-
-  const expectedHash = expectedLine.split(' ')[0];
-  const archiveBuffer = await fetchBinary(archiveUrl);
-  const actualHash = createHash('sha256').update(archiveBuffer).digest('hex');
-
-  if (expectedHash !== actualHash) {
-    throw new Error(`Checksum mismatch for ${archiveName}`);
-  }
-
+  const archiveBuffer = await downloadVerifiedAsset({
+    assetName: archiveName,
+    assetUrl: archiveUrl,
+    checksumUrl,
+  });
   await writeFile(archivePath, archiveBuffer);
 
   await tar.extract({
