@@ -97,7 +97,7 @@ run = "node tools/ci/steps/run-gitleaks.mjs"
 [tasks."vulnerability-scan"]
 description = "Run OSV vulnerability scan"
 depends = ["setup"]
-run = 'pnpm dlx osv-scanner --recursive --licenses="MIT" ./'
+run = "node tools/ci/steps/run-osv-scan.mjs"
 
 [tasks."copilot-review"]
 description = "Request Copilot code review for a pull request"

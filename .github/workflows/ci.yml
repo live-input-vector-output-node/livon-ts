@@ -40,6 +40,8 @@ jobs:
           cache: true
 
       - name: Request Copilot review
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: >-
           mise run copilot-review --
           --repo "${{ github.repository }}"
