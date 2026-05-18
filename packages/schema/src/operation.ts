@@ -1,11 +1,10 @@
-import { Schema, Shape, Infer, SchemaContext, SchemaDoc, PublishAck } from './types.js';
+import { SchemaLike, Shape, Infer, SchemaContext, SchemaDoc, PublishAck } from './types.js';
 import { createSchemaContext } from './context.js';
 import { object } from './object.js';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- operation input/output schemas require permissive composition typing.
-type AnySchema = Schema<any>;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- overload implementation requires broad result type for optional output branches.
-type AnyResult = any;
+type AnySchema = SchemaLike;
+type AnyResult = unknown;
+type AnyFieldOperationExecutor = FieldOperationExecutor<unknown, unknown, unknown>;
 
 type InputSource = AnySchema | Shape | undefined;
 type InputInfer<TInput> = TInput extends AnySchema
@@ -23,7 +22,7 @@ export interface OperationRooms<TInput> {
 }
 
 export type OperationResult<TOutputSchema extends AnySchema | undefined, TResult> =
-  TOutputSchema extends Schema<infer TOutput> ? TOutput : TResult;
+  TOutputSchema extends SchemaLike<infer TOutput> ? TOutput : TResult;
 
 export interface OperationPublishHook<TOutput> {
   (output: TOutput, ctx: SchemaContext): unknown | void | Promise<unknown | void>;
@@ -79,10 +78,20 @@ export interface OperationInputWithOptionalOutput<TInputSchema extends AnySchema
   output?: AnySchema;
 }
 
-export interface FieldOperationExecutor<TDependsOn, TInput, TResult> {
-  (dependsOn: TDependsOn, ctx: SchemaContext): TResult | Promise<TResult>;
-  (dependsOn: TDependsOn, input: TInput, ctx: SchemaContext): TResult | Promise<TResult>;
-}
+export type FieldOperationExecutor<TDependsOn, TInput, TResult> =
+  [TInput] extends [undefined]
+    ? (...args: readonly [dependsOn: TDependsOn, ctx: SchemaContext]) => TResult | Promise<TResult>
+    : (...args: readonly [dependsOn: TDependsOn, input: TInput, ctx: SchemaContext]) => TResult | Promise<TResult>;
+
+type FieldOperationExecutorWithInput<TDependsOn, TInput, TResult> = (
+  ...args: readonly [dependsOn: TDependsOn, input: TInput, ctx: SchemaContext]
+) => TResult | Promise<TResult>;
+
+type FieldOperationExecutorWithoutInput<TDependsOn, TResult> = (
+  ...args: readonly [dependsOn: TDependsOn, ctx: SchemaContext]
+) => TResult | Promise<TResult>;
+
+type ShapeSchema<TShape extends Shape> = AnySchema & SchemaLike<ShapeInfer<TShape>>;
 
 export interface FieldOperation<
   TDependsOnSchema extends AnySchema,
@@ -202,12 +211,13 @@ export function operation<TInputSchema extends AnySchema, TResult>(
   input: OperationInputWithOptionalOutput<TInputSchema, TResult>,
 ): Operation<TInputSchema, AnySchema | undefined, AnyResult> {
   const output = 'output' in input ? input.output : undefined;
+  const publish = input.publish as OperationPublishMap<OperationResult<AnySchema | undefined, TResult>> | undefined;
   return {
     type: 'operation' as const,
     input: input.input,
     output,
     exec: input.exec,
-    publish: input.publish,
+    publish,
     rooms: input.rooms,
     ack: input.ack,
     doc: input.doc,
@@ -223,10 +233,10 @@ export interface FieldOperationFactory {
   ): FieldOperation<TDependsOnSchema, TInput, undefined, TResult>;
   <TShape extends Shape, TOutputSchema extends AnySchema, TInput extends InputSource = undefined>(
     input: FieldOperationInputShapeWithOutput<TShape, TOutputSchema, TInput>,
-  ): FieldOperation<AnySchema, TInput, TOutputSchema, Infer<TOutputSchema>>;
+  ): FieldOperation<ShapeSchema<TShape>, TInput, TOutputSchema, Infer<TOutputSchema>>;
   <TShape extends Shape, TResult, TInput extends InputSource = undefined>(
     input: FieldOperationInputShape<TShape, TResult, TInput>,
-  ): FieldOperation<AnySchema, TInput, undefined, TResult>;
+  ): FieldOperation<ShapeSchema<TShape>, TInput, undefined, TResult>;
 }
 
 /**
@@ -260,14 +270,14 @@ export function fieldOperation<
   TInput extends InputSource = undefined,
 >(
   input: FieldOperationInputShapeWithOutput<TShape, TOutputSchema, TInput>,
-): FieldOperation<AnySchema, TInput, TOutputSchema, Infer<TOutputSchema>>;
+): FieldOperation<ShapeSchema<TShape>, TInput, TOutputSchema, Infer<TOutputSchema>>;
 export function fieldOperation<
   TShape extends Shape,
   TResult,
   TInput extends InputSource = undefined,
 >(
   input: FieldOperationInputShape<TShape, TResult, TInput>,
-): FieldOperation<AnySchema, TInput, undefined, TResult>;
+): FieldOperation<ShapeSchema<TShape>, TInput, undefined, TResult>;
 export function fieldOperation<TDependsOnSchema extends AnySchema, TResult>(
   input:
     | FieldOperationInput<TDependsOnSchema, TResult, InputSource>
@@ -282,12 +292,13 @@ export function fieldOperation<TDependsOnSchema extends AnySchema, TResult>(
     ? normalizeDependsOn(input.input as AnySchema | Shape, 'input')
     : undefined;
   const output = 'output' in input ? input.output : undefined;
+  const exec = input.exec as unknown as AnyFieldOperationExecutor;
   return {
     type: 'field' as const,
     dependsOn: dependsOnSchema,
     input: inputSchema,
     output,
-    exec: input.exec,
+    exec,
     doc: input.doc,
   };
 }
@@ -351,7 +362,6 @@ const logPublishError = (error: unknown, info?: Readonly<Record<string, unknown>
       logger.error('publish failed', info, error);
       return;
     }
-    // eslint-disable-next-line no-console
     (globalThis as { console?: { error?: (...args: unknown[]) => void } }).console?.error?.(
       'publish failed',
       info ?? {},
@@ -486,8 +496,15 @@ export const runFieldOperation = async <
   const dependsOn = op.dependsOn.parse(rawDependsOn, context) as Infer<TDependsOnSchema>;
   const input = op.input ? op.input.parse(rawInput, context) : undefined;
   const result = op.input
-    ? await op.exec(dependsOn, input as InputInfer<TInput>, context)
-    : await op.exec(dependsOn, context);
+    ? await (op.exec as unknown as FieldOperationExecutorWithInput<
+        Infer<TDependsOnSchema>,
+        InputInfer<TInput>,
+        TResult
+      >)(dependsOn, input as InputInfer<TInput>, context)
+    : await (op.exec as unknown as FieldOperationExecutorWithoutInput<
+        Infer<TDependsOnSchema>,
+        TResult
+      >)(dependsOn, context);
   if (op.output) {
     return op.output.parse(result, context) as OperationResult<TOutputSchema, TResult>;
   }

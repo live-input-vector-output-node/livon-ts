@@ -502,66 +502,71 @@ const shouldSkipExternalUrl = (url) => {
   }
 };
 
+const createTimeoutSignal = (timeoutMs) => {
+  if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') {
+    return AbortSignal.timeout(timeoutMs);
+  }
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  if (typeof timer.unref === 'function') {
+    timer.unref();
+  }
+  return controller.signal;
+};
+
+const fetchUrlStatusViaCurl = async (url, method) => {
+  const args = ['-L', '--max-time', '15', '-A', 'livon-link-check/1.0', '-o', '/dev/null', '-s', '-w', '%{http_code}'];
+  if (method === 'HEAD') {
+    args.push('-I');
+  }
+  args.push(url);
+  try {
+    const { stdout } = await execFileAsync('curl', args);
+    const code = Number.parseInt(stdout.trim(), 10);
+    return Number.isFinite(code) ? code : 0;
+  } catch {
+    return 0;
+  }
+};
+
+const fetchUrlStatusViaNativeFetch = async (url, method) => {
+  if (typeof fetch !== 'function') {
+    return 0;
+  }
+
+  const response = await fetch(url, {
+    method,
+    redirect: 'follow',
+    signal: createTimeoutSignal(15000),
+    headers: {
+      'user-agent': 'livon-link-check/1.0',
+      accept: 'text/html,application/json;q=0.9,*/*;q=0.8',
+    },
+  });
+  return response.status;
+};
+
+const fetchUrlStatusViaMethod = async (url, method) => {
+  try {
+    const nativeStatusCode = await fetchUrlStatusViaNativeFetch(url, method);
+    if (nativeStatusCode > 0) {
+      return nativeStatusCode;
+    }
+  } catch {
+    // Try curl fallback below.
+  }
+
+  return fetchUrlStatusViaCurl(url, method);
+};
+
 const fetchUrlStatus = async (url) => {
   const normalizedUrl = normalizeExternalUrl(url);
   const methods = ['HEAD', 'GET'];
-  const createTimeoutSignal = (timeoutMs) => {
-    if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') {
-      return AbortSignal.timeout(timeoutMs);
-    }
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
-    if (typeof timer.unref === 'function') {
-      timer.unref();
-    }
-    return controller.signal;
-  };
-
-  const fetchUrlStatusViaCurl = async (method) => {
-    const args = ['-L', '--max-time', '15', '-A', 'livon-link-check/1.0', '-o', '/dev/null', '-s', '-w', '%{http_code}'];
-    if (method === 'HEAD') {
-      args.push('-I');
-    }
-    args.push(normalizedUrl);
-    try {
-      const { stdout } = await execFileAsync('curl', args);
-      const code = Number.parseInt(stdout.trim(), 10);
-      return Number.isFinite(code) ? code : 0;
-    } catch {
-      return 0;
-    }
-  };
 
   for (const method of methods) {
-    try {
-      if (typeof fetch === 'function') {
-        const response = await fetch(normalizedUrl, {
-          method,
-          redirect: 'follow',
-          signal: createTimeoutSignal(15000),
-          headers: {
-            'user-agent': 'livon-link-check/1.0',
-            accept: 'text/html,application/json;q=0.9,*/*;q=0.8',
-          },
-        });
-        const statusCode = response.status;
-        if (statusCode > 0) {
-          return statusCode;
-        }
-      } else {
-        const statusCode = await fetchUrlStatusViaCurl(method);
-        if (statusCode > 0) {
-          return statusCode;
-        }
-      }
-    } catch {
-      // Try fallback method.
-      if (typeof fetch !== 'function') {
-        const statusCode = await fetchUrlStatusViaCurl(method);
-        if (statusCode > 0) {
-          return statusCode;
-        }
-      }
+    const statusCode = await fetchUrlStatusViaMethod(normalizedUrl, method);
+    if (statusCode > 0) {
+      return statusCode;
     }
   }
 
@@ -674,7 +679,7 @@ export const runLinkCheck = async ({
 
   const localIssues = uniqueBy(localIssuesRaw, (entry) => `${entry.source}:${entry.line}:${entry.kind}:${entry.target}`);
 
-  const externalUrls = [...externalReferenceMap.keys()].sort();
+  const externalUrls = [...externalReferenceMap.keys()].sort((left, right) => left.localeCompare(right));
   const externalChecks = checkExternal
     ? await runWithConcurrency(
         externalUrls,

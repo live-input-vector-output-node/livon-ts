@@ -1,11 +1,8 @@
 import { schemaFactory } from './schemaFactory.js';
 import { isArray } from './typeGuards.js';
-import { Schema, SchemaDoc } from './types.js';
+import { Infer, SchemaDoc, SchemaLike } from './types.js';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- tuple items can contain heterogeneous schema output types.
-type AnySchema = Schema<any>;
-
-export interface TupleSchemaInput<TItems extends readonly AnySchema[]> {
+export interface TupleSchemaInput<TItems extends readonly SchemaLike[]> {
   name: string;
   items: TItems;
   doc?: SchemaDoc;
@@ -35,7 +32,7 @@ export interface TupleSchemaInput<TItems extends readonly AnySchema[]> {
  * }).optional();
  * MaybeCoordinates.parse(undefined);
  */
-export const tuple = <TItems extends readonly AnySchema[]>({
+export const tuple = <TItems extends readonly SchemaLike[]>({
   name,
   items,
   doc,
@@ -53,7 +50,7 @@ export const tuple = <TItems extends readonly AnySchema[]>({
         throw { message: 'Expected tuple', code: 'tuple.type' };
       }
       const result = items.map((schema, index) => schema.parse(input[index], ctx)) as {
-        [K in keyof TItems]: ReturnType<TItems[K]['parse']>;
+        [K in keyof TItems]: Infer<TItems[K]>;
       };
       return result;
     },

@@ -1,9 +1,6 @@
 import { schemaFactory, SchemaWithChain } from './schemaFactory.js';
 import { isRecord } from './typeGuards.js';
-import { Schema, Shape, SchemaDoc } from './types.js';
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- object shape must accept arbitrary schema output types per key.
-type AnySchema = Schema<any>;
+import { Infer, Shape, SchemaDoc } from './types.js';
 
 export interface ObjectSchemaInput<TShape extends Shape> {
   name: string;
@@ -39,12 +36,12 @@ export interface ObjectSchemaInput<TShape extends Shape> {
  * MaybeUser.parse(null);
  */
 export const object = <
-  TShape extends Record<string, AnySchema>
+  TShape extends Shape
 >({
   name,
   shape,
   doc,
-}: ObjectSchemaInput<TShape>): SchemaWithChain<{ [K in keyof TShape]: ReturnType<TShape[K]['parse']> }, {}> =>
+}: ObjectSchemaInput<TShape>): SchemaWithChain<{ [K in keyof TShape]: Infer<TShape[K]> }, {}> =>
   schemaFactory({
     name,
     type: 'object',
@@ -66,7 +63,7 @@ export const object = <
         throw { message: 'Expected object', code: 'object.type' };
       }
       return Object.entries(shape).reduce((acc, [key, schema]) => {
-        return { ...acc, [key]: (schema as AnySchema).parse(input[key], ctx) };
-      }, {} as { [K in keyof TShape]: ReturnType<TShape[K]['parse']> });
+        return { ...acc, [key]: schema.parse(input[key], ctx) };
+      }, {} as { [K in keyof TShape]: Infer<TShape[K]> });
     },
   });

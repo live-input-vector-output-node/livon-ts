@@ -56,7 +56,9 @@ export const useUsersStore = create<UsersState>((set, get) => ({
         if (!selfUserId || payload.userId === selfUserId) {
           return;
         }
-        void useUsersStore.getState().announcePresence(selfUserId);
+        useUsersStore.getState().announcePresence(selfUserId).catch((error) => {
+          console.warn('livon: presence announcement skipped', error);
+        });
       },
       onUserLeft: (payload) => {
         useUsersStore.getState().remove(payload._id);

@@ -1,9 +1,9 @@
-import { Schema } from './types.js';
+import { SchemaLike } from './types.js';
 
 interface ResolveCombinatorNameInput {
   fallback: string;
   name?: string;
-  options: ReadonlyArray<Schema<unknown>>;
+  options: ReadonlyArray<SchemaLike>;
 }
 
 const capitalize = (input: string): string =>

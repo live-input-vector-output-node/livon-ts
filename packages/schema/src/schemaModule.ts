@@ -1,5 +1,13 @@
 import { createSchemaContext } from './context.js';
-import { runFieldOperation, runOperation, type Operation, type FieldOperation } from './operation.js';
+import {
+  runFieldOperation,
+  runOperation,
+  type FieldOperation,
+  type Operation,
+  type OperationExecutor,
+  type OperationPublishMap,
+  type OperationRooms,
+} from './operation.js';
 import type {
   AckConfig,
   AstNode,
@@ -8,7 +16,8 @@ import type {
   PublishAck,
   SchemaContext,
   SchemaRequestContextInput,
-  Schema,
+  SchemaLike,
+  Shape,
 } from './types.js';
 import { pack, unpack } from 'msgpackr';
 import type { Subscription } from './api.js';
@@ -25,15 +34,18 @@ import type {
 
 type RuntimeNext = (update?: PartialEventEnvelope) => Promise<EventEnvelope>;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- module registry stores heterogeneous schemas.
-type AnySchema = Schema<any>;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- runtime operation registry carries unresolved generic payload/input types.
-type AnyInput = any;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- runtime operation registry carries unresolved generic result types.
-type AnyResult = any;
+type AnySchema = SchemaLike;
+type AnyInput = AnySchema | Shape | undefined;
+type AnyResult = unknown;
 
-type AnyOperation = Operation<AnySchema, AnySchema | undefined, AnyResult>;
-type AnyFieldOperation = FieldOperation<AnySchema, AnyInput, AnySchema | undefined, AnyResult>;
+type AnyOperation = Omit<Operation<AnySchema, AnySchema | undefined, AnyResult>, 'exec' | 'publish' | 'rooms'> & {
+  exec: OperationExecutor<never, AnyResult>;
+  publish?: OperationPublishMap<never>;
+  rooms?: OperationRooms<never>;
+};
+type AnyFieldOperation = Omit<FieldOperation<AnySchema, AnyInput, AnySchema | undefined, AnyResult>, 'exec'> & {
+  exec: unknown;
+};
 type AnySubscription = Subscription<AnySchema | undefined, AnySchema, AnySchema | undefined, unknown>;
 
 export interface SchemaModuleLike {
@@ -100,6 +112,31 @@ export interface BuildExplainPayloadInput {
   now: () => number;
 }
 
+interface HandleExplainRequestInput {
+  ast: AstNode;
+  checksum: string;
+  ctx: RuntimeContext;
+  encode: SchemaModuleEncoder;
+  envelope: EventEnvelope;
+  next: RuntimeNext;
+  now: SchemaModuleNow;
+  options: SchemaModuleOptions;
+}
+
+interface HandleExplainRequestResult {
+  envelope?: EventEnvelope;
+  handled: boolean;
+}
+
+interface ResolveFieldOperationInput {
+  event: string;
+  moduleSchema: SchemaModuleInput;
+  operation?: AnyOperation;
+}
+
+type RuntimeOperation = Operation<AnySchema, AnySchema | undefined, AnyResult>;
+type RuntimeFieldOperation = FieldOperation<AnySchema, AnyInput, AnySchema | undefined, AnyResult>;
+
 export interface EmitErrorEventInput {
   ctx: RuntimeContext;
   envelope: EventEnvelope;
@@ -128,7 +165,7 @@ const stableStringify = (value: unknown): string => {
     return `[${value.map((entry) => stableStringify(entry)).join(',')}]`;
   }
   const record = value as Record<string, unknown>;
-  const keys = Object.keys(record).sort();
+  const keys = Object.keys(record).sort((left, right) => left.localeCompare(right));
   return `{${keys.map((key) => `${JSON.stringify(key)}:${stableStringify(record[key])}`).join(',')}}`;
 };
 
@@ -185,6 +222,77 @@ const buildExplainPayload = (input: BuildExplainPayloadInput): ExplainPayload =>
   etag: input.checksum,
   ...(input.notModified ? { notModified: true } : {}),
 });
+
+const handleExplainRequest = async ({
+  ast,
+  checksum,
+  ctx,
+  encode,
+  envelope,
+  next,
+  now,
+  options,
+}: HandleExplainRequestInput): Promise<HandleExplainRequestResult> => {
+  if (envelope.event !== '$explain') {
+    return { handled: false };
+  }
+
+  if (!options.explain) {
+    return { handled: true, envelope: await next() };
+  }
+
+  const metadata = getEnvelopeMetadata(envelope);
+  const ifNoneMatch = typeof metadata?.ifNoneMatch === 'string' ? metadata.ifNoneMatch : undefined;
+  const notModified = Boolean(ifNoneMatch && ifNoneMatch === checksum);
+  const payload = buildExplainPayload({
+    notModified,
+    ast,
+    checksum,
+    schemaVersion: options.schemaVersion,
+    now,
+  });
+  await ctx.emitEvent({
+    event: envelope.event,
+    payload: encode(payload),
+    metadata,
+    context: envelope.context ? { ...envelope.context } : undefined,
+  });
+
+  return { handled: true, envelope };
+};
+
+const resolveFieldOperation = ({
+  event,
+  moduleSchema,
+  operation,
+}: ResolveFieldOperationInput): AnyFieldOperation | undefined => {
+  if (operation) {
+    return undefined;
+  }
+
+  const fieldInfo = splitFieldEvent(event);
+  if (!fieldInfo) {
+    return undefined;
+  }
+
+  const fieldKey = `${fieldInfo.owner}.${fieldInfo.field}`;
+  return moduleSchema.fieldOperations[fieldKey] ?? moduleSchema.fieldOperations[fieldInfo.field];
+};
+
+const runAnyOperation = (
+  operation: AnyOperation,
+  input: unknown,
+  context: SchemaContext,
+): Promise<AnyResult> =>
+  runOperation(operation as unknown as RuntimeOperation, input, context);
+
+const runAnyFieldOperation = (
+  operation: AnyFieldOperation,
+  dependsOn: unknown,
+  input: unknown,
+  context: SchemaContext,
+): Promise<AnyResult> =>
+  runFieldOperation(operation as unknown as RuntimeFieldOperation, dependsOn, input, context);
 
 const eventErrorFromUnknown = (error: unknown, info?: Readonly<Record<string, unknown>>): EventError => {
   if (error instanceof Error) {
@@ -282,35 +390,26 @@ export const schemaModule = (schema: SchemaModuleLike, options: SchemaModuleOpti
   const checksum = hashString(stableStringify(ast));
 
   const onReceive = async (envelope: EventEnvelope, ctx: RuntimeContext, next: RuntimeNext) => {
-    if (envelope.event === '$explain') {
-      if (!options.explain) {
-        return next();
-      }
-      const metadata = getEnvelopeMetadata(envelope);
-      const ifNoneMatch = typeof metadata?.ifNoneMatch === 'string' ? metadata.ifNoneMatch : undefined;
-      const notModified = Boolean(ifNoneMatch && ifNoneMatch === checksum);
-      const payload = buildExplainPayload({
-        notModified,
-        ast,
-        checksum,
-        schemaVersion: options.schemaVersion,
-        now,
-      });
-      await ctx.emitEvent({
-        event: envelope.event,
-        payload: encode(payload),
-        metadata,
-        context: envelope.context ? { ...envelope.context } : undefined,
-      });
-      return envelope;
+    const explainResult = await handleExplainRequest({
+      ast,
+      checksum,
+      ctx,
+      encode,
+      envelope,
+      next,
+      now,
+      options,
+    });
+    if (explainResult.handled) {
+      return explainResult.envelope ?? envelope;
     }
 
     const op = moduleSchema.operations[envelope.event];
-    const fieldInfo = op ? undefined : splitFieldEvent(envelope.event);
-    const fieldKey = fieldInfo ? `${fieldInfo.owner}.${fieldInfo.field}` : undefined;
-    const fieldOp = fieldInfo && !op
-      ? moduleSchema.fieldOperations[fieldKey!] ?? moduleSchema.fieldOperations[fieldInfo.field]
-      : undefined;
+    const fieldOp = resolveFieldOperation({
+      event: envelope.event,
+      moduleSchema,
+      operation: op,
+    });
 
     if (!op && !fieldOp) {
       return next();
@@ -382,8 +481,8 @@ export const schemaModule = (schema: SchemaModuleLike, options: SchemaModuleOpti
     let result: unknown;
     try {
       result = op
-        ? await runOperation(op, input, schemaContext)
-        : await runFieldOperation(
+        ? await runAnyOperation(op, input, schemaContext)
+        : await runAnyFieldOperation(
             fieldOp as AnyFieldOperation,
             fieldPayload?.dependsOn,
             fieldPayload?.input,

@@ -143,10 +143,7 @@ export interface SchemaFactoryMockInput {
   doc?: SchemaDoc;
   ast: (ctx: SchemaContext) => AstNode;
   validate: (input: unknown, ctx: SchemaContext) => unknown;
-  chain?: Record<
-    string,
-    (value: unknown, ctx: SchemaContext) => (...args: readonly unknown[]) => unknown
-  >;
+  chain?: SchemaFactoryChainDefinition<unknown>;
 }
 
 export type SchemaFactoryMock = ReturnType<

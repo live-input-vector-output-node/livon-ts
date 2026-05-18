@@ -1,9 +1,8 @@
 import { schemaFactory } from './schemaFactory.js';
 import { resolveCombinatorName } from './combinatorName.js';
-import { Schema, SchemaContext, SchemaDoc } from './types.js';
+import { Infer, SchemaContext, SchemaDoc, SchemaLike } from './types.js';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- `or` combines heterogeneous schema branches.
-type AnySchema = Schema<any>;
+type AnySchema = SchemaLike;
 
 export interface OrSchemaDiscriminator<TValues extends readonly AnySchema[]> {
   (input: unknown, ctx: SchemaContext): TValues[number] | undefined;
@@ -28,14 +27,14 @@ const resolveOrMatch = <TValues extends readonly AnySchema[]>({
   ctx,
   options,
   discriminator,
-}: ResolveOrMatchInput<TValues>): ReturnType<TValues[number]['parse']> => {
+}: ResolveOrMatchInput<TValues>): Infer<TValues[number]> => {
   if (discriminator) {
     const selected = discriminator(input, ctx);
     if (selected) {
       if (!options.includes(selected)) {
         throw { message: 'Discriminator selected an unknown schema option.', code: 'or.discriminator' };
       }
-      return selected.parse(input, ctx) as ReturnType<TValues[number]['parse']>;
+      return selected.parse(input, ctx) as Infer<TValues[number]>;
     }
   }
 
@@ -53,7 +52,7 @@ const resolveOrMatch = <TValues extends readonly AnySchema[]>({
     throw { message: 'No union match', code: 'union.match' };
   }
 
-  return matches.value as ReturnType<TValues[number]['parse']>;
+  return matches.value as Infer<TValues[number]>;
 };
 
 /**

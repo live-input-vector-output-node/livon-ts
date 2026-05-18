@@ -41,6 +41,7 @@ export { schemaModule } from './schemaModule.js';
 export { normalizeDoc, mergeDoc } from './doc.js';
 export type {
   Schema,
+  SchemaLike,
   SchemaIssue,
   SchemaResult,
   SchemaBuildContext,

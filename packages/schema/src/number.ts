@@ -1,4 +1,4 @@
-import { schemaFactory } from './schemaFactory.js';
+import { schemaFactory, SchemaFactoryChainDefinition } from './schemaFactory.js';
 import { isNumber } from './typeGuards.js';
 import { SchemaContext, SchemaDoc } from './types.js';
 
@@ -64,7 +64,7 @@ export interface NumberChainPositive {
  *
  * @see https://livon.tech/docs/schema/number
  */
-export interface NumberChainDefinition {
+export interface NumberChainDefinition extends SchemaFactoryChainDefinition<number> {
   min: NumberChainMin;
   max: NumberChainMax;
   int: NumberChainInt;
@@ -92,7 +92,7 @@ export type NumberSchema = ReturnType<typeof number>;
  * AdultAge.parse(21);
  */
 export const number = ({ name = 'number', doc }: NumberFactoryInput = {}) =>
-  schemaFactory<number>({
+  schemaFactory<number, NumberChainDefinition>({
     name,
     type: 'number',
     doc,

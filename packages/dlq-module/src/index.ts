@@ -69,26 +69,32 @@ const contextRecordFrom = (context?: RuntimeEventContext): RuntimeEventContextRe
   return context as RuntimeEventContextRecord;
 };
 
+const eventErrorFromError = (error: Error): EventError => ({
+  message: error.message,
+  ...(error.name ? { name: error.name } : {}),
+  ...(error.stack ? { stack: error.stack } : {}),
+});
+
+const eventErrorFromRecord = (error: Record<string, unknown>): EventError => {
+  const message = typeof error.message === 'string' ? error.message : 'Unknown error';
+  const name = typeof error.name === 'string' ? error.name : undefined;
+  const stack = typeof error.stack === 'string' ? error.stack : undefined;
+  return {
+    message,
+    ...(name ? { name } : {}),
+    ...(stack ? { stack } : {}),
+  };
+};
+
 const errorFromUnknown = (error: unknown): EventError => {
   if (error instanceof Error) {
-    return {
-      message: error.message,
-      ...(error.name ? { name: error.name } : {}),
-      ...(error.stack ? { stack: error.stack } : {}),
-    };
+    return eventErrorFromError(error);
   }
   if (typeof error === 'string') {
     return { message: error };
   }
   if (isRecord(error)) {
-    const message = typeof error.message === 'string' ? error.message : 'Unknown error';
-    const name = typeof error.name === 'string' ? error.name : undefined;
-    const stack = typeof error.stack === 'string' ? error.stack : undefined;
-    return {
-      message,
-      ...(name ? { name } : {}),
-      ...(stack ? { stack } : {}),
-    };
+    return eventErrorFromRecord(error);
   }
   return { message: 'Unknown error' };
 };

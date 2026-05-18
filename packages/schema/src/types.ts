@@ -328,6 +328,14 @@ export interface Schema<T> {
   and: SchemaAndMethod<T>;
 }
 
-export type Shape = Readonly<Record<string, Schema<unknown>>>;
+export interface SchemaLike<T = unknown> {
+  name: string;
+  type: string;
+  ast: SchemaAst;
+  validate: SchemaValidate<T>;
+  parse: SchemaParse<T>;
+}
 
-export type Infer<TSchema> = TSchema extends Schema<infer TValue> ? TValue : never;
+export type Shape = Readonly<Record<string, SchemaLike>>;
+
+export type Infer<TSchema> = TSchema extends SchemaLike<infer TValue> ? TValue : never;

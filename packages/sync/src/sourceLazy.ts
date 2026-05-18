@@ -171,48 +171,21 @@ const createLazySourceFromConfig = <
       return resolvedUnitPromise;
     };
 
-    const fetch: SourceRun<TPayload, TData, TMeta> = (
+    const fetch: SourceRun<TPayload, TData, TMeta> = async (
       dataOrSetAction?: SourceRunInput<TPayload, TData, TMeta>,
       configOrMode?: { mode?: 'default' | 'refetch' | 'force' },
     ) => {
-      return ensureUnit()
-        .then((unit) => {
-          const load = unit.getSnapshot().load;
-          if (dataOrSetAction === undefined && configOrMode === undefined) {
-            return Promise.resolve(
-              Reflect.apply(
-                load,
-                unit,
-                [],
-              ),
-            ).then(() => undefined);
-          }
+      const unit = await ensureUnit();
+      const load = unit.getSnapshot().load;
+      const args = configOrMode === undefined
+        ? (dataOrSetAction === undefined ? [] : [dataOrSetAction])
+        : [dataOrSetAction, configOrMode];
 
-          if (configOrMode === undefined) {
-            return Promise.resolve(
-              Reflect.apply(
-                load,
-                unit,
-                [dataOrSetAction],
-              ),
-            ).then(() => undefined);
-          }
+      await Reflect.apply(load, unit, args);
 
-          return Promise.resolve(
-            Reflect.apply(
-              load,
-              unit,
-              [dataOrSetAction, configOrMode],
-            ),
-          ).then(() => undefined);
-        })
-        .then(() => {
-          if (!resolvedUnit) {
-            return;
-          }
-
-          snapshot = resolvedUnit.getSnapshot();
-        });
+      if (resolvedUnit) {
+        snapshot = resolvedUnit.getSnapshot();
+      }
     };
     const refetch = (
       input?: SourceFetchInput<TPayload, TData, TMeta>,

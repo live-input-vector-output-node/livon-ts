@@ -33,7 +33,9 @@ const registerPresenceLifecycleHandlers = () => {
   }
 
   const triggerPresenceRefresh = () => {
-    void ensureConnectionAndAnnouncePresence();
+    ensureConnectionAndAnnouncePresence().catch((error) => {
+      console.warn('livon: presence refresh skipped', error);
+    });
   };
 
   window.addEventListener('focus', triggerPresenceRefresh);
@@ -73,4 +75,6 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 }));
 
-void useAppStore.getState().initialize();
+useAppStore.getState().initialize().catch((error) => {
+  console.warn('livon: app initialization skipped', error);
+});

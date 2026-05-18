@@ -13,6 +13,12 @@ interface CreateMembershipMethodsInput<TId extends EntityId> {
   addUnitKeyToId: (input: EntityUnitKeyInput<TId>) => void;
 }
 
+interface SetSingleUnitMembershipInput<TId extends EntityId> {
+  currentMembershipIds: Set<TId>;
+  key: string;
+  nextSingleMembershipId: TId;
+}
+
 export interface MembershipMethods<TId extends EntityId> {
   clearUnitMembership: (key: string) => void;
   registerUnit: (input: RegisterEntityUnitInput) => () => void;
@@ -58,6 +64,28 @@ export const createMembershipMethods = <TId extends EntityId>({
     };
   };
 
+  const setSingleUnitMembership = ({
+    currentMembershipIds,
+    key,
+    nextSingleMembershipId,
+  }: SetSingleUnitMembershipInput<TId>): void => {
+    currentMembershipIds.forEach((id) => {
+      if (id !== nextSingleMembershipId) {
+        removeUnitKeyFromId({ id, key });
+      }
+    });
+
+    const hasNextSingleMembershipId = currentMembershipIds.has(nextSingleMembershipId);
+    currentMembershipIds.clear();
+    currentMembershipIds.add(nextSingleMembershipId);
+    if (!hasNextSingleMembershipId) {
+      addUnitKeyToId({
+        id: nextSingleMembershipId,
+        key,
+      });
+    }
+  };
+
   const setUnitMembership = ({
     key,
     ids,
@@ -75,45 +103,15 @@ export const createMembershipMethods = <TId extends EntityId>({
         return;
       }
 
-      if (currentMembershipIds.size === 1) {
-        const currentSingleMembershipId = currentMembershipIds.values().next().value;
-        if (currentSingleMembershipId === nextSingleMembershipId) {
-          return;
-        }
-
-        if (currentSingleMembershipId !== undefined) {
-          removeUnitKeyFromId({
-            id: currentSingleMembershipId,
-            key,
-          });
-        }
-
-        currentMembershipIds.clear();
-        currentMembershipIds.add(nextSingleMembershipId);
-        addUnitKeyToId({
-          id: nextSingleMembershipId,
-          key,
-        });
+      if (currentMembershipIds.size === 1 && currentMembershipIds.has(nextSingleMembershipId)) {
         return;
       }
 
-      currentMembershipIds.forEach((id) => {
-        if (id === nextSingleMembershipId) {
-          return;
-        }
-
-        removeUnitKeyFromId({ id, key });
+      setSingleUnitMembership({
+        currentMembershipIds,
+        key,
+        nextSingleMembershipId,
       });
-
-      const hasNextSingleMembershipId = currentMembershipIds.has(nextSingleMembershipId);
-      currentMembershipIds.clear();
-      currentMembershipIds.add(nextSingleMembershipId);
-      if (!hasNextSingleMembershipId) {
-        addUnitKeyToId({
-          id: nextSingleMembershipId,
-          key,
-        });
-      }
       return;
     }
 

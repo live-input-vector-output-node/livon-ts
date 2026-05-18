@@ -38,9 +38,39 @@ export interface SchemaFactoryChainOperation<TValue, TArgs extends readonly unkn
  */
 export type SchemaFactoryChainDefinition<TValue> = Record<
   string,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- chain argument/return tuples vary per key and are inferred by SchemaChainMethods.
-  SchemaFactoryChainOperation<TValue, readonly any[], any>
+  SchemaFactoryChainOperation<TValue, readonly never[], unknown>
 >;
+
+type RuntimeChainOperation<TValue> = SchemaFactoryChainOperation<
+  TValue,
+  readonly unknown[],
+  unknown
+>;
+
+interface RunRuntimeChainOperationInput<TValue> {
+  operation: SchemaFactoryChainDefinition<TValue>[string];
+  value: TValue;
+  context: SchemaContext;
+  args: readonly unknown[];
+}
+
+const runRuntimeChainOperation = <TValue>({
+  operation,
+  value,
+  context,
+  args,
+}: RunRuntimeChainOperationInput<TValue>): unknown => {
+  const runtimeOperation = operation as unknown as RuntimeChainOperation<TValue>;
+  return runtimeOperation(value, context)(...args);
+};
+
+type SchemaChainMethod<TChain, TOperation> = TOperation extends {
+  (value: infer _Value, ctx: SchemaContext): (...args: infer TArgs) => infer TNext;
+}
+  ? TArgs extends readonly unknown[]
+    ? (...args: TArgs) => SchemaWithChain<TNext, TChain>
+    : never
+  : never;
 
 /**
  * Public chain method surface inferred from a chain definition.
@@ -49,12 +79,8 @@ export type SchemaFactoryChainDefinition<TValue> = Record<
  *
  * @see https://livon.tech/docs/schema/schema-factory
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- helper conditional type must accept heterogeneous chain signatures.
-export type SchemaChainMethods<TChain extends SchemaFactoryChainDefinition<any>> = {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- each method infers args/next type from its chain entry.
-  [K in keyof TChain]: TChain[K] extends SchemaFactoryChainOperation<any, infer TArgs, infer TNext>
-    ? (...args: TArgs) => SchemaWithChain<TNext, TChain>
-    : never;
+export type SchemaChainMethods<TChain> = {
+  [K in keyof TChain]: SchemaChainMethod<TChain, TChain[K]>;
 };
 
 /**
@@ -65,7 +91,7 @@ export type SchemaChainMethods<TChain extends SchemaFactoryChainDefinition<any>>
  * @example
  * const Name = string().min(3).max(50);
  */
-export type SchemaWithChain<TValue, TChain extends SchemaFactoryChainDefinition<TValue>> = Schema<TValue> &
+export type SchemaWithChain<TValue, TChain> = Schema<TValue> &
   SchemaChainMethods<TChain>;
 
 export interface SchemaFactoryInput<TValue, TChain extends SchemaFactoryChainDefinition<TValue>> {
@@ -95,6 +121,14 @@ export interface GuardFactory {
   <T>(input: GuardFactoryInput<T>): Schema<T>;
 }
 
+interface AttachChainMethodsInput<TValue, TChain extends SchemaFactoryChainDefinition<TValue>> {
+  ast: SchemaFactoryInput<TValue, TChain>['ast'];
+  base: Schema<TValue>;
+  chain: TChain;
+  name: string;
+  type: string;
+}
+
 const normalizeError = (error: unknown): SchemaFactoryErrorLike => {
   if (error && typeof error === 'object' && 'message' in error) {
     const err = error as SchemaFactoryErrorLike;
@@ -106,6 +140,37 @@ const normalizeError = (error: unknown): SchemaFactoryErrorLike => {
   }
 
   return { message: 'Schema validation failed' };
+};
+
+const attachChainMethods = <
+  TValue,
+  TChain extends SchemaFactoryChainDefinition<TValue> = SchemaFactoryChainDefinition<TValue>,
+>({
+  ast,
+  base,
+  chain,
+  name,
+  type,
+}: AttachChainMethodsInput<TValue, TChain>): SchemaWithChain<TValue, TChain> => {
+  const result: SchemaWithChain<TValue, TChain> = base as SchemaWithChain<TValue, TChain>;
+
+  Object.entries(chain).forEach(([key, operation]) => {
+    (result as Record<string, unknown>)[key] = (...args: readonly unknown[]) =>
+      schemaFactory<unknown, SchemaFactoryChainDefinition<unknown>>({
+        name: `${name}.${key}`,
+        type,
+        ast,
+        validate: (input, ctx) => {
+          const context = ensureSchemaContext(ctx);
+          const value = base.parse(input, context);
+          const next = runRuntimeChainOperation({ operation, value, context, args });
+          return next;
+        },
+        chain: chain as unknown as SchemaFactoryChainDefinition<unknown>,
+      });
+  });
+
+  return result;
 };
 
 /**
@@ -163,31 +228,17 @@ export const schemaFactory = <
     },
   });
 
-  const result: SchemaWithChain<TValue, TChain> = base as SchemaWithChain<TValue, TChain>;
-
   if (!chain) {
-    return result;
+    return base as SchemaWithChain<TValue, TChain>;
   }
 
-  Object.entries(chain).forEach(([key, operation]) => {
-    (result as Record<string, unknown>)[key] = (...args: readonly unknown[]) =>
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- runtime dispatch cannot preserve per-key generic output without erased bridge type.
-      schemaFactory<any, TChain>({
-        name: `${name}.${key}`,
-        type,
-        ast,
-        validate: (input, ctx) => {
-          const context = ensureSchemaContext(ctx);
-          const value = base.parse(input, context);
-          const next = operation(value, context)(...args);
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- chain output type is recovered on the public API surface via SchemaChainMethods.
-          return next as any;
-        },
-        chain: chain as TChain,
-      });
+  return attachChainMethods({
+    ast,
+    base,
+    chain,
+    name,
+    type,
   });
-
-  return result;
 };
 
 /**

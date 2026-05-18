@@ -89,7 +89,7 @@ const getResolvedColorMode = ({colorMode, isBrowser}: ColorModeResolvedInput): C
     return 'light';
   }
 
-  return document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+  return document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
 };
 
 const getColorModeAriaLabel = ({colorMode}: ColorModeLabelInput): string =>

@@ -164,48 +164,21 @@ const createLazyActionFromConfig = <
       return resolvedUnitPromise;
     };
 
-    const execute: ActionRun<TPayload, TData, TMeta> = (
+    const execute: ActionRun<TPayload, TData, TMeta> = async (
       dataOrSetAction?: ActionRunInput<TPayload, TData, TMeta>,
       configOrMode?: object,
     ) => {
-      return ensureUnit()
-        .then((unit) => {
-          const submit = unit.getSnapshot().submit;
-          if (dataOrSetAction === undefined && configOrMode === undefined) {
-            return Promise.resolve(
-              Reflect.apply(
-                submit,
-                unit,
-                [],
-              ),
-            ).then(() => undefined);
-          }
+      const unit = await ensureUnit();
+      const submit = unit.getSnapshot().submit;
+      const args = configOrMode === undefined
+        ? (dataOrSetAction === undefined ? [] : [dataOrSetAction])
+        : [dataOrSetAction, configOrMode];
 
-          if (configOrMode === undefined) {
-            return Promise.resolve(
-              Reflect.apply(
-                submit,
-                unit,
-                [dataOrSetAction],
-              ),
-            ).then(() => undefined);
-          }
+      await Reflect.apply(submit, unit, args);
 
-          return Promise.resolve(
-            Reflect.apply(
-              submit,
-              unit,
-              [dataOrSetAction, configOrMode],
-            ),
-          ).then(() => undefined);
-        })
-        .then(() => {
-          if (!resolvedUnit) {
-            return;
-          }
-
-          snapshot = resolvedUnit.getSnapshot();
-        });
+      if (resolvedUnit) {
+        snapshot = resolvedUnit.getSnapshot();
+      }
     };
 
     const getSnapshot = (): ActionSnapshot<TPayload, TData, TMeta> => {

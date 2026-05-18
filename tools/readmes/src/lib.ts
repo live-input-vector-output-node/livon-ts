@@ -27,6 +27,16 @@ export interface ReadmeSyncReport {
   readonly updated: string[];
 }
 
+interface ProcessReadmeTargetInput {
+  baseDir: string;
+  config: ReadmeSyncConfig;
+  errors: string[];
+  mismatches: ReadmeSyncMismatch[];
+  options?: { write?: boolean };
+  target: ReadmeSyncTarget;
+  updated: string[];
+}
+
 const README_SYNC_CONFIG_PATH = path.join('configs', 'docs', 'readme-sync.json');
 
 const resolveWorkspaceRoot = (startDir = process.cwd()): string => {
@@ -178,6 +188,64 @@ const loadReadmeSyncConfig = async (baseDir: string): Promise<ReadmeSyncConfig> 
   return JSON.parse(raw) as ReadmeSyncConfig;
 };
 
+const writeGeneratedReadme = async (targetPath: string, expected: string): Promise<void> => {
+  await mkdir(path.dirname(targetPath), { recursive: true });
+  await writeFile(targetPath, expected, 'utf8');
+};
+
+const processReadmeTarget = async ({
+  baseDir,
+  config,
+  errors,
+  mismatches,
+  options,
+  target,
+  updated,
+}: ProcessReadmeTargetInput): Promise<void> => {
+  if (!target.source.replace(/\\/g, '/').startsWith('website/docs/')) {
+    errors.push(`${target.source}: source must be under website/docs (target ${target.id})`);
+    return;
+  }
+
+  const sourcePath = path.join(baseDir, target.source);
+  const targetPath = path.join(baseDir, target.target);
+
+  if (!existsSync(sourcePath)) {
+    errors.push(`${target.source}: source file does not exist (${target.id})`);
+    return;
+  }
+
+  const expected = await generateReadme(baseDir, config, target);
+  if (!existsSync(targetPath)) {
+    if (!options?.write) {
+      mismatches.push({
+        target: target.target,
+        reason: `target file does not exist (${target.id})`,
+      });
+      return;
+    }
+
+    await writeGeneratedReadme(targetPath, expected);
+    updated.push(target.target);
+    return;
+  }
+
+  const current = normalizeOutput(await readFile(targetPath, 'utf8'));
+  if (current === expected) {
+    return;
+  }
+
+  mismatches.push({
+    target: target.target,
+    reason: `out of sync with ${target.source}`,
+  });
+
+  if (options?.write) {
+    await writeGeneratedReadme(targetPath, expected);
+    updated.push(target.target);
+  }
+};
+
 export const createReadmeSyncReport = async (
   baseDir: string,
   options?: { write?: boolean },
@@ -204,50 +272,15 @@ export const createReadmeSyncReport = async (
   const updated: string[] = [];
 
   for (const target of config.targets) {
-    if (!target.source.replace(/\\/g, '/').startsWith('website/docs/')) {
-      errors.push(`${target.source}: source must be under website/docs (target ${target.id})`);
-      continue;
-    }
-
-    const sourcePath = path.join(baseDir, target.source);
-    const targetPath = path.join(baseDir, target.target);
-
-    if (!existsSync(sourcePath)) {
-      errors.push(`${target.source}: source file does not exist (${target.id})`);
-      continue;
-    }
-    const expected = await generateReadme(baseDir, config, target);
-    const targetExists = existsSync(targetPath);
-
-    if (!targetExists) {
-      if (!options?.write) {
-        mismatches.push({
-          target: target.target,
-          reason: `target file does not exist (${target.id})`,
-        });
-        continue;
-      }
-
-      await mkdir(path.dirname(targetPath), { recursive: true });
-      await writeFile(targetPath, expected, 'utf8');
-      updated.push(target.target);
-      continue;
-    }
-
-    const current = normalizeOutput(await readFile(targetPath, 'utf8'));
-
-    if (current !== expected) {
-      mismatches.push({
-        target: target.target,
-        reason: `out of sync with ${target.source}`,
-      });
-
-      if (options?.write) {
-        await mkdir(path.dirname(targetPath), { recursive: true });
-        await writeFile(targetPath, expected, 'utf8');
-        updated.push(target.target);
-      }
-    }
+    await processReadmeTarget({
+      baseDir,
+      config,
+      errors,
+      mismatches,
+      options,
+      target,
+      updated,
+    });
   }
 
   return {

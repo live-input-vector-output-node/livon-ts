@@ -1,8 +1,8 @@
-import { Schema } from './types.js';
+import { Schema, SchemaHookAfter } from './types.js';
 
-export interface AfterInput<T> {
+export interface AfterInput<T, U> {
   schema: Schema<T>;
-  hook: Parameters<Schema<T>['after']>[0];
+  hook: SchemaHookAfter<T, U>;
 }
 
 /**
@@ -29,4 +29,4 @@ export interface AfterInput<T> {
  * }).optional();
  * MaybeUppercaseName.parse(undefined);
  */
-export const after = <T>({ schema, hook }: AfterInput<T>) => schema.after(hook);
+export const after = <T, U>({ schema, hook }: AfterInput<T, U>): Schema<U> => schema.after(hook);

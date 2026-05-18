@@ -65,6 +65,68 @@ const isSameReferenceList = <TValue>(
   return left.every((value, index) => Object.is(value, right[index]));
 };
 
+interface ResolveManyDraftValueInput<TData, TEntity extends object> {
+  identityKey: string;
+  previousValue: unknown;
+  sourceValue: TData;
+  trackedIds: readonly EntityId[];
+  readEntityValueForDraftIdentity: (id: EntityId, identityKey: string) => TEntity | undefined;
+}
+
+interface ResolveSingleDraftValueInput<TData, TEntity extends object> {
+  identityKey: string;
+  sourceValue: TData;
+  trackedIds: readonly EntityId[];
+  readEntityValueForDraftIdentity: (id: EntityId, identityKey: string) => TEntity | undefined;
+}
+
+const resolveManyDraftValue = <TData, TEntity extends object>({
+  identityKey,
+  previousValue,
+  sourceValue,
+  trackedIds,
+  readEntityValueForDraftIdentity,
+}: ResolveManyDraftValueInput<TData, TEntity>): TData | readonly TEntity[] => {
+  if (trackedIds.length === 0) {
+    return sourceValue;
+  }
+
+  const resolvedValues = trackedIds
+    .map((id) => readEntityValueForDraftIdentity(id, identityKey))
+    .filter((entry): entry is TEntity => entry !== undefined);
+  if (resolvedValues.length === 0) {
+    return sourceValue;
+  }
+
+  const previousManyValue = Array.isArray(previousValue) ? previousValue : null;
+  if (
+    previousManyValue
+    && isSameReferenceList(previousManyValue, resolvedValues)
+  ) {
+    return previousManyValue;
+  }
+
+  return resolvedValues;
+};
+
+const resolveSingleDraftValue = <TData, TEntity extends object>({
+  identityKey,
+  sourceValue,
+  trackedIds,
+  readEntityValueForDraftIdentity,
+}: ResolveSingleDraftValueInput<TData, TEntity>): TData | TEntity => {
+  if (trackedIds.length === 0) {
+    return sourceValue;
+  }
+
+  const firstTrackedId = trackedIds[0];
+  if (firstTrackedId === undefined) {
+    return sourceValue;
+  }
+
+  return readEntityValueForDraftIdentity(firstTrackedId, identityKey) ?? sourceValue;
+};
+
 const resolveLooseEntityId = (
   value: unknown,
 ): EntityId | undefined => {
@@ -181,6 +243,69 @@ export const draft: DraftBuilder = <
       return draftAwareEntity.getByIdForIdentity(id, identityKey);
     };
 
+    const resolveManySet = ({
+      draftOptions,
+      identityKey,
+      resolvedInput,
+      sourceValue,
+    }: {
+      draftOptions: EntityDraftOptions | undefined;
+      identityKey: string;
+      resolvedInput: readonly unknown[];
+      sourceValue: unknown;
+    }): void => {
+      const currentValues = Array.isArray(sourceValue) ? sourceValue : [];
+      const resolvedIds: EntityId[] = [];
+      resolvedInput.forEach((entry, index) => {
+        if (!isRecordLike(entry)) {
+          return;
+        }
+
+        const currentValue = currentValues[index];
+        const resolvedId = resolveLooseEntityId(entry) ?? (currentValue ? entity.idOf(currentValue) : undefined);
+        const base = resolvedId === undefined
+          ? undefined
+          : readEntityValueForDraftIdentity(resolvedId, identityKey) ?? currentValue;
+        if (!base || resolvedId === undefined) {
+          return;
+        }
+
+        methods.setDraft(mergeRecordLikeIntoEntity(base, entry), {
+          identityKey,
+          options: draftOptions,
+        });
+        resolvedIds.push(resolvedId);
+      });
+      if (resolvedIds.length > 0) {
+        trackedIdsByIdentityKey.set(identityKey, resolvedIds);
+      }
+    };
+
+    const resolveSingleSet = ({
+      draftOptions,
+      identityKey,
+      resolvedInput,
+      sourceValue,
+    }: {
+      draftOptions: EntityDraftOptions | undefined;
+      identityKey: string;
+      resolvedInput: RecordLike;
+      sourceValue: unknown;
+    }): void => {
+      const currentId = Array.isArray(sourceValue) ? undefined : resolveLooseEntityId(sourceValue);
+      const resolvedId = resolveLooseEntityId(resolvedInput) ?? currentId;
+      const base = resolvedId === undefined ? undefined : readEntityValueForDraftIdentity(resolvedId, identityKey);
+      if (!base || resolvedId === undefined) {
+        return;
+      }
+
+      methods.setDraft(mergeRecordLikeIntoEntity(base, resolvedInput), {
+        identityKey,
+        options: draftOptions,
+      });
+      trackedIdsByIdentityKey.set(identityKey, [resolvedId]);
+    };
+
     const resolveSet = (
       identity: TIdentity,
       input: DraftSetInput<TData, TEntity>,
@@ -206,43 +331,12 @@ export const draft: DraftBuilder = <
           return;
         }
 
-        const currentValues = sourceSnapshot && Array.isArray(sourceSnapshot.value)
-          ? sourceSnapshot.value
-          : [];
-        const resolvedIds: EntityId[] = [];
-        resolvedInput.forEach((entry, index) => {
-          if (!isRecordLike(entry)) {
-            return;
-          }
-
-          const inputId = resolveLooseEntityId(entry);
-          const currentValue = currentValues[index];
-          const currentId = currentValue
-            ? entity.idOf(currentValue)
-            : undefined;
-          const resolvedId = inputId ?? currentId;
-          if (resolvedId === undefined) {
-            return;
-          }
-
-          const base = readEntityValueForDraftIdentity(
-            resolvedId,
-            identityKey,
-          )
-            ?? currentValue;
-          if (!base) {
-            return;
-          }
-
-          methods.setDraft(mergeRecordLikeIntoEntity(base, entry), {
-            identityKey,
-            options: draftOptions,
-          });
-          resolvedIds.push(resolvedId);
+        resolveManySet({
+          draftOptions,
+          identityKey,
+          resolvedInput,
+          sourceValue: sourceSnapshot?.value,
         });
-        if (resolvedIds.length > 0) {
-          trackedIdsByIdentityKey.set(identityKey, resolvedIds);
-        }
         return;
       }
 
@@ -250,28 +344,12 @@ export const draft: DraftBuilder = <
         return;
       }
 
-      const inputId = resolveLooseEntityId(resolvedInput);
-      const currentId = sourceSnapshot && Array.isArray(sourceSnapshot.value)
-        ? undefined
-        : resolveLooseEntityId(sourceSnapshot?.value);
-      const resolvedId = inputId ?? currentId;
-      if (resolvedId === undefined) {
-        return;
-      }
-
-      const base = readEntityValueForDraftIdentity(
-        resolvedId,
+      resolveSingleSet({
+        draftOptions,
         identityKey,
-      );
-      if (!base) {
-        return;
-      }
-
-      methods.setDraft(mergeRecordLikeIntoEntity(base, resolvedInput), {
-        identityKey,
-        options: draftOptions,
+        resolvedInput,
+        sourceValue: sourceSnapshot?.value,
       });
-      trackedIdsByIdentityKey.set(identityKey, [resolvedId]);
     };
 
     const resolveClear = (
@@ -346,46 +424,19 @@ export const draft: DraftBuilder = <
           ? 'dirty'
           : 'clear';
         const nextValue = mode === 'many'
-          ? (() => {
-            if (trackedIds.length === 0) {
-              return sourceSnapshot.value;
-            }
-
-            const resolvedValues = trackedIds
-              .map((id) => readEntityValueForDraftIdentity(id, identityKey))
-              .filter((entry): entry is TEntity => entry !== undefined);
-            if (resolvedValues.length === 0) {
-              return sourceSnapshot.value;
-            }
-
-            const previousManyValue = snapshotCache && Array.isArray(snapshotCache.value)
-              ? snapshotCache.value
-              : null;
-            if (
-              previousManyValue
-              && isSameReferenceList(previousManyValue, resolvedValues)
-            ) {
-              return previousManyValue;
-            }
-
-            return resolvedValues;
-          })()
-          : (() => {
-            if (trackedIds.length === 0) {
-              return sourceSnapshot.value;
-            }
-
-            const firstTrackedId = trackedIds[0];
-            if (firstTrackedId === undefined) {
-              return sourceSnapshot.value;
-            }
-
-            const trackedValue = readEntityValueForDraftIdentity(
-              firstTrackedId,
-              identityKey,
-            );
-            return trackedValue ?? sourceSnapshot.value;
-          })();
+          ? resolveManyDraftValue({
+            identityKey,
+            previousValue: snapshotCache?.value,
+            sourceValue: sourceSnapshot.value,
+            trackedIds,
+            readEntityValueForDraftIdentity,
+          })
+          : resolveSingleDraftValue({
+            identityKey,
+            sourceValue: sourceSnapshot.value,
+            trackedIds,
+            readEntityValueForDraftIdentity,
+          });
 
         if (
           snapshotCache

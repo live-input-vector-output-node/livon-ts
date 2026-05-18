@@ -101,10 +101,10 @@ export const runBadgeContractCheck = async (
 
   const packageDocsFiles = (await collectFiles(docsPackagesDir))
     .filter((filePath) => filePath.endsWith('.md') && !filePath.endsWith(`${path.sep}index.md`))
-    .sort();
+    .sort((left, right) => left.localeCompare(right));
   const schemaDocsFiles = (await collectFiles(docsSchemaDir))
     .filter((filePath) => filePath.endsWith('.md'))
-    .sort();
+    .sort((left, right) => left.localeCompare(right));
 
   const contracts: BadgeFileContract[] = [
     createBadgeFileContract(

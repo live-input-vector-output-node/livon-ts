@@ -1,8 +1,7 @@
 import { OrSchemaInput, or } from './or.js';
-import { Schema } from './types.js';
+import { SchemaLike } from './types.js';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- union alias keeps heterogeneous schema options.
-type AnySchema = Schema<any>;
+type AnySchema = SchemaLike;
 
 /**
  * union is part of the public LIVON API.

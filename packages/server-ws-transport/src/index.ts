@@ -398,6 +398,21 @@ export const nodeWsTransport = (options: NodeWsTransportOptions): RuntimeModule 
       clients.set(socket, info);
 
       const baseContext = { transport: 'ws', clientId };
+      const reportConnectionError = (error: unknown) => {
+        if (onError) {
+          onError(error, { stage: 'connection', clientId });
+        }
+      };
+      const reportReceiveError = (error: unknown) => {
+        if (onError) {
+          onError(error, { stage: 'receive', clientId });
+        }
+      };
+      const reportDecodeError = (error: unknown) => {
+        if (onError) {
+          onError(error, { stage: 'decode', clientId });
+        }
+      };
 
       socket.on('message', (data) => {
         try {
@@ -405,23 +420,13 @@ export const nodeWsTransport = (options: NodeWsTransportOptions): RuntimeModule 
           const context = buildClientContext({ base: baseContext, info, getClientContext: options.getClientContext });
           const input = buildReceiveEmitInput({ envelope, context });
           const receive = registry.emitReceive(input);
-          receive.catch((error) => {
-            if (onError) {
-              onError(error, { stage: 'receive', clientId });
-            }
-          });
+          receive.catch(reportReceiveError);
         } catch (error) {
-          if (onError) {
-            onError(error, { stage: 'decode', clientId });
-          }
+          reportDecodeError(error);
         }
       });
 
-      socket.on('error', (error) => {
-        if (onError) {
-          onError(error, { stage: 'connection', clientId });
-        }
-      });
+      socket.on('error', reportConnectionError);
 
       socket.on('close', () => {
         clients.delete(socket);
@@ -432,11 +437,7 @@ export const nodeWsTransport = (options: NodeWsTransportOptions): RuntimeModule 
             request,
             emitSend: registry.emitSend,
           });
-          Promise.resolve(run).catch((error) => {
-            if (onError) {
-              onError(error, { stage: 'connection', clientId });
-            }
-          });
+          Promise.resolve(run).catch(reportConnectionError);
         }
       });
     });

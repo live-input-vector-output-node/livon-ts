@@ -366,6 +366,32 @@ const renderConstraints = (constraints?: Readonly<Record<string, unknown>>): str
   return [`Constraints: ${parts.join(', ')}.`];
 };
 
+interface ResolveNamedExampleInput {
+  depth: number;
+  namedNodes: Map<string, NamedNode>;
+  node: AstNode;
+  visited: Set<string>;
+}
+
+const resolveNamedExample = ({
+  depth,
+  namedNodes,
+  node,
+  visited,
+}: ResolveNamedExampleInput): string | undefined => {
+  if (!node.name || !namedNodes.has(node.name) || !isTypeDefinitionNode(node)) {
+    return undefined;
+  }
+
+  const named = namedNodes.get(node.name)!.node;
+  if (visited.has(node.name)) {
+    return '...';
+  }
+
+  visited.add(node.name);
+  return named !== node ? buildExample(named, namedNodes, depth + 1, visited) : undefined;
+};
+
 const buildExample = (
   node: AstNode | undefined,
   namedNodes: Map<string, NamedNode>,
@@ -378,20 +404,16 @@ const buildExample = (
   if (depth > 2) {
     return '...';
   }
-  if (node.name && namedNodes.has(node.name) && isTypeDefinitionNode(node)) {
-    const named = namedNodes.get(node.name)!.node;
-    if (named !== node) {
-      if (visited.has(node.name)) {
-        return '...';
-      }
-      visited.add(node.name);
-      return buildExample(named, namedNodes, depth + 1, visited);
-    }
-    if (visited.has(node.name)) {
-      return '...';
-    }
-    visited.add(node.name);
+  const namedExample = resolveNamedExample({
+    depth,
+    namedNodes,
+    node,
+    visited,
+  });
+  if (namedExample !== undefined) {
+    return namedExample;
   }
+
   switch (node.type) {
     case 'string':
       return '"string"';
