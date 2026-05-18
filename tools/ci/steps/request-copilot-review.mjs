@@ -27,4 +27,5 @@ if (fallback.status === 0) {
   process.exit(0);
 }
 
-throw new Error('failed to request Copilot review via gh cli');
+console.warn('copilot-review: unable to request reviewer automatically; continuing without failing CI');
+process.exit(0);
