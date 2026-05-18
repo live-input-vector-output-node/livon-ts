@@ -203,11 +203,36 @@ jobs:
           path: ci-build-artifacts.tgz
           retention-days: 2
 
+  publish_gate:
+    needs:
+      - ci
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    outputs:
+      run_publish: ${{ steps.changes.outputs.changesets }}
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Detect changeset file changes
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            changesets:
+              - '.changeset/*.md'
+              - '!.changeset/README.md'
+
   publish:
     needs:
       - ci
+      - publish_gate
       - install_development_dependencies
-    if: ${{ (github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')) && needs.ci.result == 'success' }}
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.publish_gate.outputs.run_publish == 'true' && needs.ci.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -450,6 +475,7 @@ jobs:
       - install_production_dependencies
       - install_development_dependencies
       - ci
+      - publish_gate
       - publish
       - docs_build
       - docs_deploy
@@ -473,7 +499,7 @@ jobs:
           RUN_CI: ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
           RUN_DOCS: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
           RUN_COVERAGE: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
-          RUN_PUBLISH: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
+          RUN_PUBLISH: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.publish_gate.outputs.run_publish == 'true' }}
           RUN_SECRET_SCAN: ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'schedule' && github.event.schedule == '0 3 * * 6') }}
           RUN_VULN_SCAN: ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'schedule' && github.event.schedule == '30 12 * * 1') }}
           RUN_SCORECARD: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'schedule' && github.event.schedule == '30 1 * * 6') }}
