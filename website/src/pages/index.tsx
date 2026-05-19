@@ -89,15 +89,20 @@ httpServer.listen(3002, '127.0.0.1');`}</CodeBlock>
               </article>
               <article className={`${styles.card} ${styles.heroCodeCard}`}>
                 <Heading as="h3">Client Sync (Required)</Heading>
-                <CodeBlock language="sh">{`livon --endpoint ws://127.0.0.1:3002/ws --out src/generated/api.ts --poll 2000 -- pnpm dev`}</CodeBlock>
+                <CodeBlock language="ts">{`import { livonClientSyncPlugin } from '@livon/plugin-rsbuild';
+
+livonClientSyncPlugin({
+  url: 'ws://127.0.0.1:3002/ws',
+  outputDirectory: '.livon/generated',
+  importIdentifier: '@livon/generated',
+});`}</CodeBlock>
               </article>
               <article className={`${styles.card} ${styles.heroCodeCard}`}>
                 <Heading as="h3">Browser</Heading>
-                <CodeBlock language="ts">{`import { runtime } from '@livon/runtime';
-import { clientWsTransport } from '@livon/client-ws-transport';
-import { api } from './generated/api.js';
+                <CodeBlock language="ts">{`import { configureLivonClient } from '@livon/client';
+import { api } from '@livon/generated';
 
-runtime(clientWsTransport({ url: 'ws://127.0.0.1:3002/ws' }), api);
+configureLivonClient({ endpointUrl: 'ws://127.0.0.1:3002/ws' });
 
 api({
   onMessage: (payload) => {

@@ -1,0 +1,82 @@
+{
+  "name": "@livon/client-sync",
+  "version": "0.29.0-rc.11",
+  "private": false,
+  "type": "module",
+  "description": "Bundler-independent WebSocket client sync engine for LIVON.",
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "development": "./src/index.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE.md",
+    "THIRD_PARTY_NOTICES.md"
+  ],
+  "license": "MIT",
+  "author": {
+    "name": "LIVON",
+    "url": "https://livon.tech"
+  },
+  "contributors": [
+    {
+      "name": "cr15p1",
+      "url": "https://github.com/cr15p1"
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/live-input-vector-output-node/livon-ts.git",
+    "directory": "packages/client-sync"
+  },
+  "homepage": "https://livon.tech/docs/packages/client-sync",
+  "bugs": {
+    "url": "https://github.com/live-input-vector-output-node/livon-ts/issues"
+  },
+  "keywords": [
+    "livon",
+    "client-sync",
+    "plugin",
+    "typescript"
+  ],
+  "scripts": {
+    "build": "rslib build",
+    "build:watch": "rslib dev",
+    "dev": "true",
+    "lint": "eslint . --max-warnings 0",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run -c vitest.unit.config.ts",
+    "test:unit": "vitest run -c vitest.unit.config.ts",
+    "test:integration": "true"
+  },
+  "dependencies": {
+    "@livon/contract": "workspace:*",
+    "msgpackr": "1.11.8",
+    "ws": "8.19.0"
+  },
+  "devDependencies": {
+    "@livon/vitest": "workspace:*",
+    "@livon/eslint": "workspace:*",
+    "@livon/rslib": "workspace:*",
+    "@livon/typescript": "workspace:*",
+    "@rslib/core": "latest",
+    "@types/node": "latest",
+    "@types/ws": "latest",
+    "@typescript-eslint/eslint-plugin": "8.58.1",
+    "@typescript-eslint/parser": "8.58.1",
+    "eslint": "10.2.0",
+    "typescript": "latest",
+    "vitest": "latest"
+  }
+}

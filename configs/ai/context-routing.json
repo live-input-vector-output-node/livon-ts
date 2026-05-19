@@ -43,7 +43,7 @@
       "load": [
         "packages/client/PROMPT.md",
         "website/docs/packages/client.md",
-        "website/docs/core/generators.md",
+        "website/docs/packages/client-sync.md",
         "website/docs/core/schema-doc-and-generated-jsdoc.md"
       ]
     },
@@ -176,10 +176,10 @@
       ]
     },
     {
-      "path": "packages/client/src/generate.ts",
+      "path": "packages/client/src/client.ts",
       "mustLoad": [
         "packages/client/PROMPT.md",
-        "website/docs/core/generators.md",
+        "website/docs/packages/client-sync.md",
         "website/docs/core/schema-doc-and-generated-jsdoc.md"
       ]
     },

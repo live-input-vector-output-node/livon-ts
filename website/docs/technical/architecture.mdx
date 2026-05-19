@@ -12,16 +12,16 @@ LIVON is an event-driven runtime with strict module boundaries:
 1. [@livon/runtime](/docs/packages/runtime) orchestrates hook chains and envelope lifecycle.
 2. [@livon/schema](/docs/packages/schema) resolves operations/subscriptions and validates payloads.
 3. [@livon/*-ws-transport](/docs/packages) maps runtime envelopes to WebSocket wire payloads.
-4. [@livon/client](/docs/packages/client) exposes generated APIs on top of runtime + transport.
+4. [@livon/client](/docs/packages/client) executes plugin-generated client APIs over WebSocket.
 
 ## Layer map
 
 <Mermaid
   value={`
 flowchart LR
-  ClientApp["Client App"] --> ClientApi["@livon/client generated API"]
-  ClientApi --> ClientTransport["@livon/client-ws-transport"]
-  ClientTransport --> Runtime["@livon/runtime"]
+  ClientApp["Client App"] --> Generated["@livon/generated physical files"]
+  Generated --> ClientRuntime["@livon/client"]
+  ClientRuntime --> WebSocket[WebSocket network]
   Runtime --> Schema["@livon/schema schemaModule"]
   Runtime --> ServerTransport["@livon/node-ws-transport"]
   ServerTransport --> WebSocket[WebSocket network]

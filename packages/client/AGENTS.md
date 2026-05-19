@@ -7,7 +7,7 @@
 
 Scope: `packages/client/**`
 
-specialization-id: `client-generator`
+specialization-id: `client-runtime`
 
-Use specialization `client-generator` from `configs/ai/specializations.json`.
+Use specialization `client-runtime` from `configs/ai/specializations.json`.
 Keep this file focused on package-only deviations and avoid repeating root-gate rules.

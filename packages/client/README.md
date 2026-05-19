@@ -5,47 +5,18 @@
 
 [![npm](https://img.shields.io/npm/v/%40livon%2Fclient)](https://www.npmjs.com/package/@livon/client)
 [![CI](https://img.shields.io/github/actions/workflow/status/live-input-vector-output-node/livon-ts/ci.yml?branch=main&label=ci)](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml)
+[![license](https://img.shields.io/npm/l/%40livon%2Fclient)](https://www.npmjs.com/package/@livon/client)
 [![Vulnerability scan](https://img.shields.io/github/check-runs/live-input-vector-output-node/livon-ts/main?nameFilter=vulnerability_scan&label=vulnerability%20scan)](https://github.com/live-input-vector-output-node/livon-ts/actions/workflows/ci.yml)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/live-input-vector-output-node/livon-ts/badge)](https://scorecard.dev/viewer/?uri=github.com/live-input-vector-output-node/livon-ts)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/12249/badge)](https://www.bestpractices.dev/projects/12249)
 [![REUSE status](https://api.reuse.software/badge/github.com/live-input-vector-output-node/livon-ts)](https://api.reuse.software/info/github.com/live-input-vector-output-node/livon-ts)
-[![license](https://img.shields.io/npm/l/%40livon%2Fclient)](https://www.npmjs.com/package/@livon/client)
 
 ## Purpose
 
-[@livon/client](https://livon.tech/docs/packages/client) provides deterministic client interface execution and generated-client foundations.
+`@livon/client` is the browser-safe runtime used by plugin-generated LIVON clients.
+It sends typed calls over the configured Livon WebSocket endpoint and registers generated subscription handlers.
 
-## Best for
-
-Use this package when frontend apps consume generated LIVON APIs and typed subscription handlers.
-
-Exports include:
-
-- `createClient`
-- `createClientModule`
-- `clientModule`
-
-## Generator sync policy
-
-Generated client surfaces and hover docs are built from the client generator.
-When generator output changes, docs must be updated in sync.
-
-- Rule source: `packages/client/PROMPT.md`
-- JSDoc reference: [SchemaDoc & Generated JSDoc](https://livon.tech/docs/core/schema-doc-and-generated-jsdoc)
-
-Current generated typing behavior to keep in sync:
-
-- `and(...)` schema nodes are emitted as TypeScript intersections (`Left & Right`).
-- If schema composition passes an explicit `name`, that name is used as the generated type name.
-
-### Central TypeScript surface template
-
-Generated interface and signature syntax is centralized in:
-
-- `packages/client/src/typeScriptSurfaceTemplate.ts`
-
-Use this file when TypeScript surface style should change globally (for example interface member syntax, callable signatures, or method/property signature formatting).
-This avoids editing many render call sites in `packages/client/src/generate.ts`.
+Client generation is plugin-based only. Do not run a CLI generator.
 
 ## Install
 
@@ -53,95 +24,41 @@ This avoids editing many render call sites in `packages/client/src/generate.ts`.
 pnpm add @livon/client
 ```
 
-## Runtime wiring (generated API path)
+Client apps also install a build plugin such as [`@livon/plugin-rsbuild`](https://livon.tech/docs/packages/plugin-rsbuild) or [`@livon/plugin`](https://livon.tech/docs/packages/plugin).
+
+## Runtime API
 
 ```ts
-import {runtime} from '@livon/runtime';
-import {clientWsTransport} from '@livon/client-ws-transport';
-import {api} from './generated/api';
+import {configureLivonClient} from '@livon/client';
 
-runtime(
-  clientWsTransport({url: 'ws://127.0.0.1:3002/ws'}),
-  api,
-);
-```
-
-### Parameters in this example
-
-`clientWsTransport({...})`:
-
-- `url` (`string`): websocket endpoint used by client transport.
-
-`runtime(transport, api)`:
-
-- `transport` (`RuntimeModule`): client transport module.
-- `api` (`RuntimeModule`): generated client module built from server schema.
-
-## Subscription handling pattern
-
-```ts
-api({
-  onMessage: (payload, ctx) => {
-    payload.text;
-    ctx.state.get('lastMessage');
-  },
-});
-
-api.onMessage.off();
-```
-
-### Parameters in this example
-
-`api({...})`:
-
-- `onMessage` (`(payload, ctx) => void`): typed subscription callback.
-- `payload` (in callback): generated payload type from server schema.
-- `ctx` (in callback): runtime context for state/emit/room access.
-
-`api.onMessage.off()`:
-
-- no parameters; disables one subscription callback stream.
-
-## Room-scoped handlers
-
-```ts
-api.room('global')({
-  onMessage: (payload) => {
-    payload.text;
-  },
+configureLivonClient({
+  endpointUrl: 'ws://127.0.0.1:3002/ws',
 });
 ```
 
-### Parameters in this example
-
-`api.room(roomId)`:
-
-- `roomId` (`string`): room selector for scoped schema handling.
-
-`api.room(... )({...})`:
-
-- `onMessage` (`(payload) => void`): room-scoped subscription callback.
-
-## Low-level client module
+Generated files import `createLivonRemoteFunction` and `registerLivonSubscription` from this package.
+Application code normally imports from the configured generated alias instead:
 
 ```ts
-import {createClientModule} from '@livon/client';
-import {runtime} from '@livon/runtime';
+import {sendMessage} from '@livon/generated';
 
-const module = createClientModule({ast});
-runtime(transport, module);
+const message = await sendMessage({
+  author: 'Ada',
+  text: 'Hello',
+  roomId: 'global',
+});
 ```
 
-### Parameters in this example
+## Security
 
-`createClientModule({...})`:
+Generated client files are public artifacts.
+They must not contain secrets, private environment values, database details, internal source paths, or server implementation code.
 
-- `ast` (`AstNode`): schema AST used to build executable client interface module.
+TypeScript types are not security.
+The server must still enforce authentication, authorization, input validation, output filtering, rate limiting where appropriate, and error masking.
 
 ## Related pages
 
-- [@livon/runtime](https://livon.tech/docs/packages/runtime)
-- [@livon/client-ws-transport](https://livon.tech/docs/packages/client-ws-transport)
-- [@livon/schema](https://livon.tech/docs/packages/schema)
-- [SchemaDoc & Generated JSDoc](https://livon.tech/docs/core/schema-doc-and-generated-jsdoc)
-- [Schema APIs](https://livon.tech/docs/schema)
+- [@livon/client-sync](https://livon.tech/docs/packages/client-sync)
+- [@livon/plugin](https://livon.tech/docs/packages/plugin)
+- [@livon/plugin-rsbuild](https://livon.tech/docs/packages/plugin-rsbuild)

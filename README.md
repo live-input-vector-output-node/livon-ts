@@ -48,11 +48,15 @@ LIVON is a TypeScript monorepo for schema-first APIs and deterministic realtime 
 | `@livon/runtime` | Runtime composition and execution boundaries. | [runtime](https://livon.tech/docs/packages/runtime) |
 | `@livon/schema` | Schema builders, parsing, and contract typing. | [schema](https://livon.tech/docs/packages/schema) |
 | `@livon/sync` | Deterministic sync units for state/event workflows. | [sync](https://livon.tech/docs/packages/sync) |
-| `@livon/client` | Generated client API surfaces from server schema. | [client](https://livon.tech/docs/packages/client) |
+| `@livon/client` | Browser-safe runtime used by plugin-generated clients. | [client](https://livon.tech/docs/packages/client) |
+| `@livon/contract` | Public contract and sync metadata types. | [contract](https://livon.tech/docs/packages/contract) |
+| `@livon/client-sync` | Plugin sync core for generated client files. | [client-sync](https://livon.tech/docs/packages/client-sync) |
+| `@livon/plugin` | Vite, Rollup, Webpack, and Rspack client sync plugins. | [plugin](https://livon.tech/docs/packages/plugin) |
+| `@livon/plugin-rsbuild` | Rsbuild and Rslib client sync plugin. | [plugin-rsbuild](https://livon.tech/docs/packages/plugin-rsbuild) |
 | `@livon/client-ws-transport` | Browser/client websocket transport adapter. | [client-ws-transport](https://livon.tech/docs/packages/client-ws-transport) |
 | `@livon/node-ws-transport` | Node websocket transport adapter. | [node-ws-transport](https://livon.tech/docs/packages/node-ws-transport) |
 | `@livon/react` | React integration utilities around LIVON sync/runtime. | [react](https://livon.tech/docs/packages/react) |
-| `@livon/cli` | Explain/sync CLI and generated client update tooling. | [cli](https://livon.tech/docs/packages/cli) |
+| `@livon/cli` | Compatibility stub for removed CLI generation. | [cli](https://livon.tech/docs/packages/cli) |
 | `@livon/dlq-module` | Dead-letter queue runtime module for failure handling. | [dlq-module](https://livon.tech/docs/packages/dlq-module) |
 
 ## Recommended reading paths

@@ -1,0 +1,105 @@
+{
+  "name": "@livon/plugin",
+  "version": "0.29.0-rc.11",
+  "private": false,
+  "type": "module",
+  "description": "Universal build plugins for LIVON generated client sync.",
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "development": "./src/index.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./vite": {
+      "types": "./dist/vite.d.ts",
+      "development": "./src/vite.ts",
+      "import": "./dist/vite.js",
+      "require": "./dist/vite.cjs"
+    },
+    "./rollup": {
+      "types": "./dist/rollup.d.ts",
+      "development": "./src/rollup.ts",
+      "import": "./dist/rollup.js",
+      "require": "./dist/rollup.cjs"
+    },
+    "./webpack": {
+      "types": "./dist/webpack.d.ts",
+      "development": "./src/webpack.ts",
+      "import": "./dist/webpack.js",
+      "require": "./dist/webpack.cjs"
+    },
+    "./rspack": {
+      "types": "./dist/rspack.d.ts",
+      "development": "./src/rspack.ts",
+      "import": "./dist/rspack.js",
+      "require": "./dist/rspack.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE.md",
+    "THIRD_PARTY_NOTICES.md"
+  ],
+  "license": "MIT",
+  "author": {
+    "name": "LIVON",
+    "url": "https://livon.tech"
+  },
+  "contributors": [
+    {
+      "name": "cr15p1",
+      "url": "https://github.com/cr15p1"
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/live-input-vector-output-node/livon-ts.git",
+    "directory": "packages/plugin"
+  },
+  "homepage": "https://livon.tech/docs/packages/plugin",
+  "bugs": {
+    "url": "https://github.com/live-input-vector-output-node/livon-ts/issues"
+  },
+  "keywords": [
+    "livon",
+    "vite",
+    "rollup",
+    "webpack",
+    "rspack"
+  ],
+  "scripts": {
+    "build": "rslib build",
+    "build:watch": "rslib dev",
+    "dev": "true",
+    "lint": "eslint . --max-warnings 0",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run -c vitest.unit.config.ts",
+    "test:unit": "vitest run -c vitest.unit.config.ts",
+    "test:integration": "true"
+  },
+  "dependencies": {
+    "@livon/client-sync": "workspace:*",
+    "@livon/contract": "workspace:*",
+    "unplugin": "^2.3.10"
+  },
+  "devDependencies": {
+    "@livon/vitest": "workspace:*",
+    "@livon/eslint": "workspace:*",
+    "@livon/rslib": "workspace:*",
+    "@livon/typescript": "workspace:*",
+    "@rslib/core": "latest",
+    "@typescript-eslint/eslint-plugin": "8.58.1",
+    "@typescript-eslint/parser": "8.58.1",
+    "eslint": "10.2.0",
+    "typescript": "latest",
+    "vitest": "latest"
+  }
+}

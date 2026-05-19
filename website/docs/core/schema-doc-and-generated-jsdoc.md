@@ -135,14 +135,14 @@ If `and({ left, right, name })` is used, the explicit `name` becomes the generat
 
 In generated JSDoc, this appears inside `Constraints` so delivery behavior is visible directly at the call site (`api.sendMessage(...)`).
 
-## Generator and docs sync rule
+## Generated client docs sync rule
 
-Generated JSDoc is produced by the client generator (`@livon/client`), so generator output and docs must stay synchronized.
+Generated client types are produced by plugin sync (`@livon/client-sync`), so generated output and docs must stay synchronized.
 
 Required when changing generator behavior:
 
-- update generator implementation in `packages/client/src/generate.ts` or templates in `packages/client/templates/*`
-- if TypeScript interface/signature surface should change globally, update `packages/client/src/typeScriptSurfaceTemplate.ts`
+- update generated surface rendering in `packages/client-sync`
+- if TypeScript interface/signature surface should change globally, update the client sync renderer
 - update this page when generated JSDoc structure or terminology changes
 - update package docs in [@livon/client](/docs/packages/client) when usage/hover behavior changes
 - keep `packages/client/src/generate.spec.ts` aligned with current generated output expectations

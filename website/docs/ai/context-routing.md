@@ -43,7 +43,7 @@ The rule model is path-based only: parent folder rules flow downward regardless 
 | --- | --- |
 | `packages/schema/**` touched | `packages/schema/PROMPT.md`, `/docs/packages/schema`, `/docs/schema` |
 | Schema APIs or parsing/type-safety changes | `/docs/schema/index`, `/docs/schema/schema-factory`, `/docs/schema/type-safety` |
-| `packages/client/**` touched | `packages/client/PROMPT.md`, `/docs/packages/client`, `/docs/core/generators`, `/docs/core/schema-doc-and-generated-jsdoc` |
+| `packages/client/**` touched | `packages/client/PROMPT.md`, `/docs/packages/client`, `/docs/packages/client-sync`, `/docs/core/schema-doc-and-generated-jsdoc` |
 | `packages/runtime/**` touched | `packages/runtime/PROMPT.md`, `/docs/technical/runtime-design`, `/docs/technical/architecture`, `/docs/technical/event-flow`, `/docs/technical/roadmap` |
 | `packages/sync/**`, `packages/react/**`, or framework adapter packages touched | `/docs/packages/sync`, `/docs/packages/react`, `/docs/technical/architecture`, `/docs/core/coding-style-guide` |
 | Transport/runtime-lifecycle/server flow changes | `/docs/technical/runtime-design`, `/docs/technical/architecture`, `/docs/technical/event-flow`, `/docs/technical/roadmap` |

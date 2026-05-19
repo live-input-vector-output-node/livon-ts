@@ -3,7 +3,7 @@
   "version": "0.29.0-rc.11",
   "private": false,
   "type": "module",
-  "description": "CLI for LIVON client sync and generated API workflows.",
+  "description": "Compatibility stub for removed LIVON CLI client generation.",
   "publishConfig": {
     "access": "public"
   },
@@ -13,6 +13,7 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
+      "development": "./src/index.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     }
@@ -47,8 +48,8 @@
   "keywords": [
     "livon",
     "cli",
-    "codegen",
-    "sync",
+    "plugin",
+    "migration",
     "typescript"
   ],
   "bin": {
@@ -58,18 +59,13 @@
     "build": "rslib build",
     "build:watch": "rslib dev",
     "dev": "true",
-    "lint": "eslint . --max-warnings 7",
+    "lint": "eslint . --max-warnings 0",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "true",
-    "test:unit": "true",
+    "test": "vitest run -c vitest.unit.config.ts",
+    "test:unit": "vitest run -c vitest.unit.config.ts",
     "test:integration": "true"
   },
-  "dependencies": {
-    "@rslib/core": "0.19.5",
-    "@livon/client": "workspace:*",
-    "msgpackr": "1.11.8",
-    "ws": "8.19.0"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@livon/vitest": "workspace:*",
     "@livon/eslint": "workspace:*",

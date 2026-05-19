@@ -2,7 +2,7 @@
 <!-- @agent.load: ../../PROMPT.md -->
 <!-- @agent.load: ../../PROMPTS.md -->
 <!-- @agent.load: ../AGENTS.md -->
-<!-- @agent.load: ../../website/docs/core/generators.md -->
+<!-- @agent.load: ../../website/docs/packages/client-sync.md -->
 <!-- @agent.load: ../../website/docs/core/schema-doc-and-generated-jsdoc.md -->
 <!-- @agent.load: ../../website/docs/packages/client.md -->
 
@@ -13,13 +13,13 @@ This prompt applies only to the client package.
 Canonical sources:
 
 - `/docs/packages/client`
-- `/docs/core/generators`
+- `/docs/packages/client-sync`
 - `/docs/core/schema-doc-and-generated-jsdoc`
 
-Generator sync rule:
+Client sync rule:
 
-- Any change in `packages/client/src/generate.ts`, `packages/client/src/typeScriptSurfaceTemplate.ts`, or `packages/client/templates/*` that affects generated API output must update documentation in:
+- Any change in generated client runtime behavior must update documentation in:
   - `website/docs/core/schema-doc-and-generated-jsdoc.md`
   - `website/docs/packages/client.md`
-- Keep generated JSDoc terminology and examples aligned with documented terminology and examples.
-- Validate generator behavior with `packages/client/src/generate.spec.ts`.
+- Keep generated client terminology and examples aligned with documented terminology and examples.
+- Validate sync behavior with `packages/client-sync/src/index.spec.ts`.
