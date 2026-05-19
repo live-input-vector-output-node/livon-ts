@@ -85,7 +85,6 @@ const sidebars: SidebarsConfig = {
         'packages/node-ws-transport',
         'packages/sync',
         'packages/react',
-        'packages/cli',
         'packages/dlq-module',
       ],
     },

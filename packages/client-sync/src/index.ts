@@ -160,12 +160,12 @@ export interface LivonClientSyncWatcher {
   stop: LivonClientSyncWatcherStop;
 }
 
-export interface LivonClientSyncWatcherStop {
-  (): void;
-}
+export type LivonClientSyncWatcherStop = () => void;
 
-const CLIENT_GENERATION_REMOVED_MESSAGE =
-  'Livon client generation through CLI has been removed. Configure a Livon build plugin instead.';
+interface PascalAccumulator {
+  value: string;
+  uppercaseNext: boolean;
+}
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -186,7 +186,14 @@ const stableStringify = (value: unknown): string => {
     return `[${value.map((entry) => stableStringify(entry)).join(',')}]`;
   }
   const record = value as Record<string, unknown>;
-  return `{${Object.keys(record).sort().map((key) => `${JSON.stringify(key)}:${stableStringify(record[key])}`).join(',')}}`;
+  const entries = Object.keys(record)
+    .sort((left, right) => left.localeCompare(right))
+    .map((key) => {
+      const serializedKey = JSON.stringify(key);
+      const serializedValue = stableStringify(record[key]);
+      return `${serializedKey}:${serializedValue}`;
+    });
+  return `{${entries.join(',')}}`;
 };
 
 const hashText = (value: string): string =>
@@ -350,10 +357,33 @@ const hasGeneratedCache = async (paths: OutputPaths): Promise<boolean> => {
   return checks.every(Boolean);
 };
 
+const isAsciiLetter = (value: string): boolean =>
+  (value >= 'A' && value <= 'Z') || (value >= 'a' && value <= 'z');
+
+const isDigit = (value: string): boolean =>
+  value >= '0' && value <= '9';
+
+const isIdentifierCharacter = (value: string): boolean =>
+  isAsciiLetter(value) || isDigit(value) || value === '_' || value === '$';
+
+const isIdentifierStartCharacter = (value: string): boolean =>
+  isAsciiLetter(value) || value === '_' || value === '$';
+
 const pascalCaseName = (value: string): string => {
-  const cleaned = value.replace(/[^A-Za-z0-9]+(.)/g, (_match, group: string) => group.toUpperCase()).replace(/[^A-Za-z0-9_$]/g, '');
+  const cleaned = Array.from(value).reduce<PascalAccumulator>(
+    (state, character) => {
+      if (!isIdentifierCharacter(character)) {
+        return { value: state.value, uppercaseNext: state.value.length > 0 };
+      }
+      return {
+        value: `${state.value}${state.uppercaseNext ? character.toUpperCase() : character}`,
+        uppercaseNext: false,
+      };
+    },
+    { value: '', uppercaseNext: false },
+  ).value;
   const fallback = cleaned.length > 0 ? cleaned : 'LivonType';
-  return /^[A-Za-z_$]/.test(fallback)
+  return isIdentifierStartCharacter(fallback.charAt(0))
     ? `${fallback.charAt(0).toUpperCase()}${fallback.slice(1)}`
     : `Livon${fallback}`;
 };
@@ -379,12 +409,9 @@ const collectNamedNodes = (ast: AstNode): NamedNode[] => {
   return [...byName.values()];
 };
 
-const renderTypeReference = ({ node, context }: TypeRenderInput): string => {
+const renderCollectionTypeReference = ({ node, context }: TypeRenderInput): string | undefined => {
   if (!node) {
-    return 'void';
-  }
-  if (node.name && context.types.has(node.name)) {
-    return context.types.get(node.name) ?? 'unknown';
+    return undefined;
   }
   if (node.type === 'array') {
     return `readonly ${renderTypeReference({ node: node.children?.[0], context })}[]`;
@@ -395,35 +422,62 @@ const renderTypeReference = ({ node, context }: TypeRenderInput): string => {
   if (node.type === 'and') {
     return (node.children ?? []).map((child) => renderTypeReference({ node: child, context })).join(' & ') || 'unknown';
   }
-  if (node.type === 'string') {
-    return 'string';
+  return undefined;
+};
+
+const renderPrimitiveTypeReference = (node: AstNode): string | undefined => {
+  const primitives = new Map<string, string>([
+    ['string', 'string'],
+    ['number', 'number'],
+    ['boolean', 'boolean'],
+    ['date', 'Date'],
+    ['binary', 'Uint8Array'],
+  ]);
+  return primitives.get(node.type);
+};
+
+const renderLiteralTypeReference = (node: AstNode): string | undefined => {
+  if (node.type !== 'literal') {
+    return undefined;
   }
-  if (node.type === 'number') {
-    return 'number';
+  const literalValue = node.constraints?.value;
+  return typeof literalValue === 'string' || typeof literalValue === 'number' || typeof literalValue === 'boolean'
+    ? JSON.stringify(literalValue)
+    : 'unknown';
+};
+
+const renderEnumTypeReference = (node: AstNode): string | undefined => {
+  if (node.type !== 'enum' || !Array.isArray(node.constraints?.values)) {
+    return undefined;
   }
-  if (node.type === 'boolean') {
-    return 'boolean';
+  const values = node.constraints.values.filter((value) => typeof value === 'string');
+  return values.length > 0 ? values.map((value) => JSON.stringify(value)).join(' | ') : 'string';
+};
+
+const renderObjectTypeReference = ({ node, context }: TypeRenderInput): string | undefined => {
+  if (node?.type !== 'object') {
+    return undefined;
   }
-  if (node.type === 'date') {
-    return 'Date';
+  const fields = (node.children ?? [])
+    .map((child) => renderField({ fieldNode: child, context }))
+    .filter(Boolean)
+    .join(' ');
+  return `{ ${fields} }`;
+};
+
+const renderTypeReference = ({ node, context }: TypeRenderInput): string => {
+  if (!node) {
+    return 'void';
   }
-  if (node.type === 'binary') {
-    return 'Uint8Array';
+  if (node.name && context.types.has(node.name)) {
+    return context.types.get(node.name) ?? 'unknown';
   }
-  if (node.type === 'literal') {
-    const literalValue = node.constraints?.value;
-    return typeof literalValue === 'string' || typeof literalValue === 'number' || typeof literalValue === 'boolean'
-      ? JSON.stringify(literalValue)
-      : 'unknown';
-  }
-  if (node.type === 'enum' && Array.isArray(node.constraints?.values)) {
-    const values = node.constraints.values.filter((value) => typeof value === 'string');
-    return values.length > 0 ? values.map((value) => JSON.stringify(value)).join(' | ') : 'string';
-  }
-  if (node.type === 'object') {
-    return `{ ${(node.children ?? []).map((child) => renderField({ fieldNode: child, context })).filter(Boolean).join(' ')} }`;
-  }
-  return 'unknown';
+  return renderCollectionTypeReference({ node, context })
+    ?? renderPrimitiveTypeReference(node)
+    ?? renderLiteralTypeReference(node)
+    ?? renderEnumTypeReference(node)
+    ?? renderObjectTypeReference({ node, context })
+    ?? 'unknown';
 };
 
 const renderField = ({ fieldNode, context }: FieldRenderInput): string => {
@@ -439,7 +493,11 @@ const renderNamedType = (node: AstNode, context: RenderContext): string => {
     return '';
   }
   if (node.type === 'object') {
-    return `export interface ${typeName} {\n${(node.children ?? []).map((child) => `  ${renderField({ fieldNode: child, context })}`).filter((line) => line.trim().length > 0).join('\n')}\n}`;
+    const fields = (node.children ?? [])
+      .map((child) => `  ${renderField({ fieldNode: child, context })}`)
+      .filter((line) => line.trim().length > 0)
+      .join('\n');
+    return `export interface ${typeName} {\n${fields}\n}`;
   }
   return `export type ${typeName} = ${renderTypeReference({ node: { ...node, name: undefined }, context })};`;
 };
@@ -489,11 +547,14 @@ const collectApiDefinitions = (ast: AstNode, context: RenderContext): RenderCont
   return context;
 };
 
+const functionInterfaceName = (definition: LivonRemoteFunctionDefinition): string =>
+  pascalCaseName(`${definition.name}Function`);
+
 const renderFunctionInterface = (definition: LivonRemoteFunctionDefinition): string =>
-  `export interface ${pascalCaseName(`${definition.name}Function`)} {\n  (input: ${definition.inputTypeName ?? 'void'}): Promise<${definition.responseTypeName ?? 'void'}>;\n}`;
+  `export interface ${functionInterfaceName(definition)} {\n  (input: ${definition.inputTypeName ?? 'void'}): Promise<${definition.responseTypeName ?? 'void'}>;\n}`;
 
 const renderFunctionExport = ({ definition, meta, config }: RenderFunctionExportInput): string =>
-  `export const ${definition.exportName}: ${pascalCaseName(`${definition.name}Function`)} = createLivonRemoteFunction({\n  endpointUrl: ${JSON.stringify(config.url)},\n  remoteIdentifier: ${JSON.stringify(definition.remoteIdentifier)},\n  contractVersion: ${JSON.stringify(meta.contractVersion)},\n});`;
+  `export const ${definition.exportName}: ${functionInterfaceName(definition)} = createLivonRemoteFunction({\n  endpointUrl: ${JSON.stringify(config.url)},\n  remoteIdentifier: ${JSON.stringify(definition.remoteIdentifier)},\n  contractVersion: ${JSON.stringify(meta.contractVersion)},\n});`;
 
 const renderSubscriptionTypes = (subscriptions: readonly LivonSubscriptionDefinition[]): string[] => {
   const eventMap = [
@@ -519,33 +580,41 @@ const renderSubscriptionRegistration = (subscriptions: readonly LivonSubscriptio
 
 const renderApiObject = (context: RenderContext): string => {
   const operationEntries = context.remoteFunctions.map((definition) => `  ${definition.exportName},`).join('\n');
-  return `export interface LivonGeneratedApi {\n  (handlers: LivonSubscriptionHandlers): LivonUnsubscribe;\n${context.remoteFunctions.map((definition) => `  ${definition.exportName}: ${pascalCaseName(`${definition.name}Function`)};`).join('\n')}\n}\n\nexport const api = Object.assign(\n  (handlers: LivonSubscriptionHandlers) => registerLivonSubscriptionHandlers(handlers),\n  {\n${operationEntries}\n  },\n) as LivonGeneratedApi;`;
+  const apiMembers = context.remoteFunctions
+    .map((definition) => `  ${definition.exportName}: ${functionInterfaceName(definition)};`)
+    .join('\n');
+  return `export interface LivonGeneratedApi {\n  (handlers: LivonSubscriptionHandlers): LivonUnsubscribe;\n${apiMembers}\n}\n\nexport const api = Object.assign(\n  (handlers: LivonSubscriptionHandlers) => registerLivonSubscriptionHandlers(handlers),\n  {\n${operationEntries}\n  },\n) as LivonGeneratedApi;`;
 };
 
-const renderDeclarationSource = ({ context, meta }: RenderDeclarationSourceInput): string => [
-  "import type { LivonSubscriptionHandler, LivonUnsubscribe } from '@livon/client';",
-  '',
-  `export declare const LIVON_CONTRACT_HASH: ${JSON.stringify(meta.contractHash)};`,
-  `export declare const LIVON_CONTRACT_VERSION: ${JSON.stringify(meta.contractVersion)};`,
-  '',
-  ...context.typeDefinitions,
-  '',
-  ...context.remoteFunctions.map(renderFunctionInterface),
-  '',
-  ...renderSubscriptionTypes(context.subscriptions),
-  '',
-  ...context.remoteFunctions.map(
-    (definition) =>
-      `export declare const ${definition.exportName}: ${pascalCaseName(`${definition.name}Function`)};`,
-  ),
-  '',
-  'export declare const registerLivonSubscriptionHandlers: (handlers: LivonSubscriptionHandlers) => LivonUnsubscribe;',
-  '',
-  `export interface LivonGeneratedApi {\n  (handlers: LivonSubscriptionHandlers): LivonUnsubscribe;\n${context.remoteFunctions.map((definition) => `  ${definition.exportName}: ${pascalCaseName(`${definition.name}Function`)};`).join('\n')}\n}`,
-  '',
-  'export declare const api: LivonGeneratedApi;',
-  '',
-].join('\n');
+const renderDeclarationSource = ({ context, meta }: RenderDeclarationSourceInput): string => {
+  const apiMembers = context.remoteFunctions
+    .map((definition) => `  ${definition.exportName}: ${functionInterfaceName(definition)};`)
+    .join('\n');
+  return [
+    "import type { LivonSubscriptionHandler, LivonUnsubscribe } from '@livon/client';",
+    '',
+    `export declare const LIVON_CONTRACT_HASH: ${JSON.stringify(meta.contractHash)};`,
+    `export declare const LIVON_CONTRACT_VERSION: ${JSON.stringify(meta.contractVersion)};`,
+    '',
+    ...context.typeDefinitions,
+    '',
+    ...context.remoteFunctions.map(renderFunctionInterface),
+    '',
+    ...renderSubscriptionTypes(context.subscriptions),
+    '',
+    ...context.remoteFunctions.map(
+      (definition) =>
+        `export declare const ${definition.exportName}: ${functionInterfaceName(definition)};`,
+    ),
+    '',
+    'export declare const registerLivonSubscriptionHandlers: (handlers: LivonSubscriptionHandlers) => LivonUnsubscribe;',
+    '',
+    `export interface LivonGeneratedApi {\n  (handlers: LivonSubscriptionHandlers): LivonUnsubscribe;\n${apiMembers}\n}`,
+    '',
+    'export declare const api: LivonGeneratedApi;',
+    '',
+  ].join('\n');
+};
 
 const generateArtifacts = ({ ast, config, meta }: GenerateArtifactsInput): GeneratedArtifacts => {
   const context = collectApiDefinitions(ast, createRenderContext(ast));
@@ -697,5 +766,3 @@ export const startLivonClientSyncWatcher = ({ config, logger }: StartLivonClient
     },
   };
 };
-
-export { CLIENT_GENERATION_REMOVED_MESSAGE };

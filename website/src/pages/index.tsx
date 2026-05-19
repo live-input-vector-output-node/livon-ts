@@ -53,7 +53,7 @@ const Home = (): ReactNode => {
                     <Link className="button button--secondary button--lg" to="/docs/core/getting-started">
                       Getting Started
                     </Link>
-                    <Link className="button button--secondary button--lg" to="/docs/packages/cli">
+                    <Link className="button button--secondary button--lg" to="/docs/packages/plugin-rsbuild">
                       Client Sync
                     </Link>
                   </div>

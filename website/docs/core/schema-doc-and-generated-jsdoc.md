@@ -145,7 +145,7 @@ Required when changing generator behavior:
 - if TypeScript interface/signature surface should change globally, update the client sync renderer
 - update this page when generated JSDoc structure or terminology changes
 - update package docs in [@livon/client](/docs/packages/client) when usage/hover behavior changes
-- keep `packages/client/src/generate.spec.ts` aligned with current generated output expectations
+- keep `packages/client-sync/src/index.spec.ts` aligned with current generated output expectations
 
 Prompt rule source for this package:
 

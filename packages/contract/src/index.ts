@@ -96,6 +96,4 @@ export interface LivonClientSyncLogger {
   error?: LivonClientSyncLog;
 }
 
-export interface LivonClientSyncLog {
-  (message: string): void;
-}
+export type LivonClientSyncLog = (message: string) => void;

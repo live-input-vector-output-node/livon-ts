@@ -54,11 +54,6 @@
       "target": "packages/dlq-module/README.md"
     },
     {
-      "id": "@livon/cli",
-      "source": "website/docs/packages/cli.md",
-      "target": "packages/cli/README.md"
-    },
-    {
       "id": "@livon/sync",
       "source": "website/docs/packages/sync.md",
       "target": "packages/sync/README.md"

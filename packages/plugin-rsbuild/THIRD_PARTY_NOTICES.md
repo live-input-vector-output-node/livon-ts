@@ -1,6 +1,13 @@
-MIT License
+Third-Party Notices
 
-Copyright (c) 2026 LIVON contributors
+This package integrates with third-party software. The following licenses apply:
+
+------------------------------------------------------------------------------
+@rsbuild/core
+------------------------------------------------------------------------------
+License: MIT
+
+Copyright (c) 2023-present Bytedance, Inc. and its affiliates.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

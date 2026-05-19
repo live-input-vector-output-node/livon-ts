@@ -156,39 +156,6 @@ importers:
         specifier: latest
         version: 4.0.18(@types/node@25.2.2)(jiti@2.6.1)(jsdom@29.0.1)(lightningcss@1.32.0)(terser@5.46.0)
 
-  packages/cli:
-    devDependencies:
-      '@livon/eslint':
-        specifier: workspace:*
-        version: link:../../tools/eslint
-      '@livon/rslib':
-        specifier: workspace:*
-        version: link:../../tools/rslib
-      '@livon/typescript':
-        specifier: workspace:*
-        version: link:../../tools/typescript
-      '@livon/vitest':
-        specifier: workspace:*
-        version: link:../../tools/vitest
-      '@types/node':
-        specifier: latest
-        version: 25.2.2
-      '@types/ws':
-        specifier: latest
-        version: 8.18.1
-      '@typescript-eslint/eslint-plugin':
-        specifier: 8.58.1
-        version: 8.58.1(@typescript-eslint/parser@8.58.1(eslint@10.2.0(jiti@2.6.1))(typescript@5.9.3))(eslint@10.2.0(jiti@2.6.1))(typescript@5.9.3)
-      '@typescript-eslint/parser':
-        specifier: 8.58.1
-        version: 8.58.1(eslint@10.2.0(jiti@2.6.1))(typescript@5.9.3)
-      eslint:
-        specifier: 10.2.0
-        version: 10.2.0(jiti@2.6.1)
-      typescript:
-        specifier: latest
-        version: 5.9.3
-
   packages/client:
     dependencies:
       msgpackr:
@@ -421,6 +388,9 @@ importers:
       '@rslib/core':
         specifier: latest
         version: 0.21.5(@module-federation/runtime-tools@0.22.0)(core-js@3.47.0)(typescript@6.0.3)
+      '@types/node':
+        specifier: latest
+        version: 25.9.0
       '@typescript-eslint/eslint-plugin':
         specifier: 8.58.1
         version: 8.58.1(@typescript-eslint/parser@8.58.1(eslint@10.2.0(jiti@2.6.1))(typescript@6.0.3))(eslint@10.2.0(jiti@2.6.1))(typescript@6.0.3)
@@ -464,6 +434,9 @@ importers:
       '@rslib/core':
         specifier: latest
         version: 0.21.5(@module-federation/runtime-tools@0.22.0)(core-js@3.47.0)(typescript@6.0.3)
+      '@types/node':
+        specifier: latest
+        version: 25.9.0
       '@typescript-eslint/eslint-plugin':
         specifier: 8.58.1
         version: 8.58.1(@typescript-eslint/parser@8.58.1(eslint@10.2.0(jiti@2.6.1))(typescript@6.0.3))(eslint@10.2.0(jiti@2.6.1))(typescript@6.0.3)
@@ -12206,8 +12179,8 @@ snapshots:
 
   '@rslib/core@0.19.5(typescript@6.0.2)':
     dependencies:
-      '@rsbuild/core': 1.7.5
-      rsbuild-plugin-dts: 0.19.5(@rsbuild/core@1.7.5)(typescript@6.0.2)
+      '@rsbuild/core': 1.7.3
+      rsbuild-plugin-dts: 0.19.5(@rsbuild/core@1.7.3)(typescript@6.0.2)
     optionalDependencies:
       typescript: 6.0.2
     transitivePeerDependencies:
@@ -17743,10 +17716,10 @@ snapshots:
     optionalDependencies:
       typescript: 5.9.3
 
-  rsbuild-plugin-dts@0.19.5(@rsbuild/core@1.7.5)(typescript@6.0.2):
+  rsbuild-plugin-dts@0.19.5(@rsbuild/core@1.7.3)(typescript@6.0.2):
     dependencies:
       '@ast-grep/napi': 0.37.0
-      '@rsbuild/core': 1.7.5
+      '@rsbuild/core': 1.7.3
     optionalDependencies:
       typescript: 6.0.2
 

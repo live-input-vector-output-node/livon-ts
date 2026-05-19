@@ -1,52 +1,30 @@
 import { pack, unpack } from 'msgpackr';
 
-export interface ClientRequest {
-  (event: string, payload: unknown): Promise<unknown>;
-}
+export type ClientRequest = (event: string, payload: unknown) => Promise<unknown>;
 
-export interface ClientTransportConnect {
-  (): Promise<void>;
-}
+export type ClientTransportConnect = () => Promise<void>;
 
-export interface ClientTransportClose {
-  (): void;
-}
+export type ClientTransportClose = () => void;
 
 export interface UrlLike {
   toString(): string;
 }
 
-export interface ReadAccessToken {
-  (): string | undefined;
-}
+export type ReadAccessToken = () => string | undefined;
 
-export interface WebSocketSend {
-  (data: string | Uint8Array): void;
-}
+export type WebSocketSend = (data: string | Uint8Array) => void;
 
-export interface WebSocketClose {
-  (): void;
-}
+export type WebSocketClose = () => void;
 
-export interface WebSocketEventListener {
-  (event: unknown): void;
-}
+export type WebSocketEventListener = (event: unknown) => void;
 
-export interface WebSocketAddEventListener {
-  (type: string, listener: WebSocketEventListener): void;
-}
+export type WebSocketAddEventListener = (type: string, listener: WebSocketEventListener) => void;
 
-export interface WebSocketRemoveEventListener {
-  (type: string, listener: WebSocketEventListener): void;
-}
+export type WebSocketRemoveEventListener = (type: string, listener: WebSocketEventListener) => void;
 
-export interface WebSocketOn {
-  (type: string, listener: WebSocketEventListener): void;
-}
+export type WebSocketOn = (type: string, listener: WebSocketEventListener) => void;
 
-export interface WebSocketOff {
-  (type: string, listener: WebSocketEventListener): void;
-}
+export type WebSocketOff = (type: string, listener: WebSocketEventListener) => void;
 
 export interface WebSocketLike {
   readyState: number;
@@ -59,9 +37,9 @@ export interface WebSocketLike {
   off?: WebSocketOff;
 }
 
-export interface WebSocketImplementation {
-  (url: string | URL, protocols?: string | string[]): WebSocketLike;
-}
+export type WebSocketImplementation = (url: string | URL, protocols?: string | string[]) => WebSocketLike;
+
+type SocketData = string | ArrayBuffer | ArrayBufferView | Uint8Array;
 
 export interface ConfigureLivonClientConfig {
   endpointUrl?: string | UrlLike;
@@ -109,13 +87,9 @@ export interface LivonClientError extends Error {
   details?: unknown;
 }
 
-export interface LivonRemoteFunction<TPayload, TResult> {
-  (payload: TPayload): Promise<TResult>;
-}
+export type LivonRemoteFunction<TPayload, TResult> = (payload: TPayload) => Promise<TResult>;
 
-export interface LivonSubscriptionHandler<TPayload> {
-  (payload: TPayload, context: LivonSubscriptionContext): void;
-}
+export type LivonSubscriptionHandler<TPayload> = (payload: TPayload, context: LivonSubscriptionContext) => void;
 
 export interface LivonSubscriptionContext {
   eventId: string;
@@ -133,9 +107,7 @@ export interface RegisterLivonSubscriptionResult {
   unsubscribe: LivonUnsubscribe;
 }
 
-export interface LivonUnsubscribe {
-  (): void;
-}
+export type LivonUnsubscribe = () => void;
 
 interface LivonClientRuntimeConfig {
   endpointUrl?: string;
@@ -173,13 +145,9 @@ interface PendingRequest {
   timeoutHandle?: ReturnType<typeof setTimeout>;
 }
 
-interface PendingRequestResolve {
-  (value: unknown): void;
-}
+type PendingRequestResolve = (value: unknown) => void;
 
-interface PendingRequestReject {
-  (error: LivonClientError): void;
-}
+type PendingRequestReject = (error: LivonClientError) => void;
 
 interface SubscriptionEntry {
   remoteIdentifier: string;
@@ -187,7 +155,7 @@ interface SubscriptionEntry {
 }
 
 interface MessageEventLike {
-  data: string | ArrayBuffer | ArrayBufferView | Uint8Array;
+  data: SocketData;
 }
 
 interface ErrorRecord {
@@ -224,6 +192,7 @@ let runtimeConfig = DEFAULT_RUNTIME_CONFIG;
 let socket: WebSocketLike | undefined;
 let socketEndpointUrl: string | undefined;
 let connectPromise: Promise<WebSocketLike> | undefined;
+let fallbackIdentifierSequence = 0;
 const pendingRequests = new Map<string, PendingRequest>();
 const subscriptionEntries = new Map<string, SubscriptionEntry>();
 
@@ -249,12 +218,13 @@ const randomIdentifier = (): string => {
   if (cryptoValue?.randomUUID) {
     return cryptoValue.randomUUID();
   }
-  return `livon_${Math.random().toString(16).slice(2)}_${Date.now().toString(16)}`;
+  fallbackIdentifierSequence += 1;
+  return `livon_${Date.now().toString(16)}_${fallbackIdentifierSequence.toString(16)}`;
 };
 
-const binaryFromSocketData = (data: string | ArrayBuffer | ArrayBufferView | Uint8Array): Uint8Array => {
+const binaryFromSocketData = (data: SocketData): Uint8Array => {
   if (typeof data === 'string') {
-    throw new Error('Expected binary Livon WebSocket payload.');
+    throw new TypeError('Expected binary Livon WebSocket payload.');
   }
   if (data instanceof Uint8Array) {
     return data;
@@ -362,7 +332,7 @@ const handleIncomingEnvelope = (envelope: WireEnvelope): void => {
 
 const handleSocketMessage = (event: unknown): void => {
   const data = isMessageEventLike(event) ? event.data : event;
-  const wireEnvelope = unpack(binaryFromSocketData(data as string | ArrayBuffer | ArrayBufferView | Uint8Array)) as WireEnvelope;
+  const wireEnvelope = unpack(binaryFromSocketData(data as SocketData)) as WireEnvelope;
   handleIncomingEnvelope(wireEnvelope);
 };
 
@@ -439,15 +409,16 @@ const requestRemote = async <TPayload, TResult>({
     payload: encodePayload(payload),
   };
 
-  const rawResponse = await new Promise<unknown>((resolve, reject: PendingRequestReject) => {
+  const rawResponse = await new Promise<unknown>((resolve, reject) => {
     const timeoutHandle = setTimeout(() => {
       pendingRequests.delete(id);
-      reject(createUnknownClientError(`Livon request timed out for ${remoteIdentifier}.`));
+      const error = createUnknownClientError(`Livon request timed out for ${remoteIdentifier}.`);
+      reject(error);
     }, runtimeConfig.requestTimeoutMilliseconds);
     pendingRequests.set(id, {
       event: remoteIdentifier,
       resolve,
-      reject,
+      reject: reject as PendingRequestReject,
       timeoutHandle,
     });
     activeSocket.send(pack(wireEnvelope));

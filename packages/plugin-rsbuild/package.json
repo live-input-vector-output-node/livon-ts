@@ -74,6 +74,7 @@
     "@livon/typescript": "workspace:*",
     "@rslib/core": "latest",
     "@rsbuild/core": "latest",
+    "@types/node": "latest",
     "@typescript-eslint/eslint-plugin": "8.58.1",
     "@typescript-eslint/parser": "8.58.1",
     "eslint": "10.2.0",

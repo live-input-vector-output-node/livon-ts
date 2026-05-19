@@ -49,7 +49,6 @@ Client repositories install a Livon build plugin, configure a WebSocket `$explai
 ## Reliability and tooling
 
 1. [@livon/dlq-module](dlq-module)
-2. [@livon/cli](cli) compatibility stub
 
 ## Schema API reference
 
