@@ -14,7 +14,7 @@ This page is the canonical roadmap source.
 
 - Monorepo scaffold with `pnpm` + Turborepo
 - Shared configs in `@livon/typescript`, `@livon/eslint`, `@livon/rslib`, `@livon/rsbuild`, `@livon/rspack`, and `@livon/vitest`
-- Generator CLI (`pnpm gen`) and policy checks (`pnpm check:policies`)
+- Plugin-based client sync and policy checks (`pnpm check:policies`)
 - [Runtime](/docs/packages/runtime), [schema module](/docs/packages/schema), and WebSocket transports implemented
 - Documentation split into core + package-level guides
 
@@ -22,7 +22,7 @@ This page is the canonical roadmap source.
 
 1. Harden runtime reliability modules (`retry`, `DLQ`, queue orchestration)
 2. Expand [schema AST metadata](/docs/schema) and docs surfaces
-3. Improve client generator and typed SDK ergonomics
+3. Improve plugin-generated client and typed SDK ergonomics
 4. Introduce gateway-based automatic [schema merging](/docs/schema)
 5. Expand transport adapters (`Kafka`, `Valkey`-compatible)
 6. Strengthen contribution automation and release flow

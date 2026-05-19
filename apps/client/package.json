@@ -25,26 +25,21 @@
     "build": "rsbuild build",
     "build:watch": "true",
     "dev": "PORT=3001 rsbuild dev",
-    "gen:client:watch": "livon --endpoint ws://127.0.0.1:3002/ws --out src/generated/api.ts --poll 2000",
-    "gen:client:deploy": "livon --endpoint ws://127.0.0.1:3002/ws --out src/generated/api.ts",
     "preview": "rsbuild preview",
     "lint": "eslint . --max-warnings 3",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run --passWithNoTests --configLoader runner -c vitest.integration.config.ts",
     "test:unit": "vitest run --configLoader runner -c vitest.unit.config.ts",
-    "test:integration": "vitest run --passWithNoTests --configLoader runner -c vitest.integration.config.ts",
-    "gen:client": "livon --endpoint ws://127.0.0.1:3002/ws --out src/generated/api.ts"
+    "test:integration": "vitest run --passWithNoTests --configLoader runner -c vitest.integration.config.ts"
   },
   "dependencies": {
     "@livon/client": "workspace:*",
-    "@livon/client-ws-transport": "workspace:*",
-    "@livon/runtime": "workspace:*",
     "react": "latest",
     "react-dom": "latest",
     "zustand": "latest"
   },
   "devDependencies": {
-    "@livon/cli": "workspace:*",
+    "@livon/plugin-rsbuild": "workspace:*",
     "@livon/vitest": "workspace:*",
     "@livon/eslint": "workspace:*",
     "@livon/rsbuild": "workspace:*",

@@ -26,13 +26,13 @@ pnpm add @livon/runtime @livon/schema @livon/node-ws-transport
 Client stack:
 
 ```sh
-pnpm add @livon/runtime @livon/client @livon/client-ws-transport
+pnpm add @livon/runtime @livon/client
 ```
 
-Optional generator CLI:
+Optional client sync plugin:
 
 ```sh
-pnpm add -D @livon/cli
+pnpm add -D @livon/plugin-rsbuild
 ```
 
 ### 3. Run local development apps in this repository
@@ -54,10 +54,10 @@ Default local endpoints:
 - Client app: `http://127.0.0.1:3001`
 - Server WS endpoint: `ws://127.0.0.1:3002/ws`
 
-Run client API generation watcher:
+Run client API sync through the configured build plugin:
 
 ```sh
-pnpm run gen:client:watch -- --filter=./apps/client
+pnpm run dev -- --filter=./apps/client
 ```
 
 Run monorepo dev orchestration:
@@ -149,13 +149,14 @@ pnpm run build -- --filter=./packages/schema
 pnpm run build:watch -- --filter=./packages/runtime
 ```
 
-### 8. Generate client API via root scripts
+### 8. Sync generated client API through build plugins
 
 ```sh
 pnpm gen node schema
-pnpm run gen:client -- --filter=./apps/client
-pnpm run gen:client:deploy -- --filter=./apps/client
 ```
+
+Generated client files are synchronized by the configured Livon build plugin.
+Use `failureMode: 'error'` and `syncMode: 'build'` for CI builds.
 
 ### 9. Generate README and community health files from docs
 

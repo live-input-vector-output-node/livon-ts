@@ -3,7 +3,7 @@
   "version": "0.29.0-rc.11",
   "private": false,
   "type": "module",
-  "description": "Client runtime and generated client foundations for LIVON.",
+  "description": "Browser-safe WebSocket runtime for LIVON generated clients.",
   "publishConfig": {
     "access": "public"
   },
@@ -13,18 +13,15 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
+      "development": "./src/index.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     },
     "./client": {
       "types": "./dist/client.d.ts",
+      "development": "./src/client.ts",
       "import": "./dist/client.js",
       "require": "./dist/client.cjs"
-    },
-    "./generate": {
-      "types": "./dist/generate.d.ts",
-      "import": "./dist/generate.js",
-      "require": "./dist/generate.cjs"
     }
   },
   "files": [
@@ -56,21 +53,21 @@
     "livon",
     "client",
     "api",
-    "codegen",
+    "websocket",
     "typescript"
   ],
   "scripts": {
     "build": "rslib build",
     "build:watch": "rslib dev",
     "dev": "true",
-    "lint": "eslint . --max-warnings 23",
+    "lint": "eslint . --max-warnings 0",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "true",
-    "test:unit": "true",
+    "test": "vitest run -c vitest.unit.config.ts",
+    "test:unit": "vitest run -c vitest.unit.config.ts",
     "test:integration": "true"
   },
   "dependencies": {
-    "@livon/runtime": "workspace:*"
+    "msgpackr": "1.11.8"
   },
   "devDependencies": {
     "@livon/vitest": "workspace:*",

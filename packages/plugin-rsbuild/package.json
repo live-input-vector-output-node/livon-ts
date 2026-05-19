@@ -1,0 +1,84 @@
+{
+  "name": "@livon/plugin-rsbuild",
+  "version": "0.29.0-rc.11",
+  "private": false,
+  "type": "module",
+  "description": "Rsbuild and Rslib plugin for LIVON generated client sync.",
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "development": "./src/index.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE.md",
+    "THIRD_PARTY_NOTICES.md"
+  ],
+  "license": "MIT",
+  "author": {
+    "name": "LIVON",
+    "url": "https://livon.tech"
+  },
+  "contributors": [
+    {
+      "name": "cr15p1",
+      "url": "https://github.com/cr15p1"
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/live-input-vector-output-node/livon-ts.git",
+    "directory": "packages/plugin-rsbuild"
+  },
+  "homepage": "https://livon.tech/docs/packages/plugin-rsbuild",
+  "bugs": {
+    "url": "https://github.com/live-input-vector-output-node/livon-ts/issues"
+  },
+  "keywords": [
+    "livon",
+    "rsbuild",
+    "rslib",
+    "plugin"
+  ],
+  "scripts": {
+    "build": "rslib build",
+    "build:watch": "rslib dev",
+    "dev": "true",
+    "lint": "eslint . --max-warnings 0",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run -c vitest.unit.config.ts",
+    "test:unit": "vitest run -c vitest.unit.config.ts",
+    "test:integration": "true"
+  },
+  "dependencies": {
+    "@livon/client-sync": "workspace:*",
+    "@livon/contract": "workspace:*"
+  },
+  "peerDependencies": {
+    "@rsbuild/core": "^1.7.3"
+  },
+  "devDependencies": {
+    "@livon/vitest": "workspace:*",
+    "@livon/eslint": "workspace:*",
+    "@livon/rslib": "workspace:*",
+    "@livon/typescript": "workspace:*",
+    "@rslib/core": "latest",
+    "@rsbuild/core": "latest",
+    "@types/node": "latest",
+    "@typescript-eslint/eslint-plugin": "8.58.1",
+    "@typescript-eslint/parser": "8.58.1",
+    "eslint": "10.2.0",
+    "typescript": "latest",
+    "vitest": "latest"
+  }
+}

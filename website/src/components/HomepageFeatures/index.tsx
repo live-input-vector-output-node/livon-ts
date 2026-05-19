@@ -23,7 +23,7 @@ const featureList: readonly FeatureItem[] = [
   },
   {
     title: 'Transports + Tooling',
-    description: 'Node/client websocket transports, DLQ module, config package, and CLI.',
+    description: 'Node/client websocket transports, DLQ module, and plugin-based client sync.',
     to: '/docs/packages/client-ws-transport',
   },
 ];

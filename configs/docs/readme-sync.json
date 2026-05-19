@@ -19,6 +19,26 @@
       "target": "packages/client/README.md"
     },
     {
+      "id": "@livon/contract",
+      "source": "website/docs/packages/contract.md",
+      "target": "packages/contract/README.md"
+    },
+    {
+      "id": "@livon/client-sync",
+      "source": "website/docs/packages/client-sync.md",
+      "target": "packages/client-sync/README.md"
+    },
+    {
+      "id": "@livon/plugin",
+      "source": "website/docs/packages/plugin.md",
+      "target": "packages/plugin/README.md"
+    },
+    {
+      "id": "@livon/plugin-rsbuild",
+      "source": "website/docs/packages/plugin-rsbuild.md",
+      "target": "packages/plugin-rsbuild/README.md"
+    },
+    {
       "id": "@livon/client-ws-transport",
       "source": "website/docs/packages/client-ws-transport.md",
       "target": "packages/client-ws-transport/README.md"
@@ -32,11 +52,6 @@
       "id": "@livon/dlq-module",
       "source": "website/docs/packages/dlq-module.md",
       "target": "packages/dlq-module/README.md"
-    },
-    {
-      "id": "@livon/cli",
-      "source": "website/docs/packages/cli.md",
-      "target": "packages/cli/README.md"
     },
     {
       "id": "@livon/sync",

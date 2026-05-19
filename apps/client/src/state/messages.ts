@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-import { api, type Message } from '../generated/api.js';
+import { api, type Message } from '@livon/generated';
 import { useSessionStore } from './session.js';
 import { useUsersStore } from './users.js';
 
@@ -35,6 +35,13 @@ type MessageSetState = (
     | Partial<MessagesState>
     | ((state: MessagesState) => Partial<MessagesState>),
 ) => void;
+
+interface SetActiveRoomInput {
+  set: MessageSetState;
+  roomId: string;
+  chatMode: ChatMode;
+  targetUserId?: string;
+}
 
 const directRoomId = (a: string, b: string) => {
   const [first, second] = [a, b].sort((left, right) => left.localeCompare(right));
@@ -98,7 +105,7 @@ const markRoomAsRead = (state: MessagesState, roomId: string): Partial<MessagesS
   };
 };
 
-const setActiveRoom = (set: MessageSetState, roomId: string, chatMode: ChatMode, targetUserId?: string) => {
+const setActiveRoom = ({ set, roomId, chatMode, targetUserId }: SetActiveRoomInput) => {
   set((state) => ({
     activeRoomId: roomId,
     activeChatMode: chatMode,
@@ -164,7 +171,7 @@ export const useMessagesStore = create<MessagesState>((set, get) => ({
     });
   },
   enterGlobalRoom: () => {
-    setActiveRoom(set, GLOBAL_ROOM_ID, 'global');
+    setActiveRoom({ set, roomId: GLOBAL_ROOM_ID, chatMode: 'global' });
   },
   enterDirectRoom: (targetUserId) => {
     const self = useSessionStore.getState().name.trim();
@@ -172,10 +179,15 @@ export const useMessagesStore = create<MessagesState>((set, get) => ({
       return;
     }
     useUsersStore.getState().upsert({ _id: targetUserId, name: targetUserId });
-    setActiveRoom(set, directRoomId(self, targetUserId), 'direct', targetUserId);
+    setActiveRoom({
+      set,
+      roomId: directRoomId(self, targetUserId),
+      chatMode: 'direct',
+      targetUserId,
+    });
   },
   leaveDirectRoom: () => {
-    setActiveRoom(set, GLOBAL_ROOM_ID, 'global');
+    setActiveRoom({ set, roomId: GLOBAL_ROOM_ID, chatMode: 'global' });
   },
   markActiveRoomAsRead: () => {
     set((state) => markRoomAsRead(state, state.activeRoomId));

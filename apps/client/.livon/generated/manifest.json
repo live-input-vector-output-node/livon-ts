@@ -1,0 +1,31 @@
+{
+  "schemaVersion": "1",
+  "contractVersion": "demo-cache",
+  "contractHash": "demo-cache",
+  "generatedAt": "2026-05-19T00:00:00.000Z",
+  "endpointUrl": "ws://127.0.0.1:3002/ws",
+  "remoteFunctions": [
+    {"name": "user", "exportName": "user", "remoteIdentifier": "user", "inputTypeName": "UserInput", "responseTypeName": "User"},
+    {"name": "listUsers", "exportName": "listUsers", "remoteIdentifier": "listUsers", "inputTypeName": "ListUsersInput", "responseTypeName": "UserList"},
+    {"name": "joinChat", "exportName": "joinChat", "remoteIdentifier": "joinChat", "inputTypeName": "UserInput", "responseTypeName": "User"},
+    {"name": "leaveChat", "exportName": "leaveChat", "remoteIdentifier": "leaveChat", "inputTypeName": "UserInput", "responseTypeName": "User"},
+    {"name": "hello", "exportName": "hello", "remoteIdentifier": "hello", "inputTypeName": "HelloInput", "responseTypeName": "Hello"},
+    {"name": "sendMessage", "exportName": "sendMessage", "remoteIdentifier": "sendMessage", "inputTypeName": "SendMessageInput", "responseTypeName": "Message"}
+  ],
+  "subscriptions": [
+    {"name": "onUserJoined", "payloadTypeName": "User"},
+    {"name": "onUserLeft", "payloadTypeName": "User"},
+    {"name": "onHello", "payloadTypeName": "Hello"},
+    {"name": "onMessage", "payloadTypeName": "Message"}
+  ],
+  "types": [
+    {"name": "User", "kind": "object"},
+    {"name": "UserInput", "kind": "object"},
+    {"name": "Message", "kind": "object"},
+    {"name": "SendMessageInput", "kind": "object"},
+    {"name": "HelloInput", "kind": "object"},
+    {"name": "Hello", "kind": "object"},
+    {"name": "ListUsersInput", "kind": "object"},
+    {"name": "UserList", "kind": "array"}
+  ]
+}

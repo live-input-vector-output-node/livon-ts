@@ -6,8 +6,17 @@
   ],
   "include": [
     "src",
+    ".livon/generated",
     "*.config.ts"
   ],
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@livon/generated": [
+        ".livon/generated/client.ts"
+      ]
+    }
+  },
   "exclude": [
     "dist",
     "node_modules"

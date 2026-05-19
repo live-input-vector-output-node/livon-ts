@@ -19,7 +19,7 @@ Package or folder-specific deviations are registered in:
 
 ## Current specialization ids
 
-- `client-generator`
+- `client-runtime`
 - `runtime-core`
 - `schema-core`
 

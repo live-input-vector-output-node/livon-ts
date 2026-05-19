@@ -1,8 +1,5 @@
-import { clientWsTransport, type ClientWsTransport } from '@livon/client-ws-transport';
-import { runtime } from '@livon/runtime';
+import { configureLivonClient } from '@livon/client';
 import { create } from 'zustand';
-
-import { api } from '../generated/api.js';
 
 export type ConnectionStatus = 'idle' | 'connecting' | 'connected' | 'error';
 
@@ -14,7 +11,6 @@ export interface ConnectionState {
   disconnect: () => void;
 }
 
-let transport: ClientWsTransport | null = null;
 let started = false;
 
 const resolveWsUrl = () => {
@@ -38,8 +34,7 @@ export const useConnectionStore = create<ConnectionState>((set) => ({
   status: 'idle',
   error: undefined,
   connect: async () => {
-    if (started && transport) {
-      await transport.connect();
+    if (started) {
       set({ status: 'connected', error: undefined });
       return;
     }
@@ -47,21 +42,9 @@ export const useConnectionStore = create<ConnectionState>((set) => ({
     set({ status: 'connecting', error: undefined });
 
     const wsUrl = resolveWsUrl();
-    transport = clientWsTransport({
-      url: wsUrl,
-      onError: (error, info) => {
-        if (info.stage === 'close') {
-          set({ status: 'idle', error: undefined });
-          return;
-        }
-        set({ status: 'error', error: normalizeError(error) });
-      },
-    });
-
-    runtime(transport, api);
+    configureLivonClient({ endpointUrl: wsUrl });
 
     try {
-      await transport.connect();
       started = true;
       set({ status: 'connected', error: undefined });
     } catch (error) {
@@ -74,7 +57,5 @@ export const useConnectionStore = create<ConnectionState>((set) => ({
   disconnect: () => {
     set({ status: 'idle', error: undefined });
     started = false;
-    transport?.close();
-    transport = null;
   },
 }));

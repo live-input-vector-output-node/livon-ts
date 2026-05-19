@@ -1,533 +1,484 @@
-import type {
-  EventEnvelope,
-  EventStatus,
-  RuntimeEventContext,
-  RuntimeModule,
-  RuntimeModuleRegister,
-  RuntimeRegistry,
-} from '@livon/runtime';
+import { pack, unpack } from 'msgpackr';
 
-export interface AstNode {
-  type: string;
-  name?: string;
-  doc?: Readonly<Record<string, unknown>>;
-  request?: string;
-  response?: string;
-  dependsOn?: string;
-  constraints?: Readonly<Record<string, unknown>>;
-  children?: readonly AstNode[];
+export type ClientRequest = (event: string, payload: unknown) => Promise<unknown>;
+
+export type ClientTransportConnect = () => Promise<void>;
+
+export type ClientTransportClose = () => void;
+
+export interface UrlLike {
+  toString(): string;
 }
 
-export interface ClientRequest {
-  (event: string, payload: unknown): Promise<unknown>;
+export type ReadAccessToken = () => string | undefined;
+
+export type WebSocketSend = (data: string | Uint8Array) => void;
+
+export type WebSocketClose = () => void;
+
+export type WebSocketEventListener = (event: unknown) => void;
+
+export type WebSocketAddEventListener = (type: string, listener: WebSocketEventListener) => void;
+
+export type WebSocketRemoveEventListener = (type: string, listener: WebSocketEventListener) => void;
+
+export type WebSocketOn = (type: string, listener: WebSocketEventListener) => void;
+
+export type WebSocketOff = (type: string, listener: WebSocketEventListener) => void;
+
+export interface WebSocketLike {
+  readyState: number;
+  binaryType?: string;
+  send: WebSocketSend;
+  close: WebSocketClose;
+  addEventListener?: WebSocketAddEventListener;
+  removeEventListener?: WebSocketRemoveEventListener;
+  on?: WebSocketOn;
+  off?: WebSocketOff;
 }
 
-export interface ClientTransportConnect {
-  (): Promise<void>;
+export type WebSocketImplementation = (url: string | URL, protocols?: string | string[]) => WebSocketLike;
+
+type SocketData = string | ArrayBuffer | ArrayBufferView | Uint8Array;
+
+export interface ConfigureLivonClientConfig {
+  endpointUrl?: string | UrlLike;
+  protocols?: string | string[];
+  readAccessToken?: ReadAccessToken;
+  WebSocket?: WebSocketImplementation;
+  requestTimeoutMilliseconds?: number;
+  metadata?: Record<string, unknown>;
 }
 
-export interface ClientTransportClose {
-  (): void;
+export interface CreateLivonRemoteFunctionConfig {
+  endpointUrl: string;
+  remoteIdentifier: string;
+  contractVersion: string;
 }
 
-export interface ClientOptions {
-  ast: AstNode;
+export interface LivonRemoteRequest<TPayload> {
+  remoteIdentifier: string;
+  contractVersion: string;
+  payload: TPayload;
 }
 
-export interface ClientModuleInput {
-  ast: AstNode;
-  name?: string;
-  requestKey?: string;
+export interface LivonRemoteSuccessResponse<TResult> {
+  success: true;
+  result: TResult;
 }
 
-export interface ClientModule extends RuntimeModule {}
+export interface LivonRemoteFailureResponse {
+  success: false;
+  error: LivonRemoteError;
+}
 
-export interface ClientHandlerContext {
+export interface LivonRemoteError {
+  code: string;
+  message: string;
+  details?: unknown;
+}
+
+export type LivonRemoteResponse<TResult> =
+  | LivonRemoteSuccessResponse<TResult>
+  | LivonRemoteFailureResponse;
+
+export interface LivonClientError extends Error {
+  code: string;
+  details?: unknown;
+}
+
+export type LivonRemoteFunction<TPayload, TResult> = (payload: TPayload) => Promise<TResult>;
+
+export type LivonSubscriptionHandler<TPayload> = (payload: TPayload, context: LivonSubscriptionContext) => void;
+
+export interface LivonSubscriptionContext {
   eventId: string;
-  event: string;
-  status: EventStatus;
-  room?: string;
+  remoteIdentifier: string;
   metadata?: Readonly<Record<string, unknown>>;
-  context?: RuntimeEventContext;
+  room?: string;
 }
 
-export interface ClientSubscriptionHandler {
-  (payload: unknown, ctx: ClientHandlerContext): void;
+export interface RegisterLivonSubscriptionInput<TPayload> {
+  remoteIdentifier: string;
+  handler: LivonSubscriptionHandler<TPayload>;
 }
 
-export interface ClientEventEnvelope {
+export interface RegisterLivonSubscriptionResult {
+  unsubscribe: LivonUnsubscribe;
+}
+
+export type LivonUnsubscribe = () => void;
+
+interface LivonClientRuntimeConfig {
+  endpointUrl?: string;
+  protocols?: string | string[];
+  readAccessToken?: ReadAccessToken;
+  WebSocket?: WebSocketImplementation;
+  requestTimeoutMilliseconds: number;
+  metadata: Readonly<Record<string, unknown>>;
+}
+
+interface WireEnvelopeBase {
   id: string;
   event: string;
-  status: EventStatus;
-  payload?: unknown;
-  error?: unknown;
+  status: 'sending' | 'receiving' | 'failed';
   metadata?: Readonly<Record<string, unknown>>;
-  context?: RuntimeEventContext;
+  context?: Uint8Array;
 }
 
-export interface ClientEventEmitter {
-  emitEvent: (envelope: ClientEventEnvelope) => void;
+interface WireEnvelopePayload extends WireEnvelopeBase {
+  payload: Uint8Array;
+  error?: never;
 }
 
-export interface ClientRequestSetter {
-  setRequest: (request: ClientRequest) => void;
+interface WireEnvelopeError extends WireEnvelopeBase {
+  error: Uint8Array;
+  payload?: never;
 }
 
-export interface ClientModuleOptions {
-  name?: string;
-  requestKey?: string;
-}
+type WireEnvelope = WireEnvelopePayload | WireEnvelopeError;
 
-const DEFAULT_REQUEST_KEY = 'livon.client.request';
-
-interface SetClientRequestInput {
-  client: unknown;
-  registry: RuntimeRegistry;
-  requestKey: string;
-}
-
-const setClientRequest = ({ client, registry, requestKey }: SetClientRequestInput) => {
-  if (typeof client !== 'object' || client === null || !('setRequest' in client)) {
-    return;
-  }
-  const candidate = client as ClientRequestSetter;
-  if (typeof candidate.setRequest !== 'function') {
-    return;
-  }
-  candidate.setRequest((event, payload) => {
-    const request = registry.state.get<ClientRequest>(requestKey);
-    if (!request) {
-      throw new Error('Client request handler is not available.');
-    }
-    return request(event, payload);
-  });
-};
-
-const buildClientEventEnvelope = (envelope: EventEnvelope): ClientEventEnvelope => {
-  if ('payload' in envelope) {
-    return {
-      ...envelope,
-      payload: envelope.payload as unknown,
-    };
-  }
-  return {
-    ...envelope,
-    error: envelope.error,
-  };
-};
-
-/**
- * clientModule is part of the public LIVON API.
- *
- * @remarks
- * Parameter and return types are defined in the TypeScript signature.
- *
- * @see https://livon.tech/docs/packages/client
- *
- * @example
- * const result = clientModule(undefined as never);
- */
-export const clientModule = (client: ClientEventEmitter, options: ClientModuleOptions = {}): RuntimeModule => {
-  const register: RuntimeModuleRegister = (registry) => {
-    const requestKey = options.requestKey ?? DEFAULT_REQUEST_KEY;
-    setClientRequest({ client, registry, requestKey });
-    registry.onReceive((envelope, _ctx, next) => {
-      client.emitEvent(buildClientEventEnvelope(envelope));
-      return next();
-    });
-  };
-
-  return {
-    name: options.name ?? 'client-module',
-    register,
-  };
-};
-
-interface OperationSpec {
-  name: string;
-  input?: AstNode;
-  output?: AstNode;
+interface PendingRequest {
   event: string;
+  resolve: PendingRequestResolve;
+  reject: PendingRequestReject;
+  timeoutHandle?: ReturnType<typeof setTimeout>;
 }
 
-interface FieldSpec {
-  owner: string;
-  field: string;
-  input?: AstNode;
-  output?: AstNode;
-  event: string;
+type PendingRequestResolve = (value: unknown) => void;
+
+type PendingRequestReject = (error: LivonClientError) => void;
+
+interface SubscriptionEntry {
+  remoteIdentifier: string;
+  handler: LivonSubscriptionHandler<unknown>;
 }
 
-type FieldRegistry = Map<string, Map<string, FieldSpec>>;
-
-interface FieldPayload {
-  dependsOn: unknown;
-  input?: unknown;
+interface MessageEventLike {
+  data: SocketData;
 }
+
+interface ErrorRecord {
+  message?: unknown;
+  code?: unknown;
+  details?: unknown;
+}
+
+interface RequestRemoteInput<TPayload> extends CreateLivonRemoteFunctionConfig, LivonRemoteRequest<TPayload> {}
+
+interface AddListenerInput {
+  target: WebSocketLike;
+  type: string;
+  listener: WebSocketEventListener;
+}
+
+interface RemoveSocketListenerInput {
+  cleanupOpen: LivonUnsubscribe;
+  cleanupError: LivonUnsubscribe;
+}
+
+const DEFAULT_REQUEST_TIMEOUT_MILLISECONDS = 10000;
+const READY_OPEN = 1;
+const DEFAULT_RUNTIME_CONFIG: LivonClientRuntimeConfig = {
+  endpointUrl: undefined,
+  protocols: undefined,
+  readAccessToken: undefined,
+  WebSocket: undefined,
+  requestTimeoutMilliseconds: DEFAULT_REQUEST_TIMEOUT_MILLISECONDS,
+  metadata: {},
+};
+
+let runtimeConfig = DEFAULT_RUNTIME_CONFIG;
+let socket: WebSocketLike | undefined;
+let socketEndpointUrl: string | undefined;
+let connectPromise: Promise<WebSocketLike> | undefined;
+let fallbackIdentifierSequence = 0;
+const pendingRequests = new Map<string, PendingRequest>();
+const subscriptionEntries = new Map<string, SubscriptionEntry>();
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
-const isArray = (value: unknown): value is unknown[] => Array.isArray(value);
+const isMessageEventLike = (value: unknown): value is MessageEventLike =>
+  isRecord(value) && 'data' in value;
 
-const capitalize = (value: string): string =>
-  value.length === 0 ? value : value.slice(0, 1).toUpperCase() + value.slice(1);
-
-const camelCaseName = (value: string): string => {
-  if (!value) return value;
-  return value
-    .replace(/[^a-zA-Z0-9]+(.)/g, (_, group) => String(group).toUpperCase())
-    .replace(/^./, (char) => char.toLowerCase());
+const createClientError = ({ code, message, details }: LivonRemoteError): LivonClientError => {
+  const error = new Error(message) as LivonClientError;
+  error.name = 'LivonClientError';
+  error.code = code;
+  error.details = details;
+  return error;
 };
 
-const fieldMethodName = (owner: string, field: string) => `$${camelCaseName(owner)}${capitalize(field)}`;
+const createUnknownClientError = (message: string): LivonClientError =>
+  createClientError({ code: 'LIVON_CLIENT_ERROR', message });
 
-const fieldEventName = (owner: string, field: string) => `$${owner}.${field}`;
-
-const walkAst = (node: AstNode, visit: (node: AstNode) => void) => {
-  visit(node);
-  node.children?.forEach((child) => walkAst(child, visit));
+const randomIdentifier = (): string => {
+  const cryptoValue = globalThis.crypto;
+  if (cryptoValue?.randomUUID) {
+    return cryptoValue.randomUUID();
+  }
+  fallbackIdentifierSequence += 1;
+  return `livon_${Date.now().toString(16)}_${fallbackIdentifierSequence.toString(16)}`;
 };
 
-const collectOperations = (root: AstNode): OperationSpec[] => {
-  const operations: OperationSpec[] = [];
-  walkAst(root, (node) => {
-    if (node.type !== 'operation' || !node.name) {
-      return;
+const binaryFromSocketData = (data: SocketData): Uint8Array => {
+  if (typeof data === 'string') {
+    throw new TypeError('Expected binary Livon WebSocket payload.');
+  }
+  if (data instanceof Uint8Array) {
+    return data;
+  }
+  if (data instanceof ArrayBuffer) {
+    return new Uint8Array(data);
+  }
+  return new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
+};
+
+const decodePayload = (payload: Uint8Array | undefined): unknown => {
+  if (!payload) {
+    return undefined;
+  }
+  return unpack(payload);
+};
+
+const encodePayload = (payload: unknown): Uint8Array => pack(payload);
+
+const readErrorRecord = (value: unknown): LivonRemoteError => {
+  if (!isRecord(value)) {
+    return { code: 'LIVON_REMOTE_ERROR', message: 'Livon remote call failed.' };
+  }
+  const record = value as ErrorRecord;
+  return {
+    code: typeof record.code === 'string' ? record.code : 'LIVON_REMOTE_ERROR',
+    message: typeof record.message === 'string' ? record.message : 'Livon remote call failed.',
+    details: record.details,
+  };
+};
+
+const normalizeRemoteResponse = <TResult>(value: unknown): LivonRemoteResponse<TResult> => {
+  if (isRecord(value) && value.success === true) {
+    return { success: true, result: value.result as TResult };
+  }
+  if (isRecord(value) && value.success === false) {
+    return { success: false, error: readErrorRecord(value.error) };
+  }
+  return { success: true, result: value as TResult };
+};
+
+const resolveWebSocketImplementation = (): WebSocketImplementation => {
+  if (runtimeConfig.WebSocket) {
+    return runtimeConfig.WebSocket;
+  }
+  const globalWebSocket = globalThis.WebSocket;
+  if (globalWebSocket) {
+    return (url, protocols) => new globalWebSocket(url, protocols);
+  }
+  throw createUnknownClientError('WebSocket is not available. Configure a WebSocket implementation.');
+};
+
+const addListener = ({ target, type, listener }: AddListenerInput): LivonUnsubscribe => {
+  if (target.addEventListener) {
+    target.addEventListener(type, listener);
+    return () => target.removeEventListener?.(type, listener);
+  }
+  if (target.on) {
+    target.on(type, listener);
+    return () => target.off?.(type, listener);
+  }
+  return () => undefined;
+};
+
+const rejectAllPending = (error: LivonClientError): void => {
+  pendingRequests.forEach((pendingRequest) => {
+    if (pendingRequest.timeoutHandle) {
+      clearTimeout(pendingRequest.timeoutHandle);
     }
-    const input = node.children?.[0];
-    const output = node.children?.[1];
-    operations.push({
-      name: node.name,
-      input,
-      output,
-      event: node.name,
-    });
+    pendingRequest.reject(error);
   });
-  return operations;
+  pendingRequests.clear();
 };
 
-const collectFieldOperations = (root: AstNode): FieldRegistry => {
-  const registry: FieldRegistry = new Map();
-  walkAst(root, (node) => {
-    if (node.type !== 'field') {
+const handleIncomingEnvelope = (envelope: WireEnvelope): void => {
+  const pendingRequest = pendingRequests.get(envelope.id);
+  if (pendingRequest) {
+    pendingRequests.delete(envelope.id);
+    if (pendingRequest.timeoutHandle) {
+      clearTimeout(pendingRequest.timeoutHandle);
+    }
+    if ('error' in envelope) {
+      pendingRequest.reject(createClientError(readErrorRecord(decodePayload(envelope.error))));
       return;
     }
-    const constraints = node.constraints;
-    const owner = typeof constraints?.owner === 'string' ? constraints.owner : undefined;
-    const field = typeof constraints?.field === 'string' ? constraints.field : undefined;
-    if (!owner || !field) {
-      return;
-    }
-    const children = node.children ?? [];
-    const dependsOn = children[0];
-    const input = children.length === 3 ? children[1] : undefined;
-    const output = children.length === 3 ? children[2] : children[1];
-    if (!dependsOn) {
-      return;
-    }
-    const spec: FieldSpec = {
-      owner,
-      field,
-      input,
-      output,
-      event: fieldEventName(owner, field),
-    };
-    if (!registry.has(owner)) {
-      registry.set(owner, new Map());
-    }
-    registry.get(owner)!.set(field, spec);
-  });
-  return registry;
-};
-
-interface HydrateByNodeInput {
-  value: unknown;
-  node: AstNode | undefined;
-  registry: FieldRegistry;
-  request: ClientRequest;
-}
-
-const hydrateByNode = ({ value, node, registry, request }: HydrateByNodeInput): unknown => {
-  if (!node) {
-    return value;
+    pendingRequest.resolve(decodePayload(envelope.payload));
+    return;
   }
 
-  if (node.type === 'array' && isArray(value)) {
-    const child = node.children?.[0];
-    value.forEach((item, index) => {
-      value[index] = hydrateByNode({ value: item, node: child, registry, request });
-    });
-    return value;
-  }
-
-  if (node.type === 'tuple' && isArray(value)) {
-    const children = node.children ?? [];
-    value.forEach((item, index) => {
-      value[index] = hydrateByNode({ value: item, node: children[index], registry, request });
-    });
-    return value;
-  }
-
-  if (node.type === 'and') {
-    return (node.children ?? []).reduce(
-      (current, child) => hydrateByNode({ value: current, node: child, registry, request }),
-      value,
-    );
-  }
-
-  if (node.type === 'object' && isRecord(value)) {
-    const typeName = node.name;
-    if (typeName && registry.has(typeName)) {
-      attachFieldOperations({ target: value, typeName, registry, request });
-    }
-    const fields = node.children ?? [];
-    fields.forEach((fieldNode) => {
-      if (fieldNode.type !== 'field' || !fieldNode.name) {
+  if ('payload' in envelope) {
+    const payload = decodePayload(envelope.payload);
+    subscriptionEntries.forEach((entry) => {
+      if (entry.remoteIdentifier !== envelope.event) {
         return;
       }
-      const child = fieldNode.children?.[0];
-      if (!child) {
-        return;
-      }
-      value[fieldNode.name] = hydrateByNode({
-        value: value[fieldNode.name],
-        node: child,
-        registry,
-        request,
+      entry.handler(payload, {
+        eventId: envelope.id,
+        remoteIdentifier: envelope.event,
+        metadata: envelope.metadata,
+        room: typeof envelope.metadata?.room === 'string' ? envelope.metadata.room : undefined,
       });
     });
-    return value;
   }
-
-  if (node.type === 'field') {
-    const child = node.children?.[0];
-    return hydrateByNode({ value, node: child, registry, request });
-  }
-
-  return value;
 };
 
-interface AttachFieldOperationsInput {
-  target: Record<string, unknown>;
-  typeName: string;
-  registry: FieldRegistry;
-  request: ClientRequest;
-}
+const handleSocketMessage = (event: unknown): void => {
+  const data = isMessageEventLike(event) ? event.data : event;
+  const wireEnvelope = unpack(binaryFromSocketData(data as SocketData)) as WireEnvelope;
+  handleIncomingEnvelope(wireEnvelope);
+};
 
-const attachFieldOperations = ({ target, typeName, registry, request }: AttachFieldOperationsInput) => {
-  const operations = registry.get(typeName);
-  if (!operations) {
-    return;
+const createMetadata = ({ remoteIdentifier, contractVersion }: CreateLivonRemoteFunctionConfig): Record<string, unknown> => {
+  const accessToken = runtimeConfig.readAccessToken?.();
+  return {
+    ...runtimeConfig.metadata,
+    remoteIdentifier,
+    contractVersion,
+    ...(accessToken ? { authorization: `Bearer ${accessToken}` } : {}),
+  };
+};
+
+const removeSocketListeners = ({ cleanupOpen, cleanupError }: RemoveSocketListenerInput): void => {
+  cleanupOpen();
+  cleanupError();
+};
+
+const openSocket = async (endpointUrl: string): Promise<WebSocketLike> => {
+  if (socket?.readyState === READY_OPEN && socketEndpointUrl === endpointUrl) {
+    return socket;
   }
-  if (!Object.isExtensible(target)) {
-    return;
+  if (connectPromise && socketEndpointUrl === endpointUrl) {
+    return connectPromise;
   }
 
-  operations.forEach((spec, fieldName) => {
-    if (fieldName in target) {
-      return;
-    }
-    Object.defineProperty(target, fieldName, {
-      enumerable: false,
-      configurable: true,
-      value: async (input?: unknown) => {
-        const payload = { dependsOn: target, input };
-        const result = await request(spec.event, payload);
-        return hydrateByNode({ value: result, node: spec.output, registry, request });
+  const WebSocketConstructor = resolveWebSocketImplementation();
+  socketEndpointUrl = endpointUrl;
+  connectPromise = new Promise<WebSocketLike>((resolve, reject) => {
+    const nextSocket = WebSocketConstructor(endpointUrl, runtimeConfig.protocols);
+    nextSocket.binaryType = 'arraybuffer';
+    const cleanupOpen = addListener({
+      target: nextSocket,
+      type: 'open',
+      listener: () => {
+        removeSocketListeners({ cleanupOpen, cleanupError });
+        socket = nextSocket;
+        connectPromise = undefined;
+        resolve(nextSocket);
       },
     });
+    const cleanupError = addListener({
+      target: nextSocket,
+      type: 'error',
+      listener: () => {
+        removeSocketListeners({ cleanupOpen, cleanupError });
+        connectPromise = undefined;
+        reject(createUnknownClientError(`Unable to connect to Livon endpoint ${endpointUrl}.`));
+      },
+    });
+    addListener({ target: nextSocket, type: 'message', listener: handleSocketMessage });
+    addListener({ target: nextSocket, type: 'close', listener: () => {
+      socket = undefined;
+      connectPromise = undefined;
+      rejectAllPending(createUnknownClientError('Livon WebSocket connection closed.'));
+    } });
   });
+  return connectPromise;
 };
 
-const normalizeFieldPayload = (payload: unknown): FieldPayload => {
-  if (isRecord(payload) && 'dependsOn' in payload) {
-    const dependsOn = payload.dependsOn;
-    const input = 'input' in payload ? payload.input : undefined;
-    if (input === undefined) {
-      return { dependsOn };
-    }
-    return { dependsOn, input };
+const requestRemote = async <TPayload, TResult>({
+  endpointUrl,
+  remoteIdentifier,
+  contractVersion,
+  payload,
+}: RequestRemoteInput<TPayload>): Promise<TResult> => {
+  const activeSocket = await openSocket(endpointUrl);
+  const id = randomIdentifier();
+  const wireEnvelope: WireEnvelopePayload = {
+    id,
+    event: remoteIdentifier,
+    status: 'sending',
+    metadata: createMetadata({ endpointUrl, remoteIdentifier, contractVersion }),
+    payload: encodePayload(payload),
+  };
+
+  const rawResponse = await new Promise<unknown>((resolve, reject) => {
+    const timeoutHandle = setTimeout(() => {
+      pendingRequests.delete(id);
+      const error = createUnknownClientError(`Livon request timed out for ${remoteIdentifier}.`);
+      reject(error);
+    }, runtimeConfig.requestTimeoutMilliseconds);
+    pendingRequests.set(id, {
+      event: remoteIdentifier,
+      resolve,
+      reject: reject as PendingRequestReject,
+      timeoutHandle,
+    });
+    activeSocket.send(pack(wireEnvelope));
+  });
+  const response = normalizeRemoteResponse<TResult>(rawResponse);
+  if (!response.success) {
+    throw createClientError(response.error);
   }
-  return { dependsOn: payload };
+  return response.result;
 };
 
-const createClientCore = ({ ast }: ClientOptions): ClientRequestSetter & Record<string, unknown> & {
-  __register?: (handlers: Record<string, ClientSubscriptionHandler>, roomId?: string) => void;
-  __toggle?: (event: string, enabled: boolean, roomId?: string) => void;
-  emitEvent: (envelope: ClientEventEnvelope) => void;
-} => {
-  const operations = collectOperations(ast);
-  const fieldRegistry = collectFieldOperations(ast);
-  let request: ClientRequest | undefined;
-
-  const client: Record<string, unknown> = {};
-  client.setRequest = (next: ClientRequest) => {
-    request = next;
+export const configureLivonClient = ({
+  endpointUrl,
+  protocols,
+  readAccessToken,
+  WebSocket,
+  requestTimeoutMilliseconds = DEFAULT_REQUEST_TIMEOUT_MILLISECONDS,
+  metadata = {},
+}: ConfigureLivonClientConfig): void => {
+  socket?.close();
+  socket = undefined;
+  socketEndpointUrl = undefined;
+  connectPromise = undefined;
+  rejectAllPending(createUnknownClientError('Livon client configuration changed.'));
+  runtimeConfig = {
+    endpointUrl: endpointUrl ? endpointUrl.toString() : runtimeConfig.endpointUrl,
+    protocols,
+    readAccessToken,
+    WebSocket,
+    requestTimeoutMilliseconds,
+    metadata,
   };
+};
 
-  const globalHandlers = new Map<string, ClientSubscriptionHandler>();
-  const globalEnabled = new Map<string, boolean>();
-  const roomHandlers = new Map<string, Map<string, ClientSubscriptionHandler>>();
-  const roomEnabled = new Map<string, Map<string, boolean>>();
-
-  const registerHandlers = (
-    handlers: Record<string, ClientSubscriptionHandler>,
-    roomId?: string,
-  ) => {
-    const entries = Object.entries(handlers).filter(([, handler]) => typeof handler === 'function');
-    if (entries.length === 0) {
-      return;
-    }
-    if (!roomId) {
-      entries.forEach(([event, handler]) => {
-        globalHandlers.set(event, handler);
-        globalEnabled.set(event, true);
-      });
-      return;
-    }
-    const roomMap = roomHandlers.get(roomId) ?? new Map<string, ClientSubscriptionHandler>();
-    const enabledMap = roomEnabled.get(roomId) ?? new Map<string, boolean>();
-    entries.forEach(([event, handler]) => {
-      roomMap.set(event, handler);
-      enabledMap.set(event, true);
+export const createLivonRemoteFunction = <TPayload, TResult>({
+  endpointUrl,
+  remoteIdentifier,
+  contractVersion,
+}: CreateLivonRemoteFunctionConfig): LivonRemoteFunction<TPayload, TResult> => {
+  return (payload: TPayload) =>
+    requestRemote<TPayload, TResult>({
+      endpointUrl: endpointUrl || runtimeConfig.endpointUrl || '',
+      remoteIdentifier,
+      contractVersion,
+      payload,
     });
-    roomHandlers.set(roomId, roomMap);
-    roomEnabled.set(roomId, enabledMap);
-  };
+};
 
-  interface ToggleHandlerInput {
-    event: string;
-    enabled: boolean;
-    roomId?: string;
-  }
-
-  const toggleHandler = ({ enabled, event, roomId }: ToggleHandlerInput) => {
-    if (!roomId) {
-      globalEnabled.set(event, enabled);
-      return;
-    }
-    const enabledMap = roomEnabled.get(roomId) ?? new Map<string, boolean>();
-    enabledMap.set(event, enabled);
-    roomEnabled.set(roomId, enabledMap);
-  };
-
-  const dispatch = (envelope: ClientEventEnvelope) => {
-    const ctx: ClientHandlerContext = {
-      eventId: envelope.id,
-      event: envelope.event,
-      status: envelope.status,
-      metadata: envelope.metadata,
-      context: envelope.context,
-      room: typeof envelope.metadata?.room === 'string' ? String(envelope.metadata.room) : undefined,
-    };
-    const roomId = ctx.room;
-
-    if (roomId) {
-      const enabledMap = roomEnabled.get(roomId);
-      const roomMap = roomHandlers.get(roomId);
-      const handler = roomMap?.get(envelope.event);
-      const isEnabled = enabledMap?.get(envelope.event) ?? true;
-      if (handler && isEnabled) {
-        handler(envelope.payload, ctx);
-      }
-    }
-
-    const handler = globalHandlers.get(envelope.event);
-    const isEnabled = globalEnabled.get(envelope.event) ?? true;
-    if (handler && isEnabled) {
-      handler(envelope.payload, ctx);
-    }
-  };
-
-  operations.forEach((op) => {
-    client[op.name] = async (input?: unknown) => {
-      if (!request) {
-        throw new Error('Client request handler is not available.');
-      }
-      const result = await request(op.event, input);
-      return hydrateByNode({ value: result, node: op.output, registry: fieldRegistry, request });
-    };
+export const registerLivonSubscription = <TPayload>({
+  remoteIdentifier,
+  handler,
+}: RegisterLivonSubscriptionInput<TPayload>): RegisterLivonSubscriptionResult => {
+  const id = randomIdentifier();
+  subscriptionEntries.set(id, {
+    remoteIdentifier,
+    handler: handler as LivonSubscriptionHandler<unknown>,
   });
-
-  fieldRegistry.forEach((fields, owner) => {
-    fields.forEach((spec, field) => {
-      const method = fieldMethodName(owner, field);
-      if (method in client) {
-        return;
-      }
-      client[method] = async (payload?: unknown, input?: unknown) => {
-        const normalized = normalizeFieldPayload(payload);
-        if (!request) {
-          throw new Error('Client request handler is not available.');
-        }
-        const result = await request(spec.event, {
-          dependsOn: normalized.dependsOn,
-          input: input ?? normalized.input,
-        });
-        return hydrateByNode({ value: result, node: spec.output, registry: fieldRegistry, request });
-      };
-    });
-  });
-
-  return Object.assign(client, {
-    __register: registerHandlers,
-    __toggle: (event: string, enabled: boolean, roomId?: string) => toggleHandler({ event, enabled, roomId }),
-    emitEvent: dispatch,
-  }) as ClientRequestSetter & Record<string, unknown> & {
-    __register: (handlers: Record<string, ClientSubscriptionHandler>, roomId?: string) => void;
-    __toggle: (event: string, enabled: boolean, roomId?: string) => void;
-    emitEvent: (envelope: ClientEventEnvelope) => void;
+  return {
+    unsubscribe: () => {
+      subscriptionEntries.delete(id);
+    },
   };
 };
-
-/**
- * createClient is part of the public LIVON API.
- *
- * @remarks
- * Parameter and return types are defined in the TypeScript signature.
- *
- * @see https://livon.tech/docs/packages/client
- *
- * @example
- * const result = createClient(undefined as never);
- */
-export const createClient = (input: ClientModuleInput): ClientModule & Record<string, unknown> & {
-  __register: (handlers: Record<string, ClientSubscriptionHandler>, roomId?: string) => void;
-  __toggle: (event: string, enabled: boolean, roomId?: string) => void;
-  emitEvent: (envelope: ClientEventEnvelope) => void;
-} => {
-  const client = createClientCore({ ast: input.ast });
-  const register: RuntimeModuleRegister = (registry) => {
-    const requestKey = input.requestKey ?? DEFAULT_REQUEST_KEY;
-    setClientRequest({ client, registry, requestKey });
-    registry.onReceive((envelope, _ctx, next) => {
-      client.emitEvent(buildClientEventEnvelope(envelope));
-      return next();
-    });
-  };
-  const moduleBase: RuntimeModule = {
-    name: input.name ?? 'client',
-    register,
-  };
-  const moduleWithClient = Object.assign(moduleBase, client) as ClientModule & Record<string, unknown> & {
-    __register: (handlers: Record<string, ClientSubscriptionHandler>, roomId?: string) => void;
-    __toggle: (event: string, enabled: boolean, roomId?: string) => void;
-    emitEvent: (envelope: ClientEventEnvelope) => void;
-  };
-  return moduleWithClient;
-};
-
-/**
- * createClientModule is part of the public LIVON API.
- *
- * @remarks
- * Parameter and return types are defined in the TypeScript signature.
- *
- * @see https://livon.tech/docs/packages/client
- *
- * @example
- * const result = createClientModule(undefined as never);
- */
-export const createClientModule = (input: ClientModuleInput): ClientModule & Record<string, unknown> =>
-  createClient(input);

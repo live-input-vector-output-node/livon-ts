@@ -1,21 +1,29 @@
-/**
- * Public package entrypoint for `@livon/client`.
- *
- * @see https://livon.tech/docs/packages/client
- */
 export type {
-  AstNode,
-  ClientTransportConnect,
-  ClientTransportClose,
   ClientRequest,
-  ClientRequestSetter,
-  ClientOptions,
-  ClientModuleInput,
-  ClientModule,
-  ClientEventEnvelope,
-  ClientEventEmitter,
-  ClientModuleOptions,
-  ClientHandlerContext,
-  ClientSubscriptionHandler,
+  ClientTransportClose,
+  ClientTransportConnect,
+  ConfigureLivonClientConfig,
+  CreateLivonRemoteFunctionConfig,
+  LivonClientError,
+  LivonRemoteError,
+  LivonRemoteFailureResponse,
+  LivonRemoteFunction,
+  LivonRemoteRequest,
+  LivonRemoteResponse,
+  LivonRemoteSuccessResponse,
+  LivonSubscriptionContext,
+  LivonSubscriptionHandler,
+  LivonUnsubscribe,
+  ReadAccessToken,
+  RegisterLivonSubscriptionInput,
+  RegisterLivonSubscriptionResult,
+  UrlLike,
+  WebSocketEventListener,
+  WebSocketImplementation,
+  WebSocketLike,
 } from './client.js';
-export { createClient, createClientModule, clientModule } from './client.js';
+export {
+  configureLivonClient,
+  createLivonRemoteFunction,
+  registerLivonSubscription,
+} from './client.js';

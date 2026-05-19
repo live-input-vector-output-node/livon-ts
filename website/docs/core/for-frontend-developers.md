@@ -26,7 +26,7 @@ Use [How Livon Differs](why-livon-exists#how-livon-differs-from-other-tools) for
 ## Tradeoffs
 
 1. You follow a shared runtime convention instead of fully custom per-app event plumbing.
-2. Schema changes should start in [schema](/docs/schema), then regenerate client types.
+2. Schema changes should start in [schema](/docs/schema), then let the Livon plugin resync client types.
 
 ## Best fit
 

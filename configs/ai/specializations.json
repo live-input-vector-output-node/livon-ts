@@ -2,7 +2,7 @@
   "version": 1,
   "specializations": [
     {
-      "id": "client-generator",
+      "id": "client-runtime",
       "scopePatterns": [
         "packages/client/**"
       ],
@@ -13,12 +13,12 @@
       "requiredLoad": [
         "packages/client/PROMPT.md",
         "website/docs/packages/client.md",
-        "website/docs/core/generators.md",
+        "website/docs/packages/client-sync.md",
         "website/docs/core/schema-doc-and-generated-jsdoc.md"
       ],
       "deltaRules": [
-        "Treat generator output behavior changes as doc-sensitive changes.",
-        "Run scoped generator tests when generated surface behavior changes."
+        "Treat generated client runtime and sync behavior changes as doc-sensitive changes.",
+        "Run scoped client and client-sync tests when generated surface behavior changes."
       ]
     },
     {

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-import { api, type User } from '../generated/api.js';
+import { api, type User } from '@livon/generated';
 
 export interface UsersState {
   items: User[];
@@ -64,9 +64,6 @@ export const useUsersStore = create<UsersState>((set, get) => ({
         useUsersStore.getState().remove(payload._id);
       },
     });
-    api.onUserJoined.on?.();
-    api.onHello.on?.();
-    api.onUserLeft.on?.();
     set({ initialized: true });
     await get().syncUsers();
   },

@@ -94,16 +94,6 @@
         "build/**"
       ]
     },
-    "gen:client:watch": {
-      "dependsOn": [
-        "^build"
-      ],
-      "cache": false,
-      "persistent": true,
-      "outputs": [
-        "src/generated/**"
-      ]
-    },
     "dev": {
       "cache": false,
       "persistent": true
@@ -277,18 +267,6 @@
       "outputs": []
     },
     "gen": {
-      "outputs": []
-    },
-    "gen:client": {
-      "dependsOn": [
-        "^build"
-      ],
-      "outputs": []
-    },
-    "gen:client:deploy": {
-      "dependsOn": [
-        "^build"
-      ],
       "outputs": []
     },
     "bench": {

@@ -36,7 +36,7 @@ LIVON is a TypeScript monorepo for schema-first APIs and deterministic realtime 
 | Area | What it contains | Start here |
 | --- | --- | --- |
 | Core docs | Product context, onboarding, governance, release flow | [Getting Started](https://livon.tech/docs/core/getting-started) |
-| Package docs | Runtime, schema, sync, adapters, CLI package guides | [Packages Index](https://livon.tech/docs/packages) |
+| Package docs | Runtime, schema, sync, plugin adapters, and reliability guides | [Packages Index](https://livon.tech/docs/packages) |
 | Schema reference | Full API references for schema builders/combinators | [Schema APIs](https://livon.tech/docs/schema) |
 | Architecture docs | Runtime internals, flow, roadmap, technical decisions | [Runtime Design](https://livon.tech/docs/technical/runtime-design) |
 | Contributor rules | Gate checks, coding/testing standards, workflow contracts | [Contributing](https://livon.tech/docs/core/contributing) |
@@ -48,11 +48,14 @@ LIVON is a TypeScript monorepo for schema-first APIs and deterministic realtime 
 | `@livon/runtime` | Runtime composition and execution boundaries. | [runtime](https://livon.tech/docs/packages/runtime) |
 | `@livon/schema` | Schema builders, parsing, and contract typing. | [schema](https://livon.tech/docs/packages/schema) |
 | `@livon/sync` | Deterministic sync units for state/event workflows. | [sync](https://livon.tech/docs/packages/sync) |
-| `@livon/client` | Generated client API surfaces from server schema. | [client](https://livon.tech/docs/packages/client) |
+| `@livon/client` | Browser-safe runtime used by plugin-generated clients. | [client](https://livon.tech/docs/packages/client) |
+| `@livon/contract` | Public contract and sync metadata types. | [contract](https://livon.tech/docs/packages/contract) |
+| `@livon/client-sync` | Plugin sync core for generated client files. | [client-sync](https://livon.tech/docs/packages/client-sync) |
+| `@livon/plugin` | Vite, Rollup, Webpack, and Rspack client sync plugins. | [plugin](https://livon.tech/docs/packages/plugin) |
+| `@livon/plugin-rsbuild` | Rsbuild and Rslib client sync plugin. | [plugin-rsbuild](https://livon.tech/docs/packages/plugin-rsbuild) |
 | `@livon/client-ws-transport` | Browser/client websocket transport adapter. | [client-ws-transport](https://livon.tech/docs/packages/client-ws-transport) |
 | `@livon/node-ws-transport` | Node websocket transport adapter. | [node-ws-transport](https://livon.tech/docs/packages/node-ws-transport) |
 | `@livon/react` | React integration utilities around LIVON sync/runtime. | [react](https://livon.tech/docs/packages/react) |
-| `@livon/cli` | Explain/sync CLI and generated client update tooling. | [cli](https://livon.tech/docs/packages/cli) |
 | `@livon/dlq-module` | Dead-letter queue runtime module for failure handling. | [dlq-module](https://livon.tech/docs/packages/dlq-module) |
 
 ## Recommended reading paths
