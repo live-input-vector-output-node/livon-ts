@@ -64,7 +64,7 @@
   "dependencies": {
     "@livon/runtime": "workspace:*",
     "msgpackr": "1.11.8",
-    "ws": "8.19.0"
+    "ws": "8.21.2"
   },
   "devDependencies": {
     "@livon/vitest": "workspace:*",
