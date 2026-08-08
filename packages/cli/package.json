@@ -68,7 +68,7 @@
     "@rslib/core": "0.19.5",
     "@livon/client": "workspace:*",
     "msgpackr": "1.11.8",
-    "ws": "8.19.0"
+    "ws": "8.21.3"
   },
   "devDependencies": {
     "@livon/vitest": "workspace:*",
